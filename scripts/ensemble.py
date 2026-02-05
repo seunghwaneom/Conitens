@@ -4837,26 +4837,108 @@ def cmd_dashboard(args):
     import subprocess
     import sys
 
-    client_script = Path(__file__).parent / "ensemble_client.py"
+    dashboard_script = Path(__file__).parent / "ensemble_dashboard.py"
 
-    if not client_script.exists():
-        print("❌ ensemble_client.py not found")
+    if not dashboard_script.exists():
+        print("❌ ensemble_dashboard.py not found")
+        print("   Run: pip install conitens --upgrade")
         return
 
-    # Use status command to show current state
     cmd = [
-        sys.executable, str(client_script),
-        "status",
-        "--port", str(args.port)
+        sys.executable, str(dashboard_script),
+        "serve",
+        "--port", str(args.port),
+        "--ws-port", str(args.ws_port)
     ]
+
+    if getattr(args, 'no_browser', False):
+        cmd.append("--no-browser")
+
+    print(f"🖥️ Starting dashboard on http://localhost:{args.port}")
+    print(f"   WebSocket server: ws://localhost:{args.ws_port}")
+    print("")
 
     try:
         subprocess.run(cmd)
+    except KeyboardInterrupt:
+        print("\nDashboard stopped")
     except Exception as e:
-        print(f"❌ Failed to connect: {e}")
+        print(f"❌ Failed to start dashboard: {e}")
         print("")
         print("Make sure the server is running:")
         print("  ensemble server start")
+
+
+def cmd_partition(args):
+    """Manage workspace partitions (v5.0)."""
+    import subprocess
+    import sys
+
+    partition_script = Path(__file__).parent / "ensemble_partition.py"
+
+    if not partition_script.exists():
+        print("❌ ensemble_partition.py not found")
+        print("   Run: pip install conitens --upgrade")
+        return
+
+    partition_cmd = getattr(args, 'partition_cmd', None)
+
+    if partition_cmd == "recommend":
+        cmd = [
+            sys.executable, str(partition_script),
+            "--workspace", WORKSPACE,
+            "recommend",
+            "--depth", str(args.depth),
+            "--min-files", str(args.min_files)
+        ]
+
+    elif partition_cmd == "create":
+        cmd = [
+            sys.executable, str(partition_script),
+            "--workspace", WORKSPACE,
+            "create",
+            "--path", args.path
+        ]
+        if args.description:
+            cmd.extend(["--description", args.description])
+
+    elif partition_cmd == "assign":
+        cmd = [
+            sys.executable, str(partition_script),
+            "--workspace", WORKSPACE,
+            "assign",
+            "--partition", args.partition,
+            "--agent", args.agent
+        ]
+
+    elif partition_cmd == "status":
+        cmd = [
+            sys.executable, str(partition_script),
+            "--workspace", WORKSPACE,
+            "status"
+        ]
+
+    elif partition_cmd == "check":
+        cmd = [
+            sys.executable, str(partition_script),
+            "--workspace", WORKSPACE,
+            "check",
+            "--agent", args.agent,
+            "--file", args.file
+        ]
+
+    else:
+        print("Usage: ensemble partition <recommend|create|assign|status|check>")
+        print("")
+        print("Commands:")
+        print("  recommend  Recommend partitions based on codebase")
+        print("  create     Create a new partition")
+        print("  assign     Assign agent to partition")
+        print("  status     Show partition status")
+        print("  check      Check file access for agent")
+        return
+
+    subprocess.run(cmd)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -5096,7 +5178,30 @@ def main():
     p_connect.add_argument("--port", "-P", type=int, default=9999, help="Server port")
 
     p_dashboard = subparsers.add_parser("dashboard", help="Open real-time agent dashboard (v5.0)")
-    p_dashboard.add_argument("--port", "-p", type=int, default=9999, help="Server port")
+    p_dashboard.add_argument("--port", "-p", type=int, default=8080, help="HTTP port (default: 8080)")
+    p_dashboard.add_argument("--ws-port", "-w", type=int, default=9999, help="WebSocket port (default: 9999)")
+    p_dashboard.add_argument("--no-browser", action="store_true", help="Don't open browser")
+
+    p_partition = subparsers.add_parser("partition", help="Manage workspace partitions (v5.0)")
+    part_subs = p_partition.add_subparsers(dest="partition_cmd", help="Partition commands")
+
+    p_part_rec = part_subs.add_parser("recommend", help="Recommend partitions")
+    p_part_rec.add_argument("--depth", "-d", type=int, default=2, help="Max directory depth")
+    p_part_rec.add_argument("--min-files", "-m", type=int, default=5, help="Min files")
+
+    p_part_create = part_subs.add_parser("create", help="Create partition")
+    p_part_create.add_argument("--path", "-p", required=True, help="Partition path")
+    p_part_create.add_argument("--description", "-D", help="Description")
+
+    p_part_assign = part_subs.add_parser("assign", help="Assign agent to partition")
+    p_part_assign.add_argument("--partition", "-p", required=True, help="Partition ID or path")
+    p_part_assign.add_argument("--agent", "-a", required=True, help="Agent ID")
+
+    p_part_status = part_subs.add_parser("status", help="Show partition status")
+
+    p_part_check = part_subs.add_parser("check", help="Check file access")
+    p_part_check.add_argument("--agent", "-a", required=True, help="Agent ID")
+    p_part_check.add_argument("--file", "-f", required=True, help="File path")
 
     args = parser.parse_args()
     WORKSPACE = os.path.abspath(args.workspace)
@@ -5135,6 +5240,7 @@ def main():
         "server": cmd_server,
         "connect": cmd_connect,
         "dashboard": cmd_dashboard,
+        "partition": cmd_partition,
     }
     
     if args.command in commands:
