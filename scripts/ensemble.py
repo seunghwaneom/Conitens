@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 """
-Ensemble CLI Tool v5.0.0
+Ensemble CLI Tool v5.3.0
 ========================
-Multi-Agent Workspace Edition
+Advanced Multi-Agent Features Edition
+
+NEW in v5.3.0 (Phase 4 Advanced Features):
+- Region-Level Locking: Lock at function/class/line-range level
+- Smart Partitioning: Dependency-based auto-partition with change frequency analysis
+- Orchestration AI: Automatic work distribution, bottleneck detection, rebalancing
+- Analytics: Collaboration metrics, agent contributions, team recommendations
+- New commands: region, smart-partition, ai, analytics
 
 NEW in v5.0.0 (Multi-Agent Workspace):
 - Context Sync Server: WebSocket server for real-time agent communication
@@ -5009,6 +5016,258 @@ def cmd_orchestrate(args):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# v5.3 PHASE 4 ADVANCED FEATURES COMMANDS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def cmd_region(args):
+    """Region-level locking (v5.3)."""
+    import subprocess
+    import sys
+
+    region_script = Path(__file__).parent / "ensemble_region_lock.py"
+
+    if not region_script.exists():
+        print("❌ ensemble_region_lock.py not found")
+        return
+
+    region_cmd = getattr(args, 'region_cmd', None)
+
+    if region_cmd == "parse":
+        cmd = [sys.executable, str(region_script), "parse", args.file]
+
+    elif region_cmd == "lock":
+        cmd = [
+            sys.executable, str(region_script), "lock",
+            "--file", args.file,
+            "--region", args.region,
+            "--agent", args.agent,
+            "--type", args.type,
+            "--ttl", str(args.ttl)
+        ]
+
+    elif region_cmd == "unlock":
+        cmd = [
+            sys.executable, str(region_script), "unlock",
+            "--file", args.file,
+            "--region", args.region,
+            "--agent", args.agent
+        ]
+
+    elif region_cmd == "check":
+        cmd = [
+            sys.executable, str(region_script), "check",
+            "--file", args.file,
+            "--agent", args.agent
+        ]
+        if args.line:
+            cmd.extend(["--line", str(args.line)])
+
+    elif region_cmd == "status":
+        cmd = [sys.executable, str(region_script), "status"]
+        if getattr(args, 'file', None):
+            cmd.extend(["--file", args.file])
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif region_cmd == "available":
+        cmd = [
+            sys.executable, str(region_script), "available",
+            "--file", args.file,
+            "--agent", args.agent
+        ]
+
+    else:
+        print("Usage: ensemble region <parse|lock|unlock|check|status|available>")
+        print("")
+        print("Commands:")
+        print("  parse      Parse file and show lockable regions")
+        print("  lock       Acquire a region lock")
+        print("  unlock     Release a region lock")
+        print("  check      Check access to a line")
+        print("  status     Show all active region locks")
+        print("  available  Show available regions for locking")
+        return
+
+    subprocess.run(cmd)
+
+
+def cmd_smart_partition(args):
+    """Smart partitioning (v5.3)."""
+    import subprocess
+    import sys
+
+    sp_script = Path(__file__).parent / "ensemble_smart_partition.py"
+
+    if not sp_script.exists():
+        print("❌ ensemble_smart_partition.py not found")
+        return
+
+    sp_cmd = getattr(args, 'sp_cmd', None)
+
+    if sp_cmd == "analyze":
+        cmd = [sys.executable, str(sp_script), "analyze"]
+        if getattr(args, 'file', None):
+            cmd.extend(["--file", args.file])
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif sp_cmd == "changes":
+        cmd = [sys.executable, str(sp_script), "changes"]
+        if getattr(args, 'days', None):
+            cmd.extend(["--days", str(args.days)])
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif sp_cmd == "partition":
+        cmd = [
+            sys.executable, str(sp_script), "partition",
+            "--max", str(args.max),
+            "--min-files", str(args.min_files),
+            "--strategy", args.strategy
+        ]
+        if getattr(args, 'output', None):
+            cmd.extend(["--output", args.output])
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif sp_cmd == "suggest":
+        cmd = [sys.executable, str(sp_script), "suggest"]
+
+    else:
+        print("Usage: ensemble smart-partition <analyze|changes|partition|suggest>")
+        print("")
+        print("Commands:")
+        print("  analyze    Analyze file dependencies")
+        print("  changes    Analyze change frequency")
+        print("  partition  Create smart partitions")
+        print("  suggest    Suggest optimal strategy")
+        return
+
+    subprocess.run(cmd)
+
+
+def cmd_orchestration_ai(args):
+    """AI-powered orchestration (v5.3)."""
+    import subprocess
+    import sys
+
+    ai_script = Path(__file__).parent / "ensemble_orchestration_ai.py"
+
+    if not ai_script.exists():
+        print("❌ ensemble_orchestration_ai.py not found")
+        return
+
+    ai_cmd = getattr(args, 'ai_cmd', None)
+
+    if ai_cmd == "status":
+        cmd = [sys.executable, str(ai_script), "status"]
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif ai_cmd == "agent":
+        cmd = [sys.executable, str(ai_script), "agent", args.action]
+        if getattr(args, 'id', None):
+            cmd.extend(["--id", args.id])
+        if getattr(args, 'type', None):
+            cmd.extend(["--type", args.type])
+        if getattr(args, 'capabilities', None):
+            cmd.extend(["--capabilities", args.capabilities])
+
+    elif ai_cmd == "work":
+        cmd = [sys.executable, str(ai_script), "work", args.action]
+        if getattr(args, 'id', None):
+            cmd.extend(["--id", args.id])
+        if getattr(args, 'title', None):
+            cmd.extend(["--title", args.title])
+        if getattr(args, 'description', None):
+            cmd.extend(["--description", args.description])
+        if getattr(args, 'capabilities', None):
+            cmd.extend(["--capabilities", args.capabilities])
+        if getattr(args, 'priority', None):
+            cmd.extend(["--priority", args.priority])
+
+    elif ai_cmd == "bottleneck":
+        cmd = [sys.executable, str(ai_script), "bottleneck"]
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif ai_cmd == "rebalance":
+        cmd = [sys.executable, str(ai_script), "rebalance"]
+
+    else:
+        print("Usage: ensemble ai <status|agent|work|bottleneck|rebalance>")
+        print("")
+        print("Commands:")
+        print("  status      Show orchestration status")
+        print("  agent       Manage agents (register/update/list)")
+        print("  work        Manage work items (add/assign/complete/list)")
+        print("  bottleneck  Detect bottlenecks")
+        print("  rebalance   Rebalance task assignments")
+        return
+
+    subprocess.run(cmd)
+
+
+def cmd_analytics(args):
+    """Collaboration analytics (v5.3)."""
+    import subprocess
+    import sys
+
+    analytics_script = Path(__file__).parent / "ensemble_analytics.py"
+
+    if not analytics_script.exists():
+        print("❌ ensemble_analytics.py not found")
+        return
+
+    an_cmd = getattr(args, 'analytics_cmd', None)
+
+    if an_cmd == "summary":
+        cmd = [sys.executable, str(analytics_script), "summary"]
+        if getattr(args, 'days', None):
+            cmd.extend(["--days", str(args.days)])
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif an_cmd == "contributors":
+        cmd = [sys.executable, str(analytics_script), "contributors"]
+        if getattr(args, 'days', None):
+            cmd.extend(["--days", str(args.days)])
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif an_cmd == "recommend":
+        cmd = [
+            sys.executable, str(analytics_script), "recommend",
+            args.task_type
+        ]
+        if getattr(args, 'size', None):
+            cmd.extend(["--size", args.size])
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    elif an_cmd == "report":
+        cmd = [sys.executable, str(analytics_script), "report"]
+        if getattr(args, 'days', None):
+            cmd.extend(["--days", str(args.days)])
+        if getattr(args, 'output', None):
+            cmd.extend(["--output", args.output])
+        if getattr(args, 'json', False):
+            cmd.append("--json")
+
+    else:
+        print("Usage: ensemble analytics <summary|contributors|recommend|report>")
+        print("")
+        print("Commands:")
+        print("  summary      Show collaboration summary")
+        print("  contributors Show agent contributions")
+        print("  recommend    Get team recommendations")
+        print("  report       Generate full analytics report")
+        return
+
+    subprocess.run(cmd)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -5016,7 +5275,7 @@ def main():
     global WORKSPACE
 
     parser = argparse.ArgumentParser(
-        description="Ensemble CLI Tool v5.2.0 (Multi-Agent Workspace)",
+        description="Ensemble CLI Tool v5.3.0 (Advanced Multi-Agent Features)",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
@@ -5288,6 +5547,110 @@ def main():
     p_orch_resolve.add_argument("--use-a", action="store_true", help="Use version A")
     p_orch_resolve.add_argument("--use-b", action="store_true", help="Use version B")
 
+    # v5.3 Region-level locking commands
+    p_region = subparsers.add_parser("region", help="Region-level locking (v5.3)")
+    region_subs = p_region.add_subparsers(dest="region_cmd", help="Region locking commands")
+
+    p_region_parse = region_subs.add_parser("parse", help="Parse file and show regions")
+    p_region_parse.add_argument("file", help="File to parse")
+
+    p_region_lock = region_subs.add_parser("lock", help="Acquire a region lock")
+    p_region_lock.add_argument("--file", "-f", required=True, help="File path")
+    p_region_lock.add_argument("--region", "-r", required=True, help="Region identifier")
+    p_region_lock.add_argument("--agent", "-a", required=True, help="Agent ID")
+    p_region_lock.add_argument("--type", "-t", default="EXCLUSIVE", choices=["EXCLUSIVE", "SHARED"])
+    p_region_lock.add_argument("--ttl", type=int, default=300, help="Lock TTL in seconds")
+
+    p_region_unlock = region_subs.add_parser("unlock", help="Release a region lock")
+    p_region_unlock.add_argument("--file", "-f", required=True, help="File path")
+    p_region_unlock.add_argument("--region", "-r", required=True, help="Region identifier")
+    p_region_unlock.add_argument("--agent", "-a", required=True, help="Agent ID")
+
+    p_region_check = region_subs.add_parser("check", help="Check access to a line")
+    p_region_check.add_argument("--file", "-f", required=True, help="File path")
+    p_region_check.add_argument("--line", "-l", type=int, help="Line number")
+    p_region_check.add_argument("--agent", "-a", required=True, help="Agent ID")
+
+    p_region_status = region_subs.add_parser("status", help="Show active region locks")
+    p_region_status.add_argument("--file", "-f", help="Filter by file")
+    p_region_status.add_argument("--json", action="store_true")
+
+    p_region_available = region_subs.add_parser("available", help="Show available regions")
+    p_region_available.add_argument("--file", "-f", required=True, help="File path")
+    p_region_available.add_argument("--agent", "-a", required=True, help="Agent ID")
+
+    # v5.3 Smart partitioning commands
+    p_sp = subparsers.add_parser("smart-partition", help="Smart partitioning (v5.3)")
+    sp_subs = p_sp.add_subparsers(dest="sp_cmd", help="Smart partition commands")
+
+    p_sp_analyze = sp_subs.add_parser("analyze", help="Analyze dependencies")
+    p_sp_analyze.add_argument("--file", "-f", help="Analyze specific file")
+    p_sp_analyze.add_argument("--json", action="store_true")
+
+    p_sp_changes = sp_subs.add_parser("changes", help="Analyze change frequency")
+    p_sp_changes.add_argument("--days", "-d", type=int, default=90)
+    p_sp_changes.add_argument("--json", action="store_true")
+
+    p_sp_partition = sp_subs.add_parser("partition", help="Create smart partitions")
+    p_sp_partition.add_argument("--max", "-m", type=int, default=5, help="Max partitions")
+    p_sp_partition.add_argument("--min-files", type=int, default=3, help="Min files per partition")
+    p_sp_partition.add_argument("--strategy", "-s", default="balanced",
+                                choices=["balanced", "coupling", "hotspot"])
+    p_sp_partition.add_argument("--output", "-o", help="Output JSON file")
+    p_sp_partition.add_argument("--json", action="store_true")
+
+    p_sp_suggest = sp_subs.add_parser("suggest", help="Suggest optimal strategy")
+
+    # v5.3 Orchestration AI commands
+    p_ai = subparsers.add_parser("ai", help="AI-powered orchestration (v5.3)")
+    ai_subs = p_ai.add_subparsers(dest="ai_cmd", help="AI orchestration commands")
+
+    p_ai_status = ai_subs.add_parser("status", help="Show orchestration status")
+    p_ai_status.add_argument("--json", action="store_true")
+
+    p_ai_agent = ai_subs.add_parser("agent", help="Manage agents")
+    p_ai_agent.add_argument("action", choices=["register", "update", "list"])
+    p_ai_agent.add_argument("--id", help="Agent ID")
+    p_ai_agent.add_argument("--type", help="Agent type")
+    p_ai_agent.add_argument("--capabilities", help="Comma-separated capabilities")
+
+    p_ai_work = ai_subs.add_parser("work", help="Manage work items")
+    p_ai_work.add_argument("action", choices=["add", "assign", "complete", "list"])
+    p_ai_work.add_argument("--id", help="Work ID")
+    p_ai_work.add_argument("--title", help="Work title")
+    p_ai_work.add_argument("--description", help="Work description")
+    p_ai_work.add_argument("--capabilities", help="Required capabilities")
+    p_ai_work.add_argument("--priority", default="MEDIUM")
+
+    p_ai_bottleneck = ai_subs.add_parser("bottleneck", help="Detect bottlenecks")
+    p_ai_bottleneck.add_argument("--json", action="store_true")
+
+    p_ai_rebalance = ai_subs.add_parser("rebalance", help="Rebalance tasks")
+
+    # v5.3 Analytics commands
+    p_analytics = subparsers.add_parser("analytics", help="Collaboration analytics (v5.3)")
+    an_subs = p_analytics.add_subparsers(dest="analytics_cmd", help="Analytics commands")
+
+    p_an_summary = an_subs.add_parser("summary", help="Show collaboration summary")
+    p_an_summary.add_argument("--days", "-d", type=int, default=30)
+    p_an_summary.add_argument("--json", action="store_true")
+
+    p_an_contrib = an_subs.add_parser("contributors", help="Show agent contributions")
+    p_an_contrib.add_argument("--days", "-d", type=int, default=30)
+    p_an_contrib.add_argument("--json", action="store_true")
+
+    p_an_recommend = an_subs.add_parser("recommend", help="Get team recommendations")
+    p_an_recommend.add_argument("task_type", choices=[
+        "new_feature", "bug_fix", "refactor", "security_audit", "documentation"
+    ])
+    p_an_recommend.add_argument("--size", choices=["small", "medium", "large"], default="medium")
+    p_an_recommend.add_argument("--json", action="store_true")
+
+    p_an_report = an_subs.add_parser("report", help="Generate full report")
+    p_an_report.add_argument("--days", "-d", type=int, default=30)
+    p_an_report.add_argument("--output", "-o", help="Output JSON file")
+    p_an_report.add_argument("--json", action="store_true")
+
     args = parser.parse_args()
     WORKSPACE = os.path.abspath(args.workspace)
     
@@ -5328,6 +5691,11 @@ def main():
         "partition": cmd_partition,
         # v5.2 Orchestrator
         "orchestrate": cmd_orchestrate,
+        # v5.3 Advanced Features
+        "region": cmd_region,
+        "smart-partition": cmd_smart_partition,
+        "ai": cmd_orchestration_ai,
+        "analytics": cmd_analytics,
     }
     
     if args.command in commands:
