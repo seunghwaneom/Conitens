@@ -23,7 +23,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    CONITENS ORCHESTRATION                        │
+│                    CONITENS ORCHESTRATION                       │
 ├─────────────────────────────────────────────────────────────────┤
 │  🧠 Gemini 3 Pro     → Planner (2M+ context, Deep Think)        │
 │  🔧 Claude Code      → Implementer (Terminal, Tool Calling)     │
