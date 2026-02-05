@@ -4941,19 +4941,86 @@ def cmd_partition(args):
     subprocess.run(cmd)
 
 
+def cmd_orchestrate(args):
+    """Multi-model orchestration (v5.2)."""
+    import subprocess
+    import sys
+
+    orchestrator_script = Path(__file__).parent / "ensemble_orchestrator.py"
+
+    if not orchestrator_script.exists():
+        print("❌ ensemble_orchestrator.py not found")
+        print("   Run: pip install conitens --upgrade")
+        return
+
+    orch_cmd = getattr(args, 'orchestrate_cmd', None)
+
+    if orch_cmd == "start":
+        cmd = [
+            sys.executable, str(orchestrator_script),
+            "--workspace", WORKSPACE,
+            "start",
+            "--mode", args.mode
+        ]
+        print(f"🎭 Starting orchestrator in {args.mode} mode...")
+
+    elif orch_cmd == "status":
+        cmd = [
+            sys.executable, str(orchestrator_script),
+            "--workspace", WORKSPACE,
+            "status"
+        ]
+
+    elif orch_cmd == "conflicts":
+        cmd = [
+            sys.executable, str(orchestrator_script),
+            "--workspace", WORKSPACE,
+            "conflicts"
+        ]
+
+    elif orch_cmd == "resolve":
+        cmd = [
+            sys.executable, str(orchestrator_script),
+            "--workspace", WORKSPACE,
+            "resolve",
+            "--conflict", args.conflict
+        ]
+        if args.use_a:
+            cmd.append("--use-a")
+        elif args.use_b:
+            cmd.append("--use-b")
+
+    else:
+        print("Usage: ensemble orchestrate <start|status|conflicts|resolve>")
+        print("")
+        print("Commands:")
+        print("  start      Start orchestrator in GCC-RT/PAR-RT/SOLO-RT mode")
+        print("  status     Show orchestrator status")
+        print("  conflicts  List merge conflicts")
+        print("  resolve    Resolve a merge conflict")
+        print("")
+        print("Modes:")
+        print("  GCC-RT   Gemini (Plan) → Claude (Implement) → Codex (Review) Real-time")
+        print("  PAR-RT   All agents work in parallel with sync points")
+        print("  SOLO-RT  Single agent with real-time monitoring")
+        return
+
+    subprocess.run(cmd)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
     global WORKSPACE
-    
+
     parser = argparse.ArgumentParser(
-        description="Ensemble CLI Tool v4.2.0 (vibe-kit inspired)",
+        description="Ensemble CLI Tool v5.2.0 (Multi-Agent Workspace)",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    parser.add_argument("--version", "-v", action="version", version="Ensemble CLI v5.0.0")
+    parser.add_argument("--version", "-v", action="version", version="Ensemble CLI v5.2.0")
     
     parser.add_argument("--workspace", "-w",
         help="Workspace directory",
@@ -5203,6 +5270,24 @@ def main():
     p_part_check.add_argument("--agent", "-a", required=True, help="Agent ID")
     p_part_check.add_argument("--file", "-f", required=True, help="File path")
 
+    # v5.2 Orchestrator commands
+    p_orchestrate = subparsers.add_parser("orchestrate", help="Multi-model orchestration (v5.2)")
+    orch_subs = p_orchestrate.add_subparsers(dest="orchestrate_cmd", help="Orchestrator commands")
+
+    p_orch_start = orch_subs.add_parser("start", help="Start orchestrator")
+    p_orch_start.add_argument("--mode", "-m", default="GCC-RT",
+                              choices=["GCC-RT", "PAR-RT", "SOLO-RT"],
+                              help="Orchestration mode")
+
+    p_orch_status = orch_subs.add_parser("status", help="Show orchestrator status")
+
+    p_orch_conflicts = orch_subs.add_parser("conflicts", help="List merge conflicts")
+
+    p_orch_resolve = orch_subs.add_parser("resolve", help="Resolve merge conflict")
+    p_orch_resolve.add_argument("--conflict", "-c", required=True, help="Conflict ID")
+    p_orch_resolve.add_argument("--use-a", action="store_true", help="Use version A")
+    p_orch_resolve.add_argument("--use-b", action="store_true", help="Use version B")
+
     args = parser.parse_args()
     WORKSPACE = os.path.abspath(args.workspace)
     
@@ -5241,6 +5326,8 @@ def main():
         "connect": cmd_connect,
         "dashboard": cmd_dashboard,
         "partition": cmd_partition,
+        # v5.2 Orchestrator
+        "orchestrate": cmd_orchestrate,
     }
     
     if args.command in commands:
