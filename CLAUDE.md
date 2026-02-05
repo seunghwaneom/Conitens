@@ -1,4 +1,4 @@
-# CLAUDE.md — Ensemble v4.2.0 for Claude Code
+# CLAUDE.md — Ensemble v5.0.0 for Claude Code
 
 > **Claude Code가 자동으로 로드하는 프로젝트 컨텍스트**
 >
@@ -489,6 +489,96 @@ ensemble dump \
 
 ---
 
+## 🔗 Multi-Agent Workspace (v5.0)
+
+### 서버 시작
+
+다중 Agent 협업 시 Context Sync Server를 먼저 시작합니다:
+
+```bash
+# 서버 상태 확인
+ensemble server status
+
+# 서버 시작 (백그라운드)
+ensemble server start --background
+
+# 또는 포그라운드 (디버깅용)
+ensemble server start --port 9999
+```
+
+### Agent로 연결
+
+```bash
+# Claude Code 인스턴스로 연결
+ensemble connect --agent CLAUDE --instance terminal-1
+
+# 파티션 지정 (특정 디렉토리만 담당)
+ensemble connect --agent CLAUDE --instance frontend --partition src/frontend/
+ensemble connect --agent CLAUDE --instance backend --partition src/backend/
+```
+
+### 다중 터미널 워크플로우
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  MULTI-TERMINAL WORKFLOW                                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  Terminal 1: ensemble server start --background                     │
+│                                                                     │
+│  Terminal 2: ensemble connect --agent CLAUDE --instance term-1      │
+│              → Frontend 작업                                        │
+│                                                                     │
+│  Terminal 3: ensemble connect --agent CLAUDE --instance term-2      │
+│              → Backend 작업                                         │
+│                                                                     │
+│  Terminal 4: ensemble connect --agent CODEX --instance reviewer     │
+│              → 실시간 코드 리뷰                                      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 실시간 이벤트
+
+| 수신 이벤트 | 처리 |
+|------------|------|
+| `file:changed` | Context 갱신, 영향 분석 |
+| `lock:acquired` | 해당 파일 편집 회피 |
+| `review:requested` | (Codex 역할 시) 리뷰 시작 |
+| `plan:proposed` | (계획 검토) 확인/제안 |
+
+### Lock 프로토콜
+
+파일 수정 전 반드시 Lock 획득:
+
+```bash
+# Lock 획득
+ensemble lock acquire --file src/api.py --agent CLAUDE
+
+# 작업 수행...
+
+# Lock 해제
+ensemble lock release --file src/api.py --agent CLAUDE
+```
+
+### 대시보드
+
+```bash
+# 현재 상태 확인
+ensemble dashboard
+
+# 출력 예시:
+# Active Agents: 3
+#   - CLAUDE-term-1 (src/frontend/)
+#   - CLAUDE-term-2 (src/backend/)
+#   - CODEX-reviewer (no partition)
+# Active Locks: 2
+#   - src/api.py: CLAUDE-term-2 (EXCLUSIVE)
+#   - src/auth.py: CLAUDE-term-1 (EXCLUSIVE)
+```
+
+---
+
 ## 🛠️ Skills & Tools Reference
 
 > **Full Reference**: See @.agent/skills/ensemble-toolkit/SKILL.md for complete tool documentation
@@ -527,4 +617,4 @@ python scripts/ensemble_weekly.py trends
 
 ---
 
-*Ensemble v4.2.0 — Claude Code Integration (Full Autonomous Execution)*
+*Ensemble v5.0.0 — Multi-Agent Workspace Edition (Full Autonomous Execution)*

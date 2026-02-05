@@ -1,9 +1,28 @@
 #!/usr/bin/env python3
 """
-Ensemble CLI Tool v3.9.0
+Ensemble CLI Tool v5.0.0
 ========================
-Research Lab + General Purpose Edition
-vibe-kit Inspired Self-Improvement Features
+Multi-Agent Workspace Edition
+
+NEW in v5.0.0 (Multi-Agent Workspace):
+- Context Sync Server: WebSocket server for real-time agent communication
+- Multi-Terminal Support: Run multiple agents in parallel
+- Distributed Lock Manager: File locking with TTL and deadlock prevention
+- File Watcher: Real-time file change broadcasting
+- Agent Client SDK: Easy integration for Claude, Codex, Gemini
+- Shared Context: Real-time workspace state sharing
+- New commands: server (start/stop/status), connect, dashboard
+
+Server Usage:
+    python ensemble.py server start --port 9999 --background
+    python ensemble.py server status
+    python ensemble.py connect --agent CLAUDE --instance terminal-1 --partition src/
+    python ensemble.py dashboard
+
+Environment Variables (v5.0):
+    ENSEMBLE_SERVER_PORT     Server port (default: 9999)
+    ENSEMBLE_SERVER_HOST     Server host (default: localhost)
+    ENSEMBLE_LOCK_TTL        Default lock TTL in seconds (default: 300)
 
 NEW in v3.9.0:
 - Triage: Automatic failure analysis with 10 pattern types
@@ -4687,6 +4706,160 @@ id: {report_id}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# v5.0 MULTI-AGENT WORKSPACE COMMANDS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def cmd_server(args):
+    """Manage Context Sync Server (v5.0)."""
+    import subprocess
+    import sys
+
+    server_script = Path(__file__).parent / "ensemble_server.py"
+
+    if not server_script.exists():
+        print("❌ ensemble_server.py not found")
+        print("   Run: pip install conitens --upgrade")
+        return
+
+    server_cmd = getattr(args, 'server_cmd', None)
+
+    if server_cmd == "start":
+        cmd = [
+            sys.executable, str(server_script),
+            "--workspace", WORKSPACE,
+            "start",
+            "--port", str(args.port),
+            "--host", args.host
+        ]
+
+        if getattr(args, 'background', False):
+            # Run in background
+            if os.name == 'nt':  # Windows
+                subprocess.Popen(
+                    cmd,
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+            else:  # Unix
+                subprocess.Popen(
+                    cmd,
+                    start_new_session=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+            print(f"✅ Server starting in background on ws://{args.host}:{args.port}")
+            print(f"   Workspace: {WORKSPACE}")
+            print("")
+            print("🔜 Next steps:")
+            print(f"   ensemble server status")
+            print(f"   ensemble connect --agent CLAUDE --instance terminal-1")
+        else:
+            # Run in foreground
+            print(f"Starting Context Sync Server on ws://{args.host}:{args.port}")
+            print(f"Workspace: {WORKSPACE}")
+            print("Press Ctrl+C to stop\n")
+            try:
+                subprocess.run(cmd)
+            except KeyboardInterrupt:
+                print("\nServer stopped")
+
+    elif server_cmd == "stop":
+        cmd = [
+            sys.executable, str(server_script),
+            "--workspace", WORKSPACE,
+            "stop"
+        ]
+        subprocess.run(cmd)
+
+    elif server_cmd == "status":
+        cmd = [
+            sys.executable, str(server_script),
+            "--workspace", WORKSPACE,
+            "status",
+            "--port", str(args.port)
+        ]
+        subprocess.run(cmd)
+
+    else:
+        print("Usage: ensemble server <start|stop|status>")
+        print("")
+        print("Commands:")
+        print("  start    Start Context Sync Server")
+        print("  stop     Stop Context Sync Server")
+        print("  status   Show server status")
+        print("")
+        print("Options for start:")
+        print("  --port, -p     Server port (default: 9999)")
+        print("  --host, -H     Server host (default: localhost)")
+        print("  --background, -b  Run in background")
+
+
+def cmd_connect(args):
+    """Connect to Context Sync Server as agent (v5.0)."""
+    import subprocess
+    import sys
+
+    client_script = Path(__file__).parent / "ensemble_client.py"
+
+    if not client_script.exists():
+        print("❌ ensemble_client.py not found")
+        print("   Run: pip install conitens --upgrade")
+        return
+
+    cmd = [
+        sys.executable, str(client_script),
+        "connect",
+        "--agent", args.agent,
+        "--instance", args.instance,
+        "--host", args.host,
+        "--port", str(args.port)
+    ]
+
+    if args.partition:
+        cmd.extend(["--partition", args.partition])
+
+    print(f"🔗 Connecting to ws://{args.host}:{args.port}")
+    print(f"   Agent: {args.agent}")
+    print(f"   Instance: {args.instance}")
+    if args.partition:
+        print(f"   Partition: {args.partition}")
+    print("")
+
+    try:
+        subprocess.run(cmd)
+    except KeyboardInterrupt:
+        print("\nDisconnected")
+
+
+def cmd_dashboard(args):
+    """Open real-time agent dashboard (v5.0)."""
+    import subprocess
+    import sys
+
+    client_script = Path(__file__).parent / "ensemble_client.py"
+
+    if not client_script.exists():
+        print("❌ ensemble_client.py not found")
+        return
+
+    # Use status command to show current state
+    cmd = [
+        sys.executable, str(client_script),
+        "status",
+        "--port", str(args.port)
+    ]
+
+    try:
+        subprocess.run(cmd)
+    except Exception as e:
+        print(f"❌ Failed to connect: {e}")
+        print("")
+        print("Make sure the server is running:")
+        print("  ensemble server start")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -4698,7 +4871,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     
-    parser.add_argument("--version", "-v", action="version", version="Ensemble CLI v4.2.0")
+    parser.add_argument("--version", "-v", action="version", version="Ensemble CLI v5.0.0")
     
     parser.add_argument("--workspace", "-w",
         help="Workspace directory",
@@ -4897,9 +5070,34 @@ def main():
     p_upgrade.add_argument("--dry-run", action="store_true", help="Preview without changes")
     
     p_report = subparsers.add_parser("report", help="Generate structured GitHub issue report (v4.2)")
-    p_report.add_argument("--type", "-t", choices=["bug", "suggestion", "feedback"], 
+    p_report.add_argument("--type", "-t", choices=["bug", "suggestion", "feedback"],
                           default="feedback", help="Report type")
-    
+
+    # v5.0 Multi-Agent Workspace commands
+    p_server = subparsers.add_parser("server", help="Manage Context Sync Server (v5.0)")
+    server_subs = p_server.add_subparsers(dest="server_cmd", help="Server commands")
+
+    p_server_start = server_subs.add_parser("start", help="Start Context Sync Server")
+    p_server_start.add_argument("--port", "-p", type=int, default=9999, help="Server port (default: 9999)")
+    p_server_start.add_argument("--host", "-H", default="localhost", help="Server host (default: localhost)")
+    p_server_start.add_argument("--background", "-b", action="store_true", help="Run in background")
+
+    p_server_stop = server_subs.add_parser("stop", help="Stop Context Sync Server")
+
+    p_server_status = server_subs.add_parser("status", help="Show server status")
+    p_server_status.add_argument("--port", "-p", type=int, default=9999, help="Server port")
+
+    p_connect = subparsers.add_parser("connect", help="Connect to Context Sync Server as agent (v5.0)")
+    p_connect.add_argument("--agent", "-a", required=True, choices=["CLAUDE", "CODEX", "GEMINI"],
+                          help="Agent type")
+    p_connect.add_argument("--instance", "-i", required=True, help="Instance ID (e.g., terminal-1)")
+    p_connect.add_argument("--partition", "-p", help="Workspace partition path (e.g., src/frontend/)")
+    p_connect.add_argument("--host", "-H", default="localhost", help="Server host")
+    p_connect.add_argument("--port", "-P", type=int, default=9999, help="Server port")
+
+    p_dashboard = subparsers.add_parser("dashboard", help="Open real-time agent dashboard (v5.0)")
+    p_dashboard.add_argument("--port", "-p", type=int, default=9999, help="Server port")
+
     args = parser.parse_args()
     WORKSPACE = os.path.abspath(args.workspace)
     
@@ -4933,6 +5131,10 @@ def main():
         "upgrade-setup": cmd_upgrade_setup,
         "upgrade": cmd_upgrade,
         "report": cmd_report,
+        # v5.0 Multi-Agent Workspace
+        "server": cmd_server,
+        "connect": cmd_connect,
+        "dashboard": cmd_dashboard,
     }
     
     if args.command in commands:
