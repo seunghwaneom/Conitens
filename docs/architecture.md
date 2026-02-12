@@ -1,7 +1,7 @@
 # Conitens Architecture (Formalized from Sketch)
 
 ## 1) System Boundary
-Conitens 작업은 **"Antigravity (or Claude Code or Codex)"**라는 단일 실행 경계 안에서 수행됩니다. 이 경계 내부에서만 에이전트 실행, 워크스페이스 변경, 로컬 문서 반영이 이뤄지며, 경계 외부 소스 중 허용된 입력은 Global 문서(GDrive)와 Human input입니다.
+Conitens 작업은 사용자가 원하는 목표를 AI와 함께 정립하고, 혼합 및 단독 AI 모델에서 Agent control을 Context가 흔들리지 않고 이어지도록 돕습니다. Workspace가 바뀌는 경우를 대비해, Global 문서는 드라이브 연동 (GDrive)을 사용합니다.
 
 ## 2) Canonical Architecture Diagram (Mermaid)
 ```mermaid
