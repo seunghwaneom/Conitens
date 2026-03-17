@@ -1,6 +1,8 @@
 {
   "name": "@seunghwan/conitens",
   "version": "4.2.0",
+  "private": true,
+  "type": "module",
   "description": "Conitens — Multi-Agent AI Orchestration System for Collaborative Development",
   "keywords": [
     "ai",
@@ -16,6 +18,8 @@
   ],
   "author": "Seunghwan",
   "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "workspaces": ["packages/*"],
   "bin": {
     "ensemble": "./bin/ensemble.js",
     "conitens": "./bin/ensemble.js"
@@ -24,6 +28,7 @@
     "bin/",
     "scripts/",
     ".agent/",
+    ".agents/",
     ".notes/",
     ".vibe/",
     "vibe-kit/",
@@ -33,7 +38,7 @@
     "USAGE_GUIDE.md"
   ],
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=22.12.0"
   },
   "os": [
     "darwin",
@@ -49,6 +54,8 @@
     "url": "https://github.com/seunghwan/conitens/issues"
   },
   "scripts": {
-    "postinstall": "node ./bin/postinstall.js"
+    "postinstall": "node ./bin/postinstall.cjs",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build"
   }
 }
