@@ -20,3 +20,6 @@ export * from "./replay/index.js";
 
 // Phase 2 Week 5
 export * from "./ws-bus/index.js";
+
+// Traces
+export * from "./traces/index.js";
