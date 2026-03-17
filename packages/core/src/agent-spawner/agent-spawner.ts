@@ -68,7 +68,26 @@ export class AgentSpawner {
       );
     }
 
+    // Validate inputs to prevent shell injection via tmux
+    // tmux interprets its command argument through a shell, so we must
+    // reject dangerous characters in command/args
+    const DANGEROUS = /[;&|`$(){}!#]/;
+    if (DANGEROUS.test(command)) {
+      throw new Error(`Unsafe command: "${command}" contains shell metacharacters`);
+    }
+    for (const arg of args) {
+      if (DANGEROUS.test(arg)) {
+        throw new Error(`Unsafe argument: "${arg}" contains shell metacharacters`);
+      }
+    }
+
+    // Validate agentId (used in session name)
+    if (!/^[a-zA-Z0-9_-]+$/.test(agentId)) {
+      throw new Error(`Invalid agentId: "${agentId}" must be alphanumeric/dash/underscore`);
+    }
+
     // Build the full command string for tmux
+    // Safe because we validated no shell metacharacters above
     const fullCommand = [command, ...args].join(" ");
 
     // Build tmux new-session args
