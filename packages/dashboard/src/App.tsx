@@ -3,8 +3,9 @@ import { useEventStore } from "./store/event-store.js";
 import { useWebSocket } from "./hooks/use-websocket.js";
 import { KanbanBoard } from "./components/KanbanBoard.js";
 import { Timeline } from "./components/Timeline.js";
+import { PixelOffice } from "./components/PixelOffice.js";
 
-type Tab = "overview" | "kanban" | "timeline";
+type Tab = "overview" | "kanban" | "timeline" | "office";
 
 const tabStyle = (active: boolean): React.CSSProperties => ({
   padding: "8px 16px",
@@ -42,6 +43,7 @@ export function App() {
         <button style={tabStyle(activeTab === "overview")} onClick={() => setActiveTab("overview")}>Overview</button>
         <button style={tabStyle(activeTab === "kanban")} onClick={() => setActiveTab("kanban")}>Kanban</button>
         <button style={tabStyle(activeTab === "timeline")} onClick={() => setActiveTab("timeline")}>Timeline</button>
+        <button style={tabStyle(activeTab === "office")} onClick={() => setActiveTab("office")}>Office</button>
       </nav>
 
       {/* Content */}
@@ -89,6 +91,7 @@ export function App() {
 
         {activeTab === "kanban" && <KanbanBoard />}
         {activeTab === "timeline" && <Timeline />}
+        {activeTab === "office" && <PixelOffice />}
       </div>
     </div>
   );
