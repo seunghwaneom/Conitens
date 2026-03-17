@@ -28,3 +28,8 @@ export * from "./traces/index.js";
 export * from "./channels/index.js";
 export * from "./mode/index.js";
 export * from "./generator/index.js";
+
+// Phase 5
+export * from "./mcp/index.js";
+export * from "./a2a/index.js";
+export * from "./plugins/index.js";
