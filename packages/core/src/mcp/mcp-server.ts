@@ -46,6 +46,7 @@ export class ContinensMcpServer {
       },
       handler: async (params) => {
         return {
+          stub: true,
           success: true,
           task_id: params.task_id,
           state: "draft",
@@ -67,6 +68,7 @@ export class ContinensMcpServer {
       },
       handler: async (params) => {
         return {
+          stub: true,
           success: true,
           task_id: params.task_id,
           assignee: params.assignee,
@@ -84,6 +86,7 @@ export class ContinensMcpServer {
       },
       handler: async () => {
         return {
+          stub: true,
           success: true,
           tasks: [],
           message: "Task list retrieved",
@@ -103,6 +106,7 @@ export class ContinensMcpServer {
       },
       handler: async (params) => {
         return {
+          stub: true,
           success: true,
           task_id: params.task_id,
           message: `Status for ${params.task_id} retrieved`,
@@ -124,6 +128,7 @@ export class ContinensMcpServer {
       },
       handler: async (params) => {
         return {
+          stub: true,
           success: true,
           type: params.type,
           message: `Command ${params.type} submitted`,

@@ -12,6 +12,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import type { ConitensEvent } from "@conitens/protocol";
 import type { BaseReducer } from "./base-reducer.js";
+import { validateId } from "../utils/safe-path.js";
 
 interface CuratedEntry {
   ts: string;
@@ -32,6 +33,7 @@ export class MemoryCuratorReducer implements BaseReducer {
 
     const agentId = event.payload.agent_id as string;
     if (!agentId) return;
+    validateId(agentId, "agent_id");
 
     const entry: CuratedEntry = {
       ts: event.ts,

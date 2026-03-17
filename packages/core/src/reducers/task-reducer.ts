@@ -11,6 +11,7 @@ import { join } from "node:path";
 import type { ConitensEvent, TaskState } from "@conitens/protocol";
 import { canTransition } from "@conitens/protocol";
 import type { BaseReducer } from "./base-reducer.js";
+import { validateId } from "../utils/safe-path.js";
 
 interface TaskRecord {
   taskId: string;
@@ -41,6 +42,7 @@ export class TaskReducer implements BaseReducer {
 
     const taskId = event.task_id ?? (event.payload.task_id as string | undefined);
     if (!taskId) return;
+    validateId(taskId, "task_id");
 
     switch (event.type) {
       case "task.created":

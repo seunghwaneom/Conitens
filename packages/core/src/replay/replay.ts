@@ -22,11 +22,9 @@ export async function replayAll(
   const log = new EventLog(eventsDir);
   let eventCount = 0;
 
-  // Reset all reducers that support it
+  // Reset all reducers before replay
   for (const reducer of reducers) {
-    if ("reset" in reducer && typeof (reducer as { reset: () => void }).reset === "function") {
-      (reducer as { reset: () => void }).reset();
-    }
+    reducer.reset();
   }
 
   // Replay all events through matching reducers

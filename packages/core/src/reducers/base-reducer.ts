@@ -21,4 +21,7 @@ export interface BaseReducer {
    * @param conitensDir Absolute path to the .conitens/ directory
    */
   reduce(event: ConitensEvent, conitensDir: string): Promise<void>;
+
+  /** Reset in-memory state (for replay). */
+  reset(): void;
 }

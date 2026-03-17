@@ -88,7 +88,30 @@ export function redactPayload(
         anyRedacted = true;
         allFields.push(fieldPath);
       }
-    } else if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    } else if (Array.isArray(value)) {
+      const redactedArray: unknown[] = [];
+      for (let i = 0; i < value.length; i++) {
+        const item = value[i];
+        if (typeof item === "string") {
+          const r = redactString(item, patterns);
+          redactedArray.push(r.text);
+          if (r.redacted) {
+            anyRedacted = true;
+            allFields.push(`${fieldPath}[${i}]`);
+          }
+        } else if (item !== null && typeof item === "object" && !Array.isArray(item)) {
+          const nested = redactPayload(item as Record<string, unknown>, patterns, `${fieldPath}[${i}]`);
+          redactedArray.push(nested.payload);
+          if (nested.redacted) {
+            anyRedacted = true;
+            allFields.push(...nested.redacted_fields);
+          }
+        } else {
+          redactedArray.push(item);
+        }
+      }
+      result[key] = redactedArray;
+    } else if (value !== null && typeof value === "object") {
       const nested = redactPayload(value as Record<string, unknown>, patterns, fieldPath);
       result[key] = nested.payload;
       if (nested.redacted) {
