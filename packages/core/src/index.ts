@@ -23,3 +23,8 @@ export * from "./ws-bus/index.js";
 
 // Traces
 export * from "./traces/index.js";
+
+// Phase 4
+export * from "./channels/index.js";
+export * from "./mode/index.js";
+export * from "./generator/index.js";
