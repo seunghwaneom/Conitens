@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/kanbanboard.tsx","./src/components/timeline.tsx","./src/hooks/use-websocket.ts","./src/store/event-store.ts"],"version":"5.9.3"}

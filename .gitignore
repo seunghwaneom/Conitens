@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Conitens runtime
+.conitens/runtime/
+.conitens/agents/*/memory.sqlite
+
+# OMC state
+.omc/
+
+# OS
+.DS_Store
+Thumbs.db
