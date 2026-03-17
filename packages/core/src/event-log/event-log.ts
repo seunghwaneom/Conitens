@@ -15,6 +15,7 @@ import { SCHEMA_VERSION } from "@conitens/protocol";
 
 export class EventLog {
   private readonly eventsDir: string;
+  private dirEnsured = false;
 
   constructor(eventsDir: string) {
     this.eventsDir = eventsDir;
@@ -45,8 +46,11 @@ export class EventLog {
     const date = fullEvent.ts.slice(0, 10); // YYYY-MM-DD
     const filePath = join(this.eventsDir, `${date}.jsonl`);
 
-    // 3. Ensure directory exists
-    await mkdir(this.eventsDir, { recursive: true });
+    // 3. Ensure directory exists (cached to avoid syscall on every append)
+    if (!this.dirEnsured) {
+      await mkdir(this.eventsDir, { recursive: true });
+      this.dirEnsured = true;
+    }
 
     // 4. Append with fsync
     const line = JSON.stringify(fullEvent) + "\n";

@@ -55,7 +55,7 @@ export class Orchestrator {
         payload: {
           reason: "parse_error",
           file: basename(commandPath),
-          error: String(err),
+          error: err instanceof Error ? err.message : "Unknown parse error",
         },
       });
       await this.safeDelete(commandPath);

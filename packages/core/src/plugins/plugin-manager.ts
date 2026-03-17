@@ -60,13 +60,29 @@ export class PluginManager {
 
   /**
    * Run onBeforeEvent hooks. Returns null if any plugin vetoes the event.
+   * Immutable fields (schema, event_id, type, ts, run_id, actor) are preserved
+   * after each plugin hook — plugins cannot change event identity.
    */
   async runBeforeEvent(event: ConitensEvent): Promise<ConitensEvent | null> {
     let current: ConitensEvent | null = event;
 
+    // Preserve immutable fields that plugins must not change
+    const immutableFields = {
+      schema: event.schema,
+      event_id: event.event_id,
+      type: event.type,
+      ts: event.ts,
+      run_id: event.run_id,
+      actor: event.actor,
+    };
+
     for (const [, plugin] of this.plugins) {
       if (plugin.hooks.onBeforeEvent && current) {
         current = await plugin.hooks.onBeforeEvent(current);
+        if (current) {
+          // Restore immutable fields — plugins cannot change event identity
+          Object.assign(current, immutableFields);
+        }
       }
     }
 

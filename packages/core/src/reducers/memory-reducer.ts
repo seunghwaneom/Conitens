@@ -10,6 +10,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import type { ConitensEvent } from "@conitens/protocol";
 import type { BaseReducer } from "./base-reducer.js";
+import { validateId } from "../utils/safe-path.js";
 
 interface MemoryEntry {
   ts: string;
@@ -34,6 +35,7 @@ export class MemoryReducer implements BaseReducer {
   async reduce(event: ConitensEvent, conitensDir: string): Promise<void> {
     const agentId = this.extractAgentId(event);
     if (!agentId) return;
+    validateId(agentId, "agentId");
 
     const entry: MemoryEntry = {
       ts: event.ts,

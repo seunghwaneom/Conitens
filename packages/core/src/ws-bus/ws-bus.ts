@@ -7,20 +7,38 @@
 
 import { WebSocketServer } from "ws";
 import type { WebSocket as WS } from "ws";
+import type { IncomingMessage } from "node:http";
 import type { ConitensEvent } from "@conitens/protocol";
 
 export class WebSocketBus {
   private wss: WebSocketServer | null = null;
   private clients = new Set<WS>();
+  private readonly authToken: string | null;
+
+  constructor(authToken: string | null = null) {
+    this.authToken = authToken;
+  }
 
   /**
    * Start the WebSocket server on the given port.
+   * If authToken was provided at construction, clients must supply
+   * ?token=<authToken> in their connection URL.
    */
   async start(port: number): Promise<void> {
     return new Promise((resolve, reject) => {
       this.wss = new WebSocketServer({ port });
 
-      this.wss.on("connection", (ws) => {
+      this.wss.on("connection", (ws: WS, req: IncomingMessage) => {
+        // If auth token is configured, validate it
+        if (this.authToken) {
+          const url = new URL(req.url ?? "", `http://localhost:${port}`);
+          const token = url.searchParams.get("token");
+          if (token !== this.authToken) {
+            ws.close(4001, "Unauthorized");
+            return;
+          }
+        }
+
         this.clients.add(ws);
         ws.on("close", () => {
           this.clients.delete(ws);
