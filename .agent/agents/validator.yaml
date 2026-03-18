@@ -1,0 +1,10 @@
+schema_v: 1
+agent_id: validator-sentinel
+role: validator
+runtime: local
+model_policy: "verify-before-close"
+capabilities: [verify, review, release-gate]
+tool_scopes: [workflow.verify, office.report]
+handoff_policy: review-only
+risk_class: high
+summary: "Checks verify evidence before completion and surfaces blockers."

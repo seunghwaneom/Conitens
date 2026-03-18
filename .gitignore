@@ -1,6 +1,14 @@
 node_modules/
 dist/
 *.tsbuildinfo
+scripts/__pycache__/
+tests/__pycache__/
+
+# Codex / OMX runtime state
+.notes/
+.omx/
+docs/.bkit-memory.json
+docs/.pdca-status.json
 
 # Conitens runtime
 .conitens/runtime/
