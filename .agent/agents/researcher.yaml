@@ -1,0 +1,10 @@
+schema_v: 1
+agent_id: researcher-subagent
+role: researcher
+runtime: local
+model_policy: "bounded-readonly"
+capabilities: [repo-map, impact-analysis, context-gathering]
+tool_scopes: [workflow.agent, office.report]
+handoff_policy: delegated-readonly
+risk_class: low
+summary: "Handles read-heavy discovery and research substeps."

@@ -1,487 +1,322 @@
-# CONITENS v4.1.1 — Multi-Tool Orchestration
-
-> **Core Architecture**: Antigravity + Claude Code Extension + Codex Extension
-> 
-> **v4.1.1 Features**: Agent별 설정 폴더 구조 문서화 + Skills 참조 방식 추가
->
-> **v4.0 Features**: Agent 자율 실행 + 단일 Agent 전체 워크플로우 지원
-
----
-
-## ⚠️ Supported Environments
-
-| Environment | Support Status | Notes |
-|-------------|----------------|-------|
-| **Linux (EXT4, XFS)** | ✅ Fully supported | Recommended |
-| **macOS (APFS)** | ✅ Fully supported | |
-| **Windows (NTFS)** | ⚠️ Partial support | File lock behavior may differ |
-| **WSL2 (Linux FS)** | ✅ Fully supported | Use `~/projects/...` |
-| **WSL2 (/mnt/c, /mnt/d)** | ❌ Not recommended | See below |
-| **NFS/Network drives** | ❌ Not supported | Lock/mtime unstable |
-
-### WSL2 Windows Drive Warning
-
-Using Windows drives (`/mnt/c`, `/mnt/d`) in WSL2 causes file lock and mtime behavior differences that may result in:
-
-- Locks frequently quarantined as stale
-- Repeated lock acquisition failures (timeout)
-- Concurrency protection not working properly
-
-**Solution**: Move project to Linux filesystem
-```bash
-# Not recommended
-cd /mnt/c/Users/me/projects/myapp
-
-# Recommended
-cd ~/projects/myapp
-```
-
----
-
-## [WHY] Why Conitens?
-
-### Problem
-```
-Limitations of single AI tools:
-1. Context limit: Forgets initial instructions in long projects
-2. Hallucination: Quality degrades when one model handles all roles (planning+implementation+verification)
-3. Quota exhaustion: Work stops when limit reached on single tool
-4. No verification: Structural problem of reviewing own code
-5. Error repetition: Same errors repeat across tasks (solved in v3.6)
-```
-
-### Solution
-```
-Role separation + Independent verification + Flexible collaboration:
-- Gemini: Planning specialist (2M+ context, Deep Think)
-- Claude: Implementation specialist (terminal control, Tool Calling)
-- Codex:  Verification specialist (security audit, code review)
-
-→ Leverage each tool's strengths + Independent verification + Context-appropriate collaboration patterns
-```
-
----
-
-## [0] Quick Reference
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  CONITENS v3.9 — FLEXIBLE MULTI-TOOL ORCHESTRATION                  │
-├─────────────────────────────────────────────────────────────────────┤
-│  📌 PATTERNS: SRL (Serial) / PAR (Parallel) / FRE (Free)           │
-│  📌 MODES: G (Gemini) / GCC (G→C→C) / XXX (custom chain) / SOLO    │
-├─────────────────────────────────────────────────────────────────────┤
-│  🔧 TOOL ARCHITECTURE:                                              │
-│     Antigravity Agent  → .agent/rules/, .agent/workflows/           │
-│     Claude Code Ext    → CLAUDE.md (standalone capable)             │
-│     Codex Extension    → AGENTS.md (standalone capable)             │
-├─────────────────────────────────────────────────────────────────────┤
-│  📁 SHARED STATE (all files created within {workspace}/ only):      │
-│     .notes/INBOX/      → Waiting                                    │
-│     .notes/ACTIVE/     → In progress                                │
-│     .notes/COMPLETED/  → Completed                                  │
-│     .notes/HALTED/     → 🆕 Halted (resumable)                      │
-│     .notes/DUMPED/     → 🆕 Dumped (not resumable)                  │
-│     .notes/JOURNAL/    → Session journals                           │
-├─────────────────────────────────────────────────────────────────────┤
-│  📝 NAMING CONVENTION (v3.9):                                       │
-│     Task: TASK-(location)-(date)-(num)-(desc).md                    │
-│     Journal: (date)-(num)-(desc).md                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│  🔑 CORE PRINCIPLES (maintained in all modes):                      │
-│     1. TASK AS SSOT — task.md is the single source of truth        │
-│     2. STEP LOG MANDATORY — Record at every phase transition       │
-│     3. JOURNAL ON DONE — Create journal on completion              │
-│     4. HASH AUDIT TRAIL — SHA-256 change tracking                  │
-│     5. STATUS DISCIPLINE — Follow state transition rules           │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## [1] Execution Patterns (since v3.4, updated v3.9)
-
-### 1.1 Pattern Overview
-
-| Pattern | Code | Flow | State Guard | Use Case |
-|---------|------|------|-------------|----------|
-| **Serial** | `SRL` | G→C→C sequential | STRICT | Planning→Implementation→Verification cycle |
-| **Parallel** | `PAR` | Independent | NONE | Role-based file separation |
-| **Free** | `FRE` | Any order | SOFT | Flexible collaboration |
-
-### 1.2 Serial Pattern (SRL) — Same as original GCC
-
-```yaml
-pattern: SRL
-mode: GCC
-agents: [GEMINI, CLAUDE, CODEX]
-state_guard: STRICT
-# Sequential handoff based on next_expected
-```
-
-```
-GEMINI ─────────→ CLAUDE ─────────→ CODEX
-  │    next:CLAUDE   │    next:CODEX   │
-  │                  │                 │
-  └──────────────────┴─────────────────┴──→ DONE
-                     ↑ cycle if needed ↑
-```
-
-### 1.3 Parallel Pattern (PAR)
-
-```yaml
-pattern: PAR
-mode: PAR
-agents: [GEMINI, CLAUDE, CODEX]
-state_guard: NONE
-partitions:
-  GEMINI: ["docs/", "config/"]
-  CLAUDE: ["src/backend/"]
-  CODEX: ["src/security/"]
-```
-
-```
-GEMINI ──────────┐
-                 │
-CLAUDE ──────────┼──→ [Sync Point] ──→ DONE
-                 │
-CODEX  ──────────┘
-    Independent work    Merge/Verify
-```
-
-**Key Rules**:
-- Each agent works only within assigned `partition`
-- CONFLICT warning when modifying other partitions
-- Conflict resolution at Sync Point
-
-### 1.4 Free Pattern (FRE)
-
-```yaml
-pattern: FRE
-mode: FRE
-agents: [GEMINI, CLAUDE]
-state_guard: SOFT  # Only warn on conflict
-```
-
-```
-GEMINI ←───→ CLAUDE
-  ↑           ↑
-  └────┬──────┘
-       │
-  Any order, user-specified
-```
-
-**Key Rules**:
-- `next_expected: ANY` allowed
-- User explicitly specifies agent
-- Share work content via STEP LOG
-
----
-
-## [2] Mode Definitions
-
-### 2.1 Mode Overview
-
-| Mode | Pattern | Agents | Description |
-|------|---------|--------|-------------|
-| **G** | SRL | Gemini only | Gemini standalone |
-| **GCC** | SRL | G→C→C | Full cycle (original) |
-| **XXX** | SRL/FRE | Custom chain | Custom combination |
-| **PAR** | PAR | All parallel | Parallel work |
-| **SOLO** | - | Any single | 🆕 Single agent |
-
-### 2.2 SOLO Mode (NEW)
-
-**Single agent executes full workflow**:
-
-```yaml
-mode: SOLO
-agent: CLAUDE  # or GEMINI, CODEX
-pattern: SOLO
-state_guard: NONE
-```
-
-**SOLO Mode Workflow**:
-```
-[SOLO AGENT]
-    ├─ Phase 0: Task creation/analysis
-    ├─ Phase 1: Planning/design
-    ├─ Phase 2: Implementation
-    ├─ Phase 3: Self-review
-    ├─ STEP LOG recording
-    └─ DONE + Journal creation
-```
-
-> **Key**: Conitens Core Principles maintained even in SOLO mode
-> (SSOT, STEP LOG, Journal, Hash)
-
-### 2.3 Journal Rule (Common to All Modes)
-
-```
-⚠️ Key: The tool that sets status to DONE/HALTED/DUMPED creates the Journal.
-
-🚨 MANDATORY JOURNALING:
-- The tool handling status termination is responsible for the Journal regardless of mode
-- Status termination without Journal is not allowed — this rule is absolute
-- Location: {workspace}/.notes/JOURNAL/{YYYY-MM-DD}-{num}-{desc}.md
-```
-
----
-
-## [3] Status & State Flow (Extended)
-
-### 3.1 Status Definition
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  STATUS LIFECYCLE                                                   │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  INBOX ──→ ACTIVE ──→ DONE-AWAITING-USER ──→ DONE ──→ COMPLETED    │
-│              │                                                      │
-│              ├──(blocker)──→ HALTED ──(resume)──→ ACTIVE           │
-│              │                    │                                 │
-│              │                    └──(abandon)──→ DUMPED           │
-│              │                                                      │
-│              └──(direction change)───────────────→ DUMPED          │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### 3.2 New Status: HALTED
-
-```yaml
-status: HALTED
-reason: BLOCKER | RESOURCE | PRIORITY
-blocker_description: "Waiting for external API"
-halted_at: {timestamp}
-resume_condition: "After API release"
-```
-
-**HALTED Conditions**:
-| Reason | Description | Example |
-|--------|-------------|---------|
-| `BLOCKER` | External dependency | API not available, library not supported |
-| `RESOURCE` | Resource shortage | Quota exhausted, time constraint |
-| `PRIORITY` | Priority shift | More urgent work emerged |
-
-### 3.3 New Status: DUMPED
-
-```yaml
-status: DUMPED
-reason: PIVOT | FAILURE | CANCELLED
-dump_description: "Technical approach failed"
-dumped_at: {timestamp}
-lessons_learned: "Consider SSE instead of WebSocket"
-```
-
-**DUMPED Conditions**:
-| Reason | Description | Example |
-|--------|-------------|---------|
-| `PIVOT` | Direction change | Requirements completely changed |
-| `FAILURE` | Technical failure | Approach proved impossible |
-| `CANCELLED` | Project cancelled | Business decision |
-
----
-
-## [4] Naming Convention (v3.9)
-
-### 4.1 Task Naming
-
-**Format**: `TASK-(location)-(date)-(num)-(desc).md`
-
-| Component | Format | Example |
-|-----------|--------|---------|
-| Location | INBOX/ACTIVE/COMPLETED/HALTED/DUMPED | ACTIVE |
-| Date | YYYYMMDD | 20260131 |
-| Number | NNN (daily serial number) | 001 |
-| Description | kebab-case | user-auth-api |
-
-**Examples**:
-```
-TASK-INBOX-20260131-001-user-auth-api.md
-TASK-ACTIVE-20260131-001-user-auth-api.md
-TASK-COMPLETED-20260131-001-user-auth-api.md
-```
-
-**Auto-rename on location move**:
-```bash
-# INBOX → ACTIVE
-mv TASK-INBOX-*.md → TASK-ACTIVE-*.md (change location tag in filename)
-```
-
-### 4.2 Journal Naming
-
-**Format**: `(date)-(num)-(desc).md`
-
-**Example**:
-```
-2026-01-31-001-user-auth-api.md
-```
-
-> Maintains 1:1 mapping with Task file
-
----
-
-## [5] Directory Structure
-
-```
-{workspace}/
-├── .agent/                          # Antigravity Agent only
-│   ├── rules/
-│   │   └── ensemble-protocol.md
-│   └── workflows/
-│       ├── ensemble-new.md
-│       ├── ensemble-start.md
-│       ├── ensemble-log.md
-│       ├── ensemble-close.md
-│       ├── ensemble-status.md
-│       ├── ensemble-halt.md         # 🆕 Halt workflow
-│       └── ensemble-dump.md         # 🆕 Dump workflow
-│
-├── .notes/                          # ⭐ Shared state
-│   ├── INBOX/
-│   ├── ACTIVE/
-│   │   └── _focus.md
-│   ├── COMPLETED/
-│   ├── HALTED/                      # 🆕
-│   ├── DUMPED/                      # 🆕
-│   └── JOURNAL/
-│
-├── CLAUDE.md                        # Claude (standalone capable)
-├── AGENTS.md                        # Codex (standalone capable)
-├── CONITENS.md                      # This file
-└── scripts/
-    └── ensemble.py
-```
-
----
-
-## [6] State Guard Configuration
-
-### 6.1 State Guard Modes
-
-| Guard Mode | Behavior | Pattern |
-|------------|----------|---------|
-| `STRICT` | next_expected mismatch → HALT | SRL |
-| `SOFT` | Mismatch → WARN + allow proceed | FRE |
-| `NONE` | No check | PAR, SOLO |
-
-### 6.2 task.md Header (v3.9)
-
-```yaml
----
-task_id: TASK-ACTIVE-20260131-001-user-auth-api
-status: ACTIVE
-pattern: SRL | PAR | FRE
-mode: G | GCC | XXX | PAR | SOLO
-agents: [GEMINI, CLAUDE, CODEX]  # Participating agents
-executor_chain: CLAUDE→CODEX    # For XXX mode (optional)
-partitions:                      # For PAR mode (optional)
-  GEMINI: ["docs/"]
-  CLAUDE: ["src/"]
-state_guard: STRICT | SOFT | NONE
-owner: GEMINI | CLAUDE | CODEX
-next_expected: GEMINI | CLAUDE | CODEX | ANY | NONE
-created_at: 2026-01-31T14:30:00+09:00
-updated_at: 2026-01-31T15:00:00+09:00
----
-```
-
----
-
-## [7] Handoff Protocol
-
-### 7.1 Serial (SRL) Handoff — Same as original
-
-```
-1. Current tool: Write STEP LOG + Journal append
-2. Current tool: Update next_expected
-3. User: Switch to next tool sidebar
-4. Next tool: Check State Guard then work
-```
-
-### 7.2 Parallel (PAR) Sync Point
-
-```
-1. All agents: Complete work within own partition
-2. All agents: Write STEP LOG
-3. Reach Sync Point:
-   - Check for file conflicts
-   - No conflicts → Proceed to DONE
-   - Conflicts exist → User resolves or designated agent merges
-```
-
-### 7.3 Free (FRE) Handoff
-
-```
-1. User: Specify desired agent
-2. Designated agent: Read task.md and check STEP LOG
-3. Designated agent: Perform work + Add STEP LOG
-4. Repeat (any order)
-```
-
----
-
-## [8] Agent-Specific Instructions
-
-### 8.1 Gemini (Antigravity)
-→ See `.agent/rules/ensemble-protocol.md`
-
-### 8.2 Claude Code
-→ See `CLAUDE.md` (standalone capable)
-
-### 8.3 Codex
-→ See `AGENTS.md` (standalone capable)
-
----
-
-## [9] Security Configuration
-
-```
-# ~/.gemini/antigravity/terminalAllowlist.txt
-git *
-npm *
-pip install *
-python *
-pytest *
-node *
-
-# ~/.gemini/antigravity/terminalDenylist.txt
-rm -rf /
-sudo rm *
-curl | bash
-```
-
----
-
-## [10] Migration from v3.3
-
-### 10.1 Automatic Mappings
-
-| v3.3 | v3.4 |
-|------|------|
-| `mode: G` | `mode: G`, `pattern: SRL` |
-| `mode: GCC` | `mode: GCC`, `pattern: SRL` |
-| `mode: XXX` | `mode: XXX`, `pattern: SRL` (default) |
-| `executor_chain` | `agents: [...]` |
-
-### 10.2 New Fields
-
-```yaml
-# v3.4 new fields
-pattern: SRL | PAR | FRE        # Execution pattern
-agents: [GEMINI, CLAUDE, CODEX] # Participating agent list
-state_guard: STRICT | SOFT | NONE
-partitions: {}                  # For PAR mode
-```
-
-### 10.3 Breaking Changes
-
-- Task filename convention changed (recommended, backward compatible)
-- Journal filename convention changed
-- `HALTED/`, `DUMPED/` folders need to be added
-
----
-
-*Version: CONITENS v3.9.0 (2026-02-01) — Collision Prevention, Case System, Duplicate Detection*
+# CONITENS v4.2.0
+
+Conitens is an operations layer for agentic engineering.
+
+It does not try to replace external AI runtimes. Instead, it coordinates them
+through files, CLI contracts, approvals, verification, meetings, replayable
+events, and static operational reports.
+
+## What Conitens Is
+
+- External runtimes such as Claude Code, Gemini, Codex, and future agents own
+  reasoning and generation.
+- Conitens owns state, approvals, verify gates, workflow execution, event
+  logging, meeting capture, office reporting, and replayable artifacts.
+- The system favors append-only machine state over narrative summaries.
+
+## Core And Ext
+
+### Core
+
+The Core remains centered on [scripts/ensemble.py](scripts/ensemble.py).
+
+Core responsibilities:
+
+- task lifecycle in `.notes/`
+- focus management
+- lock handling
+- question and approval flow
+- verify-before-close enforcement
+- existing task/status/error/context entrypoints
+
+### Ext
+
+The Ext layer adds new capabilities without replacing Core behavior.
+
+Implemented extension modules:
+
+- [ensemble_contracts.py](scripts/ensemble_contracts.py)
+- [ensemble_events.py](scripts/ensemble_events.py)
+- [ensemble_workflow.py](scripts/ensemble_workflow.py)
+- [ensemble_meeting.py](scripts/ensemble_meeting.py)
+- [ensemble_office.py](scripts/ensemble_office.py)
+- [ensemble_hooks.py](scripts/ensemble_hooks.py)
+- [ensemble_mcp_server.py](scripts/ensemble_mcp_server.py)
+- [ensemble_telegram.py](scripts/ensemble_telegram.py)
+
+The guiding rule is simple:
+
+Conitens extends by adding an Ext layer around the existing Core, not by
+replacing the Core with a new state engine.
+
+## Canonical Surfaces
+
+Current control-plane decision:
+
+- active runtime truth = `scripts/ensemble.py` + `.notes/` + `.agent/`
+- canonical agent/skill/gate metadata = `.agent/agents/`, `.agent/skills/`, `.agent/policies/`
+- lowercase canonical extension paths = `.notes/workflows/`, `.notes/events/`, `.notes/meetings/`, `.notes/office/`, `.notes/artifacts/`, `.notes/handoffs/`, `.notes/gates/`
+- legacy uppercase aliases remain readable and writable during the transition
+- reference/parity surfaces only = `packages/*`, RFC-era `.conitens` material, older roadmap documents
+
+See [docs/adr-0001-control-plane.md](docs/adr-0001-control-plane.md) and [docs/control-plane-compatibility.md](docs/control-plane-compatibility.md).
+
+### CLI Surface
+
+Current CLI entrypoints include:
+
+- `ensemble workflow`
+- `ensemble meet`
+- `ensemble hooks`
+- `ensemble office`
+- `ensemble mcp`
+- `ensemble telegram`
+
+The classic task lifecycle commands remain part of the Core:
+
+- `ensemble new`
+- `ensemble start`
+- `ensemble log`
+- `ensemble verify`
+- `ensemble close`
+- `ensemble status`
+- `ensemble approve`
+- `ensemble questions`
+
+### Config Surface
+
+- `.agent/` is the canonical Conitens configuration surface.
+- `.agents/skills/` is the Codex compatibility layer.
+
+#### `.agent/`
+
+Use `.agent/` for:
+
+- workflow contracts
+- rules
+- agent manifests
+- skill manifests
+- gate policies
+- canonical operational behavior
+
+Important paths:
+
+- [.agent/rules/ensemble-protocol.md](.agent/rules/ensemble-protocol.md)
+- [.agent/agents/manager.yaml](.agent/agents/manager.yaml)
+- [.agent/skills/task-planner.yaml](.agent/skills/task-planner.yaml)
+- [.agent/policies/gates.yaml](.agent/policies/gates.yaml)
+- [.agent/workflows/verify-close.md](.agent/workflows/verify-close.md)
+- [.agent/workflows/research-build-review.md](.agent/workflows/research-build-review.md)
+- [.agent/workflows/incident-triage.md](.agent/workflows/incident-triage.md)
+- [.agent/workflows/wf.plan-execute-validate.md](.agent/workflows/wf.plan-execute-validate.md)
+
+#### `.agents/skills/`
+
+Use `.agents/skills/` for Codex-facing skill discovery and compatibility.
+
+Current skills:
+
+- [.agents/skills/conitens-core/SKILL.md](.agents/skills/conitens-core/SKILL.md)
+- [.agents/skills/meeting-recorder/SKILL.md](.agents/skills/meeting-recorder/SKILL.md)
+- [.agents/skills/office-report/SKILL.md](.agents/skills/office-report/SKILL.md)
+- [.agents/skills/mcp-readonly/SKILL.md](.agents/skills/mcp-readonly/SKILL.md)
+
+## Runtime State
+
+`.notes/` is the operational state surface.
+
+It stores both Core task state and Ext operational artifacts.
+
+Important areas:
+
+- `.notes/INBOX/`, `.notes/ACTIVE/`, `.notes/COMPLETED/`
+- `.notes/HALTED/`, `.notes/DUMPED/`
+- `.notes/JOURNAL/`
+- `.notes/events/` with legacy alias `.notes/EVENTS/`
+- `.notes/meetings/` with legacy alias `.notes/MEETINGS/`
+- `.notes/meetings/summaries/`
+- `.notes/context/LATEST_CONTEXT.md`
+- `.notes/workflows/`
+- `.notes/artifacts/`
+- `.notes/handoffs/`
+- `.notes/gates/`
+- `.notes/office/` with legacy alias `.notes/OFFICE/`
+
+### Event Philosophy
+
+Events are append-only.
+
+Conitens records operational interactions as JSONL so state can be replayed or
+summarized later. Events should be treated as a canonical audit trail, while
+summaries are derived views.
+
+### Meeting Philosophy
+
+Meeting transcripts are append-only.
+
+- transcript JSONL is canonical
+- summaries are derived
+- summaries may be regenerated from transcript
+
+This keeps human-readable coordination notes downstream of the machine log.
+
+## Verification And Approval
+
+### Verify Before Close
+
+`verify-before-close` remains a non-negotiable rule.
+
+Conitens must not create a default path that closes code work without passing
+through verification. Workflow support does not weaken this rule. It makes the
+rule more visible and more automatable.
+
+### Approval Gate
+
+Approval and question flow remain Core safety mechanisms.
+
+Write or execute paths exposed through Ext features must preserve that gate:
+
+- workflow steps that call Core write/exec commands
+- hook automation
+- future MCP write tools
+- Telegram approval forwarding
+
+Remote or indirect channels must not bypass local approval policy.
+
+## Workflow Contracts
+
+Workflow contracts are markdown files with frontmatter-based schema fields.
+
+Current design goals:
+
+- `schema_v` versioning
+- explicit inputs
+- step-by-step CLI execution
+- step result recording with `run_id`
+- forward compatibility through warning-and-ignore behavior for unknown fields
+
+Workflow execution keeps the `.agent` registration guard and records results in
+`.notes/workflows/` with legacy alias support for `.notes/WORKFLOWS/`.
+
+The current engine supports typed handoff and approval-aware steps while keeping
+`verify-before-close` intact.
+
+## Office Reports
+
+Office reports are static operational snapshots.
+
+They are intentionally static-first:
+
+- Markdown output
+- HTML output
+- no real-time UI required for the base architecture
+
+The report is meant to help answer operational questions such as:
+
+- what is active now
+- what is blocked
+- whether verify ran
+- whether approvals are pending
+- which meetings or workflow runs changed most recently
+- whether delegated handoffs are blocked
+- whether registry metadata is valid
+
+## MCP Status
+
+The current MCP surface is read-only by design and ordered as:
+
+1. resources
+2. prompts
+3. tools
+
+Safe tools currently focus on inspection:
+
+- `task.list`
+- `task.get`
+- `locks.list`
+- `questions.list`
+- `context.get`
+- `meetings.list`
+- `workflow.runs`
+- `handoffs.list`
+- `registry.summary`
+- `office.snapshot`
+
+Resources and prompts expose workflow definitions, workflow runs, gate records,
+office snapshots, blocked-run summaries, approval-request preparation, and
+verify checklist generation without promoting write-capable tools first.
+
+The local CLI now exposes these layers for demo and inspection:
+
+- `ensemble mcp resources`
+- `ensemble mcp resource-read --uri ...`
+- `ensemble mcp prompts`
+- `ensemble mcp prompt-get --prompt ... --arguments ...`
+
+Write-capable MCP tools are not part of the current safe default. They require
+an explicit approval-gated design.
+
+## Telegram Status
+
+Telegram is a skeleton integration and remains OFF by default.
+
+Current scope is intentionally narrow:
+
+- notification formatting
+- approval-request forwarding
+- meeting mirroring
+- status-oriented UX preparation
+
+Telegram must not directly mutate local files or silently execute write actions.
+
+## Encoding And Platform Notes
+
+Windows console encoding can break nested workflow subprocesses when the Python
+CLI emits Unicode. Because of that, workflow subprocess execution now forces a
+UTF-8 environment for nested `ensemble.py` calls.
+
+This is an implementation safeguard, not a change in architectural policy.
+
+## SSOT Boundaries
+
+The single source of truth is not "whatever file exists under the repo root."
+
+The intended canonical hierarchy is:
+
+1. machine-generated state in `.notes/`
+2. canonical contracts in `.agent/`
+3. compatibility skill metadata in `.agents/skills/`
+4. human-readable documentation
+
+`.omx/` contains runtime state for OMX tooling, planning, and execution support,
+but it is not the canonical Conitens operational state model for task/verify/
+meeting/event truth.
+
+## Current Safe Defaults
+
+- Core preserved
+- Ext layered on top
+- verify-before-close preserved
+- append-only events
+- append-only meeting transcripts
+- summary as derivative output
+- MCP read-only
+- Telegram OFF by default
+- stdlib-first implementation approach
+- file-based task state compatibility retained
+- `LATEST_CONTEXT.md` written to canonical path with legacy mirror support
+
+## Next Expansion Rule
+
+When Conitens grows further, prefer:
+
+- stronger contracts
+- clearer approval boundaries
+- richer observability
+- safer replayability
+
+Do not prefer:
+
+- hidden automation
+- remote write shortcuts
+- parallel feature growth without operational clarity

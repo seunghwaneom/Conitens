@@ -1,0 +1,10 @@
+schema_v: 1
+skill_id: quality-validator
+family: verification
+summary: "Evaluate verify evidence, baseline regressions, and close-gate readiness."
+triggers: [validate, quality-validator, sentinel]
+inputs: [task_id, evidence_refs]
+outputs: [gate-decision, validation-summary]
+approval_class: readonly
+default_workflow: wf.plan-execute-validate
+compatible_runtimes: [codex, claude, gemini, local]

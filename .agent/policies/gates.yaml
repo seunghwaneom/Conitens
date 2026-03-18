@@ -1,0 +1,27 @@
+schema_v: 1
+default_policy: owner-approval
+actions:
+  - action_class: workflow.approval
+    approval_required: true
+    verify_required: false
+    owner_scope: project-owner
+    remote_allowed: false
+    notes: "Pause workflow execution until owner confirmation exists."
+  - action_class: workflow.resume
+    approval_required: true
+    verify_required: false
+    owner_scope: project-owner
+    remote_allowed: false
+    notes: "Resume approval-paused workflow runs."
+  - action_class: workflow.verify-close
+    approval_required: false
+    verify_required: true
+    owner_scope: workflow-runner
+    remote_allowed: false
+    notes: "Any completion path touching code must pass verify."
+  - action_class: mcp.readonly
+    approval_required: false
+    verify_required: false
+    owner_scope: none
+    remote_allowed: true
+    notes: "Read-only MCP queries remain safe by default."
