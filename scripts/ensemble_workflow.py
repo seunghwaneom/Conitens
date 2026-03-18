@@ -670,6 +670,23 @@ def _execute_parallel_step(
         step_result["stderr"] = "parallel_workcell is reserved until the feature flag is enabled."
         return step_result
     branches = step_preview.get("rendered_branches", [])
+    lease_conflicts: list[dict[str, str]] = []
+    claimed_paths: dict[str, str] = {}
+    for branch in branches:
+        lease_paths = branch.get("lease_paths") or []
+        lease_list = lease_paths if isinstance(lease_paths, list) else [lease_paths] if lease_paths else []
+        for lease in [str(item) for item in lease_list]:
+            owner = claimed_paths.get(lease)
+            if owner and owner != branch.get("id"):
+                lease_conflicts.append({"path": lease, "first": owner, "second": str(branch.get("id"))})
+            else:
+                claimed_paths[lease] = str(branch.get("id"))
+    if lease_conflicts:
+        step_result["status"] = "failed"
+        step_result["lease_conflicts"] = lease_conflicts
+        step_result["stderr"] = "parallel_workcell lease path conflicts detected."
+        return step_result
+
     branch_results: list[dict[str, Any]] = []
     overall_ok = True
     for branch in branches:
@@ -677,9 +694,15 @@ def _execute_parallel_step(
             "id": branch.get("id"),
             "cmd": branch.get("cmd", ""),
             "agent_id": branch.get("agent_id"),
+            "owner_transfer": bool(branch.get("owner_transfer", False)),
+            "lease_paths": branch.get("lease_paths", []),
+            "worktree_id": branch.get("worktree_id"),
             "status": "skipped",
         }
-        if branch.get("agent_id"):
+        handoff = None
+        if branch.get("agent_id") and branch_result["owner_transfer"]:
+            lease_paths = branch.get("lease_paths") or []
+            lease_list = lease_paths if isinstance(lease_paths, list) else [lease_paths] if lease_paths else []
             handoff = create_handoff(
                 workspace,
                 from_actor=actor,
@@ -689,6 +712,9 @@ def _execute_parallel_step(
                 task_id=record.get("task_id"),
                 correlation_id=record.get("correlation_id"),
                 artifact_type="parallel-branch",
+                owner_transfer=True,
+                worktree_id=str(branch.get("worktree_id")) if branch.get("worktree_id") else None,
+                lease_paths=[str(item) for item in lease_list],
             )
             transition_handoff(workspace, handoff_id=handoff["handoff_id"], state="started", actor=str(branch["agent_id"]), detail=f"Branch {branch['id']} started")
             completed = run_cli_command(workspace, branch.get("cmd", ""))

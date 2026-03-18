@@ -123,6 +123,14 @@ PROMPTS = [
 ]
 
 
+def list_resources() -> list[dict[str, Any]]:
+    return RESOURCES
+
+
+def list_prompts() -> list[dict[str, Any]]:
+    return PROMPTS
+
+
 def read_resource(workspace: str | Path, uri: str) -> Any:
     if uri == "conitens://context/current":
         return collect_context(workspace)

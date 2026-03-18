@@ -122,6 +122,8 @@ List tools:
 
 ```bash
 ensemble mcp tools
+ensemble mcp resources
+ensemble mcp prompts
 ```
 
 MCP also exposes resources and prompts before tools at the protocol level.
@@ -141,6 +143,18 @@ Additional read-only inspection tools:
 - `handoffs.list`
 - `registry.summary`
 - `office.snapshot`
+
+Prompt rendering example:
+
+```bash
+ensemble mcp prompt-get --prompt workflow.blocked-summary --arguments "{}"
+```
+
+Feature-flagged parallel workflow:
+
+```bash
+ensemble workflow run --workflow wf.parallel-workcell --set task_id=TASK-... --set parallel_feature_flag=true
+```
 
 ## 8. Telegram Skeleton
 

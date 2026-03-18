@@ -89,6 +89,8 @@ List resources, prompts, and tools:
 ```bash
 ensemble mcp serve
 ensemble mcp tools
+ensemble mcp resources
+ensemble mcp prompts
 ```
 
 Current ordering is resources -> prompts -> tools.
@@ -105,6 +107,18 @@ Read-only tools currently include:
 - `handoffs.list`
 - `registry.summary`
 - `office.snapshot`
+
+Prompt example:
+
+```bash
+ensemble mcp prompt-get --prompt workflow.blocked-summary --arguments "{}"
+```
+
+Feature-flagged parallel example:
+
+```bash
+ensemble workflow run --workflow wf.parallel-workcell --set task_id=TASK-... --set parallel_feature_flag=true
+```
 
 ## Documentation
 

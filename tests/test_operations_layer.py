@@ -232,6 +232,59 @@ class OperationsLayerTests(unittest.TestCase):
             self.assertEqual(result["status"], "failed")
             self.assertEqual(result["steps"][0]["status"], "reserved")
 
+    def test_parallel_workcell_runs_when_feature_flag_is_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            result = run_workflow(
+                workspace,
+                "wf.parallel-workcell",
+                {"task_id": "TASK-1", "parallel_feature_flag": "true"},
+                actor="TEST",
+            )
+            self.assertEqual(result["status"], "passed")
+            self.assertEqual(result["steps"][0]["status"], "passed")
+            self.assertEqual(result["steps"][1]["status"], "passed")
+            self.assertEqual(len(list_handoffs(workspace)), 1)
+
+    def test_parallel_workcell_fails_on_lease_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            conflict_workflow = workspace / ".agent" / "workflows" / "conflict.md"
+            conflict_workflow.write_text(
+                "---\n"
+                "schema_v: 1\n"
+                "name: \"Conflict\"\n"
+                "slug: \"conflict\"\n"
+                "inputs:\n"
+                "  task_id:\n"
+                "    type: string\n"
+                "    required: true\n"
+                "steps:\n"
+                "  - id: fanout\n"
+                "    kind: parallel\n"
+                "    on_fail: stop\n"
+                "    branches:\n"
+                "      - id: a\n"
+                "        lease_paths: [\"workspace/shared\"]\n"
+                "        cmd: \"python -c \\\"print('a')\\\"\"\n"
+                "      - id: b\n"
+                "        lease_paths: [\"workspace/shared\"]\n"
+                "        cmd: \"python -c \\\"print('b')\\\"\"\n"
+                "---\n",
+                encoding="utf-8",
+            )
+            result = run_workflow(
+                workspace,
+                "conflict",
+                {"task_id": "TASK-1", "parallel_feature_flag": "true"},
+                actor="TEST",
+            )
+            self.assertEqual(result["status"], "failed")
+            self.assertEqual(result["steps"][0]["status"], "failed")
+            self.assertTrue(result["steps"][0]["lease_conflicts"])
+
     def test_manager_owned_agent_step_does_not_force_typed_handoff(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
@@ -452,6 +505,38 @@ class OperationsLayerTests(unittest.TestCase):
                 {"jsonrpc": "2.0", "id": 4, "method": "prompts/get", "params": {"name": "workflow.blocked-summary", "arguments": {}}},
             )
             self.assertIn("prompt", prompt["result"])
+
+            cli_resources = subprocess.run(
+                [sys.executable, str(SCRIPTS / "ensemble.py"), "--workspace", str(workspace), "mcp", "resources"],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=self.cli_env(),
+            )
+            self.assertIn("conitens://office/snapshot", cli_resources.stdout)
+            cli_prompt = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "ensemble.py"),
+                    "--workspace",
+                    str(workspace),
+                    "mcp",
+                    "prompt-get",
+                    "--prompt",
+                    "workflow.blocked-summary",
+                    "--arguments",
+                    "{}",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=self.cli_env(),
+            )
+            self.assertIn("run-20260311-demo", cli_prompt.stdout)
 
 
 if __name__ == "__main__":

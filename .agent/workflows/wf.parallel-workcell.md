@@ -14,11 +14,15 @@ steps:
     on_fail: stop
     branches:
       - id: map
-        cmd: "python -c \"print('map {{task_id}}')\""
+        lease_paths: ["workspace/map"]
+        cmd: python -c "print('map {{task_id}}')"
       - id: impact
         agent_id: researcher-subagent
+        owner_transfer: true
+        worktree_id: "impact-{{task_id}}"
+        lease_paths: ["workspace/impact"]
         summary: "Impact scan {{task_id}}"
-        cmd: "python -c \"print('impact {{task_id}}')\""
+        cmd: python -c "print('impact {{task_id}}')"
   - id: join
     kind: join
     depends_on: [fanout]

@@ -246,6 +246,13 @@ Resources and prompts expose workflow definitions, workflow runs, gate records,
 office snapshots, blocked-run summaries, approval-request preparation, and
 verify checklist generation without promoting write-capable tools first.
 
+The local CLI now exposes these layers for demo and inspection:
+
+- `ensemble mcp resources`
+- `ensemble mcp resource-read --uri ...`
+- `ensemble mcp prompts`
+- `ensemble mcp prompt-get --prompt ... --arguments ...`
+
 Write-capable MCP tools are not part of the current safe default. They require
 an explicit approval-gated design.
 

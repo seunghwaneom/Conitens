@@ -4441,7 +4441,15 @@ def cmd_office(args):
 def cmd_mcp(args):
     """Read-only MCP helpers."""
     try:
-        from ensemble_mcp_server import TOOLS, call_tool, serve_stdio
+        from ensemble_mcp_server import (
+            PROMPTS,
+            RESOURCES,
+            TOOLS,
+            call_tool,
+            read_resource,
+            render_prompt,
+            serve_stdio,
+        )
     except ImportError:
         print("❌ MCP module not found. Ensure ensemble_mcp_server.py is in the same directory.")
         return
@@ -4450,6 +4458,15 @@ def cmd_mcp(args):
         sys.exit(serve_stdio(WORKSPACE))
     if args.action == "tools":
         print(json.dumps({"tools": TOOLS}, ensure_ascii=False, indent=2))
+    if args.action == "resources":
+        print(json.dumps({"resources": RESOURCES}, ensure_ascii=False, indent=2))
+    if args.action == "resource-read":
+        print(json.dumps(read_resource(WORKSPACE, args.uri), ensure_ascii=False, indent=2))
+    if args.action == "prompts":
+        print(json.dumps({"prompts": PROMPTS}, ensure_ascii=False, indent=2))
+    if args.action == "prompt-get":
+        arguments = json.loads(args.arguments or "{}")
+        print(json.dumps(render_prompt(WORKSPACE, args.prompt, arguments), ensure_ascii=False, indent=2))
     if args.action == "call":
         arguments = json.loads(args.arguments or "{}")
         print(json.dumps(call_tool(WORKSPACE, args.tool, arguments), ensure_ascii=False, indent=2))
@@ -5155,8 +5172,10 @@ def main():
 
     # mcp server
     p_mcp = subparsers.add_parser("mcp", help="Read-only MCP helper/server")
-    p_mcp.add_argument("action", choices=["serve", "tools", "call"], help="MCP action")
+    p_mcp.add_argument("action", choices=["serve", "tools", "call", "resources", "resource-read", "prompts", "prompt-get"], help="MCP action")
     p_mcp.add_argument("--tool", help="Tool name")
+    p_mcp.add_argument("--uri", help="Resource URI")
+    p_mcp.add_argument("--prompt", help="Prompt name")
     p_mcp.add_argument("--arguments", help="JSON string for tool arguments")
 
     # telegram skeleton
