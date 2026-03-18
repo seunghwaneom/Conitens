@@ -1,0 +1,10 @@
+schema_v: 1
+skill_id: context-curator
+family: context
+summary: "Refresh operational context without overwriting canonical task truth."
+triggers: [context, latest-context]
+inputs: [workspace]
+outputs: [context-snapshot]
+approval_class: readonly
+default_workflow: wf.research-plan-validate
+compatible_runtimes: [codex, claude, gemini, local]
