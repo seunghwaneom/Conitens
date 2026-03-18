@@ -1,0 +1,10 @@
+schema_v: 1
+skill_id: task-planner
+family: planning
+summary: "Turn goals into workflow-ready task steps with verify and approval checkpoints."
+triggers: [plan, task-planner]
+inputs: [goal, constraints]
+outputs: [task-plan, workflow-choice]
+approval_class: task-spec-write
+default_workflow: wf.plan-execute-validate
+compatible_runtimes: [codex, claude, gemini, local]

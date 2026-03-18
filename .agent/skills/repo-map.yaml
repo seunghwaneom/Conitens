@@ -1,0 +1,10 @@
+schema_v: 1
+skill_id: repo-map
+family: discovery
+summary: "Map the repository surface and find relevant files before planning or execution."
+triggers: [analyze, inspect, repo-map]
+inputs: [workspace, query]
+outputs: [paths, symbols, notes]
+approval_class: readonly
+default_workflow: wf.research-plan-validate
+compatible_runtimes: [codex, claude, gemini, local]

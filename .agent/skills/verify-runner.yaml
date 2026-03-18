@@ -1,0 +1,10 @@
+schema_v: 1
+skill_id: verify-runner
+family: verification
+summary: "Run targeted checks and gather verify evidence for the requested files."
+triggers: [verify, verify-runner]
+inputs: [task_id, files]
+outputs: [verify-check-output, evidence]
+approval_class: exec-gated
+default_workflow: wf.plan-execute-validate
+compatible_runtimes: [codex, claude, gemini, local]

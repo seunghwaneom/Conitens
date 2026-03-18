@@ -1,0 +1,10 @@
+schema_v: 1
+skill_id: change-impact
+family: discovery
+summary: "Estimate affected files, dependencies, and verification scope for a change."
+triggers: [impact, dependency-trace]
+inputs: [workspace, file]
+outputs: [impact-report]
+approval_class: readonly
+default_workflow: wf.research-plan-validate
+compatible_runtimes: [codex, claude, gemini, local]

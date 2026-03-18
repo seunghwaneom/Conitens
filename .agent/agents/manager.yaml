@@ -1,0 +1,10 @@
+schema_v: 1
+agent_id: manager-default
+role: orchestrator
+runtime: local
+model_policy: "manager-default"
+capabilities: [planning, delegation, workflow-control, approval-boundary]
+tool_scopes: [workflow.run, workflow.resume, office.report, mcp.readonly]
+handoff_policy: manager-default
+risk_class: medium
+summary: "Keeps conversation ownership and delegates bounded work through typed handoffs."

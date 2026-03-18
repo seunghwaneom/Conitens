@@ -1367,6 +1367,29 @@ def log_question_event(event_type: str, details: dict = None):
     """Log question-related events."""
     log_file = get_question_events_log()
     log_event(log_file, event_type, details)
+    mirror_ops_event(event_type, payload=details or {})
+
+
+def mirror_ops_event(event_type: str, payload: dict = None, scope: dict = None,
+                     actor_name: str = "CLI", actor_type: str = "system",
+                     severity: str = "info"):
+    """Mirror important state changes into the unified .notes/EVENTS log when available."""
+    try:
+        from ensemble_events import append_event
+    except ImportError:
+        return
+
+    try:
+        append_event(
+            WORKSPACE,
+            event_type=event_type,
+            actor={"type": actor_type, "name": actor_name},
+            scope=scope or {},
+            severity=severity,
+            payload=payload or {},
+        )
+    except Exception:
+        pass
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1506,14 +1529,32 @@ def approve_question(question_id: str, dry_run: bool = False) -> tuple[bool, str
     
     # Mark as executed
     data = read_questions()
+    approved_question = None
     for q in data.get('questions', []):
         if q.get('question_id') == question_id:
             q['status'] = 'executed'
             q['executed_at'] = get_kst_now()
             q['executed_by'] = get_current_user_info().get('username', 'unknown')
+            approved_question = q
             break
     write_questions(data)
-    
+
+    gate_id = ((approved_question or {}).get('context') or {}).get('gate_id')
+    if gate_id:
+        try:
+            from ensemble_gate import update_gate_record
+
+            update_gate_record(
+                WORKSPACE,
+                gate_id=gate_id,
+                status='approved',
+                decision='approved',
+                evidence_ref=question_id,
+                actor=get_current_user_info().get('username', 'unknown'),
+            )
+        except Exception:
+            pass
+
     log_question_event('APPROVED', {
         'question_id': question_id,
         'choice': question.get('selected_choice'),
@@ -2852,6 +2893,20 @@ def cmd_verify(args):
         'verify_by': agent,
         'updated_at': now
     })
+
+    mirror_ops_event(
+        'VERIFY_RESULT',
+        payload={
+            'task_id': task_id,
+            'status': verify_status,
+            'files': changed_files,
+            'blocked_files': [r['file'] for r in errors],
+        },
+        scope={'task_id': task_id},
+        actor_name=agent,
+        actor_type='agent',
+        severity='error' if has_block else 'info',
+    )
     
     print()
     if has_block:
@@ -2886,6 +2941,14 @@ def cmd_close(args):
     verify_status = header.get('verify_status', 'NOT_RUN')
     
     if verify_status == 'FAIL':
+        mirror_ops_event(
+            'TASK_CLOSE_BLOCKED',
+            payload={'task_id': task_id, 'reason': 'verify_failed'},
+            scope={'task_id': task_id},
+            actor_name=args.agent or "CLI",
+            actor_type='agent',
+            severity='warn',
+        )
         print("❌ Cannot close — Verification FAILED!")
         print("\nCurrent verify status: FAIL")
         print("\n→ Fix errors and run /ensemble-verify again.")
@@ -2893,6 +2956,14 @@ def cmd_close(args):
         return
     
     if verify_status == 'NOT_RUN' and not args.skip_verify:
+        mirror_ops_event(
+            'TASK_CLOSE_BLOCKED',
+            payload={'task_id': task_id, 'reason': 'verify_not_run'},
+            scope={'task_id': task_id},
+            actor_name=args.agent or "CLI",
+            actor_type='agent',
+            severity='warn',
+        )
         print("⚠️ Verification not run — Close requires verify!")
         print("\nCurrent verify status: NOT_RUN")
         print("\nOptions:")
@@ -2918,6 +2989,14 @@ def cmd_close(args):
         'hash': hash_value,
         'updated_at': now
     })
+
+    mirror_ops_event(
+        'TASK_STATUS_CHANGED',
+        payload={'task_id': task_id, 'from': 'ACTIVE', 'to': 'DONE', 'verify_status': verify_status},
+        scope={'task_id': task_id},
+        actor_name=agent,
+        actor_type='agent',
+    )
     
     # Add Final STEP LOG
     final_log = f"""
@@ -4235,6 +4314,165 @@ def cmd_context(args):
         print(show_context(WORKSPACE))
 
 
+def cmd_workflow(args):
+    """Run workflow contracts through the extension engine."""
+    try:
+        from ensemble_workflow import explain_workflow, get_workflow_runs_dir, resume_workflow, run_workflow
+    except ImportError:
+        print("❌ Workflow module not found. Ensure ensemble_workflow.py is in the same directory.")
+        return
+
+    inputs = {}
+    malformed = []
+    for item in args.set or []:
+        if "=" not in item:
+            malformed.append(item)
+            continue
+        key, value = item.split("=", 1)
+        inputs[key.strip()] = value.strip()
+
+    if malformed:
+        print(f"??Invalid workflow input(s): {', '.join(malformed)}")
+        print("??Use --set key=value form.")
+        sys.exit(1)
+
+    if args.action == "run":
+        result = run_workflow(
+            WORKSPACE,
+            args.workflow,
+            inputs,
+            actor=args.actor,
+            dry_run=getattr(args, 'dry_run', False),
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if result.get("status") == "waiting-approval":
+            sys.exit(2)
+        if result.get("status") not in ("passed", "dry-run"):
+            sys.exit(1)
+
+    elif args.action == "resume":
+        result = resume_workflow(WORKSPACE, args.run, actor=args.actor)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if result.get("status") == "waiting-approval":
+            sys.exit(2)
+        if result.get("status") != "passed":
+            sys.exit(1)
+
+    elif args.action == "explain":
+        print(json.dumps(explain_workflow(WORKSPACE, args.workflow, inputs, actor=args.actor), ensure_ascii=False, indent=2))
+
+    elif args.action == "show":
+        run_path = get_workflow_runs_dir(WORKSPACE) / f"{args.run}.json"
+        if not run_path.exists():
+            print(f"❌ Workflow run not found: {args.run}")
+            sys.exit(1)
+        print(run_path.read_text(encoding="utf-8"))
+
+
+def cmd_meet(args):
+    """Meeting recorder commands."""
+    try:
+        from ensemble_meeting import start_meeting, say, end_meeting, show_meeting, list_meetings
+    except ImportError:
+        print("❌ Meeting module not found. Ensure ensemble_meeting.py is in the same directory.")
+        return
+
+    if args.action == "start":
+        print(json.dumps(start_meeting(WORKSPACE, topic=args.topic, actor=args.actor, task_id=args.task), ensure_ascii=False, indent=2))
+    elif args.action == "say":
+        files = [item.strip() for item in (args.files or "").split(",") if item.strip()]
+        print(
+            json.dumps(
+                say(
+                    WORKSPACE,
+                    meeting_id=args.meeting,
+                    sender=args.sender,
+                    text=args.text,
+                    channel=args.channel,
+                    content_type=args.kind,
+                    task_id=args.task,
+                    files=files,
+                ),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+    elif args.action == "end":
+        print(json.dumps(end_meeting(WORKSPACE, meeting_id=args.meeting, actor=args.actor, summary_mode=args.summary_mode), ensure_ascii=False, indent=2))
+    elif args.action == "show":
+        print(json.dumps(show_meeting(WORKSPACE, args.meeting), ensure_ascii=False, indent=2))
+    elif args.action == "list":
+        print(json.dumps(list_meetings(WORKSPACE), ensure_ascii=False, indent=2))
+
+
+def cmd_hooks_ext(args):
+    """Local git hook helpers."""
+    try:
+        from ensemble_hooks import install_hooks, run_pre_commit, run_post_commit, run_commit_msg
+    except ImportError:
+        print("❌ Hooks module not found. Ensure ensemble_hooks.py is in the same directory.")
+        return
+
+    if args.action == "install":
+        print(install_hooks(WORKSPACE, args.configure_git))
+    elif args.action == "pre-commit":
+        result = run_pre_commit(WORKSPACE)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if result.get("status") != "PASS":
+            sys.exit(1)
+    elif args.action == "post-commit":
+        print(json.dumps(run_post_commit(WORKSPACE), ensure_ascii=False, indent=2))
+    elif args.action == "commit-msg":
+        print(json.dumps(run_commit_msg(WORKSPACE, args.message_file), ensure_ascii=False, indent=2))
+
+
+def cmd_office(args):
+    """Generate static office report."""
+    try:
+        from ensemble_office import generate_report
+    except ImportError:
+        print("❌ Office module not found. Ensure ensemble_office.py is in the same directory.")
+        return
+
+    report = generate_report(WORKSPACE, args.format)
+    print(report)
+
+
+def cmd_mcp(args):
+    """Read-only MCP helpers."""
+    try:
+        from ensemble_mcp_server import TOOLS, call_tool, serve_stdio
+    except ImportError:
+        print("❌ MCP module not found. Ensure ensemble_mcp_server.py is in the same directory.")
+        return
+
+    if args.action == "serve":
+        sys.exit(serve_stdio(WORKSPACE))
+    if args.action == "tools":
+        print(json.dumps({"tools": TOOLS}, ensure_ascii=False, indent=2))
+    if args.action == "call":
+        arguments = json.loads(args.arguments or "{}")
+        print(json.dumps(call_tool(WORKSPACE, args.tool, arguments), ensure_ascii=False, indent=2))
+
+
+def cmd_telegram(args):
+    """Telegram bridge skeleton."""
+    try:
+        from ensemble_telegram import config_status, notify, approval_request, mirror_meeting
+    except ImportError:
+        print("❌ Telegram module not found. Ensure ensemble_telegram.py is in the same directory.")
+        return
+
+    if args.action == "status":
+        print(json.dumps(config_status(), ensure_ascii=False, indent=2))
+    elif args.action == "notify":
+        print(json.dumps(notify(WORKSPACE, args.text, actor=args.actor), ensure_ascii=False, indent=2))
+    elif args.action == "approval-request":
+        print(json.dumps(approval_request(WORKSPACE, args.text, actor=args.actor), ensure_ascii=False, indent=2))
+    elif args.action == "mirror-meeting":
+        print(json.dumps(mirror_meeting(WORKSPACE, args.meeting, actor=args.actor), ensure_ascii=False, indent=2))
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # v4.2 UPGRADE SYSTEM
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -4881,6 +5119,52 @@ def main():
     p_context = subparsers.add_parser("context", help="Manage LATEST_CONTEXT.md (v3.9)")
     p_context.add_argument("action", choices=["update", "show"],
                            help="Context action")
+
+    # workflow extensions
+    p_workflow = subparsers.add_parser("workflow", help="Run workflow contracts")
+    p_workflow.add_argument("action", choices=["run", "resume", "show", "explain"], help="Workflow action")
+    p_workflow.add_argument("--workflow", help="Workflow path or slug")
+    p_workflow.add_argument("--run", help="Workflow run ID")
+    p_workflow.add_argument("--actor", default="CLI")
+    p_workflow.add_argument("--set", action="append", default=[], help="Workflow input key=value")
+    p_workflow.add_argument("--dry-run", action="store_true", help="Validate and render steps without executing")
+
+    # meeting recorder
+    p_meet = subparsers.add_parser("meet", help="Record append-only meetings")
+    p_meet.add_argument("action", choices=["start", "say", "end", "show", "list"], help="Meeting action")
+    p_meet.add_argument("--meeting", help="Meeting ID")
+    p_meet.add_argument("--topic", help="Meeting topic")
+    p_meet.add_argument("--sender", help="Message sender")
+    p_meet.add_argument("--text", help="Message text")
+    p_meet.add_argument("--channel", default="cli")
+    p_meet.add_argument("--kind", default="text", choices=["text", "markdown", "code", "decision", "action_item"])
+    p_meet.add_argument("--task", help="Related task ID")
+    p_meet.add_argument("--files", help="Comma-separated related files")
+    p_meet.add_argument("--actor", default="CLI")
+    p_meet.add_argument("--summary-mode", default="decisions", choices=["decisions", "action_items", "timeline"])
+
+    # hooks
+    p_hooks = subparsers.add_parser("hooks", help="Install or run local git hooks")
+    p_hooks.add_argument("action", choices=["install", "pre-commit", "post-commit", "commit-msg"], help="Hook action")
+    p_hooks.add_argument("--configure-git", action="store_true")
+    p_hooks.add_argument("message_file", nargs="?")
+
+    # office report
+    p_office = subparsers.add_parser("office", help="Generate static office report")
+    p_office.add_argument("--format", choices=["md", "html"], default="md")
+
+    # mcp server
+    p_mcp = subparsers.add_parser("mcp", help="Read-only MCP helper/server")
+    p_mcp.add_argument("action", choices=["serve", "tools", "call"], help="MCP action")
+    p_mcp.add_argument("--tool", help="Tool name")
+    p_mcp.add_argument("--arguments", help="JSON string for tool arguments")
+
+    # telegram skeleton
+    p_telegram = subparsers.add_parser("telegram", help="Telegram bridge skeleton")
+    p_telegram.add_argument("action", choices=["status", "notify", "approval-request", "mirror-meeting"], help="Telegram action")
+    p_telegram.add_argument("--text", help="Notification text")
+    p_telegram.add_argument("--meeting", help="Meeting ID")
+    p_telegram.add_argument("--actor", default="CLI")
     
     # v4.2 Upgrade System
     p_upgrade_scan = subparsers.add_parser("upgrade-scan", help="Scan journals for upgrade candidates (v4.2)")
@@ -4928,6 +5212,12 @@ def main():
         "impact": cmd_impact,
         "weekly": cmd_weekly,
         "context": cmd_context,
+        "workflow": cmd_workflow,
+        "meet": cmd_meet,
+        "hooks": cmd_hooks_ext,
+        "office": cmd_office,
+        "mcp": cmd_mcp,
+        "telegram": cmd_telegram,
         # v4.2 upgrade system
         "upgrade-scan": cmd_upgrade_scan,
         "upgrade-setup": cmd_upgrade_setup,

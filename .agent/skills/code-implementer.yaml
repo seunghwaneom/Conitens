@@ -1,0 +1,10 @@
+schema_v: 1
+skill_id: code-implementer
+family: implementation
+summary: "Execute a bounded code change under manager supervision."
+triggers: [implement, patch, execute]
+inputs: [task_id, files, command]
+outputs: [patch, notes]
+approval_class: write-gated
+default_workflow: wf.plan-execute-validate
+compatible_runtimes: [codex, claude, local]

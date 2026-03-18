@@ -1,180 +1,129 @@
-# Conitens v2
+# Conitens
 
-> **Conitens v2는 이종 CLI 에이전트를 위한 마크다운 네이티브, 이벤트 소싱 협업 OS다.**
+> **Conitens는 외부 CLI 에이전트를 위한 verify-gated operations/control plane이다.**
 
-[![Tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)]()
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)]()
-[![Node](https://img.shields.io/badge/Node-%E2%89%A522.12-green)]()
-[![License](https://img.shields.io/badge/License-MIT-yellow)]()
+Conitens does not replace Claude Code, Codex, Gemini, or future runtimes. It coordinates them through files, workflow contracts, approvals, verify gates, events, meetings, office reports, and replayable artifacts.
 
-Conitens v2 coordinates heterogeneous CLI agents (Claude Code, Gemini CLI, Codex CLI) through a markdown-native, event-sourced protocol. Files are the protocol — the `.conitens/` directory is the shared workspace, and `events/*.jsonl` is the single source of truth.
+## Current Product Line
 
-## Architecture
+The active control plane in this repository is:
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  5-Plane Taxonomy                                       │
-├─────────────────────────────────────────────────────────┤
-│  CONTROL   — MODE.md, personas, policies (human-owned)  │
-│  COMMAND   — commands/*.md (intent, deleted after use)   │
-│  EVENT     — events/*.jsonl (append-only, commit point)  │
-│  ENTITY    — tasks/*.md, decisions/*.md (reducer-owned)  │
-│  VIEW      — views/*.md (generated from events)          │
-│  OPERATIONAL — runtime/locks, pids (not replay-relevant) │
-└─────────────────────────────────────────────────────────┘
-```
+- Core CLI: [scripts/ensemble.py](scripts/ensemble.py)
+- Additive extensions: `scripts/ensemble_*.py`
+- Runtime truth: `.notes/`
+- Canonical config and control metadata: `.agent/`
+- Compatibility skills: `.agents/skills/`
 
-### Protocol Stack
-```
-Layer 5: A2A        — Remote agent federation
-Layer 4: MCP        — Agent-to-tool (5 tools)
-Layer 3: WebSocket  — Real-time event bus
-Layer 2: SQLite     — Index/query (planned)
-Layer 1: Files+JSONL+Git — Local truth & audit
-```
+Notes path policy for this product line:
+
+- lowercase canonical for extension surfaces such as `.notes/workflows`, `.notes/events`, `.notes/meetings`, `.notes/office`, `.notes/artifacts`, `.notes/handoffs`, `.notes/gates`
+- legacy uppercase aliases remain readable and writable during the transition
+
+This rule is formalized in [ADR-0001](docs/adr-0001-control-plane.md).
+
+## Repository Layers
+
+### Active Runtime
+
+- `.notes/` stores task state, events, meetings, workflow runs, handoffs, office reports, and context snapshots.
+- `.agent/` stores rules, workflows, canonical agent manifests, canonical skill manifests, and gate policies.
+- `scripts/ensemble.py` preserves the existing operations core.
+- `scripts/ensemble_workflow.py`, `scripts/ensemble_mcp_server.py`, `scripts/ensemble_office.py`, `scripts/ensemble_meeting.py`, and related modules extend that core additively.
+
+### Reference / Parity Surfaces
+
+- `packages/*`
+- `docs/RFC-1.0.1-merged.md`
+- older `.conitens`-first roadmap material
+
+These remain important design references, but they are not the active runtime truth for the current product line unless a later ADR promotes them.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Initialize .conitens/ workspace
-npx conitens init
-
-# Run all tests
-pnpm test
-
-# Build all packages
-pnpm -r build
+ensemble init-owner
+ensemble new --mode GCC --case MODIFY --title "Add typed workflow handoffs"
+ensemble start
+ensemble log --done "Prepared implementation slice" --change "scripts/ensemble_workflow.py" --next "Run verify"
+ensemble verify --files scripts/ensemble_workflow.py
+ensemble close
 ```
 
-## Packages
+## Core Capabilities
 
-| Package | Description | Tests |
-|---------|-------------|-------|
-| `@conitens/protocol` | RFC-1.0.1 types, validators, path classification | 65 |
-| `@conitens/core` | Headless orchestrator, reducers, replay, channels | 88 |
-| `@conitens/tui` | Ink-based terminal dashboard (4 panels) | — |
-| `@conitens/dashboard` | React 19 + Vite web dashboard (Kanban, Timeline, Office) | — |
+- Verify-before-close task lifecycle
+- Owner approval and question queue
+- Append-only event logging
+- Append-only meeting transcripts with derived summaries
+- Markdown workflow contracts with run records
+- Durable gate records and artifact manifests
+- Read-only MCP resources/prompts/tools surface for safe inspection
+- Static office reports for operational visibility
+- Typed handoff artifacts for delegated workflow steps
 
-## Core Modules
+## Workflow Example
 
-```
-@conitens/core
-├── event-log/        — JSONL append/read/replay with fsync
-├── init/             — .conitens/ directory initializer
-├── orchestrator/     — command → validate → dedupe → redact → append → reduce → delete
-├── reducers/         — TaskReducer, StatusReducer, MemoryReducer, MemoryCuratorReducer
-├── replay/           — Crash recovery: rebuild all state from events
-├── agent-spawner/    — tmux session management for agent isolation
-├── worktree/         — Git worktree manager for file isolation
-├── ws-bus/           — WebSocket real-time event broadcasting
-├── channels/         — Slack (Bolt.js), Telegram (grammY), Discord (discord.js) adapters
-├── mode/             — MODE.md management + provider switching
-├── generator/        — AGENTS.md instruction generation from personas
-├── traces/           — OTEL-compatible trace logging (traces/*.jsonl)
-├── mcp/              — MCP server exposing 5 tools
-├── a2a/              — A2A federation client
-├── plugins/          — Plugin manager with lifecycle hooks
-└── cli.ts            — conitens init | serve | replay | doctor
-```
-
-## 7 Invariants
-
-| # | Invariant |
-|---|-----------|
-| I-1 | `events/*.jsonl` append is the **only commit point** |
-| I-2 | Views rebuild from **events only** (no runtime dependency) |
-| I-3 | Agents don't directly modify entity/view files |
-| I-4 | MODE.md changes **only provider bindings** |
-| I-5 | All outbound messages pass **approval gates** |
-| I-6 | Pre-append **redaction** of secrets is mandatory |
-| I-7 | Each file has **exactly one owner** (writer) |
-
-## Task State Machine
-
-```
-draft → planned → assigned → active ⇄ blocked
-                                ↓
-                              review
-                           ↙    ↓    ↘
-                      active   done   failed → assigned
-         (anywhere) → cancelled
-```
-
-9 states, validated transitions via `canTransition()` from `@conitens/protocol`.
-
-## Event Types (33)
-
-Task (8), Handoff (4), Decision (3), Approval (3), Agent (4), Message (3), Memory (4), Mode (2), System (3), Command (1).
-
-## Dashboard
-
-The web dashboard (`@conitens/dashboard`) provides:
-
-- **Overview** — Agent status sidebar + task list + live event log
-- **Kanban** — Drag-and-drop task board with dnd-kit (9 columns = 9 states)
-- **Timeline** — Recharts area chart of event volume over time
-- **Office** — PixiJS 8 pixel office with agent avatars and task cards
+Explain a workflow:
 
 ```bash
-cd packages/dashboard && pnpm dev  # http://localhost:3000
+ensemble workflow explain --workflow wf.plan-execute-validate --set task_id=TASK-... --set files=scripts/ensemble_workflow.py --set summary="Implement workflow step kinds" --set implement_cmd="python -c \"print('implement')\""
 ```
 
-## TUI (Terminal)
+Run until approval pause:
 
 ```bash
-# The TUI shows: Agent Status Bar, Task List, Live Log, Alerts
+ensemble workflow run --workflow wf.plan-execute-validate --set task_id=TASK-... --set files=scripts/ensemble_workflow.py --set summary="Implement workflow step kinds" --set implement_cmd="python -c \"print('implement')\""
 ```
 
-## Security
+Approve and resume:
 
-- All process spawning uses `execFile` (not `exec`) — no shell injection
-- tmux commands validated against shell metacharacter injection
-- Path traversal prevention via `validateId()` on all user-supplied identifiers
-- Plugin invariant guards prevent mutation of event identity fields
-- WebSocket supports optional token-based authentication
-- Pre-append redaction handles strings, objects, and arrays
-- Secrets blocked from outbound channel messages (I-5)
+```bash
+ensemble approve --latest
+ensemble workflow resume --run run-YYYYMMDD-HHMMSS-wf-plan-execute-validate
+```
+
+## MCP Surface
+
+List resources, prompts, and tools:
+
+```bash
+ensemble mcp serve
+ensemble mcp tools
+```
+
+Current ordering is resources -> prompts -> tools.
+
+Read-only tools currently include:
+
+- `task.list`
+- `task.get`
+- `questions.list`
+- `locks.list`
+- `context.get`
+- `meetings.list`
+- `workflow.runs`
+- `handoffs.list`
+- `registry.summary`
+- `office.snapshot`
 
 ## Documentation
 
-| Document | Purpose |
-|----------|---------|
-| [RFC-1.0.1](docs/RFC-1.0.1-merged.md) | Protocol specification (single source of truth) |
-| [CLAUDE.md](CLAUDE.md) | Project instructions for Claude Code |
-| [AGENTS.md](AGENTS.md) | Generated agent registry |
-
-## Tech Stack
-
-| Area | Technology |
-|------|-----------|
-| Runtime | Node.js ≥22.12, TypeScript 5.7 |
-| Package Manager | pnpm 9 (monorepo workspaces) |
-| Build | tsc (packages), Vite 7 (dashboard) |
-| Test | Vitest |
-| Frontend | React 19, Zustand 5, Recharts, dnd-kit, PixiJS 8 |
-| TUI | Ink 5 (React for Terminal) |
-| WebSocket | ws |
-| Channels | Bolt.js, grammY, discord.js (structural adapters) |
+- [CONITENS.md](CONITENS.md): canonical architecture and state meaning
+- [USAGE_GUIDE.md](USAGE_GUIDE.md): operator-oriented CLI usage
+- [docs/adr-0001-control-plane.md](docs/adr-0001-control-plane.md): current truth boundaries
+- [docs/control-plane-compatibility.md](docs/control-plane-compatibility.md): active vs reference surfaces
+- [docs/OPERATIONS_LAYER.md](docs/OPERATIONS_LAYER.md): Core/Ext overview
 
 ## Development
 
 ```bash
-# Run protocol tests only
-cd packages/protocol && pnpm test
-
-# Run core tests only
-cd packages/core && pnpm test
-
-# Build everything
-pnpm -r build
-
-# Start dev dashboard
-cd packages/dashboard && pnpm dev
+python -m unittest tests.test_operations_layer
+pnpm -r test
 ```
 
-## License
+## Non-Goals For This Product Line
 
-MIT
+- remote write-capable MCP by default
+- bypassing owner approval through Telegram, MCP, or workflow helpers
+- replacing `scripts/ensemble.py` with a new runtime
+- treating `.context/` or `.conitens/` as active task truth for the current branch

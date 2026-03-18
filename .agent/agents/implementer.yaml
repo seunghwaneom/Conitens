@@ -1,0 +1,10 @@
+schema_v: 1
+agent_id: implementer-subagent
+role: implementer
+runtime: local
+model_policy: "verify-gated"
+capabilities: [code-change, patching, task-execution]
+tool_scopes: [workflow.agent, verify]
+handoff_policy: delegated-write
+risk_class: medium
+summary: "Owns bounded implementation steps behind gate and verify rules."

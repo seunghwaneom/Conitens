@@ -21,6 +21,7 @@ from collections import defaultdict
 # ═══════════════════════════════════════════════════════════════════════════════
 
 CONTEXT_FILE = "LATEST_CONTEXT.md"
+CONTEXT_DIR = "context"
 MAX_RECENT_CHANGES = 10
 MAX_CRITICAL_ISSUES = 5
 MAX_HOTSPOTS = 5
@@ -41,30 +42,35 @@ def get_active_tasks(workspace: str) -> List[Dict]:
         return tasks
     
     for item in active_dir.iterdir():
-        if not item.is_dir() or item.name.startswith('_'):
+        if item.name.startswith('_'):
             continue
-        
+
         task_info = {
-            "task_id": item.name,
+            "task_id": item.stem if item.is_file() else item.name,
             "title": None,
             "status": "ACTIVE",
             "priority": "normal",
         }
-        
-        # Try to read task.md
-        task_md = item / "task.md"
-        if task_md.exists():
-            try:
-                content = task_md.read_text(encoding='utf-8', errors='replace')
-                # Extract title from frontmatter or first heading
-                if 'title:' in content:
-                    for line in content.split('\n'):
-                        if line.strip().startswith('title:'):
-                            task_info['title'] = line.split(':', 1)[1].strip()
-                            break
-            except:
-                pass
-        
+
+        task_source = item
+        if item.is_dir():
+            task_source = item / "task.md"
+            if not task_source.exists():
+                continue
+        elif not item.is_file() or item.suffix.lower() != ".md":
+            continue
+
+        try:
+            content = task_source.read_text(encoding='utf-8', errors='replace')
+            for line in content.split('\n'):
+                if line.strip().startswith('title:'):
+                    task_info['title'] = line.split(':', 1)[1].strip()
+                    break
+                if line.startswith('# ') and not task_info['title']:
+                    task_info['title'] = line[2:].strip()
+        except:
+            pass
+
         tasks.append(task_info)
     
     return tasks
@@ -416,10 +422,18 @@ def update_context(workspace: str) -> Path:
     context = generate_context(workspace)
     md_content = format_context_md(context)
     
-    context_file = Path(workspace) / ".notes" / CONTEXT_FILE
-    context_file.write_text(md_content, encoding='utf-8')
-    
-    return context_file
+    notes_dir = Path(workspace) / ".notes"
+    context_dir = notes_dir / CONTEXT_DIR
+    context_dir.mkdir(parents=True, exist_ok=True)
+
+    preferred_path = context_dir / CONTEXT_FILE
+    preferred_path.write_text(md_content, encoding='utf-8')
+
+    # Legacy mirror for older commands/docs that still read .notes/LATEST_CONTEXT.md.
+    legacy_path = notes_dir / CONTEXT_FILE
+    legacy_path.write_text(md_content, encoding='utf-8')
+
+    return preferred_path
 
 
 def show_context(workspace: str) -> str:
