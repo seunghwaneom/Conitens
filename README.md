@@ -127,6 +127,7 @@ ensemble workflow run --workflow wf.parallel-workcell --set task_id=TASK-... --s
 - [docs/adr-0001-control-plane.md](docs/adr-0001-control-plane.md): current truth boundaries
 - [docs/control-plane-compatibility.md](docs/control-plane-compatibility.md): active vs reference surfaces
 - [docs/OPERATIONS_LAYER.md](docs/OPERATIONS_LAYER.md): Core/Ext overview
+- [docs/LOCAL_RUNTIME_POLICY.md](docs/LOCAL_RUNTIME_POLICY.md): what stays local-only vs tracked
 
 ## Development
 
