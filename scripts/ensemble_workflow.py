@@ -16,11 +16,13 @@ from pathlib import Path
 from typing import Any
 
 from ensemble_artifacts import append_artifact_manifest
+from ensemble_agents import hire_agent
 from ensemble_contracts import collect_unknown_fields, parse_contract_file
 from ensemble_events import append_event
 from ensemble_gate import create_workflow_approval, get_question, question_is_approved, update_gate_record
 from ensemble_handoff import create_handoff, transition_handoff
 from ensemble_paths import candidate_notes_dirs, ensure_notes_dir
+from ensemble_registry import find_agent_manifest
 
 
 WORKFLOW_SCHEMA_V = 1
@@ -35,7 +37,14 @@ STEP_ALLOWED_FIELDS = {
     "summary",
     "owner_transfer",
     "worktree_id",
+    "workspace_id",
     "lease_paths",
+    "room_id",
+    "provider_id",
+    "task_prompt",
+    "persona",
+    "skills",
+    "workflows",
     "question",
     "choices",
     "default_choice",
@@ -307,6 +316,13 @@ def validate_workflow(
                 "event_type": step.get("event_type"),
                 "payload": step.get("payload"),
                 "files": step.get("files"),
+                "workspace_id": step.get("workspace_id"),
+                "room_id": step.get("room_id"),
+                "provider_id": step.get("provider_id"),
+                "task_prompt": step.get("task_prompt"),
+                "persona": step.get("persona"),
+                "skills": step.get("skills"),
+                "workflows": step.get("workflows"),
                 "depends_on": step.get("depends_on"),
             }
         )
@@ -347,6 +363,20 @@ def validate_workflow(
             preview["rendered_payload"] = render_value(step.get("payload"), supplied)
         if step.get("files") not in (None, "", []):
             preview["rendered_files"] = render_value(step.get("files"), supplied)
+        if step.get("workspace_id") not in (None, "", []):
+            preview["rendered_workspace_id"] = render_value(step.get("workspace_id"), supplied)
+        if step.get("room_id") not in (None, "", []):
+            preview["rendered_room_id"] = render_value(step.get("room_id"), supplied)
+        if step.get("provider_id") not in (None, "", []):
+            preview["rendered_provider_id"] = render_value(step.get("provider_id"), supplied)
+        if step.get("task_prompt") not in (None, "", []):
+            preview["rendered_task_prompt"] = render_value(step.get("task_prompt"), supplied)
+        if step.get("persona") not in (None, "", []):
+            preview["rendered_persona"] = render_value(step.get("persona"), supplied)
+        if step.get("skills") not in (None, "", []):
+            preview["rendered_skills"] = render_value(step.get("skills"), supplied)
+        if step.get("workflows") not in (None, "", []):
+            preview["rendered_workflows"] = render_value(step.get("workflows"), supplied)
         if step.get("depends_on") not in (None, "", []):
             preview["rendered_depends_on"] = render_value(step.get("depends_on"), supplied)
         if step_kind == "parallel":
@@ -581,7 +611,16 @@ def _execute_agent_step(
     step: dict[str, Any],
     step_result: dict[str, Any],
 ) -> dict[str, Any]:
+    def as_list(value: Any) -> list[str]:
+        if value in (None, "", []):
+            return []
+        if isinstance(value, list):
+            return [str(item) for item in value if str(item)]
+        return [str(value)]
+
     target_agent = str(step.get("agent_id") or "SUBAGENT")
+    agent_manifest = find_agent_manifest(workspace, target_agent)
+    manifest_data = agent_manifest.get("data", {}) if agent_manifest else {}
     summary = str(step_preview.get("rendered_summary") or step_preview.get("rendered_cmd") or f"Delegated step {step_preview['id']}")
     files = render_value(step.get("files") or [], record["inputs"])
     files_list = files if isinstance(files, list) else [files] if files else []
@@ -615,6 +654,74 @@ def _execute_agent_step(
             detail=f"Started delegated step {step_preview['id']}",
         )
         step_result["handoff_id"] = handoff["handoff_id"]
+    provider_id = str(step_preview.get("rendered_provider_id") or manifest_data.get("provider_id") or "").strip()
+    workspace_id = str(step_preview.get("rendered_workspace_id") or manifest_data.get("workspace_id") or "root").strip()
+    room_id = str(step_preview.get("rendered_room_id") or manifest_data.get("room_id") or "").strip() or None
+    task_prompt = str(step_preview.get("rendered_task_prompt") or summary).strip()
+    persona = str(step_preview.get("rendered_persona") or manifest_data.get("persona") or "").strip() or None
+    skills = as_list(step_preview.get("rendered_skills") or manifest_data.get("skills") or [])
+    workflows = as_list(step_preview.get("rendered_workflows") or manifest_data.get("workflows") or [])
+    if provider_id:
+        runtime = hire_agent(
+            workspace,
+            agent_id=target_agent,
+            provider_id=provider_id,
+            task_prompt=task_prompt,
+            actor=actor,
+            task_id=record.get("task_id"),
+            room_id=room_id,
+            workspace_id=workspace_id or "root",
+            persona=persona,
+            skills=skills,
+            workflows=workflows,
+            shared_files=[str(item) for item in files_list],
+            spawn_process=True,
+        )
+        step_result["provider_id"] = provider_id
+        step_result["workspace_id"] = workspace_id
+        step_result["room_id"] = room_id
+        step_result["runtime_status"] = runtime.get("status")
+        step_result["runtime_pid"] = runtime.get("pid")
+        step_result["prompt_file"] = runtime.get("prompt_file")
+        if runtime.get("status") == "blocked" and runtime.get("question_id"):
+            step_result["status"] = "waiting-approval"
+            step_result["question_id"] = runtime.get("question_id")
+            step_result["gate_id"] = runtime.get("gate_id")
+            step_result["stderr"] = str(runtime.get("reason") or runtime.get("status"))
+            if handoff:
+                transition_handoff(
+                    workspace,
+                    handoff_id=handoff["handoff_id"],
+                    state="blocked",
+                    actor=target_agent,
+                    detail=f"Delegated provider '{provider_id}' is waiting for approval",
+                    result={"question_id": runtime.get("question_id"), "gate_id": runtime.get("gate_id")},
+                )
+            return step_result
+        if runtime.get("status") in {"running", "planned", "completed"}:
+            step_result["status"] = "passed"
+            if handoff:
+                transition_handoff(
+                    workspace,
+                    handoff_id=handoff["handoff_id"],
+                    state="completed",
+                    actor=target_agent,
+                    detail=f"Delegated provider '{provider_id}' launched",
+                    result={"status": runtime.get("status"), "pid": runtime.get("pid")},
+                )
+        else:
+            step_result["status"] = "failed"
+            step_result["stderr"] = str(runtime.get("last_error") or runtime.get("status"))
+            if handoff:
+                transition_handoff(
+                    workspace,
+                    handoff_id=handoff["handoff_id"],
+                    state="blocked",
+                    actor=target_agent,
+                    detail=f"Delegated provider '{provider_id}' failed to launch",
+                    result={"status": runtime.get("status"), "error": runtime.get("last_error")},
+                )
+        return step_result
     rendered_cmd = step_preview.get("rendered_cmd", "")
     if rendered_cmd:
         completed = run_cli_command(workspace, rendered_cmd)

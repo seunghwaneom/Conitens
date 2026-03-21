@@ -1,0 +1,17 @@
+schema_v: 1
+default_action: block
+critical_paths:
+  - scripts/ensemble.py
+  - scripts/ensemble_gate.py
+  - scripts/ensemble_hooks.py
+  - .agent/policies/**
+  - .agent/workflows/**
+  - .notes/gates/**
+  - .notes/handoffs/**
+blocked_command_patterns:
+  - git reset --hard
+  - git clean -fd
+  - git push --force
+  - rm -rf
+  - del /f /s /q
+notes: "Critical control-plane files and destructive commands are blocked by default for local hook checks and provider launch guards."
