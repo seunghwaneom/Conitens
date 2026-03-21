@@ -1,0 +1,16 @@
+schema_v: 1
+provider_id: openclaw
+runtime: openclaw
+display_name: "OpenClaw"
+launch_mode: task_run
+command: openclaw
+args:
+  - task
+  - run
+  - --workspace
+  - "{workspace_root}"
+  - --prompt
+  - "Work on task {task_id}. Persona {persona_file}. Memory {memory_file}. Room {room_id}."
+supported_platforms: [win32, linux, darwin]
+capabilities: [prompt, cwd, detached, subagents]
+notes: "Runs an OpenClaw task against the resolved workspace."

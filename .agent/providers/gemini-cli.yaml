@@ -1,0 +1,12 @@
+schema_v: 1
+provider_id: gemini-cli
+runtime: gemini
+display_name: "Gemini CLI"
+launch_mode: prompt
+command: gemini
+args:
+  - -p
+  - "Work on task {task_id} in {workspace_root}. Use persona {persona_file}, memory {memory_file}, and shared memory {shared_memory_file}. Coordinate through room {room_id}."
+supported_platforms: [win32, linux, darwin]
+capabilities: [prompt, cwd, detached, subagents]
+notes: "Launches Gemini CLI with workspace-scoped context and memory paths."
