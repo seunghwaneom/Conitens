@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-from ensemble_contracts import parse_contract_file
+from ensemble_contracts import parse_contract_file, parse_simple_yaml
 from ensemble_events import append_event, load_events
 from ensemble_gate import list_gate_records, read_gate_record
 from ensemble_hooks import check_action_policy, install_hooks, run_post_commit
@@ -72,6 +72,20 @@ class OperationsLayerTests(unittest.TestCase):
             destination = workspace / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text((ROOT / relative).read_text(encoding="utf-8"), encoding="utf-8")
+
+    def expected_registry_metrics(self, workspace: Path) -> dict[str, int]:
+        def yaml_count(path: Path) -> int:
+            return len(list(path.glob("*.yaml"))) + len(list(path.glob("*.yml")))
+
+        gates = parse_simple_yaml((workspace / ".agent" / "policies" / "gates.yaml").read_text(encoding="utf-8"))
+        return {
+            "agent_count": yaml_count(workspace / ".agent" / "agents"),
+            "skill_count": yaml_count(workspace / ".agent" / "skills"),
+            "provider_count": yaml_count(workspace / ".agent" / "providers"),
+            "workspace_count": yaml_count(workspace / ".agent" / "workspaces"),
+            "workflow_count": len(list((workspace / ".agent" / "workflows").glob("*.md"))),
+            "gate_action_count": len(gates.get("actions", [])) if isinstance(gates.get("actions", []), list) else 0,
+        }
 
     def test_event_append_redacts_sensitive_values(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -213,10 +227,11 @@ class OperationsLayerTests(unittest.TestCase):
             workspace = Path(temp_dir)
             self.prepare_control_plane_workspace(workspace)
             summary = registry_summary(workspace)
-            self.assertEqual(summary["metrics"]["agent_count"], 4)
-            self.assertEqual(summary["metrics"]["skill_count"], 7)
-            self.assertGreaterEqual(summary["metrics"]["workflow_count"], 6)
-            self.assertEqual(summary["metrics"]["gate_action_count"], 4)
+            expected = self.expected_registry_metrics(workspace)
+            self.assertEqual(summary["metrics"]["agent_count"], expected["agent_count"])
+            self.assertEqual(summary["metrics"]["skill_count"], expected["skill_count"])
+            self.assertEqual(summary["metrics"]["workflow_count"], expected["workflow_count"])
+            self.assertEqual(summary["metrics"]["gate_action_count"], expected["gate_action_count"])
             self.assertEqual(summary["errors"], [])
 
     def test_workflow_explain_supports_agent_parallel_and_emit_event_kinds(self) -> None:
@@ -494,7 +509,9 @@ class OperationsLayerTests(unittest.TestCase):
             tasks = call_tool(workspace, "task.list")
             self.assertEqual(len(tasks), 1)
             registry = call_tool(workspace, "registry.summary")
-            self.assertEqual(registry["metrics"]["agent_count"], 4)
+            expected = self.expected_registry_metrics(workspace)
+            self.assertEqual(registry["metrics"]["agent_count"], expected["agent_count"])
+            self.assertEqual(registry["metrics"]["skill_count"], expected["skill_count"])
             self.assertEqual(call_tool(workspace, "handoffs.list"), [])
             workflow_runs = call_tool(workspace, "workflow.runs")
             self.assertEqual(len(workflow_runs), 1)
@@ -802,6 +819,12 @@ class OperationsLayerTests(unittest.TestCase):
             try:
                 self.assertTrue(Path(launched["path"]).exists())
                 self.assertIn("http://127.0.0.1:8876/index.html", launched["url"])
+                with urlopen("http://127.0.0.1:8876/index.html", timeout=10) as response:
+                    index_html = response.read().decode("utf-8")
+                    dashboard_cookie = response.headers.get("Set-Cookie")
+                self.assertNotIn(launched["token"], index_html)
+                self.assertIsNotNone(dashboard_cookie)
+                self.assertIn("conitens_dashboard_auth=", dashboard_cookie)
                 with urlopen("http://127.0.0.1:8876/api/dashboard", timeout=10) as response:
                     dashboard = json.loads(response.read().decode("utf-8"))
                 self.assertIn("snapshot", dashboard)
@@ -818,6 +841,19 @@ class OperationsLayerTests(unittest.TestCase):
                     urlopen(request, timeout=10)
                 self.assertEqual(exc_info.exception.code, 403)
                 exc_info.exception.close()
+
+                cookie_authorized = Request(
+                    "http://127.0.0.1:8876/api/actions/update-context",
+                    data=body,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Cookie": dashboard_cookie,
+                    },
+                    method="POST",
+                )
+                with urlopen(cookie_authorized, timeout=10) as response:
+                    cookie_update_result = json.loads(response.read().decode("utf-8"))
+                self.assertTrue(cookie_update_result["ok"])
 
                 authorized = Request(
                     "http://127.0.0.1:8876/api/actions/update-context",
