@@ -1,105 +1,126 @@
-import React, { useMemo } from "react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
-import { useEventStore } from "../store/event-store.js";
+import React, { useMemo, useState } from "react";
+import type { EventRecord } from "../store/event-store.js";
+import { getEventFamily } from "../utils.js";
 
-const TYPE_COLORS: Record<string, string> = {
-  task: "#3b82f6",
-  agent: "#22c55e",
-  handoff: "#f59e0b",
-  decision: "#8b5cf6",
-  approval: "#f97316",
-  message: "#06b6d4",
-  memory: "#ec4899",
-  system: "#64748b",
-  command: "#ef4444",
-  mode: "#a855f7",
-};
+export function Timeline({ events }: { events: EventRecord[] }) {
+  const [familyFilter, setFamilyFilter] = useState<string>("all");
+  const [actorFilter, setActorFilter] = useState<string>("");
 
-function getTypePrefix(type: string): string {
-  return type.split(".")[0];
-}
-
-export function Timeline() {
-  const { events } = useEventStore();
-
-  const chartData = useMemo(() => {
-    if (events.length === 0) return [];
-
-    // Group events by minute
-    const buckets = new Map<string, Record<string, number>>();
-
-    for (const event of events) {
-      const minute = event.ts.slice(0, 16); // YYYY-MM-DDTHH:MM
-      const prefix = getTypePrefix(event.type);
-
-      if (!buckets.has(minute)) {
-        buckets.set(minute, {});
-      }
-      const bucket = buckets.get(minute)!;
-      bucket[prefix] = (bucket[prefix] || 0) + 1;
-    }
-
-    return [...buckets.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([time, counts]) => ({
-        time: time.slice(11), // HH:MM
-        ...counts,
-      }));
+  const families = useMemo(() => {
+    const set = new Set<string>();
+    for (const event of events) set.add(getEventFamily(event.type));
+    return Array.from(set).sort();
   }, [events]);
 
-  const activeTypes = useMemo(() => {
-    const types = new Set<string>();
-    for (const event of events) {
-      types.add(getTypePrefix(event.type));
+  const filtered = useMemo(() => {
+    let result = events;
+    if (familyFilter !== "all") {
+      result = result.filter((e) => getEventFamily(e.type) === familyFilter);
     }
-    return [...types].sort();
-  }, [events]);
+    if (actorFilter) {
+      const q = actorFilter.toLowerCase();
+      result = result.filter((e) => e.actor.id.toLowerCase().includes(q));
+    }
+    return [...result].slice(-30).reverse();
+  }, [events, familyFilter, actorFilter]);
+
+  const latestEvent = filtered[0];
 
   if (events.length === 0) {
     return (
-      <div style={{ padding: "32px", textAlign: "center", color: "#64748b" }}>
-        No events yet. Connect to a running Conitens instance to see the timeline.
+      <div className="empty-state animated">
+        No events recorded yet. Connect to a live Conitens bus to start streaming...
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "16px" }}>
-      <h2 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "16px", color: "#94a3b8" }}>
-        Event Timeline ({events.length} events)
-      </h2>
-      <ResponsiveContainer width="100%" height={400}>
-        <AreaChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis dataKey="time" stroke="#64748b" fontSize={11} />
-          <YAxis stroke="#64748b" fontSize={11} />
-          <Tooltip
-            contentStyle={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "6px", fontSize: "12px" }}
-            labelStyle={{ color: "#94a3b8" }}
+    <div className="timeline-shell">
+      <div className="timeline-summary">
+        <div className="metric-card">
+          <div className="metric-label">Total Events</div>
+          <div className="metric-value">{events.length}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Filtered</div>
+          <div className="metric-value">{filtered.length}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Families</div>
+          <div className="metric-value">{families.length}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Latest Actor</div>
+          <div className="metric-value metric-value-compact">
+            {latestEvent?.actor.id ?? "-"}
+          </div>
+        </div>
+      </div>
+
+      <div className="timeline-filters">
+        <div className="filter-group">
+          <label className="status-card-label" htmlFor="family-filter">type</label>
+          <select
+            id="family-filter"
+            className="filter-select"
+            value={familyFilter}
+            onChange={(e) => setFamilyFilter(e.target.value)}
+          >
+            <option value="all">all types</option>
+            {families.map((f) => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-group">
+          <label className="status-card-label" htmlFor="actor-filter">actor</label>
+          <input
+            id="actor-filter"
+            className="filter-input"
+            type="text"
+            placeholder="filter by actor..."
+            value={actorFilter}
+            onChange={(e) => setActorFilter(e.target.value)}
           />
-          <Legend wrapperStyle={{ fontSize: "11px" }} />
-          {activeTypes.map((prefix) => (
-            <Area
-              key={prefix}
-              type="monotone"
-              dataKey={prefix}
-              stackId="1"
-              stroke={TYPE_COLORS[prefix] || "#94a3b8"}
-              fill={TYPE_COLORS[prefix] || "#94a3b8"}
-              fillOpacity={0.3}
-            />
-          ))}
-        </AreaChart>
-      </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="timeline-focus">
+        <div>
+          <p className="panel-kicker">LATEST_SIGNAL</p>
+          <strong>{latestEvent?.type ?? "No event"}</strong>
+          <div className="muted">
+            {latestEvent
+              ? `${latestEvent.actor.id}${latestEvent.task_id ? ` / ${latestEvent.task_id}` : ""}`
+              : "Connect live data to inspect event flow"}
+          </div>
+        </div>
+        <span className={`event-pill ${getEventFamily(latestEvent?.type ?? "system")}`}>
+          {getEventFamily(latestEvent?.type ?? "system")}
+        </span>
+      </div>
+
+      <div className="timeline-table">
+        <div className="timeline-table-header">
+          <div>Timestamp</div>
+          <div>Event</div>
+          <div>Actor</div>
+          <div>Task</div>
+        </div>
+        {filtered.map((event, index) => (
+          <div key={event.event_id} className={`timeline-row${index === 0 ? " latest" : ""}`}>
+            <div>{event.ts.slice(11, 19)}</div>
+            <div className="timeline-event-cell">
+              <span className={`event-pill ${getEventFamily(event.type)}`}>
+                {getEventFamily(event.type)}
+              </span>
+              <strong>{event.type}</strong>
+            </div>
+            <div>{event.actor.id}</div>
+            <div className="timeline-task-cell">{event.task_id ?? "-"}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

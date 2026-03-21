@@ -1,0 +1,8 @@
+schema_v: 1
+workspace_id: default
+path: .
+strategy: inherit
+create_if_missing: true
+branch_prefix: codex
+shared_readonly_paths: [.agent, .notes]
+notes: "Default workspace entry for provider-backed spawns."

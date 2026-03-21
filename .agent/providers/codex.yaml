@@ -1,0 +1,10 @@
+schema_v: 1
+provider_id: codex
+runtime: codex
+display_name: "Codex CLI"
+launch_mode: headless_prompt
+command: codex
+args: ["exec", "--sandbox", "workspace-write", "--ask-for-approval", "never", "{{task_prompt}}"]
+supported_platforms: [win32, linux, darwin]
+capabilities: [prompt, cwd, detached, sandbox]
+notes: "Uses Codex non-interactive exec mode and keeps work inside the resolved workspace."

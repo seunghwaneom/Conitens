@@ -1,0 +1,8 @@
+schema_v: 1
+workspace_id: isolated-worktree
+path: .conitens-worktrees/{{agent_id}}-{{task_id}}
+strategy: git-worktree
+create_if_missing: true
+branch_prefix: codex
+shared_readonly_paths: [.agent, .notes]
+notes: "Creates an isolated git worktree per agent/task for bounded parallel work."

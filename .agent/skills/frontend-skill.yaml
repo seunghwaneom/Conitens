@@ -1,0 +1,10 @@
+schema_v: 1
+skill_id: frontend-skill
+family: frontend
+summary: "Design and review frontend surfaces with restrained hierarchy, utility-first app copy, strong visual anchors, and tasteful motion."
+triggers: [frontend-skill, frontend-review, ui-review, app-ui]
+inputs: [brief, files, screenshots]
+outputs: [visual-thesis, review-findings, refactor-plan]
+approval_class: readonly
+default_workflow: wf.research-plan-validate
+compatible_runtimes: [codex, claude, gemini, local]
