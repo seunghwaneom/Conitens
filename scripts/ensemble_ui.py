@@ -16,6 +16,7 @@ import threading
 import time
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.cookies import SimpleCookie
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
@@ -27,6 +28,9 @@ from ensemble_memory import append_long_term_memory, append_shared_memory, show_
 from ensemble_office import collect_office_snapshot, generate_report
 from ensemble_room import create_room, post_room_message, show_room
 from ensemble_spawn import start_spawn, stop_spawn
+
+
+DASHBOARD_AUTH_COOKIE = "conitens_dashboard_auth"
 
 
 def _host_is_loopback(host: str) -> bool:
@@ -101,13 +105,38 @@ def _json_response(handler: BaseHTTPRequestHandler, payload: Any, status: int = 
     handler.wfile.write(body)
 
 
-def _text_response(handler: BaseHTTPRequestHandler, text: str, status: int = 200, content_type: str = "text/html; charset=utf-8") -> None:
+def _text_response(
+    handler: BaseHTTPRequestHandler,
+    text: str,
+    status: int = 200,
+    content_type: str = "text/html; charset=utf-8",
+    extra_headers: dict[str, str] | None = None,
+) -> None:
     body = text.encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", content_type)
     handler.send_header("Content-Length", str(len(body)))
+    for key, value in (extra_headers or {}).items():
+        handler.send_header(key, value)
     handler.end_headers()
     handler.wfile.write(body)
+
+
+def _dashboard_auth_cookie_value(handler: BaseHTTPRequestHandler) -> str | None:
+    raw_cookie = handler.headers.get("Cookie")
+    if not raw_cookie:
+        return None
+
+    cookie = SimpleCookie()
+    cookie.load(raw_cookie)
+    auth_cookie = cookie.get(DASHBOARD_AUTH_COOKIE)
+    return auth_cookie.value if auth_cookie else None
+
+
+def _request_has_dashboard_auth(handler: BaseHTTPRequestHandler, auth_token: str) -> bool:
+    if handler.headers.get("Authorization") == f"Bearer {auth_token}":
+        return True
+    return _dashboard_auth_cookie_value(handler) == auth_token
 
 
 def _safe_read_static(root: Path, request_path: str) -> tuple[bytes, str] | None:
@@ -154,7 +183,7 @@ def _tail_text_file(path: str | Path, limit: int = 30) -> list[str]:
     return lines[-limit:]
 
 
-def render_web_app_html(auth_token: str) -> str:
+def render_web_app_html() -> str:
     html = """<!doctype html>
 <html lang="en">
 <head>
@@ -281,7 +310,6 @@ def render_web_app_html(auth_token: str) -> str:
     <div id="flash" style="padding:0 16px 16px;"></div>
   </div>
   <script>
-    const DASHBOARD_TOKEN = __DASHBOARD_TOKEN__;
     const STATUS_COLORS = {
       INBOX: 'var(--inbox)',
       ACTIVE: 'var(--active)',
@@ -323,17 +351,14 @@ def render_web_app_html(auth_token: str) -> str:
     }
 
     async function getJson(url, options) {
-      const method = String(options?.method || 'GET').toUpperCase();
       const headers = {
         'Content-Type': 'application/json',
         ...(options?.headers || {}),
       };
-      if (method !== 'GET') {
-        headers.Authorization = 'Bearer ' + DASHBOARD_TOKEN;
-      }
       const response = await fetch(url, {
         ...options,
         headers,
+        credentials: 'same-origin',
       });
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
@@ -730,7 +755,7 @@ def render_web_app_html(auth_token: str) -> str:
 </body>
 </html>
 """
-    return html.replace("__DASHBOARD_TOKEN__", json.dumps(auth_token))
+    return html
 
 
 def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> type[BaseHTTPRequestHandler]:
@@ -780,7 +805,13 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
                 _json_response(self, {"spawn_id": spawn_id, "log_file": record.get("log_file"), "lines": _tail_text_file(record.get("log_file") or "")})
                 return
             if path in {"/", "/index.html"}:
-                _text_response(self, render_web_app_html(auth_token))
+                _text_response(
+                    self,
+                    render_web_app_html(),
+                    extra_headers={
+                        "Set-Cookie": f"{DASHBOARD_AUTH_COOKIE}={auth_token}; HttpOnly; Path=/; SameSite=Strict",
+                    },
+                )
                 return
             if path == "/office-report.html":
                 office_report = generate_report(workspace_root, "html")
@@ -802,7 +833,7 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
             if not _request_is_loopback(self):
                 _json_response(self, {"error": "Dashboard writes are only available from loopback clients."}, status=403)
                 return
-            if self.headers.get("Authorization") != f"Bearer {auth_token}":
+            if not _request_has_dashboard_auth(self, auth_token):
                 _json_response(self, {"error": "Missing or invalid dashboard token."}, status=403)
                 return
             length = int(self.headers.get("Content-Length", "0") or "0")
@@ -924,7 +955,7 @@ def launch_web_ui(workspace: str | Path, *, host: str = "127.0.0.1", port: int =
     office_dir = Path(generate_report(workspace, "html").parent)
     index_path = office_dir / "index.html"
     auth_token = secrets.token_urlsafe(24)
-    index_path.write_text(render_web_app_html(auth_token), encoding="utf-8")
+    index_path.write_text(render_web_app_html(), encoding="utf-8")
     handler = _build_handler(workspace, office_dir, auth_token)
     server = ThreadingHTTPServer((host, port), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
