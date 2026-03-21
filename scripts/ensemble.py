@@ -148,6 +148,7 @@ import hashlib
 import os
 import sys
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -4490,6 +4491,142 @@ def cmd_telegram(args):
         print(json.dumps(mirror_meeting(WORKSPACE, args.meeting, actor=args.actor), ensure_ascii=False, indent=2))
 
 
+def cmd_spawn(args):
+    """Spawn or inspect provider-backed subagents."""
+    try:
+        from ensemble_spawn import (
+            get_provider_manifest,
+            get_workspace_manifest,
+            list_spawn_records,
+            load_provider_manifests,
+            load_workspace_manifests,
+            read_spawn_record,
+            refresh_spawn_record,
+            start_spawn,
+            stop_spawn,
+        )
+    except ImportError:
+        print("??Spawn module not found. Ensure ensemble_spawn.py is in the same directory.")
+        return
+
+    if args.action == "providers":
+        print(json.dumps(load_provider_manifests(WORKSPACE), ensure_ascii=False, indent=2))
+    elif args.action == "provider-show":
+        print(json.dumps(get_provider_manifest(WORKSPACE, args.provider), ensure_ascii=False, indent=2))
+    elif args.action == "workspaces":
+        print(json.dumps(load_workspace_manifests(WORKSPACE), ensure_ascii=False, indent=2))
+    elif args.action == "workspace-show":
+        print(json.dumps(get_workspace_manifest(WORKSPACE, args.workspace_id), ensure_ascii=False, indent=2))
+    elif args.action == "start":
+        result = start_spawn(
+            WORKSPACE,
+            provider_id=args.provider,
+            agent_id=args.agent_id,
+            workspace_id=args.workspace_id,
+            actor=args.actor,
+            task_id=args.task,
+            room_id=args.room,
+            summary=args.summary,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if result.get("status") == "blocked":
+            sys.exit(2)
+    elif args.action == "list":
+        print(json.dumps([refresh_spawn_record(WORKSPACE, row["spawn_id"]) for row in list_spawn_records(WORKSPACE)], ensure_ascii=False, indent=2))
+    elif args.action == "show":
+        print(json.dumps(refresh_spawn_record(WORKSPACE, args.spawn), ensure_ascii=False, indent=2))
+    elif args.action == "stop":
+        print(json.dumps(stop_spawn(WORKSPACE, spawn_id=args.spawn, actor=args.actor), ensure_ascii=False, indent=2))
+
+
+def cmd_memory_ext(args):
+    """Manage persona, long-term, and shared memory."""
+    try:
+        from ensemble_memory import append_long_term_memory, append_shared_memory, initialize_agent_memory, show_memory
+    except ImportError:
+        print("??Memory module not found. Ensure ensemble_memory.py is in the same directory.")
+        return
+
+    if args.action == "init-agent":
+        print(json.dumps(initialize_agent_memory(WORKSPACE, args.provider, args.agent_id), ensure_ascii=False, indent=2))
+    elif args.action == "append":
+        if args.kind == "shared":
+            print(json.dumps(append_shared_memory(WORKSPACE, author=args.author, text=args.text, task_id=args.task), ensure_ascii=False, indent=2))
+        else:
+            print(
+                json.dumps(
+                    append_long_term_memory(
+                        WORKSPACE,
+                        provider_id=args.provider,
+                        agent_id=args.agent_id,
+                        author=args.author,
+                        text=args.text,
+                        tags=[item.strip() for item in (args.tags or "").split(",") if item.strip()],
+                        task_id=args.task,
+                    ),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+    elif args.action == "show":
+        print(json.dumps(show_memory(WORKSPACE, kind=args.kind, provider_id=args.provider, agent_id=args.agent_id), ensure_ascii=False, indent=2))
+
+
+def cmd_room(args):
+    """Manage project chat rooms."""
+    try:
+        from ensemble_room import create_room, export_room_markdown, post_room_message, show_room
+    except ImportError:
+        print("??Room module not found. Ensure ensemble_room.py is in the same directory.")
+        return
+
+    if args.action == "create":
+        participants = [item.strip() for item in (args.participants or "").split(",") if item.strip()]
+        print(json.dumps(create_room(WORKSPACE, name=args.name, participants=participants, actor=args.actor, task_id=args.task), ensure_ascii=False, indent=2))
+    elif args.action == "post":
+        attachments = [item.strip() for item in (args.attachments or "").split(",") if item.strip()]
+        print(
+            json.dumps(
+                post_room_message(
+                    WORKSPACE,
+                    room_id=args.room,
+                    sender=args.sender,
+                    text=args.text,
+                    message_type=args.kind,
+                    attachments=attachments,
+                    task_id=args.task,
+                ),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+    elif args.action == "show":
+        print(json.dumps(show_room(WORKSPACE, args.room), ensure_ascii=False, indent=2))
+    elif args.action == "export":
+        print(export_room_markdown(WORKSPACE, args.room))
+
+
+def cmd_ui(args):
+    """Launch terminal or web UI views."""
+    try:
+        from ensemble_ui import launch_web_ui, watch_tui
+    except ImportError:
+        print("??UI module not found. Ensure ensemble_ui.py is in the same directory.")
+        return
+
+    if args.action == "tui":
+        watch_tui(WORKSPACE, interval=args.interval, once=args.once)
+    elif args.action == "web":
+        result = launch_web_ui(WORKSPACE, host=args.host, port=args.port)
+        print(json.dumps({"url": result["url"], "path": result["path"]}, ensure_ascii=False, indent=2))
+        if not args.once:
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                result["server"].shutdown()
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # v4.2 UPGRADE SYSTEM
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -5184,6 +5321,54 @@ def main():
     p_telegram.add_argument("--text", help="Notification text")
     p_telegram.add_argument("--meeting", help="Meeting ID")
     p_telegram.add_argument("--actor", default="CLI")
+
+    # provider-backed subagents
+    p_spawn = subparsers.add_parser("spawn", help="Spawn provider-backed subagents")
+    p_spawn.add_argument(
+        "action",
+        choices=["providers", "provider-show", "workspaces", "workspace-show", "start", "list", "show", "stop"],
+        help="Spawn action",
+    )
+    p_spawn.add_argument("--provider", help="Provider ID")
+    p_spawn.add_argument("--agent-id", help="Logical agent ID")
+    p_spawn.add_argument("--workspace-id", default="default", help="Workspace config ID")
+    p_spawn.add_argument("--task", help="Related task ID")
+    p_spawn.add_argument("--room", help="Room ID for coordination")
+    p_spawn.add_argument("--summary", help="Spawn summary")
+    p_spawn.add_argument("--spawn", help="Spawn ID")
+    p_spawn.add_argument("--actor", default="CLI")
+
+    # persistent memory
+    p_memory = subparsers.add_parser("memory", help="Manage agent persona and long-term memory")
+    p_memory.add_argument("action", choices=["init-agent", "append", "show"], help="Memory action")
+    p_memory.add_argument("--kind", choices=["persona", "longterm", "shared"], default="longterm")
+    p_memory.add_argument("--provider", help="Provider ID")
+    p_memory.add_argument("--agent-id", help="Agent ID")
+    p_memory.add_argument("--author", default="CLI")
+    p_memory.add_argument("--text", help="Memory text")
+    p_memory.add_argument("--tags", help="Comma-separated tags")
+    p_memory.add_argument("--task", help="Related task ID")
+
+    # project rooms
+    p_room = subparsers.add_parser("room", help="Manage project chat rooms")
+    p_room.add_argument("action", choices=["create", "post", "show", "export"], help="Room action")
+    p_room.add_argument("--name", help="Room name")
+    p_room.add_argument("--participants", help="Comma-separated participants")
+    p_room.add_argument("--room", help="Room ID")
+    p_room.add_argument("--sender", default="USER")
+    p_room.add_argument("--text", help="Message text")
+    p_room.add_argument("--kind", choices=["text", "decision", "action_item", "handoff"], default="text")
+    p_room.add_argument("--attachments", help="Comma-separated file attachments")
+    p_room.add_argument("--task", help="Related task ID")
+    p_room.add_argument("--actor", default="CLI")
+
+    # runtime UI
+    p_ui = subparsers.add_parser("ui", help="Launch terminal or web UI")
+    p_ui.add_argument("action", choices=["tui", "web"], help="UI action")
+    p_ui.add_argument("--interval", type=float, default=2.0, help="Refresh interval for TUI")
+    p_ui.add_argument("--once", action="store_true", help="Render once and exit")
+    p_ui.add_argument("--host", default="127.0.0.1")
+    p_ui.add_argument("--port", type=int, default=8765)
     
     # v4.2 Upgrade System
     p_upgrade_scan = subparsers.add_parser("upgrade-scan", help="Scan journals for upgrade candidates (v4.2)")
@@ -5237,6 +5422,10 @@ def main():
         "office": cmd_office,
         "mcp": cmd_mcp,
         "telegram": cmd_telegram,
+        "spawn": cmd_spawn,
+        "memory": cmd_memory_ext,
+        "room": cmd_room,
+        "ui": cmd_ui,
         # v4.2 upgrade system
         "upgrade-scan": cmd_upgrade_scan,
         "upgrade-setup": cmd_upgrade_setup,

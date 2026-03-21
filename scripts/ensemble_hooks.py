@@ -6,6 +6,7 @@ Local git hook helpers for Conitens.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import json
 import os
 import py_compile
@@ -15,13 +16,49 @@ from typing import Any
 
 from ensemble_context import update_context
 from ensemble_events import append_event
+from ensemble_contracts import parse_simple_yaml
+from ensemble_gate import create_workflow_approval, list_gate_records, update_gate_record
 
 
 HOOK_DIR = ".githooks"
+BLOCKING_GATES_FILE = "blocking_gates.yaml"
+HOOK_POLICY_FILE = "hooks.yaml"
 
 
 def repo_root(workspace: str | Path) -> Path:
     return Path(workspace)
+
+
+def hook_policy_path(workspace: str | Path) -> Path:
+    return Path(workspace) / ".agent" / "policies" / HOOK_POLICY_FILE
+
+
+def load_hook_policy(workspace: str | Path) -> dict[str, Any]:
+    path = hook_policy_path(workspace)
+    if not path.exists():
+        return {"schema_v": 1, "default_action": "allow", "critical_paths": [], "blocked_command_patterns": []}
+    return parse_simple_yaml(path.read_text(encoding="utf-8"))
+
+
+def evaluate_critical_operation(
+    workspace: str | Path,
+    *,
+    command_tokens: list[str] | None = None,
+    touched_files: list[str] | None = None,
+) -> dict[str, Any]:
+    policy = load_hook_policy(workspace)
+    violations: list[str] = []
+    for raw_path in touched_files or []:
+        normalized = str(raw_path).replace("\\", "/")
+        for pattern in [str(item).replace("\\", "/") for item in policy.get("critical_paths", [])]:
+            if pattern and fnmatch.fnmatch(normalized, pattern):
+                violations.append(f"critical path blocked: {normalized}")
+                break
+    command_text = " ".join(command_tokens or []).lower()
+    for pattern in [str(item).lower() for item in policy.get("blocked_command_patterns", [])]:
+        if pattern and pattern in command_text:
+            violations.append(f"command blocked by hook policy: {pattern}")
+    return {"allowed": not violations, "violations": violations, "policy": policy}
 
 
 def staged_files(workspace: str | Path) -> list[Path]:
@@ -82,13 +119,23 @@ def run_pre_commit(workspace: str | Path) -> dict[str, Any]:
     for path in files:
         ok, detail = check_file(path)
         results.append({"file": str(path), "ok": ok, "detail": detail})
+    touched = []
+    for path in files:
+        try:
+            touched.append(str(path.relative_to(workspace)).replace("\\", "/"))
+        except ValueError:
+            touched.append(str(path).replace("\\", "/"))
+    critical_check = evaluate_critical_operation(workspace, touched_files=touched)
+    if not critical_check["allowed"]:
+        for violation in critical_check["violations"]:
+            results.append({"file": "HOOK_POLICY", "ok": False, "detail": violation})
     status = "PASS" if all(item["ok"] for item in results) else "FAIL"
     append_event(
         workspace,
         event_type="HOOK_RESULT",
         actor={"type": "system", "name": "HOOK"},
         severity="error" if status == "FAIL" else "info",
-        payload={"hook": "pre-commit", "status": status, "files": [item["file"] for item in results]},
+        payload={"hook": "pre-commit", "status": status, "files": [item["file"] for item in results], "violations": critical_check["violations"]},
     )
     return {"hook": "pre-commit", "status": status, "results": results}
 
@@ -113,6 +160,72 @@ def active_task_id(workspace: str | Path) -> str | None:
             value = line.split(":", 1)[1].strip()
             return None if value == "null" else value
     return None
+
+
+def blocking_gates_path(workspace: str | Path) -> Path:
+    return Path(workspace) / ".agent" / "policies" / BLOCKING_GATES_FILE
+
+
+def load_blocking_gates(workspace: str | Path) -> dict[str, Any]:
+    path = blocking_gates_path(workspace)
+    if not path.exists():
+        return {"schema_v": 1, "actions": []}
+    return parse_simple_yaml(path.read_text(encoding="utf-8"))
+
+
+def check_action_policy(
+    workspace: str | Path,
+    *,
+    action: str,
+    actor: str = "CLI",
+    task_id: str | None = None,
+    subject_ref: str | None = None,
+    consume_on_allow: bool = True,
+) -> dict[str, Any]:
+    policy = load_blocking_gates(workspace)
+    actions = policy.get("actions", [])
+    match = None
+    for rule in actions:
+        if not isinstance(rule, dict):
+            continue
+        if rule.get("action") == action:
+            match = rule
+            break
+    if not match:
+        return {"status": "allow", "action": action}
+
+    subject = subject_ref or task_id or action
+    for gate in list_gate_records(workspace):
+        if gate.get("action_class") == action and gate.get("subject_ref") == subject and gate.get("status") in {"approved", "resumed"}:
+            if consume_on_allow:
+                gate = update_gate_record(
+                    workspace,
+                    gate_id=str(gate.get("gate_id") or ""),
+                    status="consumed",
+                    decision=gate.get("decision"),
+                    actor=actor,
+                )
+            return {"status": "allow", "action": action, "subject_ref": subject, "gate_id": gate.get("gate_id")}
+
+    question = create_workflow_approval(
+        workspace,
+        run_id=f"manual-{action}",
+        workflow_id="manual.hook",
+        step_id=action,
+        actor=actor,
+        question=str(match.get("prompt") or f"Approve action '{action}' for '{subject}'."),
+        action_class=action,
+        task_id=task_id,
+        correlation_id=subject,
+    )
+    return {
+        "status": "blocked",
+        "action": action,
+        "subject_ref": subject,
+        "question_id": question["question_id"],
+        "gate_id": ((question.get("context") or {}).get("gate_id")),
+        "reason": match.get("reason") or "approval_required",
+    }
 
 
 def run_commit_msg(workspace: str | Path, message_file: str | Path) -> dict[str, Any]:
@@ -182,6 +295,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("pre-commit")
     subparsers.add_parser("post-commit")
+    check_parser = subparsers.add_parser("check-action")
+    check_parser.add_argument("--action", required=True)
+    check_parser.add_argument("--actor", default="CLI")
+    check_parser.add_argument("--task")
+    check_parser.add_argument("--subject-ref")
 
     commit_parser = subparsers.add_parser("commit-msg")
     commit_parser.add_argument("message_file")
@@ -202,6 +320,17 @@ def main() -> int:
     if args.command == "post-commit":
         print(json.dumps(run_post_commit(args.workspace), ensure_ascii=False, indent=2))
         return 0
+    if args.command == "check-action":
+        result = check_action_policy(
+            args.workspace,
+            action=args.action,
+            actor=args.actor,
+            task_id=args.task,
+            subject_ref=args.subject_ref,
+            consume_on_allow=False,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result["status"] == "allow" else 2
     if args.command == "commit-msg":
         print(json.dumps(run_commit_msg(args.workspace, args.message_file), ensure_ascii=False, indent=2))
         return 0

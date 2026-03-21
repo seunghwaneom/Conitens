@@ -1,0 +1,7 @@
+schema_v: 1
+room_id: project-main
+name: "Project Main"
+members: [USER, manager-default]
+shared_files: [README.md, CONITENS.md, .agent/workflows/wf.plan-execute-validate.md]
+summary_mode: concise
+notes: "Default shared room for the operator and hired agents."
