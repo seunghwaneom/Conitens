@@ -2,3 +2,6 @@
 **/*.pyc
 tests/
 .omx/
+.notes/**
+!.notes/README.md
+.agent/shared-memory.md

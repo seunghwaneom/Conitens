@@ -1,0 +1,13 @@
+schema_v: 1
+provider_id: codex-cli
+runtime: codex
+display_name: "Codex CLI (Compat)"
+launch_mode: headless_prompt
+command: codex
+args:
+  - exec
+  - -p
+  - "Work on task {task_id} in {workspace_root}. Use persona {persona_file} and long-term memory {memory_file}. Coordinate through room {room_id}."
+supported_platforms: [win32, linux, darwin]
+capabilities: [prompt, cwd, detached]
+notes: "Compatibility provider for Codex CLI prompt execution."
