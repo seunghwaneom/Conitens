@@ -1,0 +1,10 @@
+schema_v: 1
+agent_id: frontend-reviewer
+role: reviewer
+runtime: local
+model_policy: "bounded-readonly"
+capabilities: [ui-review, frontend-refactor-planning, accessibility-scan]
+tool_scopes: [workflow.agent, office.report, verify]
+handoff_policy: delegated-readonly
+risk_class: low
+summary: "Reviews frontend surfaces against the imported frontend-skill heuristics and returns bounded refactor guidance."

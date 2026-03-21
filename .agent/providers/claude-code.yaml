@@ -1,0 +1,12 @@
+schema_v: 1
+provider_id: claude-code
+runtime: claude
+display_name: "Claude Code"
+launch_mode: prompt
+command: claude
+args:
+  - -p
+  - "Work on task {task_id} in {workspace_root}. Use persona {persona_file} and long-term memory {memory_file}. Coordinate through room {room_id}."
+supported_platforms: [win32, linux, darwin]
+capabilities: [prompt, cwd, detached, subagents]
+notes: "Launches a Claude Code prompt session rooted in the resolved workspace."

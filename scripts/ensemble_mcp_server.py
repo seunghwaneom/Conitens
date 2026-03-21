@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from ensemble_agents import list_agent_runtimes, list_rooms
+from ensemble_memory import show_memory
 from ensemble_events import append_event
 from ensemble_gate import list_gate_records
 from ensemble_handoff import list_handoffs
@@ -62,6 +64,21 @@ TOOLS = [
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
+        "name": "agents.list",
+        "description": "List hired agent runtimes.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "rooms.list",
+        "description": "List project chat rooms.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "memory.shared",
+        "description": "Return shared curated and proposed memory.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
         "name": "handoffs.list",
         "description": "List typed handoff artifacts.",
         "inputSchema": {"type": "object", "properties": {}},
@@ -80,6 +97,9 @@ TOOLS = [
 
 RESOURCES = [
     {"uri": "conitens://context/current", "name": "Current Context", "description": "Current context snapshot."},
+    {"uri": "conitens://agents/runtime", "name": "Agent Runtimes", "description": "Current hired agents and runtime status."},
+    {"uri": "conitens://rooms/active", "name": "Rooms", "description": "Current room registry and activity."},
+    {"uri": "conitens://memory/shared", "name": "Shared Memory", "description": "Curated and proposed shared memory."},
     {"uri": "conitens://workflow/runs", "name": "Workflow Runs", "description": "Workflow run records."},
     {"uri": "conitens://workflow/definitions", "name": "Workflow Definitions", "description": "Workflow contract registry."},
     {"uri": "conitens://gates/pending", "name": "Pending Gates", "description": "Durable approval gate records."},
@@ -134,6 +154,12 @@ def list_prompts() -> list[dict[str, Any]]:
 def read_resource(workspace: str | Path, uri: str) -> Any:
     if uri == "conitens://context/current":
         return collect_context(workspace)
+    if uri == "conitens://agents/runtime":
+        return list_agent_runtimes(workspace)
+    if uri == "conitens://rooms/active":
+        return list_rooms(workspace)
+    if uri == "conitens://memory/shared":
+        return show_memory(workspace, kind="shared")
     if uri == "conitens://workflow/runs":
         return collect_workflow_runs(workspace)
     if uri == "conitens://workflow/definitions":
@@ -216,6 +242,12 @@ def call_tool(workspace: str | Path, name: str, arguments: dict[str, Any] | None
         return list_meetings(workspace)
     if name == "workflow.runs":
         return collect_workflow_runs(workspace)
+    if name == "agents.list":
+        return list_agent_runtimes(workspace)
+    if name == "rooms.list":
+        return list_rooms(workspace)
+    if name == "memory.shared":
+        return show_memory(workspace, kind="shared")
     if name == "handoffs.list":
         return list_handoffs(workspace)
     if name == "registry.summary":

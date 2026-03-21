@@ -7,6 +7,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,12 +18,18 @@ sys.path.insert(0, str(SCRIPTS))
 from ensemble_contracts import parse_contract_file
 from ensemble_events import append_event, load_events
 from ensemble_gate import list_gate_records, read_gate_record
-from ensemble_hooks import install_hooks, run_post_commit
+from ensemble_hooks import check_action_policy, install_hooks, run_post_commit
 from ensemble_handoff import list_handoffs
+from ensemble_agents import hire_agent
+from ensemble_memory import append_long_term_memory, append_shared_memory, initialize_agent_memory, show_memory
 from ensemble_mcp_server import call_tool, handle_request
 from ensemble_meeting import end_meeting, list_meetings, meeting_path, start_meeting, summary_path, say
 from ensemble_office import collect_office_snapshot, generate_report
+from ensemble_provider_render import build_provider_command, build_provider_render_values
+from ensemble_room import create_room, export_room_markdown, post_room_message, show_room
 from ensemble_registry import registry_summary
+from ensemble_spawn import start_spawn
+from ensemble_ui import launch_web_ui, render_tui_snapshot
 from ensemble_workflow import explain_workflow, resume_workflow, run_workflow
 
 
@@ -57,6 +65,9 @@ class OperationsLayerTests(unittest.TestCase):
             *sorted((path.relative_to(ROOT) for path in (ROOT / ".agent" / "agents").glob("*.yaml")), key=lambda item: str(item)),
             *sorted((path.relative_to(ROOT) for path in (ROOT / ".agent" / "skills").glob("*.yaml")), key=lambda item: str(item)),
             Path(".agent/policies/gates.yaml"),
+            Path(".agent/policies/blocking_gates.yaml"),
+            *sorted((path.relative_to(ROOT) for path in (ROOT / ".agent" / "providers").glob("*.yaml")), key=lambda item: str(item)),
+            *sorted((path.relative_to(ROOT) for path in (ROOT / ".agent" / "workspaces").glob("*.yaml")), key=lambda item: str(item)),
         ]:
             destination = workspace / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -537,6 +548,298 @@ class OperationsLayerTests(unittest.TestCase):
                 env=self.cli_env(),
             )
             self.assertIn("run-20260311-demo", cli_prompt.stdout)
+
+    def test_blocking_hook_and_spawn_flow_require_approval_then_launch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            provider_dir = workspace / ".agent" / "providers"
+            provider_dir.mkdir(parents=True, exist_ok=True)
+            (provider_dir / "python-test.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema_v: 1",
+                        "provider_id: python-test",
+                        "label: Python Test",
+                        "command: python",
+                        "args: [-c, \"print('spawn-ok')\"]",
+                        "supports_workspace_launch: true",
+                        "supports_subagents: false",
+                        "platforms: [windows, linux, macos]",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            blocked = check_action_policy(workspace, action="spawn.start", actor="TEST", task_id="TASK-1", subject_ref="TASK-1")
+            self.assertEqual(blocked["status"], "blocked")
+            subprocess.run(
+                [sys.executable, str(SCRIPTS / "ensemble.py"), "--workspace", str(workspace), "init-owner"],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=self.cli_env(),
+            )
+            subprocess.run(
+                [sys.executable, str(SCRIPTS / "ensemble.py"), "--workspace", str(workspace), "approve", "--latest"],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=self.cli_env(),
+            )
+
+            launched = start_spawn(
+                workspace,
+                provider_id="python-test",
+                agent_id="validator-sentinel",
+                workspace_id="default",
+                actor="TEST",
+                task_id="TASK-1",
+            )
+            self.assertEqual(launched["status"], "running")
+            self.assertTrue((workspace / ".notes" / "subagents" / "ACTIVE" / f"{launched['spawn_id']}.json").exists())
+            self.assertGreaterEqual(len(list_gate_records(workspace)), 1)
+
+    def test_spawn_approval_is_consumed_after_one_launch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            subprocess.run(
+                [sys.executable, str(SCRIPTS / "ensemble.py"), "--workspace", str(workspace), "init-owner"],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=self.cli_env(),
+            )
+            blocked = check_action_policy(workspace, action="spawn.start", actor="TEST", task_id="TASK-1", subject_ref="TASK-1")
+            gate_id = blocked["gate_id"]
+            subprocess.run(
+                [sys.executable, str(SCRIPTS / "ensemble.py"), "--workspace", str(workspace), "approve", "--latest"],
+                check=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=self.cli_env(),
+            )
+
+            allowed = check_action_policy(workspace, action="spawn.start", actor="TEST", task_id="TASK-1", subject_ref="TASK-1")
+            self.assertEqual(allowed["status"], "allow")
+            self.assertEqual(read_gate_record(workspace, gate_id)["status"], "consumed")
+
+            blocked_again = check_action_policy(
+                workspace,
+                action="spawn.start",
+                actor="TEST",
+                task_id="TASK-1",
+                subject_ref="TASK-1",
+                consume_on_allow=False,
+            )
+            self.assertEqual(blocked_again["status"], "blocked")
+
+    def test_hire_agent_respects_spawn_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            blocked = hire_agent(
+                workspace,
+                agent_id="validator-sentinel",
+                provider_id="claude-code",
+                task_prompt="Inspect auth changes.",
+                actor="TEST",
+                task_id="TASK-2",
+                workspace_id="root",
+                spawn_process=False,
+            )
+            self.assertEqual(blocked["status"], "blocked")
+            self.assertIn("question_id", blocked)
+
+    def test_provider_workflow_waits_for_spawn_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            provider_dir = workspace / ".agent" / "providers"
+            provider_dir.mkdir(parents=True, exist_ok=True)
+            (provider_dir / "python-test.yaml").write_text(
+                "\n".join(
+                    [
+                        "schema_v: 1",
+                        "provider_id: python-test",
+                        "runtime: python",
+                        "display_name: Python Test",
+                        "launch_mode: prompt",
+                        "command: python",
+                        'args: ["-c", "print(\\"spawn-ok\\")"]',
+                        "supported_platforms: [win32, linux, darwin]",
+                        "capabilities: [prompt, cwd, detached]",
+                        "notes: test",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            workflow_path = workspace / ".agent" / "workflows" / "spawn-gated.md"
+            workflow_path.write_text(
+                "\n".join(
+                    [
+                        "---",
+                        "schema_v: 1",
+                        'name: "Spawn Gated Workflow"',
+                        'slug: "spawn-gated"',
+                        "inputs:",
+                        "  task_id:",
+                        "    type: string",
+                        "    required: true",
+                        "steps:",
+                        "  - id: launch",
+                        "    kind: agent",
+                        "    agent_id: validator-sentinel",
+                        "    provider_id: python-test",
+                        "    workspace_id: default",
+                        '    task_prompt: "Validate {{task_id}}"',
+                        "    on_fail: stop",
+                        "---",
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPTS / "ensemble_workflow.py"),
+                    "--workspace",
+                    str(workspace),
+                    "run",
+                    "--workflow",
+                    "spawn-gated",
+                    "--set",
+                    "task_id=TASK-3",
+                ],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=self.cli_env(),
+            )
+            self.assertEqual(result.returncode, 2)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["status"], "waiting-approval")
+            self.assertEqual(payload["waiting_on"]["kind"], "approval")
+
+    def test_provider_render_values_support_single_and_double_braces(self) -> None:
+        provider = {
+            "provider_id": "render-test",
+            "command": "python",
+            "args": [
+                "-c",
+                "print('{workspace_root}|{{task_prompt}}|{persona_file}|{{shared_memory_file}}')",
+            ],
+        }
+        values = build_provider_render_values(
+            workspace_root="/tmp/work",
+            workspace_path="/tmp/work",
+            task_id="TASK-9",
+            agent_id="agent-a",
+            room_id="room-1",
+            memory_file="/tmp/memory.md",
+            persona_file="/tmp/persona.md",
+            shared_memory_file="/tmp/shared.md",
+            task_prompt="do the thing",
+            task_prompt_file="/tmp/prompt.md",
+        )
+        command = build_provider_command(provider, values)
+        self.assertEqual(command[0], "python")
+        self.assertIn("/tmp/work|do the thing|/tmp/persona.md|/tmp/shared.md", command[2])
+
+    def test_memory_and_room_artifacts_are_append_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            paths = initialize_agent_memory(workspace, "claude-code", "implementer-subagent")
+            self.assertTrue(Path(paths["persona_file"]).exists())
+
+            append_long_term_memory(
+                workspace,
+                provider_id="claude-code",
+                agent_id="implementer-subagent",
+                author="TEST",
+                text="Remember to verify auth changes before close.",
+                tags=["auth", "verify"],
+                task_id="TASK-1",
+            )
+            append_shared_memory(workspace, author="TEST", text="Shared reminder", task_id="TASK-1")
+            room = create_room(workspace, name="auth-room", participants=["user", "implementer"], actor="TEST", task_id="TASK-1")
+            post_room_message(workspace, room_id=room["room_id"], sender="user", text="Check the login flow.", task_id="TASK-1")
+
+            longterm = show_memory(workspace, kind="longterm", provider_id="claude-code", agent_id="implementer-subagent")
+            shared = show_memory(workspace, kind="shared")
+            transcript = show_room(workspace, room["room_id"])
+            export_path = export_room_markdown(workspace, room["room_id"])
+
+            self.assertEqual(len(longterm["entries"]), 1)
+            self.assertIn("Shared reminder", shared["content"])
+            self.assertEqual(len(transcript["messages"]), 1)
+            self.assertTrue(export_path.exists())
+
+    def test_ui_helpers_render_terminal_and_web_views(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            (workspace / ".notes" / "ACTIVE").mkdir(parents=True, exist_ok=True)
+            snapshot_text = render_tui_snapshot(workspace)
+            self.assertIn("Conitens TUI", snapshot_text)
+
+            launched = launch_web_ui(workspace, host="127.0.0.1", port=8876)
+            try:
+                self.assertTrue(Path(launched["path"]).exists())
+                self.assertIn("http://127.0.0.1:8876/index.html", launched["url"])
+                with urlopen("http://127.0.0.1:8876/api/dashboard", timeout=10) as response:
+                    dashboard = json.loads(response.read().decode("utf-8"))
+                self.assertIn("snapshot", dashboard)
+                self.assertIn("shared_memory", dashboard)
+
+                body = json.dumps({}).encode("utf-8")
+                request = Request(
+                    "http://127.0.0.1:8876/api/actions/update-context",
+                    data=body,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with self.assertRaises(HTTPError) as exc_info:
+                    urlopen(request, timeout=10)
+                self.assertEqual(exc_info.exception.code, 403)
+                exc_info.exception.close()
+
+                authorized = Request(
+                    "http://127.0.0.1:8876/api/actions/update-context",
+                    data=body,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {launched['token']}",
+                    },
+                    method="POST",
+                )
+                with urlopen(authorized, timeout=10) as response:
+                    update_result = json.loads(response.read().decode("utf-8"))
+                self.assertTrue(update_result["ok"])
+            finally:
+                launched["server"].shutdown()
+
+    def test_ui_launch_rejects_non_loopback_hosts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            self.prepare_control_plane_workspace(workspace)
+            with self.assertRaises(ValueError):
+                launch_web_ui(workspace, host="0.0.0.0", port=8877)
 
 
 if __name__ == "__main__":
