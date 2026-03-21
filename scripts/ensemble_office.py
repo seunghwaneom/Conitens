@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from ensemble_agents import list_agent_runtimes, list_rooms
 from ensemble_artifacts import append_artifact_manifest, load_artifact_manifest
 from ensemble_contracts import parse_simple_yaml, split_frontmatter
 from ensemble_events import load_events, replay_event_summary
@@ -358,6 +359,8 @@ def collect_office_snapshot(workspace: str | Path) -> dict[str, Any]:
     tasks = collect_tasks(workspace)
     questions = collect_questions(workspace)
     meetings = list_meetings(workspace)
+    agents = list_agent_runtimes(workspace)
+    rooms = list_rooms(workspace)
     workflow_runs = collect_workflow_runs(workspace)
     handoffs = collect_handoffs(workspace)
     gates = collect_gates(workspace)
@@ -391,6 +394,8 @@ def collect_office_snapshot(workspace: str | Path) -> dict[str, Any]:
         "approval_events": approval_events,
         "verify_failures": verify_failures,
         "meetings": meetings,
+        "agents": agents,
+        "rooms": rooms,
         "workflow_runs": workflow_runs,
         "handoffs": handoffs,
         "gates": gates,
@@ -402,6 +407,8 @@ def collect_office_snapshot(workspace: str | Path) -> dict[str, Any]:
         "metrics": {
             "task_total": len(tasks),
             "meeting_total": len(meetings),
+            "agent_total": len(agents),
+            "room_total": len(rooms),
             "active_meetings": len(active_meetings),
             "pending_approvals": len(pending_questions),
             "lock_total": len(locks.get("locks", {})),
@@ -430,6 +437,8 @@ def render_office_markdown(snapshot: dict[str, Any]) -> str:
         f"- Workflow Runs: {snapshot['metrics']['workflow_runs']}",
         f"- Handoffs: {snapshot['metrics']['handoffs']}",
         f"- Gates: {snapshot['metrics']['gates']}",
+        f"- Agents: {snapshot['metrics']['agent_total']}",
+        f"- Rooms: {snapshot['metrics']['room_total']}",
         "",
         "## Metrics",
         "",
@@ -439,6 +448,8 @@ def render_office_markdown(snapshot: dict[str, Any]) -> str:
         f"- Stale Tasks: {snapshot['metrics']['stale_tasks']}",
         f"- Stale Meetings: {snapshot['metrics']['stale_meetings']}",
         f"- Stale Context: {snapshot['metrics']['stale_context']}",
+        f"- Agents: {snapshot['metrics']['agent_total']}",
+        f"- Rooms: {snapshot['metrics']['room_total']}",
         f"- Registry Errors: {snapshot['metrics']['registry_errors']}",
         "",
         "## Status",
@@ -485,6 +496,26 @@ def render_office_markdown(snapshot: dict[str, Any]) -> str:
     else:
         lines.append("- No meetings recorded.")
 
+    lines.extend(["", "## Agents", ""])
+    if snapshot["agents"]:
+        for agent in snapshot["agents"][:10]:
+            lines.append(
+                f"- {agent.get('agent_id')}: {agent.get('status')} | provider={agent.get('provider_id')} "
+                f"| workspace={(agent.get('workspace') or {}).get('path')}"
+            )
+    else:
+        lines.append("- No hired agents.")
+
+    lines.extend(["", "## Rooms", ""])
+    if snapshot["rooms"]:
+        for room in snapshot["rooms"][:10]:
+            lines.append(
+                f"- {room.get('room_id')}: {room.get('status')} | messages={room.get('message_count')} "
+                f"| members={', '.join(room.get('members', [])) or 'none'}"
+            )
+    else:
+        lines.append("- No rooms recorded.")
+
     lines.extend(["", "## Workflow Runs", ""])
     if snapshot["workflow_runs"]:
         for run in snapshot["workflow_runs"][:10]:
@@ -523,6 +554,9 @@ def render_office_markdown(snapshot: dict[str, Any]) -> str:
     lines.append(
         f"- Agents: {snapshot['registry']['metrics']['agent_count']} | "
         f"Skills: {snapshot['registry']['metrics']['skill_count']} | "
+        f"Providers: {snapshot['registry']['metrics'].get('provider_count', 0)} | "
+        f"Workspaces: {snapshot['registry']['metrics'].get('workspace_count', 0)} | "
+        f"Rooms: {snapshot['registry']['metrics'].get('room_count', 0)} | "
         f"Workflows: {snapshot['registry']['metrics']['workflow_count']} | "
         f"Gate Actions: {snapshot['registry']['metrics']['gate_action_count']}"
     )
@@ -584,6 +618,14 @@ def render_office_html(snapshot: dict[str, Any]) -> str:
         f"{meeting['meeting_id']}: {meeting.get('topic') or 'Untitled'} ({meeting.get('status')})"
         for meeting in snapshot["meetings"]
     ]
+    agent_items = [
+        f"{agent.get('agent_id')}: {agent.get('status')} ({agent.get('provider_id')})"
+        for agent in snapshot["agents"][:10]
+    ]
+    room_items = [
+        f"{room.get('room_id')}: {room.get('status')} ({room.get('message_count')} messages)"
+        for room in snapshot["rooms"][:10]
+    ]
     workflow_items = [
         f"{run.get('run_id')}: {run.get('status')} ({run.get('workflow_id')})"
         for run in snapshot["workflow_runs"][:10]
@@ -603,6 +645,9 @@ def render_office_html(snapshot: dict[str, Any]) -> str:
     registry_items = [
         f"Agents: {snapshot['registry']['metrics']['agent_count']}",
         f"Skills: {snapshot['registry']['metrics']['skill_count']}",
+        f"Providers: {snapshot['registry']['metrics'].get('provider_count', 0)}",
+        f"Workspaces: {snapshot['registry']['metrics'].get('workspace_count', 0)}",
+        f"Rooms: {snapshot['registry']['metrics'].get('room_count', 0)}",
         f"Workflows: {snapshot['registry']['metrics']['workflow_count']}",
         f"Gate Actions: {snapshot['registry']['metrics']['gate_action_count']}",
     ] + snapshot["registry"].get("errors", [])[:5]
@@ -616,6 +661,8 @@ def render_office_html(snapshot: dict[str, Any]) -> str:
         f"Workflow Runs: {snapshot['metrics']['workflow_runs']}",
         f"Handoffs: {snapshot['metrics']['handoffs']}",
         f"Gates: {snapshot['metrics']['gates']}",
+        f"Agents: {snapshot['metrics']['agent_total']}",
+        f"Rooms: {snapshot['metrics']['room_total']}",
         f"Registry Errors: {snapshot['metrics']['registry_errors']}",
     ]
     return f"""<!doctype html>
@@ -675,6 +722,8 @@ def render_office_html(snapshot: dict[str, Any]) -> str:
     <section><h2>Approvals</h2><ul>{list_items(approval_items, 'No pending approvals.')}</ul></section>
     <section><h2>Verify</h2><ul>{list_items(verify_items, 'No verify failures.')}</ul></section>
     <section><h2>Meetings</h2><ul>{list_items(meeting_items, 'No meetings recorded.')}</ul></section>
+    <section><h2>Agents</h2><ul>{list_items(agent_items, 'No hired agents.')}</ul></section>
+    <section><h2>Rooms</h2><ul>{list_items(room_items, 'No rooms recorded.')}</ul></section>
     <section><h2>Workflow Runs</h2><ul>{list_items(workflow_items, 'No workflow runs recorded.')}</ul></section>
     <section><h2>Gates</h2><ul>{list_items(gate_items, 'No gate records.')}</ul></section>
     <section><h2>Handoffs</h2><ul>{list_items(handoff_items, 'No typed handoffs recorded.')}</ul></section>

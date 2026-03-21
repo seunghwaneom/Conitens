@@ -1,7 +1,7 @@
 {
   "name": "@seunghwan/conitens",
   "version": "4.2.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "description": "Conitens — Multi-Agent AI Orchestration System for Collaborative Development",
   "keywords": [
@@ -27,9 +27,16 @@
   "files": [
     "bin/",
     "scripts/",
-    ".agent/",
+    ".agent/agents/",
+    ".agent/policies/",
+    ".agent/providers/",
+    ".agent/rooms/",
+    ".agent/rules/",
+    ".agent/skills/",
+    ".agent/workflows/",
+    ".agent/workspaces/",
     ".agents/",
-    ".notes/",
+    ".notes/README.md",
     ".vibe/",
     "vibe-kit/",
     "AGENTS.md",
@@ -50,6 +57,9 @@
     "url": "https://github.com/seunghwan/conitens"
   },
   "homepage": "https://github.com/seunghwan/conitens#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "bugs": {
     "url": "https://github.com/seunghwan/conitens/issues"
   },

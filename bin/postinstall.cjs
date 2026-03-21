@@ -50,6 +50,8 @@ Quick Start:
   2. Run: ensemble init-owner
   3. Run: ensemble new --mode GCC --case NEW_BUILD --title "My Task"
   4. Run: ensemble start
+  5. Run: ensemble spawn providers
+  6. Run: ensemble ui tui --once
 
 Documentation:
   - USAGE_GUIDE.md
@@ -75,6 +77,10 @@ Commands (use 'ensemble' or 'conitens'):
   ensemble office
   ensemble hooks
   ensemble mcp
+  ensemble spawn
+  ensemble memory
+  ensemble room
+  ensemble ui
   ensemble close
 
 Scripts Directory:

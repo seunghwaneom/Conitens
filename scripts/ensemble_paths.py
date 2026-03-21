@@ -18,6 +18,10 @@ LOWERCASE_NOTES_DIRS = {
     "artifacts": "artifacts",
     "handoffs": "handoffs",
     "gates": "gates",
+    "agents": "agents",
+    "subagents": "subagents",
+    "memories": "memories",
+    "rooms": "rooms",
 }
 LEGACY_NOTES_DIRS = {
     "workflows": "WORKFLOWS",
@@ -28,6 +32,10 @@ LEGACY_NOTES_DIRS = {
     "artifacts": "ARTIFACTS",
     "handoffs": "HANDOFFS",
     "gates": "GATES",
+    "agents": "AGENTS",
+    "subagents": "SUBAGENTS",
+    "memories": "MEMORIES",
+    "rooms": "ROOMS",
 }
 
 

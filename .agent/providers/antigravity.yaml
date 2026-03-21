@@ -1,0 +1,13 @@
+schema_v: 1
+provider_id: antigravity
+runtime: antigravity
+display_name: "Antigravity"
+launch_mode: workspace_open
+command: antigravity
+args:
+  - workspace
+  - open
+  - "{workspace_root}"
+supported_platforms: [win32, linux, darwin]
+capabilities: [cwd, detached, workspace-open]
+notes: "Opens the target workspace in Antigravity for delegated work."
