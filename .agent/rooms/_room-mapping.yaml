@@ -1,0 +1,119 @@
+# Room Mapping Configuration — v1
+# Default assignment rules: which room each agent role/type maps to.
+#
+# When an agent is spawned, the system resolves its room assignment via:
+#   1. Explicit override (agent_assignments in _building.yaml)
+#   2. Role-based default (this file)
+#   3. Capability-based fallback (this file)
+#   4. Global fallback room
+#
+# This file is the canonical source for role→room defaults.
+# It is consumed by the 3D command-center and the orchestrator.
+
+schema_v: 1
+config_type: room-mapping
+
+# ── Role-Based Defaults ────────────────────────────────────────────
+# Maps agent roles (from .agent/agents/*.yaml `role` field) to rooms.
+# Each role has exactly one default room assignment.
+role_defaults:
+  orchestrator:
+    room_id: ops-control
+    priority: 1
+    reason: "Orchestrators command from the control room"
+  implementer:
+    room_id: impl-office
+    priority: 1
+    reason: "Implementers work in the implementation office"
+  researcher:
+    room_id: research-lab
+    priority: 1
+    reason: "Researchers operate from the research lab"
+  validator:
+    room_id: validation-office
+    priority: 1
+    reason: "Validators review from the validation office"
+  reviewer:
+    room_id: review-office
+    priority: 1
+    reason: "Reviewers inspect from the review office"
+  planner:
+    room_id: ops-control
+    priority: 2
+    reason: "Planners share the control room with orchestrators"
+  analyst:
+    room_id: research-lab
+    priority: 2
+    reason: "Analysts share the research lab"
+  tester:
+    room_id: validation-office
+    priority: 2
+    reason: "Testers share the validation office"
+
+# ── Capability-Based Fallbacks ─────────────────────────────────────
+# When an agent's role is not in role_defaults, check capabilities.
+# First matching capability determines the room.
+capability_fallbacks:
+  - capability: code-change
+    room_id: impl-office
+    reason: "Agents with code-change capability go to impl office"
+  - capability: patching
+    room_id: impl-office
+    reason: "Patching agents go to impl office"
+  - capability: repo-map
+    room_id: research-lab
+    reason: "Repo-map agents go to research lab"
+  - capability: impact-analysis
+    room_id: research-lab
+    reason: "Impact-analysis agents go to research lab"
+  - capability: context-gathering
+    room_id: research-lab
+    reason: "Context-gathering agents go to research lab"
+  - capability: verify
+    room_id: validation-office
+    reason: "Verify-capable agents go to validation office"
+  - capability: review
+    room_id: validation-office
+    reason: "Review-capable agents go to validation office"
+  - capability: ui-review
+    room_id: review-office
+    reason: "UI-review agents go to review office"
+  - capability: accessibility-scan
+    room_id: review-office
+    reason: "Accessibility agents go to review office"
+  - capability: planning
+    room_id: ops-control
+    reason: "Planning agents go to ops control"
+  - capability: delegation
+    room_id: ops-control
+    reason: "Delegation agents go to ops control"
+  - capability: workflow-control
+    room_id: ops-control
+    reason: "Workflow-control agents go to ops control"
+  - capability: approval-boundary
+    room_id: ops-control
+    reason: "Approval-boundary agents co-locate with orchestrators in ops control"
+  - capability: task-execution
+    room_id: impl-office
+    reason: "Task-execution agents work from the implementation office"
+  - capability: release-gate
+    room_id: validation-office
+    reason: "Release-gate agents operate from the validation office"
+  - capability: frontend-refactor-planning
+    room_id: review-office
+    reason: "Frontend-refactor-planning agents work from the review office"
+
+# ── Global Fallback ────────────────────────────────────────────────
+# Room used when no role or capability match is found.
+fallback_room: project-main
+fallback_reason: "Unmatched agents default to the project lobby"
+
+# ── Special Assignments ────────────────────────────────────────────
+# Entities that aren't agents but need room placement.
+special:
+  USER:
+    room_id: project-main
+    reason: "The operator enters via the project lobby"
+  SYSTEM:
+    room_id: ops-control
+    reason: "System-level events originate from ops control"

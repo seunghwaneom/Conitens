@@ -1,0 +1,30 @@
+schema_v: 1
+room_id: research-lab
+name: "Research Lab"
+room_type: lab
+floor: 1
+members: [researcher-subagent]
+shared_files:
+  - .agent/skills/repo-map.yaml
+  - .agent/skills/change-impact.yaml
+  - .agent/skills/context-curator.yaml
+summary_mode: concise
+max_occupancy: 3
+access_policy: members-only
+tags: [research, analysis, readonly]
+notes: "Research and discovery workspace. Repo mapping, impact analysis, and context gathering happen here. Read-only operations."
+
+spatial:
+  position: { x: 0, y: 3, z: 3 }
+  dimensions: { w: 4, h: 3, d: 3 }
+  color_accent: "#AB47BC"
+  icon: "research"
+  camera_preset: "isometric"
+  door_positions:
+    - { wall: "east", offset: 1.5 }
+  window_positions:
+    - { wall: "north", offset: 1, width: 2 }
+  furniture_slots:
+    - { type: "analysis-desk", position: { x: 2, y: 0, z: 1.5 } }
+    - { type: "knowledge-graph-display", position: { x: 2, y: 1.5, z: 2.8 } }
+    - { type: "file-browser-terminal", position: { x: 0.5, y: 0, z: 0.5 } }

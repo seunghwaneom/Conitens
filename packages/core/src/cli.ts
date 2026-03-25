@@ -16,6 +16,7 @@ import { MemoryCuratorReducer } from "./reducers/memory-curator-reducer.js";
 import { WebSocketBus } from "./ws-bus/ws-bus.js";
 import { ContinensMcpServer } from "./mcp/mcp-server.js";
 import { replayAll } from "./replay/replay.js";
+import { CommandWatcher } from "./command-watcher/command-watcher.js";
 
 export interface CliOptions {
   rootDir: string;
@@ -59,6 +60,29 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<void
 
       const mcpServer = new ContinensMcpServer({ conitensDir, eventsDir });
 
+      // Sub-AC 8c: Start command file-watcher and ingestion handler.
+      const commandWatcher = new CommandWatcher({
+        conitensDir,
+        orchestrator,
+        processExistingOnStart: true,
+      });
+
+      commandWatcher.on("processed", (evt) => {
+        const { guiCommandType, stage, durationMs, event } = evt;
+        console.log(
+          `[CommandWatcher] ✓ ${guiCommandType ?? event.type} (${stage}) → ${event.event_id} in ${durationMs}ms`,
+        );
+      });
+
+      commandWatcher.on("failed", (evt) => {
+        console.error(
+          `[CommandWatcher] ✗ ${evt.stage}: ${evt.error.message} (file: ${evt.commandPath})`,
+        );
+      });
+
+      await commandWatcher.start();
+      console.log(`Command watcher active — monitoring ${join(conitensDir, "commands")}`);
+
       await wsBus.start(wsPort);
       console.log(`Conitens server running — WebSocket on port ${wsPort}`);
       console.log(`MCP server ready (${mcpServer.listTools().length} tools)`);
@@ -66,6 +90,7 @@ export async function main(args: string[] = process.argv.slice(2)): Promise<void
 
       process.on("SIGINT", async () => {
         console.log("\nShutting down...");
+        await commandWatcher.stop();
         await wsBus.stop();
         process.exit(0);
       });

@@ -1,0 +1,33 @@
+{
+  /**
+   * tsconfig.electron.json — TypeScript configuration for Electron main/preload
+   *
+   * Sub-AC 13b: Desktop deployment
+   *
+   * This config is used ONLY for type-checking (tsc --noEmit) the electron/
+   * source files.  Actual compilation to CommonJS is performed by esbuild
+   * (see the build:electron-main script in package.json), which is faster
+   * and handles the .cjs output extension correctly.
+   *
+   * Key differences from the renderer tsconfig.json:
+   *  - module: "CommonJS" — Electron main process uses CJS require()
+   *  - moduleResolution: "node" — standard Node.js resolution
+   *  - lib: ["ES2022"] — no DOM APIs; Node.js + Electron APIs only
+   *  - include: ["electron"] — only type-check the electron/ directory
+   *  - types: ["node", "electron"] — Node.js + Electron type definitions
+   */
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "lib": ["ES2022"],
+    "types": ["node", "electron"]
+  },
+  "include": ["electron"]
+}

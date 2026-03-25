@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  entitlements.mac.plist — macOS hardened-runtime entitlements
+  Sub-AC 13b: Desktop deployment
+
+  Required for notarization when distributing via App Store or direct download.
+  For local-only deployment these entitlements are permissive enough to run
+  without codesigning, but the file must exist for electron-builder.
+-->
+<plist version="1.0">
+  <dict>
+    <!-- Allow JIT compilation (required by Chromium / V8) -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <!-- Allow unsigned dynamic libraries (Electron native modules) -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <!-- Allow DYLD environment variables (needed by some Electron internals) -->
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+    <!-- Allow network client connections (WebSocket to orchestrator) -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <!-- Allow network server binding (for potential future local HTTP server) -->
+    <key>com.apple.security.network.server</key>
+    <true/>
+  </dict>
+</plist>
