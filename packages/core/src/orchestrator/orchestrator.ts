@@ -5,7 +5,7 @@
 
 import { readFile, unlink } from "node:fs/promises";
 import { basename } from "node:path";
-import type { ConitensEvent, EventType } from "@conitens/protocol";
+import type { Actor, ConitensEvent, EventType } from "@conitens/protocol";
 import { isValidEventType, redactPayload } from "@conitens/protocol";
 import { EventLog } from "../event-log/event-log.js";
 import type { BaseReducer } from "../reducers/base-reducer.js";
@@ -14,7 +14,7 @@ export interface CommandData {
   type: EventType;
   task_id?: string;
   run_id: string;
-  actor: { kind: "user" | "agent" | "system" | "channel"; id: string };
+  actor: Actor;
   payload: Record<string, unknown>;
   idempotency_key?: string;
 }
@@ -23,7 +23,10 @@ export class Orchestrator {
   private readonly eventLog: EventLog;
   private readonly conitensDir: string;
   private readonly reducers: BaseReducer[];
-  private readonly processedKeys = new Set<string>();
+  /** Dedupe store with TTL (24h) and size cap (10,000) to prevent OOM. */
+  private readonly processedKeys = new Map<string, number>();
+  private static readonly DEDUPE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+  private static readonly DEDUPE_MAX_SIZE = 10_000;
 
   constructor(options: {
     eventLog: EventLog;
@@ -63,60 +66,10 @@ export class Orchestrator {
       return rejectionEvent;
     }
 
-    // 2. Validate event type
-    if (!isValidEventType(commandData.type)) {
-      const rejectionEvent = await this.eventLog.append({
-        type: "command.rejected",
-        run_id: commandData.run_id,
-        actor: commandData.actor,
-        payload: {
-          reason: "invalid_event_type",
-          attempted_type: commandData.type,
-          file: basename(commandPath),
-        },
-      });
-      await this.safeDelete(commandPath);
-      await this.runReducers(rejectionEvent);
-      return rejectionEvent;
-    }
-
-    // 3. Dedupe check (§14)
-    if (commandData.idempotency_key) {
-      if (this.processedKeys.has(commandData.idempotency_key)) {
-        const rejectionEvent = await this.eventLog.append({
-          type: "command.rejected",
-          run_id: commandData.run_id,
-          actor: commandData.actor,
-          payload: {
-            reason: "duplicate",
-            idempotency_key: commandData.idempotency_key,
-            file: basename(commandPath),
-          },
-        });
-        await this.safeDelete(commandPath);
-        await this.runReducers(rejectionEvent);
-        return rejectionEvent;
-      }
-      this.processedKeys.add(commandData.idempotency_key);
-    }
-
-    // 4. Redaction (§13, I-6) — MUST happen before event append
-    const { payload: redactedPayload, redacted, redacted_fields } =
-      redactPayload(commandData.payload);
-
-    // 5. Append event (I-1: commit point)
-    const event = await this.eventLog.append({
-      type: commandData.type,
-      run_id: commandData.run_id,
-      task_id: commandData.task_id,
-      actor: commandData.actor,
-      payload: redactedPayload,
-      idempotency_key: commandData.idempotency_key,
-      ...(redacted ? { redacted, redacted_fields } : {}),
+    // 2-6. Shared pipeline: validate → dedupe → redact → append → reduce
+    const event = await this._executePipeline(commandData, {
+      file: basename(commandPath),
     });
-
-    // 6. Run matching reducers
-    await this.runReducers(event);
 
     // 7. Delete command file (§8) — always, in all code paths
     await this.safeDelete(commandPath);
@@ -178,6 +131,132 @@ export class Orchestrator {
     throw new Error("Unrecognized command format (expected JSON or frontmatter)");
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Sub-AC 8c: CommandWatcher integration API
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Process a pre-validated, pre-parsed `CommandData` object through the
+   * core pipeline: dedupe → redact → append event → run reducers.
+   *
+   * Unlike `processCommand()`, this method does NOT perform file I/O — the
+   * caller (CommandWatcher) is responsible for reading the command file and
+   * archiving / deleting it afterwards.  This separation allows the watcher
+   * to own the file lifecycle while delegating state mutation to the
+   * Orchestrator.
+   *
+   * @param commandData  Pre-validated command data (from CommandRouter).
+   * @returns            The appended ConitensEvent.
+   */
+  async processCommandData(commandData: CommandData): Promise<ConitensEvent> {
+    return this._executePipeline(commandData);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Shared pipeline: validate → dedupe → redact → append → reduce
+  // Used by both processCommand() and processCommandData() to avoid DRY violation.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  private async _executePipeline(
+    commandData: CommandData,
+    extraPayload?: Record<string, unknown>,
+  ): Promise<ConitensEvent> {
+    // 1. Validate event type
+    if (!isValidEventType(commandData.type)) {
+      const rejectionEvent = await this.eventLog.append({
+        type: "command.rejected",
+        run_id: commandData.run_id,
+        actor: commandData.actor,
+        payload: {
+          reason: "invalid_event_type",
+          attempted_type: commandData.type,
+          ...extraPayload,
+        },
+      });
+      await this.runReducers(rejectionEvent);
+      return rejectionEvent;
+    }
+
+    // 2. Dedupe check (§14)
+    if (commandData.idempotency_key) {
+      if (this.isDuplicate(commandData.idempotency_key)) {
+        const rejectionEvent = await this.eventLog.append({
+          type: "command.rejected",
+          run_id: commandData.run_id,
+          actor: commandData.actor,
+          payload: {
+            reason: "duplicate",
+            idempotency_key: commandData.idempotency_key,
+            ...extraPayload,
+          },
+        });
+        await this.runReducers(rejectionEvent);
+        return rejectionEvent;
+      }
+      this.dedupeRecord(commandData.idempotency_key);
+    }
+
+    // 3. Redaction (§13, I-6) — MUST happen before event append
+    const { payload: redactedPayload, redacted, redacted_fields } =
+      redactPayload(commandData.payload);
+
+    // 4. Append event (I-1: commit point)
+    const event = await this.eventLog.append({
+      type: commandData.type,
+      run_id: commandData.run_id,
+      task_id: commandData.task_id,
+      actor: commandData.actor,
+      payload: redactedPayload,
+      idempotency_key: commandData.idempotency_key,
+      ...(redacted ? { redacted, redacted_fields } : {}),
+    });
+
+    // 5. Run matching reducers
+    await this.runReducers(event);
+
+    return event;
+  }
+
+  /**
+   * Append a `command.rejected` event to the event log.
+   * Used by CommandWatcher to record parse / validation failures without
+   * going through the full pipeline.
+   *
+   * @param info  Rejection details (file, reason, error message, etc.).
+   * @returns     The appended ConitensEvent.
+   */
+  async appendRejectionEvent(info: {
+    file: string;
+    reason: string;
+    error: string;
+    raw_command_id?: string;
+  }): Promise<ConitensEvent> {
+    // I-6: redaction MUST happen before event append — error messages may
+    // contain API keys, Bearer tokens, or connection strings from failed parses.
+    const rawPayload = {
+      reason: info.reason,
+      file: info.file,
+      error: info.error,
+      ...(info.raw_command_id ? { command_id: info.raw_command_id } : {}),
+    };
+    const { payload: redactedPayload, redacted, redacted_fields } =
+      redactPayload(rawPayload);
+
+    const event = await this.eventLog.append({
+      type: "command.rejected",
+      run_id: "system",
+      actor: { kind: "system", id: "orchestrator" },
+      payload: redactedPayload,
+      ...(redacted ? { redacted, redacted_fields } : {}),
+    });
+    await this.runReducers(event);
+    return event;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Private helpers
+  // ─────────────────────────────────────────────────────────────────────────
+
   /**
    * Run all matching reducers for an event.
    */
@@ -197,6 +276,27 @@ export class Orchestrator {
       await unlink(path);
     } catch {
       // File may already be deleted — ignore
+    }
+  }
+
+  /** Check if an idempotency key is a duplicate (with TTL expiry). */
+  private isDuplicate(key: string): boolean {
+    const ts = this.processedKeys.get(key);
+    if (ts === undefined) return false;
+    if (Date.now() - ts > Orchestrator.DEDUPE_TTL_MS) {
+      this.processedKeys.delete(key);
+      return false;
+    }
+    return true;
+  }
+
+  /** Record an idempotency key with timestamp; evict oldest if over cap. */
+  private dedupeRecord(key: string): void {
+    this.processedKeys.set(key, Date.now());
+    if (this.processedKeys.size > Orchestrator.DEDUPE_MAX_SIZE) {
+      // Evict oldest entry (Map iteration order is insertion order)
+      const oldest = this.processedKeys.keys().next().value;
+      if (oldest !== undefined) this.processedKeys.delete(oldest);
     }
   }
 

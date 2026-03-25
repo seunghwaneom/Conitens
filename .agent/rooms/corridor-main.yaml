@@ -1,0 +1,23 @@
+schema_v: 1
+room_id: corridor-main
+name: "Main Corridor"
+room_type: corridor
+floor: 1
+members: []
+shared_files: []
+summary_mode: silent
+max_occupancy: 0
+access_policy: open
+tags: [connector, navigation]
+notes: "Central corridor connecting all first-floor rooms. No agents reside here; serves as spatial connector and navigation pathway."
+
+spatial:
+  position: { x: 4, y: 3, z: 3 }
+  dimensions: { w: 5, h: 3, d: 1 }
+  color_accent: "#546E7A"
+  icon: "corridor"
+  camera_preset: "overhead"
+  door_positions:
+    - { wall: "west", offset: 0.5 }
+    - { wall: "east", offset: 0.5 }
+  furniture_slots: []

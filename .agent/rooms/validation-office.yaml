@@ -1,0 +1,29 @@
+schema_v: 1
+room_id: validation-office
+name: "Validation Office"
+room_type: office
+floor: 1
+members: [validator-sentinel]
+shared_files:
+  - .agent/skills/verify-runner.yaml
+  - .agent/skills/quality-validator.yaml
+  - .agent/policies/gates.yaml
+summary_mode: verbose
+max_occupancy: 2
+access_policy: members-only
+tags: [validation, review, gate]
+notes: "Quality gate and verification workspace. The validator agent reviews evidence before completion and surfaces blockers."
+
+spatial:
+  position: { x: 9, y: 3, z: 0 }
+  dimensions: { w: 3, h: 3, d: 3 }
+  color_accent: "#EF5350"
+  icon: "shield"
+  camera_preset: "close-up"
+  door_positions:
+    - { wall: "west", offset: 1.5 }
+  window_positions:
+    - { wall: "east", offset: 0.5, width: 2 }
+  furniture_slots:
+    - { type: "review-desk", position: { x: 1.5, y: 0, z: 1.5 } }
+    - { type: "gate-status-board", position: { x: 1.5, y: 1.5, z: 2.8 } }

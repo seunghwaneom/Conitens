@@ -1,0 +1,25 @@
+schema_v: 1
+room_id: archive-vault
+name: "Archive Vault"
+room_type: archive
+floor: 0
+members: [USER]
+shared_files: []
+summary_mode: silent
+max_occupancy: 2
+access_policy: open
+tags: [archive, replay, history, readonly]
+notes: "Read-only archive room for event replay and historical inspection. All completed task logs and decision records are accessible here."
+
+spatial:
+  position: { x: 8, y: 0, z: 0 }
+  dimensions: { w: 4, h: 3, d: 4 }
+  color_accent: "#78909C"
+  icon: "archive"
+  camera_preset: "isometric"
+  door_positions:
+    - { wall: "west", offset: 2 }
+  furniture_slots:
+    - { type: "replay-terminal", position: { x: 2, y: 0, z: 2 } }
+    - { type: "timeline-wall", position: { x: 2, y: 1.5, z: 3.8 } }
+    - { type: "event-log-shelf", position: { x: 3.5, y: 0, z: 1 } }
