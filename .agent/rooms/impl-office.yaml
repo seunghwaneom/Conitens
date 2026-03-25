@@ -1,0 +1,29 @@
+schema_v: 1
+room_id: impl-office
+name: "Implementation Office"
+room_type: office
+floor: 1
+members: [implementer-subagent]
+shared_files:
+  - .agent/skills/code-implementer.yaml
+  - .agent/skills/task-planner.yaml
+summary_mode: concise
+max_occupancy: 3
+access_policy: members-only
+tags: [coding, implementation, write]
+notes: "Focused workspace for the implementer agent. Code changes, patching, and task execution happen here."
+
+spatial:
+  position: { x: 0, y: 3, z: 0 }
+  dimensions: { w: 4, h: 3, d: 3 }
+  color_accent: "#66BB6A"
+  icon: "code"
+  camera_preset: "close-up"
+  door_positions:
+    - { wall: "east", offset: 1.5 }
+  window_positions:
+    - { wall: "west", offset: 1, width: 2 }
+  furniture_slots:
+    - { type: "workstation", position: { x: 1, y: 0, z: 1.5 } }
+    - { type: "workstation", position: { x: 3, y: 0, z: 1.5 } }
+    - { type: "diff-screen", position: { x: 2, y: 1.5, z: 2.8 } }

@@ -1,0 +1,25 @@
+schema_v: 1
+room_id: review-office
+name: "Frontend Review Office"
+room_type: office
+floor: 1
+members: [frontend-reviewer]
+shared_files:
+  - .agent/skills/frontend-skill.yaml
+summary_mode: concise
+max_occupancy: 2
+access_policy: members-only
+tags: [review, frontend, ui]
+notes: "Frontend review workspace. UI review, accessibility scanning, and refactor planning happen here."
+
+spatial:
+  position: { x: 9, y: 3, z: 3 }
+  dimensions: { w: 3, h: 3, d: 3 }
+  color_accent: "#42A5F5"
+  icon: "eye"
+  camera_preset: "close-up"
+  door_positions:
+    - { wall: "west", offset: 1.5 }
+  furniture_slots:
+    - { type: "review-desk", position: { x: 1.5, y: 0, z: 1.5 } }
+    - { type: "ui-preview-screen", position: { x: 1.5, y: 1.5, z: 2.8 } }

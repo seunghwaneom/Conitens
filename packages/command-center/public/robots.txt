@@ -1,0 +1,4 @@
+# Conitens Command Center — local-only deployment
+# This application runs exclusively on localhost and is not crawled by search engines.
+User-agent: *
+Disallow: /

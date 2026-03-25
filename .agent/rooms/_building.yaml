@@ -1,0 +1,63 @@
+# Building Manifest — Command Center
+# Defines the overall building structure that contains all rooms.
+# This is the root spatial entity for the 3D GUI.
+
+schema_v: 1
+building_id: command-center
+name: "Conitens Command Center"
+style: low-poly-dark
+floors: 2
+
+# ── Floor Plan ───────────────────────────────────────────────────
+floor_plan:
+  - floor: 0
+    name: "Ground Floor"
+    grid: { w: 12, d: 6 }
+    rooms:
+      - project-main     # lobby — entry point
+      - archive-vault    # archive — replay & history
+      - stairwell        # vertical connector
+
+  - floor: 1
+    name: "Operations Floor"
+    grid: { w: 12, d: 6 }
+    rooms:
+      - ops-control       # control — manager command room
+      - impl-office       # office — implementer workspace
+      - research-lab      # lab — researcher workspace
+      - validation-office # office — validator workspace
+      - review-office     # office — frontend reviewer workspace
+      - corridor-main     # corridor — connecting hallway
+      - stairwell         # vertical connector (spans floors)
+
+# ── Agent-to-Room Assignment ─────────────────────────────────────
+# Canonical mapping: where each agent is "stationed"
+agent_assignments:
+  USER: project-main
+  manager-default: ops-control
+  implementer-subagent: impl-office
+  researcher-subagent: research-lab
+  validator-sentinel: validation-office
+  frontend-reviewer: review-office
+
+# ── Room Adjacency (for navigation/pathfinding) ─────────────────
+adjacency:
+  project-main: [stairwell, archive-vault]
+  archive-vault: [project-main]
+  stairwell: [project-main, corridor-main, ops-control]
+  corridor-main: [stairwell, impl-office, research-lab, validation-office, review-office]
+  ops-control: [stairwell, corridor-main]
+  impl-office: [corridor-main]
+  research-lab: [corridor-main]
+  validation-office: [corridor-main]
+  review-office: [corridor-main]
+
+# ── Visual Defaults ──────────────────────────────────────────────
+visual_defaults:
+  wall_color: "#1E1E2E"
+  floor_color: "#2D2D3D"
+  ceiling_color: "#15151F"
+  ambient_light: "#303050"
+  accent_glow_intensity: 0.6
+  grid_visible: true
+  grid_color: "#3D3D5C"
