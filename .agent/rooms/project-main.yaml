@@ -1,7 +1,27 @@
 schema_v: 1
 room_id: project-main
 name: "Project Main"
+room_type: lobby
+floor: 0
 members: [USER, manager-default]
 shared_files: [README.md, CONITENS.md, .agent/workflows/wf.plan-execute-validate.md]
 summary_mode: concise
-notes: "Default shared room for the operator and hired agents."
+max_occupancy: 8
+access_policy: open
+tags: [entry-point, overview]
+notes: "Default shared room for the operator and hired agents. Entry point to the command center."
+
+spatial:
+  position: { x: 4, y: 0, z: 0 }
+  dimensions: { w: 4, h: 3, d: 4 }
+  color_accent: "#4FC3F7"
+  icon: "lobby"
+  camera_preset: "isometric"
+  door_positions:
+    - { wall: "north", offset: 2 }
+    - { wall: "east", offset: 2 }
+    - { wall: "west", offset: 2 }
+  furniture_slots:
+    - { type: "reception-desk", position: { x: 2, y: 0, z: 1 } }
+    - { type: "status-board", position: { x: 2, y: 1.5, z: 3.8 } }
+    - { type: "hologram-table", position: { x: 2, y: 0.5, z: 2 } }

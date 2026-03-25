@@ -33,3 +33,12 @@ export * from "./generator/index.js";
 export * from "./mcp/index.js";
 export * from "./a2a/index.js";
 export * from "./plugins/index.js";
+
+// Sub-AC 10b: Meeting orchestration — collaboration session spawning
+export * from "./meeting-orchestrator/index.js";
+
+// Sub-AC 8c: Command file-watcher and ingestion handler
+export * from "./command-watcher/index.js";
+
+// Sub-AC 8b: Orchestrator pipeline reader with lifecycle state tracking
+export * from "./command-pipeline/index.js";

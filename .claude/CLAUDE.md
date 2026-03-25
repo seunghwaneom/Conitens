@@ -103,7 +103,7 @@ conitens/
 │   │   ├── src/
 │   │   │   ├── index.ts
 │   │   │   ├── schema-version.ts       # "conitens.event.v1"
-│   │   │   ├── event.ts               # EventType(33종), ConitensEvent, obsolete alias
+│   │   │   ├── event.ts               # EventType(121종), ConitensEvent, obsolete alias
 │   │   │   ├── task-state.ts           # TaskState(9종), HandoffState, 전이 규칙
 │   │   │   ├── paths.ts               # classifyPath(), well-known 경로
 │   │   │   ├── ownership.ts           # 10개 Reducer 소유권 표, findOwner()
@@ -140,7 +140,7 @@ conitens/
 
 ## 이벤트 스키마 요약
 
-**33개 EventType** — 전체 목록은 `packages/protocol/src/event.ts` 참조.
+**121개 EventType** — 전체 목록은 `packages/protocol/src/event.ts` 참조.
 
 주요 카테고리: `task.*`(8종), `handoff.*`(4종), `decision.*`(3종), `approval.*`(3종), `agent.*`(4종), `message.*`(3종), `memory.*`(4종), `mode.*`(2종), `system.*`(3종), `command.rejected`(1종).
 

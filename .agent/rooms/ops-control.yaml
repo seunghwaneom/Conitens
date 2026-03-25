@@ -1,0 +1,32 @@
+schema_v: 1
+room_id: ops-control
+name: "Operations Control"
+room_type: control
+floor: 1
+members: [USER, manager-default]
+shared_files:
+  - .agent/policies/gates.yaml
+  - .agent/policies/hooks.yaml
+  - .agent/workflows/wf.plan-execute-validate.md
+summary_mode: verbose
+max_occupancy: 4
+access_policy: members-only
+tags: [command, orchestration, primary]
+notes: "Central command room. The manager agent orchestrates all workflows from here. Displays live task state, approval queues, and system health."
+
+spatial:
+  position: { x: 4, y: 3, z: 0 }
+  dimensions: { w: 5, h: 3, d: 4 }
+  color_accent: "#FF7043"
+  icon: "command"
+  camera_preset: "overhead"
+  door_positions:
+    - { wall: "south", offset: 2.5 }
+    - { wall: "east", offset: 2 }
+  window_positions:
+    - { wall: "south", offset: 1, width: 3 }
+  furniture_slots:
+    - { type: "command-desk", position: { x: 2.5, y: 0, z: 2 } }
+    - { type: "wall-monitor-array", position: { x: 2.5, y: 1.5, z: 3.8 } }
+    - { type: "approval-terminal", position: { x: 4, y: 0, z: 1 } }
+    - { type: "task-board", position: { x: 0.5, y: 1, z: 3.8 } }

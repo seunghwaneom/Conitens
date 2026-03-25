@@ -1,0 +1,71 @@
+# Room Configuration Schema — v1
+# Defines the structure for all room YAML files in .agent/rooms/
+#
+# Each room maps to a 3D spatial region in the command-center GUI.
+# Rooms are event-sourced: state changes emit room.* events.
+
+schema_v: 1
+schema_type: room-definition
+
+# ── Required Fields ──────────────────────────────────────────────
+required:
+  - schema_v          # integer, must be 1
+  - room_id           # unique slug, kebab-case (e.g. "ops-control")
+  - name              # human-readable display name
+  - room_type         # enum: control | office | lab | lobby | archive | corridor | pipeline | agent
+  - floor             # integer, 0-indexed floor in building
+  - members           # list of agent_id or USER
+
+# ── Optional Fields ──────────────────────────────────────────────
+optional:
+  - parent_room       # room_id of containing room (for nested spaces)
+  - shared_files      # list of file paths visible to room members
+  - summary_mode      # enum: concise | verbose | silent
+  - notes             # freeform description
+  - max_occupancy     # integer, max simultaneous agents
+  - access_policy     # enum: open | members-only | approval-required
+  - tags              # list of freeform tags for filtering
+
+# ── Hierarchy Position (Sub-AC 12a) ──────────────────────────────
+# hierarchy_position provides explicit ordering within the building
+# structure. All fields are optional; the TypeScript room-config-schema
+# constant is the authoritative source for production builds.
+hierarchy_position:
+  optional:
+    - floor_index          # integer, sort order within the floor (0 = primary room)
+    - hierarchy_depth      # integer, 0 = top-level, 1 = nested room
+    - is_main_corridor_accessible  # bool, directly reachable from main corridor
+    - adjacent_room_ids    # list of room_id (mirrors _building.yaml adjacency)
+
+# ── Spatial Properties (3D GUI) ──────────────────────────────────
+spatial:
+  required:
+    - position         # {x, y, z} grid coordinates on floor plan
+    - dimensions        # {w, h, d} width/height/depth in grid units
+  optional:
+    - color_accent      # hex color for room highlight/trim
+    - icon              # icon identifier for minimap/label
+    - camera_preset     # named camera angle: "overhead" | "isometric" | "close-up"
+    - door_positions    # list of {wall: "north"|"south"|"east"|"west", offset: number}
+    - window_positions  # list of {wall, offset, width}
+    - furniture_slots   # list of {type, position} for desks/screens/etc.
+
+# ── Role Mapping ─────────────────────────────────────────────────
+# room_type semantics:
+#   control  — primary command & orchestration (manager agents)
+#   office   — focused work by implementer/researcher agents
+#   lab      — experimentation, research, sandboxed tasks
+#   lobby    — entry point, overview, user-facing
+#   archive  — read-only, historical data, replay viewing
+#   corridor — connector between rooms (spatial only, no members)
+#   pipeline — automation pipeline visualisation room (Sub-AC 12a v1)
+#              renders with data-flow connectors + step-progress indicators
+#   agent    — dedicated single-agent workspace (Sub-AC 12a v1)
+#              more focused than "office"; hosts exactly one agent persona
+
+# ── Event Types Emitted ──────────────────────────────────────────
+# room.created       — new room instantiated
+# room.member_joined — agent/user enters room
+# room.member_left   — agent/user leaves room
+# room.updated       — room config changed
+# room.archived      — room deactivated
