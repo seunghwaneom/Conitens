@@ -177,6 +177,10 @@ interface AgentStoreState {
   usePixelSprites: boolean;
   /** Toggle the pixel sprite rendering mode. */
   setUsePixelSprites: (value: boolean) => void;
+  /** View mode: "2d" = PixiJS pixel office (default), "3d" = Three.js command center. */
+  viewMode: "2d" | "3d";
+  /** Switch between 2D pixel office and 3D command center. */
+  setViewMode: (mode: "2d" | "3d") => void;
 
   // ── Sub-AC 15a: Dynamic Registry Actions ─────────────────────────
   /**
@@ -591,6 +595,8 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
   initialized: false,
   usePixelSprites: true,
   setUsePixelSprites: (value: boolean) => set({ usePixelSprites: value }),
+  viewMode: "2d" as "2d" | "3d",
+  setViewMode: (mode: "2d" | "3d") => set({ viewMode: mode }),
   meetingGatherings: {},
   _savedLiveAgents: null,
 

@@ -69,6 +69,7 @@ import { TaskWSBridge } from "./hooks/use-task-ws-bridge.js";
 import { PipelineWSBridge } from "./hooks/use-pipeline-ws-bridge.js";
 import { PipelineCommandInterface } from "./components/PipelineCommandInterface.js";
 import { TaskGroupsBootstrap } from "./hooks/task-groups-bootstrap.js";
+import { PixelOffice } from "./office/PixelOffice.js";
 
 /**
  * Headless component that activates topology hooks and renders the topology HUD panel.
@@ -87,6 +88,8 @@ export function App() {
   // Camera preset is event-sourced in the spatial store (not local state)
   const cameraPreset = useSpatialStore((s) => s.cameraPreset);
   const setCameraPreset = useSpatialStore((s) => s.setCameraPreset);
+  const viewMode = useAgentStore((s) => s.viewMode);
+  const setViewMode = useAgentStore((s) => s.setViewMode);
 
   // Inject spatial store reference into agent-store so moveAgent can look up
   // dynamically-loaded room data (e.g. from YAML) rather than static fallback.
@@ -155,34 +158,33 @@ export function App() {
     */}
     <TaskGroupsBootstrap>
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      {/*
-        AC 9.1: Scene event recorder — subscribes to agent-store and
-        spatial-store, pipes all state-changing events into the unified
-        SceneEventLog for 3D replay capability.
-      */}
-      {/* Bridge components temporarily disabled for React 19 + Zustand 5 compat.
-         TODO: Fix unstable getSnapshot in bridge stores, then re-enable.
-      <SceneRecorder />
-      <ReplayEngine />
-      <SceneGraphReplayBridge />
-      <ReplaySpatialLayoutMount />
-      <MetricsTicker />
-      <OrchestratorWSBridge />
-      */}
-      <CommandCenterScene cameraPreset={cameraPreset} />
-      <HUD cameraPreset={cameraPreset} onPresetChange={setCameraPreset} />
-      {/* Panels/bridges temporarily disabled for React 19 + Zustand 5 compat.
-         TODO: Fix unstable getSnapshot in these stores, then re-enable.
-      <ActiveSessionsPanel />
-      <MeetingSessionPanel />
-      <TopologyBootstrap />
-      <ContextMenuPortal />
-      <CommandLogPanel defaultExpanded={false} />
-      <RoomMappingHotReloadBridge />
-      <TaskWSBridge />
-      <PipelineWSBridge />
-      <PipelineCommandInterface defaultExpanded={false} />
-      */}
+      {/* View mode toggle button */}
+      <button
+        onClick={() => setViewMode(viewMode === "2d" ? "3d" : "2d")}
+        style={{
+          position: "absolute", top: 8, right: 8, zIndex: 100,
+          padding: "4px 12px", cursor: "pointer",
+          background: viewMode === "2d" ? "#1a3a2a" : "#2a1a3a",
+          color: viewMode === "2d" ? "#66bb6a" : "#ab47bc",
+          border: `1px solid ${viewMode === "2d" ? "#66bb6a55" : "#ab47bc55"}`,
+          borderRadius: 4, fontFamily: "Courier New, monospace", fontSize: 11,
+          letterSpacing: 1,
+        }}
+      >
+        {viewMode === "2d" ? "◆ 2D PIXEL OFFICE" : "◇ 3D COMMAND CENTER"} → {viewMode === "2d" ? "3D" : "2D"}
+      </button>
+
+      {/* 2D Pixel Office (PixiJS) — default view */}
+      {viewMode === "2d" && <PixelOffice />}
+
+      {/* 3D Command Center (Three.js) — optional */}
+      {viewMode === "3d" && (
+        <>
+          <CommandCenterScene cameraPreset={cameraPreset} />
+          <HUD cameraPreset={cameraPreset} onPresetChange={setCameraPreset} />
+        </>
+      )}
+      {/* Bridge/panel components temporarily disabled for React 19 + Zustand 5 compat. */}
     </div>
     </TaskGroupsBootstrap>
     </SceneErrorBoundary>
