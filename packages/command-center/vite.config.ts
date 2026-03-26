@@ -53,6 +53,57 @@ import react from "@vitejs/plugin-react";
 import { roomsPlugin } from "./src/data/vite-rooms-plugin.js";
 
 /**
+ * esbuild plugin: patch R3F v9's bundled react-reconciler to prevent
+ * "Maximum update depth exceeded" crash with React 19.
+ *
+ * Root cause: R3F v9.5.0 bundles react-reconciler which includes a
+ * useSyncExternalStore effect (`nf`/`jr` functions) that detects
+ * snapshot changes between render and commit. R3F's own store
+ * subscribers mutate state during configure(), causing this effect
+ * to schedule infinite re-renders.
+ *
+ * Fix: Remove the `tf(n) && Gu(e)` / `ji(r) && Gl(t)` calls from
+ * the commit-phase effect. Store updates are still detected via the
+ * subscription callback (`qu`/`ql`), so no updates are lost.
+ *
+ * Applied via optimizeDeps.esbuildOptions.plugins so it runs during
+ * Vite's dependency pre-bundling phase.
+ *
+ * Can be removed when R3F ships a React 19 compatible reconciler
+ * (likely R3F v10+).
+ */
+function r3fReconcilerEsbuildPlugin() {
+  return {
+    name: "r3f-reconciler-patch",
+    setup(build: { onLoad: Function }) {
+      build.onLoad(
+        { filter: /events-[a-f0-9]+\.(esm|cjs)/ },
+        async (args: { path: string }) => {
+          const fs = await import("node:fs");
+          let code = await fs.promises.readFile(args.path, "utf8");
+          const original = code;
+          // Patch the commit-phase effect that causes the infinite loop.
+          // Production reconciler: jr function
+          code = code.replace(
+            /r\.value\s*=\s*a,\s*r\.getSnapshot\s*=\s*l,\s*ji\(r\)\s*&&\s*Gl\(t\)/g,
+            "r.value = a, r.getSnapshot = l"
+          );
+          // Development reconciler: nf function
+          code = code.replace(
+            /n\.value\s*=\s*o,\s*n\.getSnapshot\s*=\s*i,\s*tf\(n\)\s*&&\s*Gu\(e\)/g,
+            "n.value = o, n.getSnapshot = i"
+          );
+          if (code !== original) {
+            return { contents: code, loader: "js" };
+          }
+          return null;
+        }
+      );
+    },
+  };
+}
+
+/**
  * Minimum browser versions that support both ES2022 and WebGL2.
  * These are the production build targets for `vite build` (web mode).
  * Electron builds use a fixed Chromium version bundled with Electron 33+.
@@ -82,6 +133,15 @@ export default defineConfig(({ mode }) => {
       react(),
       roomsPlugin(resolve(__dirname, "../..")),
     ],
+
+    // ── Dep optimization ──────────────────────────────────────────────────
+    // Patch R3F's bundled react-reconciler during pre-bundling to fix
+    // the React 19 "Maximum update depth exceeded" crash.
+    optimizeDeps: {
+      esbuildOptions: {
+        plugins: [r3fReconcilerEsbuildPlugin()],
+      },
+    },
 
     // ── Base URL ──────────────────────────────────────────────────────────
     // Allows deploying to a subpath (e.g. /command-center/) without changing
