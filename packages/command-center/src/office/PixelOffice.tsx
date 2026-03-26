@@ -16,6 +16,8 @@ import { useSpatialStore } from "../store/spatial-store.js";
 import { AgentSpriteManager } from "./AgentSpriteManager.js";
 import { SpeechBubbleManager } from "./SpeechBubble.js";
 import { RoomMonitorManager } from "./RoomMonitor.js";
+import { HandoffArrowManager } from "./HandoffArrows.js";
+import { MinimapManager } from "./Minimap.js";
 import type { RoomDef } from "../data/building.js";
 import type { AgentStatus } from "../data/agents.js";
 
@@ -264,10 +266,18 @@ export function PixelOffice() {
       const monitorContainer = new Container();
       scene.addChild(monitorContainer);
 
+      // Arrow layer (between monitors and agents)
+      const arrowContainer = new Container();
+      scene.addChild(arrowContainer);
+
       // Managers
       const spriteManager = new AgentSpriteManager(agentContainer);
       const bubbleManager = new SpeechBubbleManager(bubbleContainer);
       const monitorManager = new RoomMonitorManager(monitorContainer);
+      const arrowManager = new HandoffArrowManager(arrowContainer);
+
+      // Minimap (fixed to stage, not scene — unaffected by pan/zoom)
+      const minimap = new MinimapManager(app.stage, el.clientWidth, el.clientHeight);
 
       // Compute layout
       const building = useSpatialStore.getState().building;
@@ -316,23 +326,87 @@ export function PixelOffice() {
       }
       monitorManager.startRefresh();
 
+      // Minimap: set room data
+      const totalW = Math.max(...layouts.map((l) => l.x + l.w), 400);
+      const totalH = Math.max(...layouts.map((l) => l.y + l.h), 400);
+      minimap.setRooms(
+        layouts.map((l) => ({ roomId: l.room.roomId, roomType: l.room.roomType, x: l.x, y: l.y, w: l.w, h: l.h })),
+        totalW, totalH,
+      );
+      minimap.setNavigateCallback((wx, wy) => {
+        // Navigate: center view on clicked world position
+        panX = el.clientWidth / 2 - wx * zoom;
+        panY = el.clientHeight / 2 - wy * zoom;
+        applyTransform();
+      });
+
       // Initial agent sync (loads sprite textures)
       syncAgents(spriteManager, bubbleManager, layouts);
 
-      // Show demo speech bubbles
-      setTimeout(() => showDemoBubbles(bubbleManager, layouts), 1500);
+      // Show demo speech bubbles + handoff arrows after sprites load
+      setTimeout(() => {
+        showDemoBubbles(bubbleManager, layouts);
+
+        // Demo handoff arrows
+        const agentPositions = new Map<string, { x: number; y: number; color: number }>();
+        const agents = useAgentStore.getState().agents;
+        for (const [agentId, agent] of Object.entries(agents)) {
+          if (!agent?.def) continue;
+          const rl = layouts.find((l) => l.room.roomId === agent.roomId);
+          if (!rl) continue;
+          const pos = agentPosition(rl, agent.status);
+          const ROLE_C: Record<string, number> = { orchestrator: 0xff7043, implementer: 0x66bb6a, researcher: 0xab47bc, reviewer: 0x42a5f5, validator: 0xef5350 };
+          agentPositions.set(agentId, { x: pos.x, y: pos.y, color: ROLE_C[agent.def.role] ?? 0x888888 });
+        }
+        arrowManager.addDemoArrows(agentPositions);
+
+        // Update minimap agents
+        const agentDots = Array.from(agentPositions.entries()).map(([id, p]) => {
+          const agent = agents[id];
+          return { agentId: id, role: agent?.def?.role ?? "implementer", x: p.x, y: p.y };
+        });
+        minimap.updateAgents(agentDots);
+      }, 2000);
 
       // Subscribe to agent changes
       const unsub = useAgentStore.subscribe(() => {
         syncAgents(spriteManager, bubbleManager, layouts);
       });
 
-      // Animation ticker — drives sprite frames + walking + bubble expiry
+      // Animation ticker — drives sprite frames + walking + bubble/arrow expiry
       app.ticker.add((ticker) => {
         const dt = ticker.deltaTime / 60; // convert to seconds
         spriteManager.tick(dt);
         bubbleManager.tick();
+        arrowManager.tick(dt);
+        minimap.updateViewport(panX, panY, zoom, el.clientWidth, el.clientHeight);
       });
+
+      // ── Keyboard Navigation ─────────────────────────────────────────
+      const onKeyDown = (e: KeyboardEvent) => {
+        // 1-9: jump to room by index
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 9 && num <= layouts.length) {
+          const rl = layouts[num - 1];
+          const cx = rl.x + rl.w / 2;
+          const cy = rl.y + rl.h / 2;
+          zoom = 1.2; // zoom in
+          panX = el.clientWidth / 2 - cx * zoom;
+          panY = el.clientHeight / 2 - cy * zoom;
+          applyTransform();
+          return;
+        }
+        // ESC: zoom out to see all rooms
+        if (e.key === "Escape") {
+          zoom = Math.min(el.clientWidth / (totalW + 40), el.clientHeight / (totalH + 40), MAX_ZOOM);
+          zoom = Math.max(zoom, MIN_ZOOM);
+          panX = (el.clientWidth - totalW * zoom) / 2;
+          panY = (el.clientHeight - totalH * zoom) / 2;
+          applyTransform();
+          return;
+        }
+      };
+      window.addEventListener("keydown", onKeyDown);
 
       // ── Pan / Zoom ────────────────────────────────────────────────
       let zoom = 1.0;
@@ -350,8 +424,6 @@ export function PixelOffice() {
       }
 
       // Center the view initially
-      const totalW = Math.max(...layouts.map((l) => l.x + l.w), 400);
-      const totalH = Math.max(...layouts.map((l) => l.y + l.h), 400);
       const viewW = el.clientWidth;
       const viewH = el.clientHeight;
       zoom = Math.min(viewW / (totalW + 40), viewH / (totalH + 40), MAX_ZOOM);
@@ -411,6 +483,9 @@ export function PixelOffice() {
         spriteManager.destroy();
         bubbleManager.destroy();
         monitorManager.destroy();
+        arrowManager.destroy();
+        minimap.destroy();
+        window.removeEventListener("keydown", onKeyDown);
         canvas.removeEventListener("wheel", onWheel);
         canvas.removeEventListener("pointerdown", onPointerDown);
         canvas.removeEventListener("pointermove", onPointerMove);
