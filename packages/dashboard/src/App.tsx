@@ -108,7 +108,7 @@ export function App() {
           <span>Conitens // control_plane</span>
         </div>
         <div className="app-header-meta">
-          <span className={`status-pill ${connectionPresentation.tone}`}>
+          <span className={`badge ${connectionPresentation.tone}`}>
             {connectionPresentation.label}
           </span>
           <span className="header-stats">
@@ -191,8 +191,8 @@ function DashboardTabPanel({
     <div className="tab-shell">
       <section className="tab-panel">
         <div className="tab-panel-header">
-          <h2 className="tab-panel-title">{title}</h2>
-          <p className="tab-panel-subtitle">{subtitle}</p>
+          <h2 className="heading-1">{title}</h2>
+          <p className="caption">{subtitle}</p>
         </div>
         {children}
       </section>

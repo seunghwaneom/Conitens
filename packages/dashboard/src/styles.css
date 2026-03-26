@@ -24,6 +24,11 @@
   box-sizing: border-box;
 }
 
+/* ── P1-5: Typography hierarchy (3 levels) ── */
+.heading-1 { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.2; margin: 0; }
+.heading-2 { font-size: 11px; font-weight: 700; color: var(--accent-strong); letter-spacing: 0.08em; text-transform: uppercase; margin: 0; }
+.caption { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
 html,
 body,
 #root {
@@ -104,7 +109,37 @@ button:focus-visible {
   justify-content: flex-end;
 }
 
-.status-pill,
+/* ── Unified token system (P0-3) ── */
+.badge,
+.badge.state,
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.chip,
+.chip.event {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--panel-muted);
+  color: var(--muted);
+  border: 1px solid rgba(46, 57, 46, 0.08);
+}
+
+/* Legacy aliases — keep for compat during migration */
 .signal-chip,
 .event-pill,
 .state-pill {
@@ -187,11 +222,42 @@ button:focus-visible {
   padding: 0 18px 18px;
 }
 
+/* ── P1-4: Content shell + tab transition ── */
+.app-content {
+  animation: content-enter 160ms ease-out;
+}
+@keyframes content-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-shell {
+  animation: content-enter 160ms ease-out;
+}
+
+/* ── P1-6: Responsive layout ── */
 .overview-layout {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 260px;
   gap: 18px;
   padding-top: 18px;
+  grid-template-columns: 220px minmax(0, 1fr) 260px;
+}
+
+@media (max-width: 1439px) {
+  .overview-layout {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+  .command-rail { display: none; }
+}
+
+@media (max-width: 1023px) {
+  .overview-layout {
+    grid-template-columns: 1fr;
+  }
+  .command-rail,
+  .overview-side { display: none; }
+  .overview-command-header { flex-direction: column; }
+  .event-cadence-card { min-width: unset; }
 }
 
 .overview-main,
@@ -316,6 +382,78 @@ button:focus-visible {
 .state-pill.danger {
   color: #8b3434;
   background: #fbeeee;
+}
+
+/* ── P0-1: AttentionStrip ── */
+.attention-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(40, 180, 99, 0.06);
+  border-left: 3px solid var(--accent);
+  margin-bottom: 4px;
+}
+.attention-strip.has-alert {
+  border-left-color: var(--red);
+  background: rgba(193, 73, 73, 0.05);
+}
+.attention-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.attention-item {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+.attention-item.danger { color: var(--red); background: rgba(193, 73, 73, 0.08); }
+.attention-item.warning { color: var(--amber); background: rgba(201, 139, 18, 0.08); }
+.attention-item.info { color: var(--info); background: rgba(29, 143, 214, 0.08); }
+.attention-item.clear { color: var(--accent-strong); }
+
+/* Unified chip tones */
+.chip.live, .badge.live { color: #0d6c3e; background: #ecf7ef; }
+.chip.demo, .badge.demo, .chip.info, .badge.info { color: #0a5d96; background: #edf5fb; }
+.chip.warning, .badge.warning { color: #7a5200; background: #fdf4df; }
+.chip.danger, .badge.danger { color: #8b3434; background: #fbeeee; }
+.chip.neutral, .badge.neutral { color: var(--muted); }
+.chip.event.agent, .chip.event.handoff, .chip.event.system { color: #0a5d96; background: #edf5fb; }
+.chip.event.workflow, .chip.event.artifact { color: #0d6c3e; background: #edf7f0; }
+.chip.event.approval, .chip.event.task { color: #7a5200; background: #fdf4df; }
+
+/* ── P0-1: Secondary metrics (reduced emphasis) ── */
+.secondary-metrics {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0 0;
+}
+.secondary-metrics .metric-card {
+  flex: 1;
+  background: transparent;
+  border: 1px dashed var(--line);
+  box-shadow: none;
+}
+
+/* ── P0-2: Card reduction in overview-grid ── */
+.overview-grid > .panel {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  backdrop-filter: none;
+}
+.overview-grid > .panel:first-child {
+  border-top: none;
+}
+.overview-grid > .panel > .panel-body {
+  padding: 16px 0;
 }
 
 .overview-command-center .metrics-grid {

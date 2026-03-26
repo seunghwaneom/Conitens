@@ -82,7 +82,7 @@ export function OverviewDashboard({
     <div className="overview-layout">
       <aside className="panel command-rail">
         <div className="rail-section">
-          <p className="panel-kicker">QUEUE_FOCUS</p>
+          <p className="heading-2">QUEUE_FOCUS</p>
           <div className="stack focus-list">
             <div className="focus-item">
               <span className="focus-label">Task</span>
@@ -111,7 +111,7 @@ export function OverviewDashboard({
         </div>
 
         <div className="rail-section">
-          <p className="panel-kicker">SHORTCUTS</p>
+          <p className="heading-2">SHORTCUTS</p>
           <div className="stack shortcut-list">
             {SHORTCUT_ITEMS.map((item) => (
               <div key={item.key} className="shortcut-row">
@@ -137,9 +137,9 @@ export function OverviewDashboard({
           <div className="panel-body">
             <div className="overview-command-header">
               <div>
-                <p className="panel-kicker">CONTROL_SUMMARY</p>
-                <h1 className="panel-title">Status-first operator view</h1>
-                <p className="panel-subtitle">
+                <p className="heading-2">CONTROL_SUMMARY</p>
+                <h1 className="heading-1">Status-first operator view</h1>
+                <p className="caption">
                   Track task flow, approvals, worker load, and recent signals without
                   leaving the control surface.
                 </p>
@@ -151,21 +151,24 @@ export function OverviewDashboard({
               </div>
             </div>
 
+            {/* P0-1: AttentionStrip — primary KPI strip */}
+            <AttentionStrip
+              blocked={metrics.blockedTasks}
+              review={metrics.reviewQueue}
+              approvals={metrics.approvalSignals}
+            />
+
             <div className="summary-chip-row">
-              <span className={`signal-chip ${isDemo ? "demo" : "live"}`}>
+              <span className={`chip ${isDemo ? "demo" : "live"}`}>
                 {isDemo ? "demo snapshot" : "live event bus"}
               </span>
-              <span className="signal-chip neutral">socket {connectionStatus}</span>
-              <span className="signal-chip info">handoffs {metrics.handoffSignals}</span>
-              <span className="signal-chip warning">approvals {metrics.approvalSignals}</span>
-              <span className="signal-chip neutral">running agents {runningAgents}</span>
+              <span className="chip neutral">socket {connectionStatus}</span>
+              <span className="chip info">handoffs {metrics.handoffSignals}</span>
+              <span className="chip neutral">agents {runningAgents}/{agents.length}</span>
             </div>
 
-            <div className="metrics-grid">
+            <div className="secondary-metrics">
               <MetricCard label="Active Agents" value={metrics.activeAgents.toString()} accent />
-              <MetricCard label="Blocked Tasks" value={metrics.blockedTasks.toString()} tone="danger" />
-              <MetricCard label="Review Queue" value={metrics.reviewQueue.toString()} tone="info" />
-              <MetricCard label="Approval Signals" value={metrics.approvalSignals.toString()} tone="warning" />
               <MetricCard label="Handoff Signals" value={metrics.handoffSignals.toString()} />
             </div>
           </div>
@@ -175,7 +178,7 @@ export function OverviewDashboard({
           <div className="panel">
             <div className="panel-body">
               <div className="section-head">
-                <p className="panel-kicker">TASK_QUEUE</p>
+                <p className="heading-2">TASK_QUEUE</p>
                 <span className="section-meta">{queuedTasks.length} surfaced tasks</span>
               </div>
               <div className="stack">
@@ -188,7 +191,7 @@ export function OverviewDashboard({
                         <strong>{task.taskId}</strong>
                         <div className="muted">{task.assignee ?? "unassigned"}</div>
                       </div>
-                      <span className={`state-pill ${getTaskTone(task.state)}`}>{task.state}</span>
+                      <span className={`badge state ${getTaskTone(task.state)}`}>{task.state}</span>
                     </div>
                   ))
                 )}
@@ -199,7 +202,7 @@ export function OverviewDashboard({
           <div className="panel">
             <div className="panel-body">
               <div className="section-head">
-                <p className="panel-kicker">RECENT_SIGNALS</p>
+                <p className="heading-2">RECENT_SIGNALS</p>
                 <span className="section-meta">latest {recentEvents.length} signals</span>
               </div>
               <div className="stack">
@@ -209,7 +212,7 @@ export function OverviewDashboard({
                   recentEvents.map((event) => (
                     <div key={event.event_id} className="event-stream-row">
                       <div className="event-stream-main">
-                        <span className={`event-pill ${getEventFamily(event.type)}`}>
+                        <span className={`chip event ${getEventFamily(event.type)}`}>
                           {getEventFamily(event.type)}
                         </span>
                         <strong>{event.type}</strong>
@@ -232,8 +235,8 @@ export function OverviewDashboard({
         <section className="panel">
           <div className="panel-body">
             <div className="section-head">
-              <p className="panel-kicker">RUNTIME_STATUS</p>
-              <span className={`signal-chip ${isDemo ? "demo" : "live"}`}>
+              <p className="heading-2">RUNTIME_STATUS</p>
+              <span className={`chip ${isDemo ? "demo" : "live"}`}>
                 {isDemo ? "demo" : "live"}
               </span>
             </div>
@@ -265,7 +268,7 @@ export function OverviewDashboard({
         <section className="panel">
           <div className="panel-body">
             <div className="section-head">
-              <p className="panel-kicker">ACTIVE_LANES</p>
+              <p className="heading-2">ACTIVE_LANES</p>
               <span className="section-meta">{priorityTasks.length} need attention</span>
             </div>
             <div className="stack">
@@ -278,7 +281,7 @@ export function OverviewDashboard({
                       <strong>{task.taskId}</strong>
                       <div className="muted">{task.assignee ?? "unassigned"}</div>
                     </div>
-                    <span className={`state-pill ${getTaskTone(task.state)}`}>{task.state}</span>
+                    <span className={`badge state ${getTaskTone(task.state)}`}>{task.state}</span>
                   </div>
                 ))
               )}
@@ -289,7 +292,7 @@ export function OverviewDashboard({
         <section className="panel">
           <div className="panel-body">
             <div className="section-head">
-              <p className="panel-kicker">AGENT_ROSTER</p>
+              <p className="heading-2">AGENT_ROSTER</p>
               <span className="section-meta">{agents.length} connected</span>
             </div>
             <div className="stack">
@@ -304,7 +307,7 @@ export function OverviewDashboard({
                         <div className="muted">{assignedCount} assigned</div>
                       </div>
                     </div>
-                    <span className={`state-pill ${getTaskTone(agent.status)}`}>{agent.status}</span>
+                    <span className={`badge state ${getTaskTone(agent.status)}`}>{agent.status}</span>
                   </div>
                 );
               })}
@@ -331,6 +334,40 @@ function MetricCard({
     <div className={`metric-card ${tone}`}>
       <div className="metric-label">{label}</div>
       <div className={`metric-value${accent ? " accent-text" : ""}`}>{value}</div>
+    </div>
+  );
+}
+
+function AttentionStrip({
+  blocked,
+  review,
+  approvals,
+}: {
+  blocked: number;
+  review: number;
+  approvals: number;
+}) {
+  const hasAlert = blocked > 0 || review > 0 || approvals > 0;
+  const total = blocked + review + approvals;
+
+  return (
+    <div className={`attention-strip${hasAlert ? " has-alert" : ""}`}>
+      {hasAlert ? (
+        <>
+          <span className="attention-label">{total} needs attention</span>
+          {blocked > 0 && (
+            <span className="attention-item danger">{blocked} blocked</span>
+          )}
+          {review > 0 && (
+            <span className="attention-item info">{review} in review</span>
+          )}
+          {approvals > 0 && (
+            <span className="attention-item warning">{approvals} approvals</span>
+          )}
+        </>
+      ) : (
+        <span className="attention-item clear">All clear — no action required</span>
+      )}
     </div>
   );
 }
