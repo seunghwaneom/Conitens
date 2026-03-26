@@ -13,6 +13,8 @@ import { useRef, useEffect } from "react";
 import { Application, Container, Graphics, Text as PixiText, TextStyle } from "pixi.js";
 import { useAgentStore } from "../store/agent-store.js";
 import { useSpatialStore } from "../store/spatial-store.js";
+import { AgentSpriteManager } from "./AgentSpriteManager.js";
+import { SpeechBubbleManager } from "./SpeechBubble.js";
 import type { RoomDef } from "../data/building.js";
 import type { AgentStatus } from "../data/agents.js";
 
@@ -154,86 +156,65 @@ function drawRooms(g: Graphics, layouts: RoomLayout[]): void {
   }
 }
 
-function drawAgents(g: Graphics, labels: Container, layouts: RoomLayout[]): void {
-  g.clear();
-  labels.removeChildren();
+/** Compute agent target position within a room based on status */
+function agentPosition(rl: RoomLayout, status: AgentStatus): { x: number; y: number } {
+  const off = STATUS_OFFSETS[status] ?? { dx: 0, dy: 0 };
+  return {
+    x: rl.x + rl.w / 2 + off.dx * rl.w * 0.4,
+    y: rl.y + rl.h / 2 + off.dy * rl.h * 0.4,
+  };
+}
 
+/** Sync agents from store to sprite manager */
+async function syncAgents(
+  spriteManager: AgentSpriteManager,
+  bubbleManager: SpeechBubbleManager,
+  layouts: RoomLayout[],
+): Promise<void> {
   const agents = useAgentStore.getState().agents;
 
-  for (const [, agent] of Object.entries(agents)) {
+  for (const [agentId, agent] of Object.entries(agents)) {
     if (!agent?.def) continue;
 
     const rl = layouts.find((l) => l.room.roomId === agent.roomId);
     if (!rl) continue;
 
-    const role = agent.def.role;
-    const status = agent.status;
-    const color = ROLE_COLORS[role] ?? 0x888888;
-    const off = STATUS_OFFSETS[status] ?? { dx: 0, dy: 0 };
-    const opacity = STATUS_OPACITY[status] ?? 0.8;
-
-    // Position: room center + status offset (in room-relative grid units)
-    const ax = rl.x + rl.w / 2 + off.dx * rl.w * 0.4;
-    const ay = rl.y + rl.h / 2 + off.dy * rl.h * 0.4;
-
-    // Glow for active/busy
-    if (status === "active" || status === "busy") {
-      g.circle(ax, ay, 24).fill({ color, alpha: 0.12 });
-    }
-    if (status === "error") {
-      g.circle(ax, ay, 22).fill({ color: 0xff0000, alpha: 0.15 });
-    }
-
-    // Body
-    g.roundRect(ax - 10, ay - 4, 20, 24, 4).fill({ color, alpha: opacity }).stroke({ color: 0x000000, width: 1.5, alpha: opacity });
-
-    // Head
-    const headColor = lighten(color);
-    g.circle(ax, ay - 14, 10).fill({ color: headColor, alpha: opacity }).stroke({ color: 0x000000, width: 1.5, alpha: opacity });
-
-    // Eyes
-    g.circle(ax - 3, ay - 15, 2).fill({ color: 0xffffff, alpha: opacity });
-    g.circle(ax + 3, ay - 15, 2).fill({ color: 0xffffff, alpha: opacity });
-    g.circle(ax - 2.5, ay - 14.5, 1).fill({ color: 0x000000, alpha: opacity });
-    g.circle(ax + 3.5, ay - 14.5, 1).fill({ color: 0x000000, alpha: opacity });
-
-    // Greyscale overlay for inactive/terminated
-    if (status === "inactive" || status === "terminated") {
-      g.circle(ax, ay - 2, 18).fill({ color: 0x333344, alpha: 0.35 });
-    }
-
-    // Name label
-    const nameStyle = new TextStyle({
-      fontFamily: "Courier New, monospace",
-      fontSize: 10,
-      fill: color,
-      align: "center",
-      letterSpacing: 1,
-    });
-    const nameTxt = new PixiText({ text: agent.def.name, style: nameStyle });
-    nameTxt.anchor.set(0.5, 0);
-    nameTxt.position.set(ax, ay + 24);
-    labels.addChild(nameTxt);
-
-    // Status badge
-    const statusStyle = new TextStyle({
-      fontFamily: "Courier New, monospace",
-      fontSize: 8,
-      fill: status === "error" ? 0xff4444 : 0x666677,
-      align: "center",
-    });
-    const statusTxt = new PixiText({ text: status.toUpperCase(), style: statusStyle });
-    statusTxt.anchor.set(0.5, 0);
-    statusTxt.position.set(ax, ay + 36);
-    labels.addChild(statusTxt);
+    const pos = agentPosition(rl, agent.status);
+    await spriteManager.setAgent(agentId, agent.def.role, agent.def.name, agent.status, pos.x, pos.y);
   }
 }
 
-function lighten(c: number): number {
-  const r = Math.min(255, ((c >> 16) & 0xff) + 50);
-  const g = Math.min(255, ((c >> 8) & 0xff) + 50);
-  const b = Math.min(255, (c & 0xff) + 50);
-  return (r << 16) | (g << 8) | b;
+/** Demo: show speech bubbles for inactive agents */
+function showDemoBubbles(
+  bubbleManager: SpeechBubbleManager,
+  layouts: RoomLayout[],
+): void {
+  const agents = useAgentStore.getState().agents;
+  const entries = Object.entries(agents);
+
+  // Show a welcome bubble on the first agent
+  if (entries.length > 0) {
+    const [agentId, agent] = entries[0];
+    if (agent?.def) {
+      const rl = layouts.find((l) => l.room.roomId === agent.roomId);
+      if (rl) {
+        const pos = agentPosition(rl, agent.status);
+        bubbleManager.show(agentId, "Awaiting task assignment...", pos.x, pos.y, "info", 8000);
+      }
+    }
+  }
+
+  // Show approval bubble on second agent
+  if (entries.length > 1) {
+    const [agentId, agent] = entries[1];
+    if (agent?.def) {
+      const rl = layouts.find((l) => l.room.roomId === agent.roomId);
+      if (rl) {
+        const pos = agentPosition(rl, agent.status);
+        bubbleManager.show(agentId, "Ready to implement", pos.x, pos.y, "approval", 10000);
+      }
+    }
+  }
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -269,14 +250,18 @@ export function PixelOffice() {
 
       // Layers
       const roomGfx = new Graphics();
-      const agentGfx = new Graphics();
       const roomLabels = new Container();
-      const agentLabels = new Container();
+      const agentContainer = new Container();
+      const bubbleContainer = new Container();
 
       scene.addChild(roomGfx);
       scene.addChild(roomLabels);
-      scene.addChild(agentGfx);
-      scene.addChild(agentLabels);
+      scene.addChild(agentContainer);
+      scene.addChild(bubbleContainer);
+
+      // Managers
+      const spriteManager = new AgentSpriteManager(agentContainer);
+      const bubbleManager = new SpeechBubbleManager(bubbleContainer);
 
       // Compute layout
       const building = useSpatialStore.getState().building;
@@ -311,12 +296,22 @@ export function PixelOffice() {
         roomLabels.addChild(f1);
       }
 
-      // Initial agent draw
-      drawAgents(agentGfx, agentLabels, layouts);
+      // Initial agent sync (loads sprite textures)
+      syncAgents(spriteManager, bubbleManager, layouts);
+
+      // Show demo speech bubbles
+      setTimeout(() => showDemoBubbles(bubbleManager, layouts), 1500);
 
       // Subscribe to agent changes
       const unsub = useAgentStore.subscribe(() => {
-        drawAgents(agentGfx, agentLabels, layouts);
+        syncAgents(spriteManager, bubbleManager, layouts);
+      });
+
+      // Animation ticker — drives sprite frames + walking + bubble expiry
+      app.ticker.add((ticker) => {
+        const dt = ticker.deltaTime / 60; // convert to seconds
+        spriteManager.tick(dt);
+        bubbleManager.tick();
       });
 
       // ── Pan / Zoom ────────────────────────────────────────────────
@@ -393,6 +388,8 @@ export function PixelOffice() {
       // Cleanup
       return () => {
         unsub();
+        spriteManager.destroy();
+        bubbleManager.destroy();
         canvas.removeEventListener("wheel", onWheel);
         canvas.removeEventListener("pointerdown", onPointerDown);
         canvas.removeEventListener("pointermove", onPointerMove);
