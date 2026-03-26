@@ -15,6 +15,7 @@ import { useAgentStore } from "../store/agent-store.js";
 import { useSpatialStore } from "../store/spatial-store.js";
 import { AgentSpriteManager } from "./AgentSpriteManager.js";
 import { SpeechBubbleManager } from "./SpeechBubble.js";
+import { RoomMonitorManager } from "./RoomMonitor.js";
 import type { RoomDef } from "../data/building.js";
 import type { AgentStatus } from "../data/agents.js";
 
@@ -259,9 +260,14 @@ export function PixelOffice() {
       scene.addChild(agentContainer);
       scene.addChild(bubbleContainer);
 
+      // Monitor layer (between rooms and agents)
+      const monitorContainer = new Container();
+      scene.addChild(monitorContainer);
+
       // Managers
       const spriteManager = new AgentSpriteManager(agentContainer);
       const bubbleManager = new SpeechBubbleManager(bubbleContainer);
+      const monitorManager = new RoomMonitorManager(monitorContainer);
 
       // Compute layout
       const building = useSpatialStore.getState().building;
@@ -295,6 +301,20 @@ export function PixelOffice() {
         f1.position.set(f1layouts[0].x, 8);
         roomLabels.addChild(f1);
       }
+
+      // Add in-room monitors (top-right of each room)
+      for (const rl of layouts) {
+        const agentCount = Object.values(useAgentStore.getState().agents)
+          .filter((a) => a?.roomId === rl.room.roomId).length;
+        monitorManager.addMonitor(
+          rl.room.roomId,
+          rl.room.roomType,
+          rl.x + rl.w - 88, // top-right corner
+          rl.y + 4,
+          agentCount,
+        );
+      }
+      monitorManager.startRefresh();
 
       // Initial agent sync (loads sprite textures)
       syncAgents(spriteManager, bubbleManager, layouts);
@@ -390,6 +410,7 @@ export function PixelOffice() {
         unsub();
         spriteManager.destroy();
         bubbleManager.destroy();
+        monitorManager.destroy();
         canvas.removeEventListener("wheel", onWheel);
         canvas.removeEventListener("pointerdown", onPointerDown);
         canvas.removeEventListener("pointermove", onPointerMove);
