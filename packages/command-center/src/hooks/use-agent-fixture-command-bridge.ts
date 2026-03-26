@@ -476,7 +476,11 @@ export interface FixtureDispatchResult {
  * ```
  */
 export function useAgentFixtureCommandBridge() {
-  const agentStore   = useAgentStore();
+  // Use getState() instead of useAgentStore() to avoid subscribing to the
+  // entire agent store — subscribing without a selector returns a new object
+  // reference every render, causing React 19's "getSnapshot should be cached"
+  // infinite re-render loop.
+  const agentStore   = useAgentStore.getState();
   const feedbackStore = useFeedbackStore.getState;
   const cmdWriter    = useCommandFileWriter();
 
