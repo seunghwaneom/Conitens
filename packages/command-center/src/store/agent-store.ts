@@ -173,6 +173,14 @@ interface AgentStoreState {
   selectedAgentId: string | null;
   /** Whether agents have been initialized */
   initialized: boolean;
+  /** Feature flag: render agents as pixel-art sprites instead of 3D geometry. Runtime-togglable. */
+  usePixelSprites: boolean;
+  /** Toggle the pixel sprite rendering mode. */
+  setUsePixelSprites: (value: boolean) => void;
+  /** View mode: "2d" = PixiJS pixel office (default), "3d" = Three.js command center. */
+  viewMode: "2d" | "3d";
+  /** Switch between 2D pixel office and 3D command center. */
+  setViewMode: (mode: "2d" | "3d") => void;
 
   // ── Sub-AC 15a: Dynamic Registry Actions ─────────────────────────
   /**
@@ -585,6 +593,10 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
   events: [],
   selectedAgentId: null,
   initialized: false,
+  usePixelSprites: true,
+  setUsePixelSprites: (value: boolean) => set({ usePixelSprites: value }),
+  viewMode: "2d" as "2d" | "3d",
+  setViewMode: (mode: "2d" | "3d") => set({ viewMode: mode }),
   meetingGatherings: {},
   _savedLiveAgents: null,
 
