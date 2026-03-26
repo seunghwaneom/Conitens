@@ -1,0 +1,8 @@
+[     628ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3100/src/hooks/use-room-loader.ts?t=1774511908107:18
+[     628ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3100/src/hooks/use-room-loader.ts?t=1774511908107:27
+[  683705ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3100/src/office/PixelOffice.tsx?t=1774515525913:0
+[  683705ms] [ERROR] [vite] Failed to reload /src/office/PixelOffice.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3100/@vite/client:881
+[  698610ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3100/src/office/PixelOffice.tsx?t=1774515540826:0
+[  698610ms] [ERROR] [vite] Failed to reload /src/office/PixelOffice.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3100/@vite/client:881
+[  722519ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3100/src/office/PixelOffice.tsx?t=1774515564736:0
+[  722519ms] [ERROR] [vite] Failed to reload /src/office/PixelOffice.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3100/@vite/client:881

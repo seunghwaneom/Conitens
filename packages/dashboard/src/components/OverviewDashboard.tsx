@@ -4,6 +4,19 @@ import type { AgentState, EventRecord, TaskState } from "../store/event-store.js
 import { getEventFamily, getTaskTone } from "../utils.js";
 
 const PRIORITY_STATES = new Set(["active", "blocked", "review"]);
+
+/** P2-9: Event family → icon mapping */
+const EVENT_FAMILY_ICONS: Record<string, string> = {
+  task: "◆",
+  agent: "●",
+  approval: "⚑",
+  handoff: "→",
+  artifact: "◇",
+  workflow: "⟳",
+  event: "◈",
+  question: "?",
+  system: "⊙",
+};
 const SHORTCUT_ITEMS = [
   { key: "1", label: "Overview" },
   { key: "2", label: "Board" },

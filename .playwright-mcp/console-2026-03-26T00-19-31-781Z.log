@@ -1,0 +1,77 @@
+[     442ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:5733
+[     519ms] [ERROR] %o
+
+%s
+
+%s
+ Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:3246:16)
+    at forceStoreRerender (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:5836:21)
+    at updateStoreInstance (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:18299:20)
+    at runWithFiberInDEV (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:729:72)
+    at commitHookEffectListMount (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:10742:13) The above error occurred in the <CommandLogPanel> component. React will try to recreate this component tree from scratch using the error boundary you provided, SceneErrorBoundary. @ http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:6732
+[     519ms] [ERROR] [SceneErrorBoundary] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:3246:16)
+    at forceStoreRerender (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:5836:21)
+    at updateStoreInstance (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:18299:20)
+    at runWithFiberInDEV (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:729:72)
+    at commitHookEffectListMount (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=f61fe82f:10742:13) 
+    at CommandLogPanel (http://localhost:3100/src/components/CommandLogPanel.tsx:288:3)
+    at div (<anonymous>)
+    at TaskGroupsBootstrap (http://localhost:3100/src/hooks/task-groups-bootstrap.tsx:34:39)
+    at SceneErrorBoundary (http://localhost:3100/src/App.tsx?t=1774484362557:20:1)
+    at ActionDispatcherProvider (http://localhost:3100/src/components/ActionDispatcherProvider.tsx:23:3)
+    at App (http://localhost:3100/src/App.tsx?t=1774484362557:95:24) @ http://localhost:3100/src/App.tsx?t=1774484362557:25
+[     520ms] [WARNING] WebSocket connection to 'ws://localhost:8080/' failed: WebSocket is closed before the connection is established. @ http://localhost:3100/src/hooks/use-orchestrator-ws.ts:181
+[     547ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3100/src/hooks/use-room-loader.ts:18
+[     548ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3100/src/hooks/use-room-loader.ts:27
+[    2791ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8081/api/topology/links:0
+[   36575ms] [ERROR] WebSocket connection to 'ws://localhost:3100/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3100/@vite/client:1034
+[   39885ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5733
+[   39948ms] [ERROR] %o
+
+%s
+
+%s
+ Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3246:16)
+    at forceStoreRerender (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5836:21)
+    at updateStoreInstance (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:18299:20)
+    at runWithFiberInDEV (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:729:72)
+    at commitHookEffectListMount (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10742:13) The above error occurred in the <CommandLogPanel> component. React will try to recreate this component tree from scratch using the error boundary you provided, SceneErrorBoundary. @ http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:6732
+[   39948ms] [ERROR] [SceneErrorBoundary] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3246:16)
+    at forceStoreRerender (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5836:21)
+    at updateStoreInstance (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:18299:20)
+    at runWithFiberInDEV (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:729:72)
+    at commitHookEffectListMount (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10742:13) 
+    at CommandLogPanel (http://localhost:3100/src/components/CommandLogPanel.tsx:288:3)
+    at div (<anonymous>)
+    at TaskGroupsBootstrap (http://localhost:3100/src/hooks/task-groups-bootstrap.tsx:34:39)
+    at SceneErrorBoundary (http://localhost:3100/src/App.tsx:20:1)
+    at ActionDispatcherProvider (http://localhost:3100/src/components/ActionDispatcherProvider.tsx:23:3)
+    at App (http://localhost:3100/src/App.tsx:95:24) @ http://localhost:3100/src/App.tsx:25
+[   39949ms] [WARNING] WebSocket connection to 'ws://localhost:8080/' failed: WebSocket is closed before the connection is established. @ http://localhost:3100/src/hooks/use-orchestrator-ws.ts:181
+[   39977ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3100/src/hooks/use-room-loader.ts:18
+[   39977ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3100/src/hooks/use-room-loader.ts:27
+[   42227ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8081/api/topology/links:0

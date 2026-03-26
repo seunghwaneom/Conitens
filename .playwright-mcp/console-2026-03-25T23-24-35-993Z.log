@@ -1,0 +1,72 @@
+[     369ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3101/src/hooks/use-room-loader.ts:18
+[     370ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3101/src/hooks/use-room-loader.ts:27
+[    1721ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:4114
+[    1870ms] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:3607:57)
+    at On (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:3597:39)
+    at Gu (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:4169:17)
+    at nf (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:4151:52)
+    at Object.react_stack_bottom_frame (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:7968:36)
+    at B (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:2717:63)
+    at ca (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:5690:95)
+    at Yp (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:5737:25)
+    at lh (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:6455:155)
+    at wr (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:6446:11)
+[    1871ms] [ERROR] %o
+
+%s
+
+%s
+ Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:3607:57)
+    at On (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:3597:39)
+    at Gu (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:4169:17)
+    at nf (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:4151:52)
+    at Object.react_stack_bottom_frame (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:7968:36)
+    at B (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:2717:63)
+    at ca (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:5690:95)
+    at Yp (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:5737:25)
+    at lh (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:6455:155)
+    at wr (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:6446:11) The above error occurred in the <CanvasImpl> component. React will try to recreate this component tree from scratch using the error boundary you provided, SceneErrorBoundary. @ http://localhost:3101/node_modules/.vite/deps/chunk-C22KKSJL.js?v=be1e2f51:6732
+[    1871ms] [ERROR] [SceneErrorBoundary] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:3607:57)
+    at On (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:3597:39)
+    at Gu (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:4169:17)
+    at nf (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:4151:52)
+    at Object.react_stack_bottom_frame (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:7968:36)
+    at B (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:2717:63)
+    at ca (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:5690:95)
+    at Yp (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:5737:25)
+    at lh (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:6455:155)
+    at wr (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:6446:11) 
+    at CanvasImpl (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:10056:3)
+    at m (http://localhost:3101/node_modules/.vite/deps/chunk-ZROW2K4Q.js?v=be1e2f51:326:9)
+    at Canvas (<anonymous>)
+    at div (<anonymous>)
+    at CommandCenterScene (http://localhost:3101/src/scene/CommandCenterScene.tsx:371:3)
+    at SceneErrorBoundary (http://localhost:3101/src/App.tsx?t=1774481004382:20:1)
+    at App (http://localhost:3101/src/App.tsx?t=1774481004382:95:24) @ http://localhost:3101/src/App.tsx?t=1774481004382:25
+[    4104ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[    4105ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[    4105ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[    4105ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[    4105ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[    4118ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[   37504ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   40853ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   44200ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   47523ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   50853ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   54183ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   57532ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   60868ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   64216ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   67545ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   70873ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   74195ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   77511ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   80853ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   84223ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   87570ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   90886ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034
+[   94225ms] [ERROR] WebSocket connection to 'ws://localhost:3101/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3101/@vite/client:1034

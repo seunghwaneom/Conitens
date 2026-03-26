@@ -1,0 +1,132 @@
+[     368ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3100/src/hooks/use-room-loader.ts:18
+[     368ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3100/src/hooks/use-room-loader.ts:27
+[     879ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:4382
+[    1010ms] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:3875:57)
+    at On (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:3865:39)
+    at Gu (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:4437:17)
+    at nf (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:4419:52)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:8236:36)
+    at B (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:2985:63)
+    at ca (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:5958:95)
+    at Yp (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6005:25)
+    at lh (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6723:155)
+    at wr (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6714:11)
+[    1014ms] [ERROR] %o
+
+%s
+
+%s
+ Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:3875:57)
+    at On (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:3865:39)
+    at Gu (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:4437:17)
+    at nf (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:4419:52)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:8236:36)
+    at B (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:2985:63)
+    at ca (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:5958:95)
+    at Yp (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6005:25)
+    at lh (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6723:155)
+    at wr (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6714:11) The above error occurred in the <CanvasImpl> component. React will try to recreate this component tree from scratch using the error boundary you provided, SceneErrorBoundary. @ http://localhost:3100/node_modules/.vite/deps/chunk-U5GAJ2MD.js?v=aefd4c11:6263
+[    1014ms] [ERROR] [SceneErrorBoundary] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:3875:57)
+    at On (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:3865:39)
+    at Gu (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:4437:17)
+    at nf (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:4419:52)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:8236:36)
+    at B (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:2985:63)
+    at ca (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:5958:95)
+    at Yp (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6005:25)
+    at lh (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6723:155)
+    at wr (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:6714:11) 
+    at CanvasImpl (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:10324:3)
+    at m (http://localhost:3100/node_modules/.vite/deps/chunk-UPQFZQHZ.js?v=aefd4c11:594:9)
+    at Canvas (<anonymous>)
+    at div (<anonymous>)
+    at CommandCenterScene (http://localhost:3100/src/scene/CommandCenterScene.tsx:371:3)
+    at SceneErrorBoundary (http://localhost:3100/src/App.tsx:20:1)
+    at App (http://localhost:3100/src/App.tsx:95:24) @ http://localhost:3100/src/App.tsx:25
+[    3288ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[    3289ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[    3289ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[    3289ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[    3289ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[    3289ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  462539ms] [ERROR] WebSocket connection to 'ws://localhost:3100/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3100/@vite/client:1034
+[  465855ms] [ERROR] WebSocket connection to 'ws://localhost:3100/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3100/@vite/client:1034
+[  469172ms] [ERROR] WebSocket connection to 'ws://localhost:3100/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3100/@vite/client:1034
+[  472487ms] [ERROR] WebSocket connection to 'ws://localhost:3100/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3100/@vite/client:1034
+[  477318ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3100/src/hooks/use-room-loader.ts:18
+[  477318ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3100/src/hooks/use-room-loader.ts:27
+[  477919ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3100/node_modules/.vite/deps/chunk-OXYAKBZQ.js?v=09d2adf7:4114
+[  480517ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  480517ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  480517ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  480517ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  480517ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  480517ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  482642ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  482643ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  482662ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  482860ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  482881ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  482881ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  484959ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  484969ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  485189ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  485199ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  485199ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  487290ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  487306ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  487332ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  487532ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  487542ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  487542ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  489626ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  489635ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  489663ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  489870ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  490335ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  490335ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  491944ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  491945ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  491982ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  492330ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  492650ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  492651ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  494268ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  494269ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  494299ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  494647ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  494973ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  494973ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  496597ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  496597ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  496630ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  496990ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  497295ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  497295ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  498921ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  498930ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  498946ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  499322ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  499631ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  499631ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  501269ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  501280ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  501302ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  501664ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  501967ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  501967ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  503594ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  503641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  503669ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  504337ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  504337ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  504338ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[  505930ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[  505976ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[  506004ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[  506684ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[  506685ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[  506702ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0

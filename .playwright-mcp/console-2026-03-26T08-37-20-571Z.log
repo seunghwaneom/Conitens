@@ -1,0 +1,6 @@
+[     688ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3100/src/hooks/use-room-loader.ts?t=1774511908107:18
+[     689ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3100/src/hooks/use-room-loader.ts?t=1774511908107:27
+[  247746ms] ReferenceError: drawAgents is not defined
+    at http://localhost:3100/src/office/PixelOffice.tsx?t=1774514488157:212:7
+[  258608ms] ReferenceError: drawAgents is not defined
+    at http://localhost:3100/src/office/PixelOffice.tsx?t=1774514498994:216:7

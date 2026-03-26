@@ -1,0 +1,22 @@
+[    2411ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:5733
+[    2484ms] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:3246:16)
+    at forceStoreRerender (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:5836:21)
+    at updateStoreInstance (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:18299:20)
+    at runWithFiberInDEV (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:729:72)
+    at commitHookEffectListMount (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:10742:13)
+[    2484ms] [WARNING] %s
+
+%s
+ An error occurred in the <CommandLogPanel> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:6697
+[    2485ms] [WARNING] WebSocket connection to 'ws://localhost:8080/' failed: WebSocket is closed before the connection is established. @ http://localhost:3102/src/hooks/use-orchestrator-ws.ts:181
+[    2490ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3102/favicon.ico:0
+[    2515ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3102/src/hooks/use-room-loader.ts:18
+[    2515ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3102/src/hooks/use-room-loader.ts:27
+[    4763ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8081/api/topology/links:0

@@ -18,6 +18,21 @@
   --red: #c14949;
   --header: #141915;
   --header-2: #1f2620;
+  /* P2-7: Density scale */
+  --density: 1;
+  --pad: calc(18px * var(--density));
+  --gap: calc(18px * var(--density));
+  --font-scale: calc(1 * var(--density));
+}
+
+/* Compact mode */
+.density-compact {
+  --density: 0.78;
+}
+
+/* Cozy mode (default) */
+.density-cozy {
+  --density: 1;
 }
 
 * {
@@ -222,6 +237,92 @@ button:focus-visible {
   padding: 0 18px 18px;
 }
 
+/* ── P2-7: Density toggle ── */
+.density-toggle {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.density-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* ── P2-8: Quick filters ── */
+.nav-divider {
+  color: rgba(255, 255, 255, 0.15);
+  align-self: center;
+  font-size: 14px;
+  margin: 0 2px;
+}
+
+.quick-filter {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+.quick-filter:hover {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+}
+.quick-filter.active {
+  color: #f7f9f5;
+  border-color: rgba(142, 226, 150, 0.18);
+  background: rgba(142, 226, 150, 0.1);
+}
+.quick-filter.has-count {
+  color: rgba(255, 255, 255, 0.6);
+}
+.filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+.quick-filter.active .filter-count {
+  background: rgba(142, 226, 150, 0.25);
+  color: #8ee296;
+}
+
+/* ── P2-9: Event family icons ── */
+.event-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.event-icon.task { background: #fdf4df; color: #7a5200; }
+.event-icon.agent { background: #edf5fb; color: #0a5d96; }
+.event-icon.approval { background: #fdf4df; color: #c98b12; }
+.event-icon.handoff { background: #edf5fb; color: #0a5d96; }
+.event-icon.artifact { background: #edf7f0; color: #0d6c3e; }
+.event-icon.workflow { background: #edf7f0; color: #0d6c3e; }
+.event-icon.event { background: #edf7f0; color: #0d6c3e; }
+.event-icon.question { background: #fdf4df; color: #7a5200; }
+.event-icon.system { background: var(--panel-muted); color: var(--muted); }
+
 /* ── P1-4: Content shell + tab transition ── */
 .app-content {
   animation: content-enter 160ms ease-out;
@@ -265,7 +366,7 @@ button:focus-visible {
 .command-rail {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--gap);
 }
 
 .panel,
@@ -278,7 +379,7 @@ button:focus-visible {
 }
 
 .panel-body {
-  padding: 18px;
+  padding: var(--pad);
 }
 
 .panel-kicker {

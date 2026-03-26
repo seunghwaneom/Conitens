@@ -1,0 +1,54 @@
+[     462ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3100/src/hooks/use-room-loader.ts:18
+[     462ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3100/src/hooks/use-room-loader.ts:27
+[     969ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:4382
+[    1058ms] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:3875:57)
+    at On (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:3865:39)
+    at Gu (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:4437:17)
+    at nf (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:4419:52)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:8236:36)
+    at B (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:2985:102)
+    at ca (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:5958:95)
+    at Yp (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6005:25)
+    at lh (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6723:155)
+    at wr (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6714:11)
+[    1057ms] [ERROR] %o
+
+%s
+
+%s
+ Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:3875:57)
+    at On (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:3865:39)
+    at Gu (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:4437:17)
+    at nf (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:4419:52)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:8236:36)
+    at B (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:2985:102)
+    at ca (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:5958:95)
+    at Yp (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6005:25)
+    at lh (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6723:155)
+    at wr (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6714:11) The above error occurred in the <CanvasImpl> component. React will try to recreate this component tree from scratch using the error boundary you provided, SceneErrorBoundary. @ http://localhost:3100/node_modules/.vite/deps/chunk-PRWYOXOG.js?v=ee331dfa:5612
+[    1057ms] [ERROR] [SceneErrorBoundary] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at as (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:3875:57)
+    at On (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:3865:39)
+    at Gu (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:4437:17)
+    at nf (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:4419:52)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:8236:36)
+    at B (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:2985:102)
+    at ca (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:5958:95)
+    at Yp (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6005:25)
+    at lh (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6723:155)
+    at wr (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:6714:11) 
+    at CanvasImpl (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:10324:3)
+    at m (http://localhost:3100/node_modules/.vite/deps/chunk-NCLIYZYA.js?v=ee331dfa:594:9)
+    at Canvas (<anonymous>)
+    at div (<anonymous>)
+    at CommandCenterScene (http://localhost:3100/src/scene/CommandCenterScene.tsx:371:3)
+    at SceneErrorBoundary (http://localhost:3100/src/App.tsx:20:1)
+    at App (http://localhost:3100/src/App.tsx:95:24) @ http://localhost:3100/src/App.tsx:25
+[    3328ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[    3328ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[    3329ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[    3343ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[    3343ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[    3358ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0

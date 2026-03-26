@@ -30,6 +30,8 @@ export function App() {
   const liveEvents = useEventStore((state) => state.events);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [density, setDensity] = useState<"cozy" | "compact">("cozy");
+  const [quickFilter, setQuickFilter] = useState<string | null>(null);
   const connection = useWebSocket();
 
   const { tasks, agents, events, isDemo } = useMemo(
@@ -101,13 +103,21 @@ export function App() {
   const activePanelTab = activeTab === "overview" ? null : (activeTab as DashboardPanelTab);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell density-${density}`}>
       <header className="app-header">
         <div className="app-brand">
           <span className="app-brand-mark">&gt;</span>
           <span>Conitens // control_plane</span>
         </div>
         <div className="app-header-meta">
+          {/* P2-7: Density toggle */}
+          <button
+            className="density-toggle"
+            onClick={() => setDensity(density === "cozy" ? "compact" : "cozy")}
+            title={`Switch to ${density === "cozy" ? "compact" : "cozy"} mode`}
+          >
+            {density === "cozy" ? "▣" : "▤"} {density.toUpperCase()}
+          </button>
           <span className={`badge ${connectionPresentation.tone}`}>
             {connectionPresentation.label}
           </span>
@@ -132,6 +142,23 @@ export function App() {
             </button>
           );
         })}
+        {/* P2-8: Quick filters */}
+        <span className="nav-divider">|</span>
+        {[
+          { key: "approvals", label: "⚑ Approvals", count: metrics.approvalSignals },
+          { key: "blocked", label: "◆ Blocked", count: metrics.blockedTasks },
+          { key: "handoffs", label: "→ Handoffs", count: metrics.handoffSignals },
+        ].map((f) => (
+          <button
+            key={f.key}
+            className={`quick-filter${quickFilter === f.key ? " active" : ""}${f.count > 0 ? " has-count" : ""}`}
+            onClick={() => setQuickFilter(quickFilter === f.key ? null : f.key)}
+            title={`Filter: ${f.label}`}
+          >
+            {f.label}
+            {f.count > 0 && <span className="filter-count">{f.count}</span>}
+          </button>
+        ))}
       </nav>
 
       <div className="app-content">

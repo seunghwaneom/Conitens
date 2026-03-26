@@ -1,0 +1,61 @@
+[     442ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:5733
+[     517ms] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:3246:16)
+    at forceStoreRerender (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:5836:21)
+    at updateStoreInstance (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:18299:20)
+    at runWithFiberInDEV (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:729:72)
+    at commitHookEffectListMount (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:10742:13)
+[     517ms] [WARNING] %s
+
+%s
+ An error occurred in the <CommandLogPanel> component. Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries. @ http://localhost:3102/node_modules/.vite/deps/chunk-C22KKSJL.js?v=126680ee:6697
+[     518ms] [WARNING] WebSocket connection to 'ws://localhost:8080/' failed: WebSocket is closed before the connection is established. @ http://localhost:3102/src/hooks/use-orchestrator-ws.ts:181
+[     542ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3102/src/hooks/use-room-loader.ts:18
+[     543ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3102/src/hooks/use-room-loader.ts:27
+[    2784ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8081/api/topology/links:0
+[   29966ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   33296ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   36638ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   39959ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   43286ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   46609ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   49932ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   53270ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   56622ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   59976ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   63316ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   66654ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   69992ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   73332ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   76687ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   80040ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   83442ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   86803ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   90196ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   93555ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[   96997ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  100405ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  103802ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  107431ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  111308ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  115140ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  119693ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  124153ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  128090ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  133070ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  140031ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  145420ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  150513ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  155631ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  162235ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  170280ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  177092ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  181534ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  186488ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034
+[  194190ms] [ERROR] WebSocket connection to 'ws://localhost:3102/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3102/@vite/client:1034

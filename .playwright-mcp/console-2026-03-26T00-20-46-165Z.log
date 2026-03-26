@@ -1,0 +1,89 @@
+[     370ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5733
+[     424ms] [ERROR] %o
+
+%s
+
+%s
+ Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3246:16)
+    at forceStoreRerender (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5836:21)
+    at updateStoreInstance (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:18299:20)
+    at runWithFiberInDEV (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:729:72)
+    at commitHookEffectListMount (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10742:13) The above error occurred in the <CommandLogPanel> component. React will try to recreate this component tree from scratch using the error boundary you provided, SceneErrorBoundary. @ http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:6732
+[     424ms] [ERROR] [SceneErrorBoundary] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3246:16)
+    at forceStoreRerender (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5836:21)
+    at updateStoreInstance (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:18299:20)
+    at runWithFiberInDEV (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:729:72)
+    at commitHookEffectListMount (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10742:13) 
+    at CommandLogPanel (http://localhost:3100/src/components/CommandLogPanel.tsx:288:3)
+    at div (<anonymous>)
+    at TaskGroupsBootstrap (http://localhost:3100/src/hooks/task-groups-bootstrap.tsx:34:39)
+    at SceneErrorBoundary (http://localhost:3100/src/App.tsx:20:1)
+    at ActionDispatcherProvider (http://localhost:3100/src/components/ActionDispatcherProvider.tsx:23:3)
+    at App (http://localhost:3100/src/App.tsx:95:24) @ http://localhost:3100/src/App.tsx:25
+[     424ms] [WARNING] WebSocket connection to 'ws://localhost:8080/' failed: WebSocket is closed before the connection is established. @ http://localhost:3100/src/hooks/use-orchestrator-ws.ts:181
+[     449ms] [WARNING] [procedural-layout] "ops-control" overlaps with "corridor-main" on floor 1 — rooms may visually intersect @ http://localhost:3100/src/hooks/use-room-loader.ts:18
+[     450ms] [WARNING] [validateDistinctCells] "corridor-main" and "ops-control" share space on floor 1 @ http://localhost:3100/src/hooks/use-room-loader.ts:27
+[    2743ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8081/api/topology/links:0
+[   45318ms] [ERROR] %o
+
+%s
+
+%s
+ Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3246:16)
+    at forceStoreRerender (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5836:21)
+    at updateStoreInstance (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:18299:20)
+    at runWithFiberInDEV (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:729:72)
+    at commitHookEffectListMount (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10742:13) The above error occurred in the <CommandLogPanel> component. React will try to recreate this component tree from scratch using the error boundary you provided, SceneErrorBoundary. @ http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:6732
+[   45318ms] [ERROR] [SceneErrorBoundary] Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at getRootForUpdatedFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3258:128)
+    at enqueueConcurrentRenderForLane (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:3246:16)
+    at forceStoreRerender (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5836:21)
+    at updateStoreInstance (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:5818:41)
+    at Object.react_stack_bottom_frame (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:18299:20)
+    at runWithFiberInDEV (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:729:72)
+    at commitHookEffectListMount (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9143:163)
+    at commitHookPassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:9197:60)
+    at commitPassiveMountOnFiber (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10772:29)
+    at recursivelyTraversePassiveMountEffects (http://localhost:3100/node_modules/.vite/deps/chunk-C22KKSJL.js?v=3a1efced:10742:13) 
+    at CommandLogPanel (http://localhost:3100/src/components/CommandLogPanel.tsx:288:3)
+    at div (<anonymous>)
+    at TaskGroupsBootstrap (http://localhost:3100/src/hooks/task-groups-bootstrap.tsx:34:39)
+    at SceneErrorBoundary (http://localhost:3100/src/App.tsx?t=1774484491380:20:1)
+    at ActionDispatcherProvider (http://localhost:3100/src/components/ActionDispatcherProvider.tsx:23:3)
+    at App (http://localhost:3100/src/App.tsx?t=1774484491380:89:24) @ http://localhost:3100/src/App.tsx?t=1774484491380:25
+[   47641ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8081/api/topology/links:0
+[   77880ms] [ERROR] The result of getSnapshot should be cached to avoid an infinite loop @ http://localhost:3100/node_modules/.vite/deps/chunk-57ZUPBS7.js?v=3a1efced:4114
+[   80792ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[   80792ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[   80792ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[   80792ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[   80792ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[   80792ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[   82633ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[   82635ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[   82635ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[   82895ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/corridor-main/metrics:0
+[   83139ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/impl-office/metrics:0
+[   83139ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/ops-control/metrics:0
+[   84964ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
+[   84965ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/project-main/metrics:0
+[   84965ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/stairwell/metrics:0
+[   85235ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:8080/api/rooms/archive-vault/metrics:0
