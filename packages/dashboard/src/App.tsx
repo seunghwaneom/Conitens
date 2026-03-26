@@ -108,7 +108,7 @@ export function App() {
           <span>Conitens // control_plane</span>
         </div>
         <div className="app-header-meta">
-          <span className={`status-pill ${connectionPresentation.tone}`}>
+          <span className={`badge ${connectionPresentation.tone}`}>
             {connectionPresentation.label}
           </span>
           <span className="header-stats">
