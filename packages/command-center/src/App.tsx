@@ -14,8 +14,37 @@
  *      from the updated room data, preserving agent status and task state.
  *   3. Agents appear with staggered fade-in animation (spawnIndex × STAGGER_MS)
  */
-import { useEffect, useRef } from "react";
+import { Component, useEffect, useRef } from "react";
+import type { ErrorInfo, ReactNode } from "react";
 import { CommandCenterScene } from "./scene/CommandCenterScene.js";
+
+/** ErrorBoundary — catches render errors and shows a diagnostic fallback. */
+class SceneErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("[SceneErrorBoundary]", error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ color: "#ff6b6b", background: "#0a0a14", padding: 32, fontFamily: "monospace", height: "100vh", overflow: "auto" }}>
+          <h2>⚠ Command Center Scene Error</h2>
+          <pre style={{ whiteSpace: "pre-wrap", fontSize: 12 }}>{this.state.error.message}</pre>
+          <button onClick={() => this.setState({ error: null })} style={{ marginTop: 16, padding: "8px 16px", cursor: "pointer" }}>
+            Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { HUD } from "./components/HUD.js";
 import { useRoomLoader } from "./hooks/use-room-loader.js";
 import { useAgentStore, injectSpatialStoreRef } from "./store/agent-store.js";
@@ -95,7 +124,6 @@ export function App() {
 
   // When the spatial store loads a building from YAML, recompute agent world
   // positions so agents stand in the correct locations if room coordinates changed.
-  const building = useSpatialStore((s) => s.building);
   const dataSource = useSpatialStore((s) => s.dataSource);
   const prevDataSource = useRef<string>("static");
 
@@ -103,10 +131,12 @@ export function App() {
     if (!agentsInitialized) return;
     // Re-run when data source transitions to "yaml" (new dynamic building loaded)
     if (dataSource === "yaml" && prevDataSource.current !== "yaml") {
-      reinitializePositions(building);
+      // Read building snapshot directly from store to avoid putting it in deps
+      // (building is an object → new reference each render → infinite loop)
+      reinitializePositions(useSpatialStore.getState().building);
     }
     prevDataSource.current = dataSource;
-  }, [dataSource, building, agentsInitialized, reinitializePositions]);
+  }, [dataSource, agentsInitialized, reinitializePositions]);
 
   return (
     /*
@@ -115,6 +145,7 @@ export function App() {
       Mounted at App root (not inside HUD) per coordinator warning pattern.
     */
     <ActionDispatcherProvider>
+    <SceneErrorBoundary>
     {/*
       Sub-AC 3 (AC 15): TaskGroupsBootstrap — provides TaskGroupsContext to all
       descendants including the Three.js Canvas (HierarchySpatialTaskLayer reads
@@ -129,112 +160,32 @@ export function App() {
         spatial-store, pipes all state-changing events into the unified
         SceneEventLog for 3D replay capability.
       */}
+      {/* Bridge components temporarily disabled for React 19 + Zustand 5 compat.
+         TODO: Fix unstable getSnapshot in bridge stores, then re-enable.
       <SceneRecorder />
-      {/*
-        AC 9.2: Replay engine — drives the RAF playback loop and reconstructs
-        3D scene state at the current playhead timestamp. Mounts headlessly;
-        controls are provided by ReplayControlPanel in HUD.tsx.
-      */}
       <ReplayEngine />
-      {/*
-        Sub-AC 9d: Scene-graph replay bridge — subscribes to the replay
-        controller store and applies reconstructed agent/room state diffs
-        to the 3D scene stores on every playhead tick. Also exposes pipeline
-        states for ReplayPipelineLayer (rendered inside CommandCenterScene).
-        Complements ReplayEngine: both can coexist safely via idempotent guards.
-      */}
       <SceneGraphReplayBridge />
-      {/*
-        Sub-AC 9c: Spatial layout replay mount — reconstructs spatial_layout
-        (3D positions of rooms, agents, and fixtures) from layout.* events at
-        each cursor position during replay. Exposes the layout via
-        useReplaySpatialLayoutStore for renderer components that need exact
-        world-space positions rather than static room-centre fallbacks.
-        Reads events from the cursor store (getCursorEvents); zero overhead in
-        live mode. Headless (renders null).
-      */}
       <ReplaySpatialLayoutMount />
-      {/* Start the background metrics ticker that drives canvas textures */}
       <MetricsTicker />
-      {/*
-        Sub-AC 6c: Orchestrator WebSocket bridge — connects to @conitens/core
-        ws-bus and feeds live ConitensEvents into the metrics store.
-        Silently falls back to simulated data if the server is unavailable.
-      */}
       <OrchestratorWSBridge />
+      */}
       <CommandCenterScene cameraPreset={cameraPreset} />
       <HUD cameraPreset={cameraPreset} onPresetChange={setCameraPreset} />
-      {/*
-        Sub-AC 10b: Active collaboration sessions panel — shows live session handles
-        returned by the MeetingHttpServer (port 8081) when meetings are convened.
-        Reactive to both HTTP POST responses (via meeting-store.upsertSession) and
-        live WebSocket meeting.* events (forwarded by OrchestratorWSBridge).
-      */}
+      {/* Panels/bridges temporarily disabled for React 19 + Zustand 5 compat.
+         TODO: Fix unstable getSnapshot in these stores, then re-enable.
       <ActiveSessionsPanel />
-      {/*
-        Sub-AC 10c: Meeting session detail panel — shows full session status,
-        transcript feed, and termination controls when a session is selected
-        via ActiveSessionsPanel "INSPECT" button or selectSession() action.
-        Renders as a left-side overlay alongside the 3D scene.
-      */}
       <MeetingSessionPanel />
-      {/*
-        Sub-AC 7d: Topology editor — keyboard shortcuts, API persistence,
-        and the topology HUD panel. Mounted here (not inside HUD.tsx) to
-        avoid adding to HUD.tsx's already-large component surface.
-        TopologyEditorLayer and TopologyEditModeIndicator are rendered inside
-        the Canvas in CommandCenterScene.tsx.
-      */}
       <TopologyBootstrap />
-      {/*
-        Sub-AC 8b: Context menu portal — renders a floating right-click menu
-        for agent / room / task entities.  Uses ActionDispatcher internally
-        to route selections to command file dispatch.
-        Mounted here (not inside HUD) so it sits above the overlay layer.
-      */}
       <ContextMenuPortal />
-      {/*
-        Sub-AC 8c: Command lifecycle log panel — scrollable list of all command
-        state transitions (pending → processing → completed/failed/rejected).
-        Reads live from command-lifecycle-store, fed by both local dispatch
-        (use-command-file-writer) and orchestrator WS events (use-orchestrator-ws).
-        Togglable — collapsed by default to avoid visual clutter.
-      */}
       <CommandLogPanel defaultExpanded={false} />
-      {/*
-        Sub-AC 12c: Room-mapping hot-reload bridge — subscribes to the
-        room-mapping store and propagates every config change to agent positions
-        in the 3D scene without a full page restart. Reads persisted overrides
-        from localStorage on startup and applies them once agents are initialized.
-        Headless (renders null); mounted here alongside the other bridge components.
-      */}
       <RoomMappingHotReloadBridge />
-      {/*
-        Sub-AC 5a: Task WS bridge — seeds the task store with mock data on
-        mount (when no live orchestrator is running) and routes task.* WS
-        events (forwarded from OrchestratorWSBridge) to the task-store so
-        task-agent assignments and status transitions stay in sync with the
-        orchestrator in real time.  Headless (renders null).
-      */}
       <TaskWSBridge />
-      {/*
-        Sub-AC 7.2: Pipeline WS bridge — listens for pipeline.started /
-        pipeline.step / pipeline.completed / pipeline.failed events from
-        the orchestrator WS bus and updates the pipeline-store accordingly.
-        Also runs a 30-second TTL eviction interval for terminal pipeline runs.
-        Headless (renders null) per coordinator null-render bridge pattern.
-      */}
       <PipelineWSBridge />
-      {/*
-        Sub-AC 7.2: Pipeline command interface — 2D HUD overlay for triggering,
-        chaining, and cancelling agent pipelines across all rooms.  Collapsed by
-        default; toggle with keyboard shortcut P.
-        Complements the diegetic PipelineDiegeticLayer rendered inside the Canvas
-        (CommandCenterScene.tsx) which provides room-scoped pipeline access.
-      */}
       <PipelineCommandInterface defaultExpanded={false} />
+      */}
     </div>
     </TaskGroupsBootstrap>
+    </SceneErrorBoundary>
     </ActionDispatcherProvider>
   );
 }

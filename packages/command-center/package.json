@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@conitens/protocol": "workspace:*",
-    "@react-three/drei": "^10.0.0",
-    "@react-three/fiber": "^9.1.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "^0.175.0",
@@ -39,8 +39,8 @@
   "devDependencies": {
     "@types/jsdom": "^28.0.1",
     "@types/node": "^22.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/three": "^0.175.0",
     "@vitejs/plugin-react": "^4.3.0",
     "concurrently": "^9.0.0",
