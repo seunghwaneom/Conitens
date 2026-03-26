@@ -19,6 +19,9 @@ import type { RoomPlacementEntry } from "../data/procedural-layout.js";
 
 export type CameraMode = "perspective" | "birdsEye";
 
+/** Bird's-eye view sub-presets. "pixel-office" adds pixel-art floor textures and integer zoom snap. */
+export type BirdsEyePreset = "default" | "pixel-office";
+
 /**
  * Named camera presets for the perspective orbit camera.
  * Defined here (in the store) so both CameraRig and App.tsx can import
@@ -161,6 +164,8 @@ interface SpatialStoreState {
    * Stored here so camera state is fully replayable from the event log.
    */
   cameraPreset: CameraPreset;
+  /** Bird's-eye sub-preset ("default" or "pixel-office") */
+  birdsEyePreset: BirdsEyePreset;
   /** Bird's-eye zoom level (orthographic frustum half-size) */
   birdsEyeZoom: number;
   /** Bird's-eye pan offset [x, z] from building center */
@@ -241,6 +246,8 @@ interface SpatialStoreState {
    * to the default centered position.  Records a camera.reset event.
    */
   resetCamera: () => void;
+  /** Set bird's-eye sub-preset ("default" or "pixel-office") */
+  setBirdsEyePreset: (preset: BirdsEyePreset) => void;
   /** Set bird's-eye zoom level */
   setBirdsEyeZoom: (zoom: number) => void;
   /** Set bird's-eye pan offset */
@@ -459,6 +466,7 @@ export const useSpatialStore = create<SpatialStoreState>((set, get) => ({
   floorVisibility: initFloorVisibility(BUILDING),
   cameraMode: "perspective" as CameraMode,
   cameraPreset: "overview" as CameraPreset,
+  birdsEyePreset: "pixel-office" as BirdsEyePreset,
   birdsEyeZoom: 10,
   birdsEyePan: [0, 0] as [number, number],
   roomCreationLog: [],
@@ -720,6 +728,25 @@ export const useSpatialStore = create<SpatialStoreState>((set, get) => ({
           type: "camera.reset" as SpatialEventType,
           ts: Date.now(),
           payload: { to: "overview" },
+        },
+      ],
+    }));
+  },
+
+  setBirdsEyePreset: (preset) => {
+    const prev = get().birdsEyePreset;
+    if (prev === preset) return;
+    set((state) => ({
+      birdsEyePreset: preset,
+      // Switching to a bird's-eye preset implicitly activates birdsEye mode
+      cameraMode: "birdsEye" as CameraMode,
+      events: [
+        ...state.events,
+        {
+          id: nextEventId(),
+          type: "birdsEye.preset_changed" as SpatialEventType,
+          ts: Date.now(),
+          payload: { from: prev, to: preset },
         },
       ],
     }));

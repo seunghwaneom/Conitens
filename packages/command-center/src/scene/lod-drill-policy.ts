@@ -107,6 +107,36 @@ export const THRESHOLDS = {
   agent:    { near: 6,  far: 14 },
 } as const;
 
+// ── Sprite Agent LOD ─────────────────────────────────────────────────────────
+
+/** Camera distance thresholds for the pixel-art sprite rendering path. */
+export const SPRITE_LOD = { near: 8, far: 18 } as const;
+
+/** Per-LOD visibility flags for the sprite rendering path. */
+export interface SpriteLodVisibility {
+  readonly showSprite: boolean;
+  readonly showDot: boolean;
+  readonly showBadge: boolean;
+  readonly showStatusDot: boolean;
+  readonly animate: boolean;
+}
+
+/** Sprite agent LOD detail policy — what to show at each distance tier. */
+export const SPRITE_LOD_DETAIL: Record<LODLevel, SpriteLodVisibility> = {
+  far:  { showSprite: false, showDot: true,  showBadge: false, showStatusDot: false, animate: false },
+  mid:  { showSprite: true,  showDot: false, showBadge: true,  showStatusDot: false, animate: false },
+  near: { showSprite: true,  showDot: false, showBadge: true,  showStatusDot: true,  animate: true  },
+} as const;
+
+/**
+ * Resolve sprite LOD level from camera distance using SPRITE_LOD thresholds.
+ */
+export function getSpriteLodLevel(distance: number): LODLevel {
+  if (distance < SPRITE_LOD.near) return "near";
+  if (distance >= SPRITE_LOD.far) return "far";
+  return "mid";
+}
+
 // ── Drill relationship ────────────────────────────────────────────────────────
 
 /**

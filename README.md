@@ -30,11 +30,41 @@ This rule is formalized in [ADR-0001](docs/adr-0001-control-plane.md).
 - `scripts/ensemble.py` preserves the existing operations core.
 - `scripts/ensemble_workflow.py`, `scripts/ensemble_mcp_server.py`, `scripts/ensemble_office.py`, `scripts/ensemble_meeting.py`, and related modules extend that core additively.
 
+### Command Center (`packages/command-center`)
+
+Visual interface for monitoring and controlling AI agents. Two view modes:
+
+**2D Pixel Office (Default)** — PixiJS 8 top-down pixel-art office, inspired by [Claw Empire](https://github.com/GreenSheep01201/claw-empire):
+
+- 9 rooms across 2 floors with room-type color coding
+- 5 agent roles with animated 48x48 pixel-art sprite sheets
+- Status-driven positioning (active→desk, idle→center, inactive→door)
+- In-room diegetic monitors (CPU, MEM, queue metrics)
+- Handoff arrows (animated agent-to-agent task flow)
+- Speech bubbles (approval requests, agent output)
+- Minimap with click-to-navigate
+- Keyboard: 1-9 room jump, ESC zoom out
+- Pan (drag) / Zoom (scroll)
+
+**3D Command Center (Optional)** — Three.js/R3F diegetic 3D visualization:
+
+- Low-poly building geometry with camera presets
+- Bird's-eye orthographic mode with 4-tier LOD
+- Display surfaces with live canvas-rendered metrics
+- Event-sourced spatial state with replay
+
+Toggle via button (top-right). Only one renderer active at a time.
+
+```bash
+cd packages/command-center && pnpm dev
+# Open http://localhost:3100
+```
+
 ### Reference / Parity Surfaces
 
-- `packages/*`
-- `docs/RFC-1.0.1-merged.md`
-- older `.conitens`-first roadmap material
+- `packages/protocol` — event types, validation, ownership rules
+- `packages/core` — orchestrator, reducers, event log
+- `docs/RFC-1.0.1.md` — protocol specification (canonical)
 
 These remain important design references, but they are not the active runtime truth for the current product line unless a later ADR promotes them.
 
@@ -129,11 +159,42 @@ ensemble workflow run --workflow wf.parallel-workcell --set task_id=TASK-... --s
 - [docs/OPERATIONS_LAYER.md](docs/OPERATIONS_LAYER.md): Core/Ext overview
 - [docs/LOCAL_RUNTIME_POLICY.md](docs/LOCAL_RUNTIME_POLICY.md): what stays local-only vs tracked
 
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| 2D Rendering | PixiJS 8 |
+| 3D Rendering | Three.js 0.175 + React Three Fiber v9 |
+| UI Framework | React 19 |
+| State Management | Zustand 5 |
+| Build | Vite 7 |
+| Testing | Vitest |
+| Package Manager | pnpm (monorepo workspaces) |
+| Runtime | Node.js 22+ |
+| Operations CLI | Python (ensemble.py) |
+
 ## Development
 
 ```bash
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm build
+
+# Run tests
+pnpm test
+
+# Command Center dev server
+cd packages/command-center && pnpm dev
+
+# Generate sprite assets
+cd packages/command-center
+pnpm generate:sprites    # Agent sprite sheet PNGs
+pnpm generate:tiles      # Room floor tileset PNG
+
+# Operations CLI
 python -m unittest tests.test_operations_layer
-pnpm -r test
 ```
 
 ## Non-Goals For This Product Line
