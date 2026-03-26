@@ -42,6 +42,7 @@ import {
   usePerformanceQuality,
 } from "./ScenePerformance.js";
 import { useAgentInteractionHandlers } from "../hooks/use-agent-interaction-handlers.js";
+import { SpriteAvatar } from "./SpriteAvatar.js";
 
 /** Stagger delay in ms between consecutive avatar fade-ins */
 const STAGGER_MS = 180;
@@ -539,6 +540,7 @@ interface AgentAvatarProps {
 export function AgentAvatar({ agentId, viewWindowVisible = true }: AgentAvatarProps) {
   const agent = useAgentStore((s) => s.agents[agentId]);
   const selectedAgentId = useAgentStore((s) => s.selectedAgentId);
+  const usePixelSprites = useAgentStore((s) => s.usePixelSprites);
   // Note: selectAgent and setAgentHovered are accessed inside useAgentInteractionHandlers;
   // they are NOT needed directly in this component since Sub-AC 4c moved all handler
   // logic into the hook.  Only selectedAgentId remains here for the isSelected flag.
@@ -639,8 +641,10 @@ export function AgentAvatar({ agentId, viewWindowVisible = true }: AgentAvatarPr
       groupRef.current.scale.setScalar(1);
     }
 
-    // ── Status-based animation (post-spawn) ───────────────────
-    if (statusCfg.animate) {
+    // ── Status-based animation (post-spawn) — suppressed in sprite mode ──
+    if (usePixelSprites) {
+      // Sprite mode: no 3D mesh animations. UV-based animation is handled by SpriteAvatar.
+    } else if (statusCfg.animate) {
       // Active: gentle breathing + slight sway
       const breathe = 1 + Math.sin(t * 2) * 0.03;
       groupRef.current.scale.set(breathe, breathe, breathe);
@@ -723,21 +727,29 @@ export function AgentAvatar({ agentId, viewWindowVisible = true }: AgentAvatarPr
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
-      {/* Body */}
-      <AvatarBody
-        color={color}
-        emissive={emissive}
-        opacity={statusCfg.opacity}
-        emissiveIntensity={emissiveIntensity}
-      />
-
-      {/* Head */}
-      <AvatarHead
-        color={color}
-        emissive={emissive}
-        opacity={statusCfg.opacity}
-        emissiveIntensity={emissiveIntensity}
-      />
+      {/* Body + Head: sprite or 3D geometry based on feature flag */}
+      {usePixelSprites ? (
+        <SpriteAvatar
+          role={agent.def.role}
+          status={agent.status}
+          roleColor={rawColor}
+        />
+      ) : (
+        <>
+          <AvatarBody
+            color={color}
+            emissive={emissive}
+            opacity={statusCfg.opacity}
+            emissiveIntensity={emissiveIntensity}
+          />
+          <AvatarHead
+            color={color}
+            emissive={emissive}
+            opacity={statusCfg.opacity}
+            emissiveIntensity={emissiveIntensity}
+          />
+        </>
+      )}
 
       {/* Foot ring glow */}
       <FootRing
