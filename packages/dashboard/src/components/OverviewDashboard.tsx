@@ -82,7 +82,7 @@ export function OverviewDashboard({
     <div className="overview-layout">
       <aside className="panel command-rail">
         <div className="rail-section">
-          <p className="panel-kicker">QUEUE_FOCUS</p>
+          <p className="heading-2">QUEUE_FOCUS</p>
           <div className="stack focus-list">
             <div className="focus-item">
               <span className="focus-label">Task</span>
@@ -111,7 +111,7 @@ export function OverviewDashboard({
         </div>
 
         <div className="rail-section">
-          <p className="panel-kicker">SHORTCUTS</p>
+          <p className="heading-2">SHORTCUTS</p>
           <div className="stack shortcut-list">
             {SHORTCUT_ITEMS.map((item) => (
               <div key={item.key} className="shortcut-row">
@@ -137,9 +137,9 @@ export function OverviewDashboard({
           <div className="panel-body">
             <div className="overview-command-header">
               <div>
-                <p className="panel-kicker">CONTROL_SUMMARY</p>
-                <h1 className="panel-title">Status-first operator view</h1>
-                <p className="panel-subtitle">
+                <p className="heading-2">CONTROL_SUMMARY</p>
+                <h1 className="heading-1">Status-first operator view</h1>
+                <p className="caption">
                   Track task flow, approvals, worker load, and recent signals without
                   leaving the control surface.
                 </p>
@@ -178,7 +178,7 @@ export function OverviewDashboard({
           <div className="panel">
             <div className="panel-body">
               <div className="section-head">
-                <p className="panel-kicker">TASK_QUEUE</p>
+                <p className="heading-2">TASK_QUEUE</p>
                 <span className="section-meta">{queuedTasks.length} surfaced tasks</span>
               </div>
               <div className="stack">
@@ -202,7 +202,7 @@ export function OverviewDashboard({
           <div className="panel">
             <div className="panel-body">
               <div className="section-head">
-                <p className="panel-kicker">RECENT_SIGNALS</p>
+                <p className="heading-2">RECENT_SIGNALS</p>
                 <span className="section-meta">latest {recentEvents.length} signals</span>
               </div>
               <div className="stack">
@@ -235,7 +235,7 @@ export function OverviewDashboard({
         <section className="panel">
           <div className="panel-body">
             <div className="section-head">
-              <p className="panel-kicker">RUNTIME_STATUS</p>
+              <p className="heading-2">RUNTIME_STATUS</p>
               <span className={`chip ${isDemo ? "demo" : "live"}`}>
                 {isDemo ? "demo" : "live"}
               </span>
@@ -268,7 +268,7 @@ export function OverviewDashboard({
         <section className="panel">
           <div className="panel-body">
             <div className="section-head">
-              <p className="panel-kicker">ACTIVE_LANES</p>
+              <p className="heading-2">ACTIVE_LANES</p>
               <span className="section-meta">{priorityTasks.length} need attention</span>
             </div>
             <div className="stack">
@@ -292,7 +292,7 @@ export function OverviewDashboard({
         <section className="panel">
           <div className="panel-body">
             <div className="section-head">
-              <p className="panel-kicker">AGENT_ROSTER</p>
+              <p className="heading-2">AGENT_ROSTER</p>
               <span className="section-meta">{agents.length} connected</span>
             </div>
             <div className="stack">
