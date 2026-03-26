@@ -191,8 +191,8 @@ function DashboardTabPanel({
     <div className="tab-shell">
       <section className="tab-panel">
         <div className="tab-panel-header">
-          <h2 className="tab-panel-title">{title}</h2>
-          <p className="tab-panel-subtitle">{subtitle}</p>
+          <h2 className="heading-1">{title}</h2>
+          <p className="caption">{subtitle}</p>
         </div>
         {children}
       </section>
