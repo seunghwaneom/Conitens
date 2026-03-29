@@ -97,6 +97,15 @@ especially `packages/dashboard` and the pixel-office surfaces.
 - IMPORTANT: Reuse CSS variables from `styles.css` for color, typography, and
   state tones; do not hardcode new palette values unless the token set is first
   updated.
+- Prefer the active `*.module.css` office files over the legacy plain
+  `office.css` / `office-stage.css` / `office-sidebar.css` siblings when
+  implementing or refining current dashboard UI.
+- Pixel-office spacing follows a 2px-biased scale. Prefer `2 / 4 / 8 / 10 /
+  12 / 16 / 24px`; treat off-scale values as deliberate exceptions rather than
+  casual new defaults.
+- If a translucent color is reused, promote it into `styles.css` as a tokenized
+  alpha variant instead of repeating ad-hoc `rgba(...)` literals across office
+  modules.
 - Office-specific layout and room styling belongs in:
   - `office.module.css`
   - `office-stage.module.css`
@@ -110,6 +119,9 @@ especially `packages/dashboard` and the pixel-office surfaces.
 - IMPORTANT: Reuse the shipped PNG tile/sprite assets (`office-floor-*.png`,
   `office-door-*.png`, `office-fixtures.png`) instead of adding new icon
   packages.
+- Reuse `packages/dashboard/src/office-fixture-registry.ts` and the existing
+  root-relative `/office-*.png` asset contract before introducing new
+  presentation assets.
 - If Figma or MCP output provides asset URLs, map them into
   `packages/dashboard/public/` only when the current asset set cannot represent
   the design.
@@ -132,8 +144,13 @@ especially `packages/dashboard` and the pixel-office surfaces.
 - Preserve current event/task/agent contracts from
   `packages/dashboard/src/store/event-store.ts` and related model helpers unless
   the task explicitly includes model changes.
+- Treat `packages/command-center/src/data/agents.ts` as the canonical source for
+  role/default-room alignment when office visuals need agent metadata.
 - Prefer compact operator UI copy over marketing copy.
 - Keep Office tab hierarchy stage-first with a narrow context rail; do not
   reintroduce heavy dossier/card systems unless explicitly requested.
+- Keep motion consistent with the current pixel-office contract: stepped,
+  restrained status cues in `office-stage.module.css`, not freeform smooth
+  animations scattered across components.
 - New office interactions must degrade gracefully in demo mode when the
   websocket is disconnected.
