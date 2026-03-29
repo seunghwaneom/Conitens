@@ -1,16 +1,11 @@
 import React from "react";
-import type { DashboardMetrics } from "../dashboard-model.js";
+import {
+  getOverviewActions,
+  getRuntimeLedger,
+  type DashboardMetrics,
+} from "../dashboard-model.js";
 import type { AgentState, EventRecord, TaskState } from "../store/event-store.js";
 import { getEventFamily, getTaskTone } from "../utils.js";
-
-const PRIORITY_STATES = new Set(["active", "blocked", "review"]);
-const SHORTCUT_ITEMS = [
-  { key: "1", label: "Overview" },
-  { key: "2", label: "Board" },
-  { key: "3", label: "Timeline" },
-  { key: "4", label: "Office" },
-  { key: "Esc", label: "Close task" },
-];
 
 function EventSparkline({ events }: { events: EventRecord[] }) {
   if (events.length < 2) return null;
@@ -76,7 +71,14 @@ export function OverviewDashboard({
   const latestEvent = recentEvents[0];
   const runningAgents = agents.filter((agent) => agent.status === "running").length;
   const focusTask = queuedTasks[0];
-  const priorityTasks = tasks.filter((task) => PRIORITY_STATES.has(task.state)).slice(0, 4);
+  const overviewActions = getOverviewActions(tasks, recentEvents);
+  const attentionTotal = metrics.blockedTasks + metrics.reviewQueue + metrics.approvalSignals;
+  const runtimeLedger = getRuntimeLedger({
+    connectionStatus,
+    latestEventType: latestEvent?.type,
+    runningAgents,
+    totalAgents: agents.length,
+  });
 
   return (
     <div className="overview-layout">
@@ -111,24 +113,14 @@ export function OverviewDashboard({
         </div>
 
         <div className="rail-section">
-          <p className="panel-kicker">SHORTCUTS</p>
-          <div className="stack shortcut-list">
-            {SHORTCUT_ITEMS.map((item) => (
-              <div key={item.key} className="shortcut-row">
-                <span className="shortcut-key">{item.key}</span>
-                <span className="shortcut-label">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rail-section rail-actions">
+          <div className="rail-actions">
           <button className="primary-button" type="button" onClick={onOpenBoard}>
             Open Board
           </button>
           <button className="secondary-button" type="button" onClick={onOpenTimeline}>
             Open Timeline
           </button>
+          </div>
         </div>
       </aside>
 
@@ -158,19 +150,33 @@ export function OverviewDashboard({
               approvals={metrics.approvalSignals}
             />
 
-            <div className="summary-chip-row">
-              <span className={`chip ${isDemo ? "demo" : "live"}`}>
-                {isDemo ? "demo snapshot" : "live event bus"}
-              </span>
-              <span className="chip neutral">socket {connectionStatus}</span>
-              <span className="chip info">handoffs {metrics.handoffSignals}</span>
-              <span className="chip neutral">agents {runningAgents}/{agents.length}</span>
+            <div className="overview-action-ledger">
+              <div className="section-head">
+                <p className="panel-kicker">IMMEDIATE_ACTIONS</p>
+                <span className="section-meta">{overviewActions.length} surfaced lanes</span>
+              </div>
+              <div className="stack">
+                {overviewActions.length === 0 ? (
+                  <div className="empty-state compact">
+                    No active actions surfaced from tasks or recent signals
+                  </div>
+                ) : (
+                  overviewActions.map((action) => (
+                    <div key={action.id} className={`action-ledger-row ${action.tone}`}>
+                      <div className="action-ledger-main">
+                        <span className={`badge ${action.tone}`}>{action.lane}</span>
+                        <div>
+                          <strong>{action.target}</strong>
+                          <div className="muted">{action.summary}</div>
+                        </div>
+                      </div>
+                      <span className="action-ledger-meta">{action.meta}</span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
-            <div className="secondary-metrics">
-              <MetricCard label="Active Agents" value={metrics.activeAgents.toString()} accent />
-              <MetricCard label="Handoff Signals" value={metrics.handoffSignals.toString()} />
-            </div>
           </div>
         </section>
 
@@ -235,57 +241,35 @@ export function OverviewDashboard({
         <section className="panel">
           <div className="panel-body">
             <div className="section-head">
-              <p className="panel-kicker">RUNTIME_STATUS</p>
+              <p className="panel-kicker">RUNTIME_LEDGER</p>
               <span className={`chip ${isDemo ? "demo" : "live"}`}>
                 {isDemo ? "demo" : "live"}
               </span>
             </div>
-            <div className="status-grid">
-              <div className="status-card">
-                <span className="status-card-label">socket</span>
-                <strong>{connectionStatus}</strong>
-              </div>
-              <div className="status-card">
-                <span className="status-card-label">tasks</span>
-                <strong>{tasks.length}</strong>
-              </div>
-              <div className="status-card">
-                <span className="status-card-label">events</span>
-                <strong>{recentEvents.length}</strong>
-              </div>
-              <div className="status-card">
-                <span className="status-card-label">running</span>
-                <strong>{runningAgents}</strong>
-              </div>
-              <div className="status-card">
-                <span className="status-card-label">latest family</span>
-                <strong>{getEventFamily(latestEvent?.type ?? "system")}</strong>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel-body">
-            <div className="section-head">
-              <p className="panel-kicker">ACTIVE_LANES</p>
-              <span className="section-meta">{priorityTasks.length} need attention</span>
-            </div>
-            <div className="stack">
-              {priorityTasks.length === 0 ? (
-                <div className="empty-state compact">No active, blocked, or review tasks</div>
-              ) : (
-                priorityTasks.map((task) => (
-                  <div key={task.taskId} className="rich-list-row">
-                    <div>
-                      <strong>{task.taskId}</strong>
-                      <div className="muted">{task.assignee ?? "unassigned"}</div>
-                    </div>
-                    <span className={`badge state ${getTaskTone(task.state)}`}>{task.state}</span>
+            <div className="runtime-ledger">
+              {runtimeLedger.map((row) => (
+                <div key={row.label} className="runtime-row">
+                  <span className="runtime-row-label">{row.label}</span>
+                  <div className="runtime-row-value">
+                    {row.tone ? (
+                      <span className={`chip ${row.tone}`}>{row.value}</span>
+                    ) : (
+                      <strong>{row.value}</strong>
+                    )}
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
+            <p className="runtime-summary-line">
+              {attentionTotal > 0 ? (
+                <>
+                  <strong>{attentionTotal}</strong> operator signals remain open across blocked,
+                  review, and approval lanes.
+                </>
+              ) : (
+                "System pressure is low. No blocked, review, or approval backlog is visible."
+              )}
+            </p>
           </div>
         </section>
 
@@ -315,25 +299,6 @@ export function OverviewDashboard({
           </div>
         </section>
       </aside>
-    </div>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  accent = false,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  tone?: string;
-}) {
-  return (
-    <div className={`metric-card ${tone}`}>
-      <div className="metric-label">{label}</div>
-      <div className={`metric-value${accent ? " accent-text" : ""}`}>{value}</div>
     </div>
   );
 }

@@ -1,0 +1,24 @@
+.office-frame {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.office-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 22px;
+  align-items: start;
+}
+
+.office-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 1220px) {
+  .office-layout {
+    grid-template-columns: 1fr;
+  }
+}
