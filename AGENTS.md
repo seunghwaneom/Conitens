@@ -70,3 +70,70 @@ meetings, workflows, events, and replayable artifacts.
 - Append-only event integrity
 - Redaction coverage
 - Packaging and documentation consistency
+
+## Figma Design System Rules
+
+These rules apply when implementing or refining Figma-driven UI for this repo,
+especially `packages/dashboard` and the pixel-office surfaces.
+
+### Component organization
+
+- Dashboard UI components live in `packages/dashboard/src/components/`.
+- Pixel-office-specific structure lives in:
+  - `packages/dashboard/src/components/Office*.tsx`
+  - `packages/dashboard/src/office-*.ts`
+  - `packages/dashboard/src/office*.module.css`
+- Reuse existing room, resident, and task projection helpers before adding new
+  presentation logic:
+  - `packages/dashboard/src/dashboard-model.ts`
+  - `packages/dashboard/src/office-presence-model.ts`
+  - `packages/dashboard/src/office-stage-schema.ts`
+  - `packages/dashboard/src/office-system.ts`
+
+### Styling and tokens
+
+- Use the existing styling stack: global tokens in
+  `packages/dashboard/src/styles.css` plus CSS Modules for feature surfaces.
+- IMPORTANT: Reuse CSS variables from `styles.css` for color, typography, and
+  state tones; do not hardcode new palette values unless the token set is first
+  updated.
+- Office-specific layout and room styling belongs in:
+  - `office.module.css`
+  - `office-stage.module.css`
+  - `office-sidebar.module.css`
+- Keep pixel styling flat and card-light; whitespace, grid structure, and token
+  contrast should do more work than shadows or gradients.
+
+### Assets and iconography
+
+- Pixel-office assets are stored in `packages/dashboard/public/`.
+- IMPORTANT: Reuse the shipped PNG tile/sprite assets (`office-floor-*.png`,
+  `office-door-*.png`, `office-fixtures.png`) instead of adding new icon
+  packages.
+- If Figma or MCP output provides asset URLs, map them into
+  `packages/dashboard/public/` only when the current asset set cannot represent
+  the design.
+
+### Figma-to-code flow
+
+1. Run `get_design_context` for the exact node.
+2. Run `get_screenshot` for visual parity.
+3. Translate the result into this repo's conventions rather than copying raw
+   generated markup verbatim.
+4. Reuse existing dashboard components and CSS-module structure where possible.
+5. Keep room semantics and data wiring in the model layer; presentation changes
+   belong in the component / CSS layer.
+6. Validate the rendered result against the Figma/reference screenshot and the
+   local build.
+
+### Project-specific implementation rules
+
+- React + TypeScript + Vite are the dashboard implementation baseline.
+- Preserve current event/task/agent contracts from
+  `packages/dashboard/src/store/event-store.ts` and related model helpers unless
+  the task explicitly includes model changes.
+- Prefer compact operator UI copy over marketing copy.
+- Keep Office tab hierarchy stage-first with a narrow context rail; do not
+  reintroduce heavy dossier/card systems unless explicitly requested.
+- New office interactions must degrade gracefully in demo mode when the
+  websocket is disconnected.

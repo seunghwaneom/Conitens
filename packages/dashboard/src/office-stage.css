@@ -1,0 +1,358 @@
+.office-stage-shell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-height: 560px;
+  border: 1px solid rgba(46, 57, 46, 0.1);
+  border-radius: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(237, 242, 248, 0.94) 0%, rgba(229, 235, 243, 0.82) 100%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+}
+
+.office-corridor {
+  position: absolute;
+  border: 1px solid rgba(46, 57, 46, 0.08);
+  background:
+    linear-gradient(90deg, rgba(46, 57, 46, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(46, 57, 46, 0.03) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(225, 232, 240, 0.96) 0%, rgba(215, 223, 232, 0.88) 100%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+  z-index: 0;
+}
+
+.office-corridor-fixture,
+.office-fixture {
+  position: absolute;
+  display: inline-flex;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.office-room-tile {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 3px solid rgba(75, 84, 97, 0.56);
+  border-radius: 0;
+  background:
+    linear-gradient(180deg, rgba(253, 251, 246, 0.98) 0%, rgba(247, 244, 238, 0.96) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  text-align: left;
+}
+
+.office-room-tile:hover,
+.office-room-avatar-slot:hover {
+  transform: none;
+}
+
+.office-room-tile.selected {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    0 0 0 2px rgba(17, 122, 69, 0.18);
+}
+
+.office-room-tile.tone-lobby {
+  background: linear-gradient(180deg, rgba(248, 247, 239, 0.98) 0%, rgba(240, 238, 227, 0.96) 100%);
+}
+
+.office-room-tile.tone-control {
+  background: linear-gradient(180deg, rgba(245, 250, 253, 0.98) 0%, rgba(233, 240, 247, 0.96) 100%);
+}
+
+.office-room-tile.tone-workspace,
+.office-room-tile.tone-review {
+  background: linear-gradient(180deg, rgba(251, 247, 240, 0.98) 0%, rgba(242, 236, 225, 0.96) 100%);
+}
+
+.office-room-tile.tone-lab,
+.office-room-tile.tone-validation {
+  background: linear-gradient(180deg, rgba(243, 249, 241, 0.98) 0%, rgba(234, 241, 229, 0.96) 100%);
+}
+
+.office-room-tile.status-info {
+  border-color: rgba(29, 143, 214, 0.22);
+}
+
+.office-room-tile.status-warning {
+  border-color: rgba(201, 139, 18, 0.22);
+}
+
+.office-room-tile.status-danger {
+  border-color: rgba(193, 73, 73, 0.26);
+}
+
+.office-room-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.office-room-team {
+  display: inline-flex;
+  margin-bottom: 4px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-strong);
+}
+
+.office-room-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.office-room-post,
+.office-room-window,
+.office-room-door {
+  position: absolute;
+}
+
+.office-room-post {
+  width: 4px;
+  height: 4px;
+  background: rgba(95, 104, 117, 0.52);
+  z-index: 3;
+}
+
+.office-room-post.post-nw { left: -2px; top: -2px; }
+.office-room-post.post-ne { right: -2px; top: -2px; }
+.office-room-post.post-sw { left: -2px; bottom: -2px; }
+.office-room-post.post-se { right: -2px; bottom: -2px; }
+
+.office-room-window {
+  height: 6px;
+  border-top: 1px solid rgba(116, 144, 171, 0.45);
+  border-bottom: 1px solid rgba(116, 144, 171, 0.45);
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.22) 0 48%, rgba(122, 146, 168, 0.42) 48% 52%, rgba(255,255,255,0.22) 52% 100%),
+    linear-gradient(180deg, rgba(189, 214, 231, 0.92) 0%, rgba(164, 194, 216, 0.76) 100%);
+  z-index: 3;
+}
+
+.office-room-door {
+  width: 12px;
+  height: 6px;
+  border: 1px solid rgba(98, 81, 57, 0.28);
+  background: #d2aa7c;
+  z-index: 3;
+}
+
+.office-room-door::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -2px;
+  width: 100%;
+  height: 2px;
+  background: rgba(98, 81, 57, 0.42);
+}
+
+.office-room-door.open {
+  width: 0;
+  height: 0;
+  border-left: 10px solid #d2aa7c;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  background: transparent;
+}
+
+.office-room-door.closed::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 2px;
+  height: 2px;
+  border-radius: 0;
+  background: rgba(98, 81, 57, 0.7);
+}
+
+.office-room-scene {
+  position: relative;
+  min-height: 96px;
+  border: 2px solid rgba(86, 96, 111, 0.12);
+  background:
+    linear-gradient(90deg, rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(242, 246, 250, 0.88) 0%, rgba(235, 240, 246, 0.72) 100%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+}
+
+.office-room-tile.kind-control .office-room-scene {
+  background:
+    linear-gradient(90deg, rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(236, 244, 252, 0.94) 0%, rgba(224, 235, 246, 0.84) 100%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+}
+
+.office-room-tile.kind-workspace .office-room-scene,
+.office-room-tile.kind-review .office-room-scene {
+  background:
+    linear-gradient(90deg, rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(247, 244, 236, 0.94) 0%, rgba(239, 232, 220, 0.84) 100%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+}
+
+.office-room-tile.kind-lab .office-room-scene,
+.office-room-tile.kind-validation .office-room-scene {
+  background:
+    linear-gradient(90deg, rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(240, 247, 239, 0.94) 0%, rgba(229, 237, 226, 0.84) 100%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+}
+
+.office-room-tile.kind-lobby .office-room-scene {
+  background:
+    linear-gradient(90deg, rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(rgba(46, 57, 46, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(244, 248, 240, 0.94) 0%, rgba(231, 239, 226, 0.84) 100%);
+  background-size: 22px 22px, 22px 22px, 100% 100%;
+}
+
+.office-room-fixtures,
+.office-room-avatars {
+  position: absolute;
+  inset: 0;
+}
+
+.office-room-avatar-slot {
+  position: absolute;
+  width: 26px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  transform: translate(-50%, -78%);
+}
+
+.office-room-avatar-slot.selected {
+  filter: drop-shadow(0 0 8px rgba(17, 122, 69, 0.16));
+}
+
+.office-avatar-shadow {
+  position: absolute;
+  left: 5px;
+  bottom: 2px;
+  width: 14px;
+  height: 4px;
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.office-room-overflow {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 0;
+  background: rgba(20, 25, 21, 0.9);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  transform: translate(-50%, -50%);
+}
+
+.office-room-awaiting {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px dashed rgba(46, 57, 46, 0.18);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.office-room-bar {
+  margin-top: auto;
+  height: 7px;
+  border-radius: 0;
+  background: rgba(46, 57, 46, 0.08);
+  overflow: hidden;
+}
+
+.office-room-fill {
+  display: block;
+  height: 100%;
+  border-radius: 0;
+  background: rgba(46, 57, 46, 0.2);
+}
+
+.office-room-fill.info {
+  background: rgba(29, 143, 214, 0.45);
+}
+
+.office-room-fill.warning {
+  background: rgba(201, 139, 18, 0.45);
+}
+
+.office-room-fill.danger {
+  background: rgba(193, 73, 73, 0.5);
+}
+
+.office-pixel-avatar {
+  position: relative;
+  display: inline-flex;
+  width: 20px;
+  height: 28px;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1;
+}
+
+.office-pixel-avatar.selected {
+  filter: drop-shadow(0 0 8px rgba(17, 122, 69, 0.22));
+}
+
+.office-pixel-sprite {
+  display: inline-flex;
+  width: 20px;
+  height: 25px;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.office-pixel-mark {
+  position: absolute;
+  right: -6px;
+  top: -3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--office-accent, var(--accent-strong));
+  font-size: 9px;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(46, 57, 46, 0.08);
+}
+
+@media (max-width: 1220px) {
+  .office-stage-shell {
+    aspect-ratio: auto;
+    min-height: 900px;
+  }
+}

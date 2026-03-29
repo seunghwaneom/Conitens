@@ -24,6 +24,14 @@ import { useEventStore } from "./store/event-store.js";
 
 type Tab = (typeof DASHBOARD_TABS)[number];
 
+const APP_KEY_LEGEND = [
+  { key: DASHBOARD_TAB_HOTKEYS.overview, label: "Overview" },
+  { key: DASHBOARD_TAB_HOTKEYS.kanban, label: "Board" },
+  { key: DASHBOARD_TAB_HOTKEYS.timeline, label: "Timeline" },
+  { key: DASHBOARD_TAB_HOTKEYS.office, label: "Office" },
+  { key: "Esc", label: "Close task" },
+];
+
 export function App() {
   const liveTasks = useEventStore((state) => state.tasks);
   const liveAgents = useEventStore((state) => state.agents);
@@ -118,20 +126,30 @@ export function App() {
       </header>
 
       <nav className="app-nav">
-        {DASHBOARD_TABS.map((tab) => {
-          const badge = tabBadges[tab];
-          return (
-            <button
-              key={tab}
-              className={`app-nav-button${activeTab === tab ? " active" : ""}`}
-              onClick={() => openTab(tab)}
-              title={`Hotkey ${DASHBOARD_TAB_HOTKEYS[tab]}`}
-            >
-              {tab.toUpperCase()}
-              {badge != null && badge > 0 && <span className="tab-badge">{badge}</span>}
-            </button>
-          );
-        })}
+        <div className="app-nav-tabs">
+          {DASHBOARD_TABS.map((tab) => {
+            const badge = tabBadges[tab];
+            return (
+              <button
+                key={tab}
+                className={`app-nav-button${activeTab === tab ? " active" : ""}`}
+                onClick={() => openTab(tab)}
+                title={`Hotkey ${DASHBOARD_TAB_HOTKEYS[tab]}`}
+              >
+                {tab.toUpperCase()}
+                {badge != null && badge > 0 && <span className="tab-badge">{badge}</span>}
+              </button>
+            );
+          })}
+        </div>
+        <div className="app-nav-legend" aria-label="Keyboard shortcuts">
+          {APP_KEY_LEGEND.map((item) => (
+            <span key={item.key} className="app-key-item">
+              <span className="app-key">{item.key}</span>
+              <span className="app-key-label">{item.label}</span>
+            </span>
+          ))}
+        </div>
       </nav>
 
       <div className="app-content">
@@ -140,6 +158,9 @@ export function App() {
             <DashboardTabPanel
               title={DASHBOARD_PANEL_COPY[activePanelTab].title}
               subtitle={DASHBOARD_PANEL_COPY[activePanelTab].subtitle}
+              hideHeader={activePanelTab === "office"}
+              className={activePanelTab === "office" ? "office-tab-shell" : undefined}
+              panelClassName={activePanelTab === "office" ? "office-tab-panel" : undefined}
             >
               {activePanelTab === "kanban" ? (
                 <KanbanBoard tasks={tasks} onSelectTask={setSelectedTaskId} />
@@ -182,18 +203,26 @@ function DashboardTabPanel({
   title,
   subtitle,
   children,
+  hideHeader = false,
+  className,
+  panelClassName,
 }: {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  hideHeader?: boolean;
+  className?: string;
+  panelClassName?: string;
 }) {
   return (
-    <div className="tab-shell">
-      <section className="tab-panel">
-        <div className="tab-panel-header">
-          <h2 className="tab-panel-title">{title}</h2>
-          <p className="tab-panel-subtitle">{subtitle}</p>
-        </div>
+    <div className={className ? `tab-shell ${className}` : "tab-shell"}>
+      <section className={panelClassName ? `tab-panel ${panelClassName}` : "tab-panel"}>
+        {!hideHeader && (
+          <div className="tab-panel-header">
+            <h2 className="tab-panel-title">{title}</h2>
+            <p className="tab-panel-subtitle">{subtitle}</p>
+          </div>
+        )}
         {children}
       </section>
     </div>
