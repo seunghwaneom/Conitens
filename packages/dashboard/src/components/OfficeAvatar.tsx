@@ -40,7 +40,7 @@ export function OfficeAvatar({
         selected ? stageStyles.selected : "",
       ].filter(Boolean).join(" ")}
       style={{ "--office-accent": profile.accent } as React.CSSProperties}
-      title={`${label} · ${profile.archetype}`}
+      title={`${label} / ${profile.archetype}`}
     >
       <canvas
         ref={canvasRef}

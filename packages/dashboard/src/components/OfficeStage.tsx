@@ -20,13 +20,10 @@ export function OfficeStage({
   return (
     <section className={`${layoutStyles["office-panel"]} ${stageStyles["office-stage-panel"]}`}>
       <div className={stageStyles["office-stage-header"]}>
-        <div>
-          <p className="panel-kicker">PIXEL OFFICE</p>
-          <h3 className={stageStyles["office-stage-title"]}>Stage-first operator floorplate</h3>
-        </div>
-        <p className={stageStyles["office-stage-subtitle"]}>
-          One shared floor, six anchored teams, and only the signals needed to route work.
-        </p>
+        <p className={stageStyles["office-stage-kicker"]}>OFFICE STAGE</p>
+        <span className={stageStyles["office-stage-meta"]}>
+          {rooms.length} rooms / stage-first operator floorplate
+        </span>
       </div>
 
       <div className={stageStyles["office-stage-shell"]}>
