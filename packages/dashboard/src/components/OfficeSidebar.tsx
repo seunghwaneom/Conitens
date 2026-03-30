@@ -51,7 +51,7 @@ export function OfficeSidebar({
 
   return (
     <aside className={`${layoutStyles["office-panel"]} ${sidebarStyles["office-rail"]}`}>
-      <section className={sidebarStyles["office-rail-section"]}>
+      <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.agents}`}>
         <div className="section-head">
           <p className="panel-kicker">ACTIVE AGENTS</p>
           <span className="section-meta">{residents.length} online</span>
@@ -83,7 +83,7 @@ export function OfficeSidebar({
                   <div>
                     <strong>{resident.agentId}</strong>
                     <div className="muted">
-                      {resident.teamLabel} / {ROLE_LABELS[resident.profile.role]}
+                      {resident.profile.archetype} / {resident.roomLabel}
                     </div>
                   </div>
                 </div>
@@ -96,7 +96,7 @@ export function OfficeSidebar({
         </div>
       </section>
 
-      <section className={sidebarStyles["office-rail-section"]}>
+      <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.queue}`}>
         <div className="section-head">
           <p className="panel-kicker">TASK QUEUE</p>
           <span className="section-meta">{queuedTasks.length} surfaced</span>
@@ -108,10 +108,19 @@ export function OfficeSidebar({
             queuedTasks.map((task) => {
               const tone = getTaskTone(task.state);
               return (
-                <div key={task.taskId} className={sidebarStyles["office-data-row"]}>
+                <div
+                  key={task.taskId}
+                  className={[
+                    sidebarStyles["office-data-row"],
+                    sidebarStyles["office-task-row"],
+                    sidebarStyles[tone],
+                  ].join(" ")}
+                >
                   <div className={sidebarStyles["office-task-main"]}>
                     <strong>{task.taskId}</strong>
-                    <div className="muted">{task.assignee ?? "unassigned"}</div>
+                    <div className="muted">
+                      {(task.assignee ?? "unassigned")} / {task.state}
+                    </div>
                     <div className={sidebarStyles["office-progress-track"]} aria-hidden="true">
                       <span
                         className={[sidebarStyles["office-progress-bar"], sidebarStyles[tone]].join(" ")}
@@ -127,7 +136,7 @@ export function OfficeSidebar({
         </div>
       </section>
 
-      <section className={sidebarStyles["office-rail-section"]}>
+      <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.handoffs}`}>
         <div className="section-head">
           <p className="panel-kicker">RECENT HANDOFFS</p>
           <span className="section-meta">{handoffs.length} live routes</span>
@@ -140,11 +149,11 @@ export function OfficeSidebar({
               <div key={handoff.id} className={sidebarStyles["office-data-row"]}>
                 <div>
                   <strong>
-                    {handoff.fromLabel} → {handoff.toLabel}
+                    {handoff.fromLabel} to {handoff.toLabel}
                   </strong>
                   <div className="muted">
                     {handoff.actorId}
-                    {handoff.targetId ? ` / ${handoff.targetId}` : ""}
+                    {handoff.targetId ? ` to ${handoff.targetId}` : ""}
                   </div>
                 </div>
                 <div className={sidebarStyles["office-route-meta"]}>
@@ -164,10 +173,12 @@ export function OfficeSidebar({
               <strong>{selectedResident.agentId}</strong>
               <span className="muted">{selectedResident.roomLabel}</span>
             </div>
-            <p className={sidebarStyles["office-focus-copy"]}>{selectedResident.profile.voice}</p>
+            <p className={sidebarStyles["office-focus-copy"]}>
+              {selectedResident.profile.archetype} / {ROLE_LABELS[selectedResident.profile.role]}
+            </p>
             <div className={sidebarStyles["office-focus-meta"]}>
-              <span>{selectedResident.taskCount} assigned tasks</span>
-              <span>{selectedResident.roleTaskCount} priority tasks</span>
+              <span>{selectedResident.taskCount} active tasks</span>
+              <span>{selectedResident.status}</span>
               <span>{selectedResident.profile.signatureProp}</span>
             </div>
           </>

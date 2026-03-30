@@ -1,40 +1,41 @@
 .office-stage-panel {
-  gap: 14px;
+  gap: 10px;
 }
 
 .office-stage-header {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  align-items: end;
+  gap: 12px;
+  align-items: center;
+  padding: 0 2px;
 }
 
-.office-stage-title {
+.office-stage-kicker {
   margin: 0;
-  font-size: 22px;
-  line-height: 1.1;
-}
-
-.office-stage-subtitle {
-  margin: 0;
-  max-width: 34ch;
-  font-size: 12px;
-  line-height: 1.55;
   color: var(--muted);
-  text-align: right;
+  font-family: var(--font-pixel, "Press Start 2P", cursive);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.office-stage-meta {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 .office-stage-shell {
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr) 236px;
-  grid-template-rows: 170px 190px 190px;
+  grid-template-columns: 232px minmax(0, 1fr) 232px;
+  grid-template-rows: 164px 176px 164px;
   grid-template-areas:
     "control commons research"
     "impl commons validation"
     "impl commons review";
   gap: 1px;
   padding: 1px;
-  min-height: 560px;
+  min-height: 520px;
   border: 1px solid rgba(46, 57, 46, 0.1);
   background: rgba(200, 184, 154, 0.55);
   box-shadow: 0 10px 24px rgba(38, 43, 34, 0.05);
@@ -51,7 +52,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
   min-width: 0;
   padding: 10px;
   border: none;
@@ -99,8 +100,8 @@
 
 .office-room-team {
   display: inline-flex;
-  margin-bottom: 4px;
-  font-size: 9px;
+  margin-bottom: 3px;
+  font-size: 8px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent-strong);
@@ -109,8 +110,8 @@
 .office-room-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  font-size: 10px;
+  gap: 6px;
+  font-size: 9px;
   color: var(--muted);
 }
 
@@ -157,12 +158,18 @@
 
 .office-room-scene {
   position: relative;
-  min-height: 104px;
-  margin-top: 2px;
+  flex: 1 1 auto;
+  min-height: 118px;
+  margin-top: 4px;
   border: 1px solid rgba(86, 96, 111, 0.18);
   background: url("/office-floor-stage.png") repeat;
   background-size: 24px 24px;
+  overflow: hidden;
 }
+
+.office-room-tile.priority-hero .office-room-scene { min-height: 148px; }
+.office-room-tile.priority-support .office-room-scene { min-height: 124px; }
+.office-room-tile.priority-quiet .office-room-scene { min-height: 132px; }
 
 .office-room-scene::before {
   content: "";
@@ -317,9 +324,9 @@
 }
 
 .office-room-bar {
-  margin-top: auto;
-  height: 8px;
-  background: rgba(34, 34, 34, 0.18);
+  margin-top: 4px;
+  height: 4px;
+  background: rgba(34, 34, 34, 0.12);
   overflow: hidden;
 }
 
@@ -459,7 +466,8 @@
     flex-direction: column;
   }
 
-  .office-stage-subtitle {
+  .office-stage-meta {
+    display: inline-flex;
     text-align: left;
   }
 

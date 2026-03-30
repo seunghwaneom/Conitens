@@ -16,7 +16,7 @@ export function TaskNode({
     <span
       className={[stageStyles["office-task-node"], stageStyles[`tone-${tone}`]].join(" ")}
       style={{ left: `${left}%`, top: `${top}%` }}
-      title={`${taskId} · ${tone}`}
+      title={`${taskId} / ${tone}`}
     >
       <span className={stageStyles["office-task-node-dot"]} aria-hidden="true" />
     </span>

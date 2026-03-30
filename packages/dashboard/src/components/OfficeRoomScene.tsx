@@ -6,12 +6,6 @@ import { OFFICE_TEAM_BRIEFS } from "../office-team-briefs.js";
 import type { OfficeRoomPresence } from "../office-presence-model.js";
 import stageStyles from "../office-stage.module.css";
 
-function getStatusBubble(status: string, agentId: string): { message: string; tone: string } | null {
-  if (status === "running") return { message: "Working...", tone: "info" };
-  if (status === "error") return { message: "Error!", tone: "danger" };
-  return null;
-}
-
 function getRoomBadgeLabel(room: OfficeRoomPresence) {
   if (room.snapshot.runningCount > 0) return "live";
   if (room.snapshot.agentCount > 0) return "occupied";
@@ -127,7 +121,7 @@ export function OfficeRoomScene({
                   stageStyles[`status-${resident.status}`],
                   resident.agentId === selectedResidentId ? stageStyles.selected : "",
                 ].filter(Boolean).join(" ")}
-                style={{
+              style={{
                   left: `${station.left + (slot.offsetX ?? 0)}%`,
                   top: `${station.top + (slot.offsetY ?? 0)}%`,
                 }}
@@ -136,21 +130,6 @@ export function OfficeRoomScene({
                   onSelectResident(resident.agentId);
                 }}
               >
-                {(() => {
-                  const bubble = getStatusBubble(resident.status, resident.agentId);
-                  if (!bubble) return null;
-                  return (
-                    <span
-                      className={[
-                        stageStyles["office-speech-bubble"],
-                        stageStyles[bubble.tone],
-                      ].filter(Boolean).join(" ")}
-                      aria-hidden="true"
-                    >
-                      {bubble.message}
-                    </span>
-                  );
-                })()}
                 <span className={stageStyles["office-avatar-ring"]} aria-hidden="true" />
                 <span className={stageStyles["office-avatar-shadow"]} aria-hidden="true" />
                 <OfficeAvatar
