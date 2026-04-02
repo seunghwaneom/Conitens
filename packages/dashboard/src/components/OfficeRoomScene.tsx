@@ -2,7 +2,6 @@ import React from "react";
 import { OfficeAvatar } from "./OfficeAvatar.js";
 import { TaskNode } from "./TaskNode.js";
 import { getOfficeFixtureStyle } from "../office-fixture-registry.js";
-import { OFFICE_TEAM_BRIEFS } from "../office-team-briefs.js";
 import type { OfficeRoomPresence } from "../office-presence-model.js";
 import stageStyles from "../office-stage.module.css";
 
@@ -27,7 +26,6 @@ export function OfficeRoomScene({
 }) {
   const stationMap = new Map(room.schema.stationAnchors.map((station) => [station.id, station]));
   const latestFamily = room.snapshot.latestFamily ?? "stable";
-  const teamBrief = OFFICE_TEAM_BRIEFS[room.teamId];
 
   return (
     <div
@@ -72,7 +70,6 @@ export function OfficeRoomScene({
       ))}
       <div className={stageStyles["office-room-meta"]}>
         <div>
-          <span className={stageStyles["office-room-team"]}>{room.teamLabel}</span>
           <strong>{room.label}</strong>
         </div>
         <span className={`badge ${room.snapshot.tone}`}>{getRoomBadgeLabel(room)}</span>
@@ -155,21 +152,10 @@ export function OfficeRoomScene({
           )}
           {room.residents.length === 0 && (
             <span className={stageStyles["office-room-awaiting"]}>
-              {teamBrief.fallbackLabel}
+              awaiting crew
             </span>
           )}
         </div>
-      </div>
-      <div className={stageStyles["office-room-bar"]} aria-hidden="true">
-        <span
-          className={[stageStyles["office-room-fill"], stageStyles[room.snapshot.tone]].join(" ")}
-          style={{
-            width: `${Math.min(
-              100,
-              room.snapshot.agentCount * 18 + room.snapshot.runningCount * 16 + room.snapshot.signalCount * 12,
-            )}%`,
-          }}
-        />
       </div>
     </div>
   );

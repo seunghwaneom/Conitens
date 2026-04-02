@@ -48,8 +48,7 @@ export function PixelOffice({
     () =>
       tasks
         .slice()
-        .sort((left, right) => compareOfficeTasks(left.state, right.state))
-        .slice(0, 6),
+        .sort((left, right) => compareOfficeTasks(left.state, right.state)),
     [tasks],
   );
 

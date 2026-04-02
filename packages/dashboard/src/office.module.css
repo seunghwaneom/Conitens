@@ -1,6 +1,9 @@
 .office-frame {
   display: flex;
   flex-direction: column;
+  width: min(100%, 1440px);
+  min-height: 980px;
+  margin: 0 auto;
   padding: 0;
 }
 
@@ -8,17 +11,25 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 22px;
-  align-items: start;
+  align-items: stretch;
+  min-height: 980px;
 }
 
 .office-panel {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 @media (max-width: 1220px) {
+  .office-frame {
+    width: 100%;
+    min-height: auto;
+  }
+
   .office-layout {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 }

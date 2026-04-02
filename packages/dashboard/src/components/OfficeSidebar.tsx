@@ -3,8 +3,8 @@ import layoutStyles from "../office.module.css";
 import sidebarStyles from "../office-sidebar.module.css";
 import type { OfficeHandoffSnapshot } from "../dashboard-model.js";
 import type { OfficeResidentPresence, OfficeRoomPresence } from "../office-presence-model.js";
+import { buildOfficeFocusStripView, buildOfficeSidebarRailView } from "../office-sidebar-view-model.ts";
 import type { TaskState } from "../store/event-store.js";
-import { OFFICE_TEAM_BRIEFS } from "../office-team-briefs.js";
 import { getTaskTone } from "../utils.js";
 
 const ROLE_LABELS = {
@@ -47,7 +47,12 @@ export function OfficeSidebar({
   selectedResidentId: string | null;
   onSelectResident: (agentId: string) => void;
 }) {
-  const teamBrief = selectedRoom ? OFFICE_TEAM_BRIEFS[selectedRoom.teamId] : null;
+  const rail = buildOfficeSidebarRailView({ residents, queuedTasks, handoffs });
+  const focus = buildOfficeFocusStripView({
+    selectedResident,
+    selectedRoom,
+    roleLabels: ROLE_LABELS,
+  });
 
   return (
     <aside className={`${layoutStyles["office-panel"]} ${sidebarStyles["office-rail"]}`}>
@@ -57,10 +62,10 @@ export function OfficeSidebar({
           <span className="section-meta">{residents.length} online</span>
         </div>
         <div className={sidebarStyles["office-staff-list"]}>
-          {residents.length === 0 ? (
+          {rail.visibleResidents.length === 0 ? (
             <div className="empty-state compact">No residents online</div>
           ) : (
-            residents.map((resident) => (
+            rail.visibleResidents.map((resident) => (
               <button
                 key={resident.agentId}
                 type="button"
@@ -94,6 +99,9 @@ export function OfficeSidebar({
             ))
           )}
         </div>
+        {rail.hiddenResidentCount > 0 ? (
+          <div className={sidebarStyles["office-overflow-chip"]}>+{rail.hiddenResidentCount} more agents off-rail</div>
+        ) : null}
       </section>
 
       <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.queue}`}>
@@ -102,10 +110,10 @@ export function OfficeSidebar({
           <span className="section-meta">{queuedTasks.length} surfaced</span>
         </div>
         <div className={sidebarStyles["office-data-list"]}>
-          {queuedTasks.length === 0 ? (
+          {rail.visibleTasks.length === 0 ? (
             <div className="empty-state compact">No queued tasks in the current view</div>
           ) : (
-            queuedTasks.map((task) => {
+            rail.visibleTasks.map((task) => {
               const tone = getTaskTone(task.state);
               return (
                 <div
@@ -134,6 +142,9 @@ export function OfficeSidebar({
             })
           )}
         </div>
+        {rail.hiddenTaskCount > 0 ? (
+          <div className={sidebarStyles["office-overflow-chip"]}>+{rail.hiddenTaskCount} more queued tasks</div>
+        ) : null}
       </section>
 
       <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.handoffs}`}>
@@ -142,10 +153,10 @@ export function OfficeSidebar({
           <span className="section-meta">{handoffs.length} live routes</span>
         </div>
         <div className={sidebarStyles["office-data-list"]}>
-          {handoffs.length === 0 ? (
+          {rail.visibleHandoffs.length === 0 ? (
             <div className="empty-state compact">No live handoff routes</div>
           ) : (
-            handoffs.map((handoff) => (
+            rail.visibleHandoffs.map((handoff) => (
               <div key={handoff.id} className={sidebarStyles["office-data-row"]}>
                 <div>
                   <strong>
@@ -164,44 +175,16 @@ export function OfficeSidebar({
             ))
           )}
         </div>
+        {rail.hiddenHandoffCount > 0 ? (
+          <div className={sidebarStyles["office-overflow-chip"]}>+{rail.hiddenHandoffCount} more handoffs in backlog</div>
+        ) : null}
       </section>
 
       <section className={sidebarStyles["office-focus-card"]}>
-        {selectedResident ? (
-          <>
-            <div className={sidebarStyles["office-focus-head"]}>
-              <strong>{selectedResident.agentId}</strong>
-              <span className="muted">{selectedResident.roomLabel}</span>
-            </div>
-            <p className={sidebarStyles["office-focus-copy"]}>
-              {selectedResident.profile.archetype} / {ROLE_LABELS[selectedResident.profile.role]}
-            </p>
-            <div className={sidebarStyles["office-focus-meta"]}>
-              <span>{selectedResident.taskCount} active tasks</span>
-              <span>{selectedResident.status}</span>
-              <span>{selectedResident.profile.signatureProp}</span>
-            </div>
-          </>
-        ) : selectedRoom ? (
-          <>
-            <div className={sidebarStyles["office-focus-head"]}>
-              <strong>{selectedRoom.label}</strong>
-              <span className="muted">{selectedRoom.teamLabel}</span>
-            </div>
-            <p className={sidebarStyles["office-focus-copy"]}>
-              {teamBrief?.mission ?? "Shared room context is stable."}
-            </p>
-            <div className={sidebarStyles["office-focus-meta"]}>
-              <span>{selectedRoom.snapshot.agentCount} residents</span>
-              <span>{selectedRoom.snapshot.taskCount} tasks</span>
-              <span>{selectedRoom.snapshot.latestFamily ?? "stable"}</span>
-            </div>
-          </>
-        ) : (
-          <p className={sidebarStyles["office-focus-copy"]}>
-            Select a room or resident to focus the rail.
-          </p>
-        )}
+        <div className={sidebarStyles["office-focus-head"]}>
+          <strong>{focus.headline}</strong>
+        </div>
+        <p className={sidebarStyles["office-focus-copy"]}>{focus.summary}</p>
       </section>
     </aside>
   );
