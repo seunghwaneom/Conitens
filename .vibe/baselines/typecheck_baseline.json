@@ -1,0 +1,19 @@
+{
+  "targets": {
+    "@conitens/command-center::typecheck": {
+      "package_name": "@conitens/command-center",
+      "script": "typecheck",
+      "error_count": 1
+    },
+    "@conitens/command-center::typecheck:electron": {
+      "package_name": "@conitens/command-center",
+      "script": "typecheck:electron",
+      "error_count": 0
+    },
+    "@conitens/command-center::typecheck:test": {
+      "package_name": "@conitens/command-center",
+      "script": "typecheck:test",
+      "error_count": 1
+    }
+  }
+}
