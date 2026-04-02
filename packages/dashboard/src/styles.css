@@ -497,6 +497,294 @@ body {
   fill: rgba(123, 200, 255, 0.12);
 }
 
+/* ── Agent Fleet ─────────────────────────────────────────── */
+
+.agent-fleet-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+
+.agent-fleet-overview {
+  display: grid;
+  gap: 20px;
+}
+
+.agent-fleet-metrics {
+  display: flex;
+  gap: 24px;
+  padding: 16px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 15, 28, 0.66);
+  backdrop-filter: blur(12px);
+}
+
+.agent-metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(177, 205, 255, 0.6);
+}
+
+.agent-metric-value {
+  font-size: 28px;
+  line-height: 1;
+  color: #eef4ff;
+}
+
+.agent-metric-active { color: #4fb062; }
+.agent-metric-paused { color: #c98b12; }
+.agent-metric-retired { color: rgba(177, 205, 255, 0.45); }
+
+.agent-fleet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.agent-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 15, 28, 0.66);
+  backdrop-filter: blur(12px);
+  color: #eef4ff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.agent-card:hover {
+  border-color: rgba(123, 200, 255, 0.3);
+  background: rgba(123, 200, 255, 0.04);
+}
+
+.agent-card.active {
+  border-color: rgba(123, 200, 255, 0.52);
+  background: rgba(123, 200, 255, 0.08);
+}
+
+.agent-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.agent-card-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-card-name {
+  font-size: 15px;
+}
+
+.agent-card-archetype {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(177, 205, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.agent-card-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: rgba(177, 205, 255, 0.88);
+}
+
+.agent-card-last-active {
+  margin: 0;
+  font-size: 11px;
+  color: rgba(177, 205, 255, 0.45);
+}
+
+/* Status dots */
+.agent-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-running {
+  background: #4fb062;
+  box-shadow: 0 0 6px rgba(79, 176, 98, 0.8);
+  animation: pulse-live 2s ease-in-out infinite;
+}
+
+.dot-idle {
+  background: #4fb062;
+}
+
+.dot-paused {
+  background: #c98b12;
+}
+
+.dot-dormant {
+  background: rgba(177, 205, 255, 0.25);
+}
+
+.dot-retired {
+  background: rgba(177, 205, 255, 0.2);
+}
+
+/* Role badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.badge-orch { border-color: rgba(255, 112, 67, 0.5); color: #ff7043; }
+.badge-impl { border-color: rgba(102, 187, 106, 0.5); color: #66bb6a; }
+.badge-rsch { border-color: rgba(171, 71, 188, 0.5); color: #ab47bc; }
+.badge-revw { border-color: rgba(66, 165, 245, 0.5); color: #42a5f5; }
+.badge-vald { border-color: rgba(239, 83, 80, 0.5); color: #ef5350; }
+
+/* Agent Profile Panel */
+.agent-profile {
+  display: grid;
+  gap: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 15, 28, 0.66);
+  backdrop-filter: blur(12px);
+}
+
+.agent-profile-empty {
+  min-height: 320px;
+}
+
+.agent-profile-section {
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.agent-profile-section:last-child {
+  border-bottom: none;
+}
+
+.agent-profile-name {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.1;
+  color: #eef4ff;
+}
+
+.agent-profile-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agent-archetype-label {
+  font-size: 12px;
+  color: rgba(177, 205, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.agent-health-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-health-status {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.agent-health-active {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(177, 205, 255, 0.6);
+}
+
+.agent-error-bar-wrap {
+  display: grid;
+  gap: 5px;
+}
+
+.agent-error-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(177, 205, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.agent-error-bar-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.agent-error-bar-fill {
+  height: 100%;
+  background: #c98b12;
+  min-width: 2px;
+}
+
+.agent-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.agent-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-stat-item span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(177, 205, 255, 0.6);
+}
+
+.agent-stat-item strong {
+  font-size: 20px;
+  color: #eef4ff;
+}
+
+.agent-stat-room {
+  font-size: 13px !important;
+  word-break: break-all;
+}
+
+.agent-action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agent-action-btn {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .graph-plan {
   fill: rgba(255, 212, 121, 0.12);
 }
