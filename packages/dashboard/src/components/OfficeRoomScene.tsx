@@ -81,6 +81,9 @@ export function OfficeRoomScene({
       </div>
       <div className={stageStyles["office-room-scene"]} aria-hidden="true">
         <div className={stageStyles["office-room-fixtures"]}>
+          {room.residents.length === 0 && (
+            <span className={stageStyles["office-room-dust"]} aria-hidden="true" />
+          )}
           {room.schema.fixtureClusters.flatMap((cluster) =>
             cluster.fixtures.map((fixture, index) => (
               <span
@@ -99,6 +102,7 @@ export function OfficeRoomScene({
               key={taskNode.taskId}
               taskId={taskNode.taskId}
               tone={taskNode.tone}
+              state={taskNode.state}
               left={taskNode.left}
               top={taskNode.top}
             />
@@ -121,7 +125,8 @@ export function OfficeRoomScene({
               style={{
                   left: `${station.left + (slot.offsetX ?? 0)}%`,
                   top: `${station.top + (slot.offsetY ?? 0)}%`,
-                }}
+                  "--office-accent": resident.profile.accent,
+                } as React.CSSProperties}
                 onClick={(event) => {
                   event.stopPropagation();
                   onSelectResident(resident.agentId);
