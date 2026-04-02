@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -25,6 +26,9 @@ from ensemble_hooks import check_action_policy
 from ensemble_memory import initialize_agent_memory
 from ensemble_paths import ensure_notes_dir
 from ensemble_provider_render import build_provider_command, build_provider_render_values
+
+
+SAFE_SPAWN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 
 def utc_iso(ts: datetime | None = None) -> str:
@@ -111,9 +115,20 @@ def next_spawn_id(workspace: str | Path) -> str:
     return f"{prefix}{max_num + 1:03d}"
 
 
+def validate_spawn_id(spawn_id: str) -> str:
+    candidate = str(spawn_id).strip()
+    if not candidate:
+        raise ValueError("spawn_id is required")
+    if ".." in candidate or "/" in candidate or "\\" in candidate:
+        raise ValueError(f"Invalid spawn_id: {spawn_id}")
+    if not SAFE_SPAWN_ID_PATTERN.fullmatch(candidate):
+        raise ValueError(f"Invalid spawn_id: {spawn_id}")
+    return candidate
+
+
 def spawn_record_path(workspace: str | Path, spawn_id: str, *, completed: bool = False) -> Path:
     base = subagent_completed_dir(workspace) if completed else subagent_active_dir(workspace)
-    return base / f"{spawn_id}.json"
+    return base / f"{validate_spawn_id(spawn_id)}.json"
 
 
 def list_spawn_records(workspace: str | Path) -> list[dict[str, Any]]:
@@ -126,8 +141,9 @@ def list_spawn_records(workspace: str | Path) -> list[dict[str, Any]]:
 
 
 def read_spawn_record(workspace: str | Path, spawn_id: str) -> dict[str, Any]:
+    safe_spawn_id = validate_spawn_id(spawn_id)
     for directory in (subagent_active_dir(workspace), subagent_completed_dir(workspace)):
-        path = directory / f"{spawn_id}.json"
+        path = directory / f"{safe_spawn_id}.json"
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
     raise FileNotFoundError(f"Spawn record not found: {spawn_id}")

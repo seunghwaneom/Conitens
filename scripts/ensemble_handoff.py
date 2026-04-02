@@ -12,6 +12,7 @@ from typing import Any
 
 from ensemble_artifacts import append_artifact_manifest
 from ensemble_events import append_event
+from ensemble_loop_repository import LoopStateRepository
 from ensemble_paths import candidate_notes_dirs, ensure_notes_dir
 
 
@@ -80,6 +81,7 @@ def create_handoff(
     owner_transfer: bool = False,
     worktree_id: str | None = None,
     lease_paths: list[str] | None = None,
+    iteration_id: str | None = None,
 ) -> dict[str, Any]:
     handoff_id = next_handoff_id(workspace)
     ts = utc_iso()
@@ -92,6 +94,7 @@ def create_handoff(
         "from": from_actor,
         "to": to_actor,
         "run_id": run_id,
+        "iteration_id": iteration_id,
         "task_id": task_id,
         "correlation_id": correlation_id or run_id,
         "files": files or [],
@@ -115,6 +118,18 @@ def create_handoff(
     legacy_path = legacy_handoff_path(workspace, handoff_id)
     if legacy_path != path:
         _write_handoff(legacy_path, record)
+    LoopStateRepository(workspace).upsert_handoff_packet(
+        handoff_id=handoff_id,
+        run_id=run_id,
+        iteration_id=iteration_id,
+        from_actor=from_actor,
+        to_actor=to_actor,
+        status="requested",
+        summary=summary,
+        packet=record,
+        created_at=ts,
+        updated_at=ts,
+    )
     append_event(
         workspace,
         event_type="HANDOFF_REQUESTED",
@@ -182,6 +197,18 @@ def transition_handoff(
     legacy_path = legacy_handoff_path(workspace, handoff_id)
     if legacy_path != path:
         _write_handoff(legacy_path, record)
+    LoopStateRepository(workspace).upsert_handoff_packet(
+        handoff_id=handoff_id,
+        run_id=record.get("run_id"),
+        iteration_id=record.get("iteration_id"),
+        from_actor=record.get("from") or "",
+        to_actor=record.get("to") or "",
+        status=state,
+        summary=record.get("summary") or "",
+        packet=record,
+        created_at=record.get("created_at"),
+        updated_at=ts,
+    )
     append_event(
         workspace,
         event_type=f"HANDOFF_{state.upper()}",
