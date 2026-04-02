@@ -56,21 +56,27 @@ export const useEventStore = create<EventStoreState>((set) => ({
               tasks = [...tasks, { taskId, state: "draft" }];
             }
           } else if (event.type === "task.assigned") {
-            tasks = tasks.map((t) =>
-              t.taskId === taskId
-                ? { ...t, assignee: event.payload.assignee as string, state: "assigned" }
-                : t
-            );
+            tasks = exists
+              ? tasks.map((t) =>
+                  t.taskId === taskId
+                    ? { ...t, assignee: event.payload.assignee as string, state: "assigned" }
+                    : t
+                )
+              : [...tasks, { taskId, assignee: event.payload.assignee as string, state: "assigned" }];
           } else if (event.type === "task.status_changed") {
-            tasks = tasks.map((t) =>
-              t.taskId === taskId
-                ? { ...t, state: event.payload.to as string }
-                : t
-            );
+            tasks = exists
+              ? tasks.map((t) =>
+                  t.taskId === taskId
+                    ? { ...t, state: event.payload.to as string }
+                    : t
+                )
+              : [...tasks, { taskId, state: event.payload.to as string }];
           } else if (event.type === "task.completed") {
-            tasks = tasks.map((t) =>
-              t.taskId === taskId ? { ...t, state: "done" } : t
-            );
+            tasks = exists
+              ? tasks.map((t) =>
+                  t.taskId === taskId ? { ...t, state: "done" } : t
+                )
+              : [...tasks, { taskId, state: "done" }];
           }
         }
       }

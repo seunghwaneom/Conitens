@@ -22,7 +22,7 @@ export const demoEvents: EventRecord[] = [
   {
     event_id: "evt-001",
     type: "workflow.started",
-    ts: new Date(Date.now() - 72 * 60 * 1000).toISOString(),
+    ts: "2026-03-21T08:02:11.000Z",
     actor: { kind: "agent", id: "architect" },
     task_id: "wf_apply",
     payload: { workflow: "wf_apply" },
@@ -30,7 +30,7 @@ export const demoEvents: EventRecord[] = [
   {
     event_id: "evt-002",
     type: "question.opened",
-    ts: new Date(Date.now() - 71 * 60 * 1000).toISOString(),
+    ts: "2026-03-21T08:03:24.000Z",
     actor: { kind: "agent", id: "architect" },
     task_id: "q_184_owner_gate",
     payload: { gate: "owner" },
@@ -38,7 +38,7 @@ export const demoEvents: EventRecord[] = [
   {
     event_id: "evt-003",
     type: "handoff.sent",
-    ts: new Date(Date.now() - 69 * 60 * 1000).toISOString(),
+    ts: "2026-03-21T08:05:02.000Z",
     actor: { kind: "agent", id: "architect" },
     task_id: "verify_append",
     payload: { target: "sentinel" },
@@ -46,14 +46,14 @@ export const demoEvents: EventRecord[] = [
   {
     event_id: "evt-004",
     type: "agent.spawned",
-    ts: new Date(Date.now() - 68 * 60 * 1000).toISOString(),
+    ts: "2026-03-21T08:06:15.000Z",
     actor: { kind: "agent", id: "worker-1" },
     payload: { provider: "codex" },
   },
   {
     event_id: "evt-005",
     type: "task.status_changed",
-    ts: new Date(Date.now() - 65 * 60 * 1000).toISOString(),
+    ts: "2026-03-21T08:08:44.000Z",
     actor: { kind: "agent", id: "sentinel" },
     task_id: "verify_append",
     payload: { to: "review" },
@@ -61,7 +61,7 @@ export const demoEvents: EventRecord[] = [
   {
     event_id: "evt-006",
     type: "approval.pending",
-    ts: new Date(Date.now() - 64 * 60 * 1000).toISOString(),
+    ts: "2026-03-21T08:10:03.000Z",
     actor: { kind: "agent", id: "owner" },
     task_id: "q_184_owner_gate",
     payload: { owner: "ops.team" },
@@ -69,7 +69,7 @@ export const demoEvents: EventRecord[] = [
   {
     event_id: "evt-007",
     type: "event.appended",
-    ts: new Date(Date.now() - 61 * 60 * 1000).toISOString(),
+    ts: "2026-03-21T08:12:38.000Z",
     actor: { kind: "system", id: "ops-log" },
     task_id: "office_snapshot",
     payload: { stream: "ops" },
@@ -77,7 +77,7 @@ export const demoEvents: EventRecord[] = [
   {
     event_id: "evt-008",
     type: "artifact.written",
-    ts: new Date(Date.now() - 59 * 60 * 1000).toISOString(),
+    ts: "2026-03-21T08:14:52.000Z",
     actor: { kind: "agent", id: "worker-1" },
     task_id: "replay_bundle",
     payload: { path: ".notes/runs/wf_apply.json" },

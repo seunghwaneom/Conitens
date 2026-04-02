@@ -1006,3 +1006,118 @@ The final polish slice is complete. The office stage now fills the preview shell
 more proportionally, the right rail breathes slightly better, and the frontend
 review document is effectively down to minor optional polish and structural
 cleanup rather than visual or behavioral blockers.
+
+## Dashboard Real-User Review Status
+
+- [x] current runtime/repo context reread before review
+- [x] latest dashboard change window identified from recent commits
+- [x] key Wave A-D files inspected directly
+- [x] team-mode attempt executed and failure captured accurately
+- [x] durable real-user review artifact written
+- [x] `.conitens/context/*` refreshed
+
+## Dashboard Real-User Review Commands Run
+
+- `Get-Content .conitens/context/LATEST_CONTEXT.md`
+- `Get-Content .vibe/context/LATEST_CONTEXT.md`
+- `git log --oneline --decorate -n 8`
+- `git diff --stat HEAD~5..HEAD`
+- `Get-Content docs/frontend/FRONTEND_REVIEW_2026-04-02.md`
+- `omx_run_team_start(...)`
+- `omx_run_team_status(jobId=omx-mnh7v86v)`
+- numbered file reads over:
+  - `packages/dashboard/src/App.tsx`
+  - `packages/dashboard/src/styles.css`
+  - `packages/dashboard/src/forward-route.ts`
+  - `packages/dashboard/src/components/AgentFleetOverview.tsx`
+  - `packages/dashboard/src/components/AgentProfilePanel.tsx`
+  - `packages/dashboard/src/components/AgentRelationshipGraph.tsx`
+  - `packages/dashboard/src/components/OnboardingOverlay.tsx`
+  - `packages/dashboard/src/components/ProposalQueuePanel.tsx`
+  - `packages/dashboard/src/agent-fleet-model.ts`
+  - `packages/dashboard/src/evolution-model.ts`
+- `view_image output/playwright/office-preview-2026-04-02-final-2.png`
+
+## Current Outcome
+
+The dashboard real-user review is complete as a read-only product/code review.
+The strongest issues are trust-boundary problems on the new `Agents` surface:
+demo-backed data and local-only actions are currently presented with the visual
+weight of live operational controls. The resulting review artifact prioritizes
+making demo/live boundaries explicit, removing fake controls, and then wiring
+the highest-value agent/fleet views to real bridge-backed data.
+
+## Dashboard Refactor Review Status
+
+- [x] latest dashboard refactor commit identified
+- [x] changed files inspected directly
+- [x] dashboard build rerun successfully
+- [x] dashboard test suite rerun and failure captured
+- [x] code + security review artifact written
+- [x] `.conitens/context/*` refreshed
+
+## Dashboard Refactor Review Commands Run
+
+- `git log --oneline --decorate -n 12`
+- `git show --stat --name-only -n 1 HEAD`
+- numbered file reads over:
+  - `packages/dashboard/src/components/ForwardShell.tsx`
+  - `packages/dashboard/src/components/ProposalQueuePanel.tsx`
+  - `packages/dashboard/src/components/TrustBadge.tsx`
+  - `packages/dashboard/src/components/OverviewDashboard.tsx`
+  - `packages/dashboard/src/components/KanbanBoard.tsx`
+  - `packages/dashboard/src/components/TaskDetailModal.tsx`
+  - `packages/dashboard/src/components/AgentRelationshipGraph.tsx`
+  - `packages/dashboard/src/store/event-store.ts`
+  - `packages/dashboard/src/demo-data.ts`
+  - `packages/dashboard/src/dashboard-model.ts`
+  - `packages/dashboard/src/forward-route.ts`
+  - `packages/dashboard/src/components/Timeline.tsx`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `pnpm.cmd --filter @conitens/dashboard test`
+
+## Current Outcome
+
+The dashboard refactor review is complete. Build verification passed, but the
+dashboard package test suite still has one failing assertion after the refactor.
+The strongest code findings are a broken demo board/task-detail flow and trust
+state work that was introduced but not actually mounted in the rendered shell.
+
+## Dashboard Refactor Fix Execution Status
+
+- [x] review findings were converted into a scoped fix plan
+- [x] demo board/task-detail flow was repaired
+- [x] trust-state indicator was mounted in the shell
+- [x] deterministic demo timestamp behavior was restored
+- [x] dashboard package build passed
+- [x] dashboard package tests passed
+- [x] execution summary and `.conitens/context/*` were refreshed
+
+## Dashboard Refactor Fix Execution Commands Run
+
+- `tmux new-session -d -s omx_dashboard_refactor`
+- `omx.cmd team --help`
+- `omx_run_team_start(...)`
+- `omx_run_team_status(jobId=omx-mnhgmhvy)`
+- numbered file reads over:
+  - `packages/dashboard/src/components/ForwardShell.tsx`
+  - `packages/dashboard/src/components/OverviewDashboard.tsx`
+  - `packages/dashboard/src/components/KanbanBoard.tsx`
+  - `packages/dashboard/src/components/TaskDetailModal.tsx`
+  - `packages/dashboard/src/components/TrustBadge.tsx`
+  - `packages/dashboard/src/store/event-store.ts`
+  - `packages/dashboard/src/demo-data.ts`
+  - `packages/dashboard/src/dashboard-model.ts`
+  - `packages/dashboard/tests/dashboard-model.test.mjs`
+  - `packages/dashboard/tests/event-store.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `pnpm.cmd --filter @conitens/dashboard test`
+
+## Current Outcome
+
+The dashboard refactor fix pass is complete. The package now rebuilds cleanly,
+the full dashboard test suite is green again, demo task interactions are backed
+by a seeded/resolved store path, and the trust indicator is finally mounted in
+the rendered shell. Team mode was attempted again but still cannot run end to
+end in this session because the OMX runtime does not see a tmux-backed leader
+pane.

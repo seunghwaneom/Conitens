@@ -296,6 +296,6 @@ test("office snapshot maps room occupancy and handoff routes from current dashbo
     taskId: "verify_append",
     actorId: "architect",
     targetId: "sentinel",
-    timestamp: "2026-03-21T08:05:02.000Z",
+    timestamp: demoEvents.find((event) => event.event_id === "evt-003")?.ts,
   });
 });
