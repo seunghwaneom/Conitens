@@ -241,6 +241,15 @@ body {
   background: rgba(123, 200, 255, 0.08);
 }
 
+@keyframes pulse-live {
+  0%, 100% { border-color: rgba(123, 200, 255, 0.25); }
+  50%       { border-color: rgba(123, 200, 255, 0.72); }
+}
+
+.forward-run-item.running {
+  animation: pulse-live 2s ease-in-out infinite;
+}
+
 .forward-run-topline strong {
   font-size: 16px;
   line-height: 1.2;
@@ -276,6 +285,11 @@ body {
   gap: 12px;
   padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.forward-section pre {
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .forward-section-header {
