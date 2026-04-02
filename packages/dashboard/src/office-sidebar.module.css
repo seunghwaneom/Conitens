@@ -110,6 +110,16 @@
 .office-status-dot.status-reviewer { background: var(--role-revw); }
 .office-status-dot.status-validator { background: var(--role-vald); }
 
+@keyframes pulse-danger {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.office-status-dot.status-blocked {
+  background: var(--accent-danger, #c14949);
+  animation: pulse-danger 1.2s ease-in-out infinite;
+}
+
 .office-task-main {
   display: flex;
   flex-direction: column;

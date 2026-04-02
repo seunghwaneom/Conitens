@@ -75,6 +75,24 @@ export function ForwardApprovalCenterPanel({
   }, [config, runId]);
 
   useEffect(() => {
+    if (!config.token.trim() || !runId) {
+      return;
+    }
+    const intervalId = setInterval(() => {
+      forwardListApprovals(config, { runId })
+        .then((payload) => {
+          setApprovals(payload.approvals);
+          setSelectedApprovalId((current) => pickNextApprovalId(current, payload.approvals));
+          setListState("ready");
+        })
+        .catch(() => {});
+    }, 5000);
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [config, runId]);
+
+  useEffect(() => {
     if (!selectedApprovalId) {
       setSelectedApproval(null);
       setDetailState("idle");
@@ -155,12 +173,17 @@ export function ForwardApprovalCenterPanel({
     }
   }
 
+  const pendingCount = approvals.filter((a) => a.status === "pending").length;
+
   return (
     <section className="forward-section">
       <div className="forward-section-header">
         <div>
           <p className="forward-panel-label">Approvals</p>
-          <h3>Approval center</h3>
+          <h3>
+            Approval center
+            {pendingCount > 0 ? <span className="badge danger">{pendingCount}</span> : null}
+          </h3>
         </div>
         <span className={`forward-state state-${listState}`}>{listState}</span>
       </div>

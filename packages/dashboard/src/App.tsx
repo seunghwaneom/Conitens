@@ -418,8 +418,8 @@ export function App() {
                       </ul>
                     )}
                   </div>
-                  <ForwardReplayPanel replay={replay} state={replayState} error={replayError} />
                   <ForwardApprovalCenterPanel config={config} runId={runDetail.runId} />
+                  <ForwardReplayPanel replay={replay} state={replayState} error={replayError} />
                   <ForwardGraphPanel model={graphModel} />
                   <ForwardInsightsPanel
                     insights={insightCards}
