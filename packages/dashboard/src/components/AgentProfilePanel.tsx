@@ -1,5 +1,6 @@
 import React from "react";
 import type { AgentProfile, AgentLifecycleStatus } from "../agent-fleet-model.js";
+import type { EvolutionEntry, LearningMetric } from "../evolution-model.js";
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -33,11 +34,32 @@ function roleToneClass(role: AgentProfile["role"]): string {
   }
 }
 
-interface AgentProfilePanelProps {
-  agent: AgentProfile | null;
+function outcomeClass(outcome: EvolutionEntry["outcome"]): string {
+  switch (outcome) {
+    case "improved": return "badge badge-success";
+    case "neutral": return "badge badge-neutral";
+    case "regressed": return "badge badge-danger";
+  }
 }
 
-export function AgentProfilePanel({ agent }: AgentProfilePanelProps) {
+function timeAgoFrom(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h ago`;
+  const diffD = Math.floor(diffH / 24);
+  return `${diffD}d ago`;
+}
+
+interface AgentProfilePanelProps {
+  agent: AgentProfile | null;
+  evolution: EvolutionEntry[];
+  metrics: LearningMetric | null;
+}
+
+export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePanelProps) {
   if (!agent) {
     return (
       <div className="agent-profile agent-profile-empty">
@@ -124,6 +146,69 @@ export function AgentProfilePanel({ agent }: AgentProfilePanelProps) {
           </button>
         </div>
       </div>
+
+      {evolution.length > 0 && (
+        <div className="agent-profile-section">
+          <p className="forward-panel-label">Evolution Timeline</p>
+          <div className="agent-evolution-list">
+            {evolution.map(entry => (
+              <div key={entry.id} className="agent-evolution-entry">
+                <div className="agent-evolution-header">
+                  <span className={outcomeClass(entry.outcome)}>{entry.outcome}</span>
+                  <span className="agent-evolution-date">{timeAgoFrom(entry.appliedAt)}</span>
+                </div>
+                <p className="agent-evolution-title">{entry.title}</p>
+                <span className="agent-evolution-delta">{entry.deltaMetric}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {metrics && (
+        <div className="agent-profile-section">
+          <p className="forward-panel-label">Learning Metrics</p>
+          <div className="agent-memory-grid">
+            {(["identity", "procedural", "episodic", "reflection"] as const).map(key => (
+              <div key={key} className="agent-memory-stat">
+                <span className="agent-memory-label">{key}</span>
+                <strong className="agent-memory-count">{metrics.memoryCounts[key]}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="agent-proposal-bar-wrap">
+            <p className="agent-proposal-bar-label">Proposals</p>
+            <div className="agent-proposal-bar">
+              {metrics.proposalStats.approved > 0 && (
+                <div
+                  className="agent-proposal-bar-seg agent-proposal-seg-approved"
+                  style={{ flex: metrics.proposalStats.approved }}
+                  title={`Approved: ${metrics.proposalStats.approved}`}
+                />
+              )}
+              {metrics.proposalStats.rejected > 0 && (
+                <div
+                  className="agent-proposal-bar-seg agent-proposal-seg-rejected"
+                  style={{ flex: metrics.proposalStats.rejected }}
+                  title={`Rejected: ${metrics.proposalStats.rejected}`}
+                />
+              )}
+              {metrics.proposalStats.pending > 0 && (
+                <div
+                  className="agent-proposal-bar-seg agent-proposal-seg-pending"
+                  style={{ flex: metrics.proposalStats.pending }}
+                  title={`Pending: ${metrics.proposalStats.pending}`}
+                />
+              )}
+            </div>
+            <div className="agent-proposal-bar-legend">
+              <span className="agent-proposal-legend-approved">{metrics.proposalStats.approved} approved</span>
+              <span className="agent-proposal-legend-rejected">{metrics.proposalStats.rejected} rejected</span>
+              <span className="agent-proposal-legend-pending">{metrics.proposalStats.pending} pending</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
