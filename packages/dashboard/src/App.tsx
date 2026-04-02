@@ -38,9 +38,11 @@ import {
   toRunDetailViewModel,
   toRunListItemViewModel,
 } from "./forward-view-model.js";
+import { OnboardingOverlay } from "./components/OnboardingOverlay.js";
 import { demoAgents, demoEvents, demoTasks } from "./demo-data.js";
 import { AgentFleetOverview } from "./components/AgentFleetOverview.js";
 import { AgentProfilePanel } from "./components/AgentProfilePanel.js";
+import { AgentRelationshipGraph } from "./components/AgentRelationshipGraph.js";
 import { ProposalQueuePanel } from "./components/ProposalQueuePanel.js";
 import { demoFleet } from "./agent-fleet-model.js";
 import { demoProposals, demoEvolution, demoLearningMetrics } from "./evolution-model.js";
@@ -82,6 +84,7 @@ export function App() {
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const selectedAgent = demoFleet.find(a => a.id === selectedAgentId) ?? null;
+  const [agentView, setAgentView] = useState<"fleet" | "graph">("fleet");
 
   useEffect(() => {
     const handleHashChange = () => setRoute(parseForwardRoute(window.location.hash));
@@ -314,6 +317,7 @@ export function App() {
 
   return (
     <div className={`forward-shell${isOfficePreview ? " forward-shell-preview" : ""}`}>
+      <OnboardingOverlay />
       <header className="forward-header">
         <div>
           <p className="forward-eyebrow">{isOfficePreview ? "Conitens / office preview" : "Conitens / forward runtime"}</p>
@@ -346,14 +350,32 @@ export function App() {
         </main>
       ) : route.screen === "agents" ? (
         <main className="forward-main">
-          <div className="agent-fleet-layout">
-            <AgentFleetOverview agents={demoFleet} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
-            <AgentProfilePanel
-              agent={selectedAgent}
-              evolution={demoEvolution.filter(e => e.agentId === selectedAgentId)}
-              metrics={demoLearningMetrics.find(m => m.agentId === selectedAgentId) ?? null}
-            />
+          <div className="forward-tab-bar">
+            <button
+              className={`forward-tab${agentView === "fleet" ? " active" : ""}`}
+              onClick={() => setAgentView("fleet")}
+            >
+              Fleet
+            </button>
+            <button
+              className={`forward-tab${agentView === "graph" ? " active" : ""}`}
+              onClick={() => setAgentView("graph")}
+            >
+              Relationships
+            </button>
           </div>
+          {agentView === "fleet" ? (
+            <div className="agent-fleet-layout">
+              <AgentFleetOverview agents={demoFleet} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
+              <AgentProfilePanel
+                agent={selectedAgent}
+                evolution={demoEvolution.filter(e => e.agentId === selectedAgentId)}
+                metrics={demoLearningMetrics.find(m => m.agentId === selectedAgentId) ?? null}
+              />
+            </div>
+          ) : (
+            <AgentRelationshipGraph agents={demoFleet} />
+          )}
           <ProposalQueuePanel proposals={demoProposals} agents={demoFleet} />
         </main>
       ) : (
