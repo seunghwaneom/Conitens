@@ -126,7 +126,7 @@ export function summarizeValidatorCorrelations(replay: ForwardReplayResponse | n
 export function toRunListItemViewModel(run: ForwardRunSummary): RunListItemViewModel {
   return {
     runId: run.run_id,
-    title: run.user_request,
+    title: run.user_request.length > 80 ? run.user_request.slice(0, 80) + "…" : run.user_request,
     status: run.status,
     subtitle: run.latest_iteration_id
       ? `${run.latest_iteration_id} | ${run.latest_iteration_status ?? "unknown"}`
