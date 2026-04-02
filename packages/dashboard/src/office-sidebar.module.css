@@ -2,6 +2,7 @@
   gap: 18px;
   padding-left: 18px;
   border-left: 1px solid var(--line);
+  min-height: 100%;
 }
 
 .office-rail-section {
@@ -46,12 +47,12 @@
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 12px;
   border-top: 1px solid var(--line);
-  background: rgba(255, 252, 245, 0.82);
-  border-right: 1px solid rgba(46, 57, 46, 0.08);
-  border-bottom: 1px solid rgba(46, 57, 46, 0.08);
-  border-left: 1px solid rgba(46, 57, 46, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+  border-right: 1px solid rgba(46, 57, 46, 0.12);
+  border-bottom: 1px solid rgba(46, 57, 46, 0.12);
+  border-left: 1px solid rgba(46, 57, 46, 0.12);
   border-radius: 0;
   text-align: left;
 }
@@ -73,6 +74,13 @@
 
 .office-staff-row:hover {
   background: rgba(255, 255, 255, 0.96);
+}
+
+.office-staff-row strong,
+.office-task-main strong,
+.office-data-row strong {
+  color: var(--text);
+  letter-spacing: 0.015em;
 }
 
 .selected {
@@ -105,13 +113,18 @@
 .office-task-main {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
 }
 
 .office-task-row {
   position: relative;
   background: rgba(255, 252, 245, 0.96);
+  transition: background 120ms ease;
+}
+
+.office-task-row:hover {
+  background: rgba(255, 255, 255, 1);
 }
 
 .office-task-row::before {
@@ -156,36 +169,60 @@
   flex: 0 0 auto;
 }
 
+.office-data-row:hover {
+  background: rgba(255, 255, 255, 0.96);
+}
+
 .office-focus-card {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 6px;
-  padding: 14px 12px;
-  border: 1px solid rgba(46, 57, 46, 0.12);
-  background: rgba(255, 252, 245, 0.92);
+  padding: 8px 12px;
+  border-top: 1px solid rgba(46, 57, 46, 0.16);
+  border-right: none;
+  border-bottom: none;
+  border-left: 3px solid var(--accent-strong, #117a45);
+  background: rgba(255, 252, 245, 0.72);
 }
 
 .office-focus-head {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: baseline;
+  align-items: center;
+  gap: 8px;
 }
 
 .office-focus-copy {
   margin: 0;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--text);
+  flex: 1 1 220px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+  letter-spacing: 0.02em;
 }
 
 .office-focus-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   font-size: 12px;
   color: var(--muted);
+}
+
+.office-overflow-chip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border: 1px dashed rgba(46, 57, 46, 0.18);
+  background: rgba(255, 252, 245, 0.62);
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 @media (max-width: 1220px) {

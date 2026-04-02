@@ -149,6 +149,38 @@ test("every floorplate room has a team brief and the commons carries an ambient 
 
   const commons = OFFICE_STAGE_ROOMS.find((room) => room.roomId === "project-main");
   assert.ok(commons?.fixtureClusters.some((cluster) => cluster.id === "commons-table"));
+  assert.ok(commons?.fixtureClusters.some((cluster) => cluster.fixtures.some((fixture) => fixture.kind === "lamp")));
+  assert.ok(commons?.fixtureClusters.some((cluster) => cluster.fixtures.some((fixture) => fixture.kind === "coffee")));
+});
+
+test("impl office is densified with workbench support and ambient fixtures", () => {
+  const implOffice = OFFICE_STAGE_ROOMS.find((room) => room.roomId === "impl-office");
+  assert.ok(implOffice);
+
+  const fixtureKinds = implOffice.fixtureClusters.flatMap((cluster) => cluster.fixtures.map((fixture) => fixture.kind));
+  assert.ok(fixtureKinds.includes("monitor"));
+  assert.ok(fixtureKinds.includes("lamp"));
+  assert.ok(fixtureKinds.includes("note"));
+  assert.ok(fixtureKinds.includes("cabinet"));
+  assert.ok(fixtureKinds.includes("coffee"));
+  assert.ok(fixtureKinds.length >= 10);
+});
+
+test("specialist wing rooms keep lean identities with restrained polish", () => {
+  const ops = OFFICE_STAGE_ROOMS.find((room) => room.roomId === "ops-control");
+  const research = OFFICE_STAGE_ROOMS.find((room) => room.roomId === "research-lab");
+  const validation = OFFICE_STAGE_ROOMS.find((room) => room.roomId === "validation-office");
+  const review = OFFICE_STAGE_ROOMS.find((room) => room.roomId === "review-office");
+
+  const opsKinds = ops.fixtureClusters.flatMap((cluster) => cluster.fixtures.map((fixture) => fixture.kind));
+  const researchKinds = research.fixtureClusters.flatMap((cluster) => cluster.fixtures.map((fixture) => fixture.kind));
+  const validationKinds = validation.fixtureClusters.flatMap((cluster) => cluster.fixtures.map((fixture) => fixture.kind));
+  const reviewKinds = review.fixtureClusters.flatMap((cluster) => cluster.fixtures.map((fixture) => fixture.kind));
+
+  assert.equal(opsKinds.filter((kind) => kind === "chair").length, 1);
+  assert.ok(researchKinds.includes("lamp"));
+  assert.ok(validationKinds.includes("clock"));
+  assert.equal(reviewKinds.includes("bench"), false);
 });
 
 test("office presence model emits at most two visible task nodes per room with priority ordering", () => {
