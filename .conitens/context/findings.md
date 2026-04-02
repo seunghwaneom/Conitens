@@ -993,3 +993,21 @@
   - failure text: `Team mode requires running inside tmux current leader pane`
 - Durable execution artifact for this pass:
   - `.conitens/reviews/dashboard_refactor_fix_execution_2026-04-02.md`
+
+## Pixel Office Rail Quieting Facts
+
+- The approved rail-only quieting pass was implemented entirely in
+  `packages/dashboard/src/office-sidebar.module.css`; no `OfficeSidebar.tsx`
+  markup change was required.
+- The rail now stays structurally identical while using flatter row separators,
+  softer section markers, reduced badge/chip weight, and stronger small-text
+  line-height/size in the dense ledger rows.
+- The blocked rail indicator no longer flashes in the sidebar; blocked state is
+  now communicated with a static danger dot treatment, matching the repo's
+  quieter ambient-signal direction.
+- Verification for this pass:
+  - `npx tsc --noEmit --pretty false --project packages/dashboard/tsconfig.json`
+    -> `0` errors / `0` warnings
+  - `pnpm --filter @conitens/dashboard build` -> passed
+  - `pnpm --filter @conitens/dashboard test` -> still failing outside this pass
+    in `packages/dashboard/tests/office-presence-model.test.mjs`

@@ -1121,3 +1121,32 @@ by a seeded/resolved store path, and the trust indicator is finally mounted in
 the rendered shell. Team mode was attempted again but still cannot run end to
 end in this session because the OMX runtime does not see a tmux-backed leader
 pane.
+
+## Pixel Office Rail Quieting Status
+
+- [x] current rail CSS and approved review guidance inspected before edits
+- [x] rail styling kept within the owned sidebar surface
+- [x] small-text readability improved without changing row caps or data model
+- [x] dashboard package build rerun successfully
+- [x] dashboard package test run rerun and unrelated failures recorded
+- [x] `.conitens/context/*` refreshed for the scoped rail pass
+
+## Pixel Office Rail Quieting Commands Run
+
+- `Get-Content .conitens/context/LATEST_CONTEXT.md`
+- `Get-Content .vibe/context/LATEST_CONTEXT.md`
+- `Get-Content docs/frontend/FRONTEND_REVIEW_2026-04-02.md`
+- `Get-Content packages/dashboard/src/office-sidebar.module.css`
+- `Get-Content packages/dashboard/src/components/OfficeSidebar.tsx`
+- `git diff -- packages/dashboard/src/office-sidebar.module.css`
+- `npx tsc --noEmit --pretty false --project D:\Google\.Conitens\packages\dashboard\tsconfig.json`
+- `pnpm --filter @conitens/dashboard build`
+- `pnpm --filter @conitens/dashboard test`
+
+## Current Outcome
+
+The rail half of the approved Pixel Office quieting pass is complete. The right
+rail is flatter and quieter, dense copy is easier to scan, and the blocked
+signal now matches the repo's non-flashing ambient direction. The dashboard
+build passes, while the remaining dashboard test failures are unrelated
+fixture-schema assertions already outside this rail-only scope.
