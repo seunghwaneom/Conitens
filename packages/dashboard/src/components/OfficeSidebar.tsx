@@ -65,38 +65,45 @@ export function OfficeSidebar({
           {rail.visibleResidents.length === 0 ? (
             <div className="empty-state compact">No residents online</div>
           ) : (
-            rail.visibleResidents.map((resident) => (
-              <button
-                key={resident.agentId}
-                type="button"
-                className={[
-                  sidebarStyles["office-staff-row"],
-                  resident.agentId === selectedResidentId ? sidebarStyles.selected : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() => onSelectResident(resident.agentId)}
-              >
-                <div className={sidebarStyles["office-staff-main"]}>
-                  <span
-                    className={[
-                      sidebarStyles["office-status-dot"],
-                      sidebarStyles[`status-${resident.profile.role}`],
-                    ].join(" ")}
-                    aria-hidden="true"
-                  />
-                  <div>
-                    <strong>{resident.agentId}</strong>
-                    <div className="muted">
-                      {resident.profile.archetype} / {resident.roomLabel}
+            rail.visibleResidents.map((resident) => {
+              const isBlocked = queuedTasks.some(
+                (t) => t.assignee === resident.agentId && t.state === "blocked"
+              );
+              return (
+                <button
+                  key={resident.agentId}
+                  type="button"
+                  className={[
+                    sidebarStyles["office-staff-row"],
+                    resident.agentId === selectedResidentId ? sidebarStyles.selected : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => onSelectResident(resident.agentId)}
+                >
+                  <div className={sidebarStyles["office-staff-main"]}>
+                    <span
+                      className={[
+                        sidebarStyles["office-status-dot"],
+                        isBlocked
+                          ? sidebarStyles["status-blocked"]
+                          : sidebarStyles[`status-${resident.profile.role}`],
+                      ].join(" ")}
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <strong>{resident.agentId}</strong>
+                      <div className="muted">
+                        {resident.profile.archetype} / {resident.roomLabel}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <span className={`badge ${resident.status === "running" ? "info" : "neutral"}`}>
-                  {resident.status}
-                </span>
-              </button>
-            ))
+                  <span className={`badge ${isBlocked ? "danger" : resident.status === "running" ? "info" : "neutral"}`}>
+                    {resident.status}
+                  </span>
+                </button>
+              );
+            })
           )}
         </div>
         {rail.hiddenResidentCount > 0 ? (
