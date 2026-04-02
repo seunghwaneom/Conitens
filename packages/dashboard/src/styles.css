@@ -147,12 +147,34 @@ body {
   text-decoration: none;
 }
 
+.forward-chip-link.active {
+  background: rgba(123, 200, 255, 0.18);
+  border-color: rgba(123, 200, 255, 0.5);
+  color: #fff;
+}
+
 .forward-main {
   padding: 28px 40px 40px;
 }
 
 .forward-shell-preview .forward-main {
   padding-top: 20px;
+}
+
+.forward-demo-banner {
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 200, 50, 0.3);
+  background: rgba(255, 200, 50, 0.08);
+  color: rgba(255, 230, 150, 0.9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.forward-demo-banner button {
+  white-space: nowrap;
 }
 
 .forward-setup {
@@ -2110,4 +2132,35 @@ button:focus-visible {
 }
 .timeline-row:nth-child(even):hover {
   background: rgba(40, 180, 99, 0.04);
+}
+
+/* === Forward detail tab bar === */
+.forward-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 18px;
+}
+
+.forward-tab {
+  padding: 10px 20px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: rgba(220, 231, 250, 0.6);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms;
+}
+
+.forward-tab:hover {
+  color: rgba(220, 231, 250, 0.9);
+}
+
+.forward-tab.active {
+  color: #eef4ff;
+  border-bottom-color: rgba(123, 200, 255, 0.8);
 }
