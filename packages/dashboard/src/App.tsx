@@ -41,7 +41,9 @@ import {
 import { demoAgents, demoEvents, demoTasks } from "./demo-data.js";
 import { AgentFleetOverview } from "./components/AgentFleetOverview.js";
 import { AgentProfilePanel } from "./components/AgentProfilePanel.js";
+import { ProposalQueuePanel } from "./components/ProposalQueuePanel.js";
 import { demoFleet } from "./agent-fleet-model.js";
+import { demoProposals, demoEvolution, demoLearningMetrics } from "./evolution-model.js";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 type DetailTab = "operations" | "intelligence" | "data";
@@ -346,8 +348,13 @@ export function App() {
         <main className="forward-main">
           <div className="agent-fleet-layout">
             <AgentFleetOverview agents={demoFleet} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
-            <AgentProfilePanel agent={selectedAgent} />
+            <AgentProfilePanel
+              agent={selectedAgent}
+              evolution={demoEvolution.filter(e => e.agentId === selectedAgentId)}
+              metrics={demoLearningMetrics.find(m => m.agentId === selectedAgentId) ?? null}
+            />
           </div>
+          <ProposalQueuePanel proposals={demoProposals} agents={demoFleet} />
         </main>
       ) : (
       <main className="forward-main">
