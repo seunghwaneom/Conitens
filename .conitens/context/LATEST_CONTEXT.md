@@ -4,7 +4,7 @@ Read this file before substantial work.
 
 ## Current State
 
-- Active batch: `Forward review hardening`
+- Active batch: `Pixel Office rail quieting`
 - Status: `complete`
 - Current live runtime truth remains `scripts/ensemble.py` plus `.notes/` and
   `.agent/`.
@@ -85,6 +85,14 @@ Read this file before substantial work.
   path, and the trust badge is now mounted in the rendered shell header.
 - Team mode was attempted again during the fix pass but still failed because
   the current OMX runtime does not detect a tmux-backed leader pane.
+- The approved rail half of the Pixel Office quieting pass is now applied in
+  `packages/dashboard/src/office-sidebar.module.css`.
+- The office rail now uses flatter separators, calmer status signaling, and
+  slightly more legible small-text treatment without changing the existing row
+  caps or sidebar content model.
+- `pnpm --filter @conitens/dashboard build` passes after the rail pass, while
+  `pnpm --filter @conitens/dashboard test` still has the pre-existing
+  unrelated fixture-schema failures in `tests/office-presence-model.test.mjs`.
 
 ## Guardrails
 

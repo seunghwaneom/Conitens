@@ -2,24 +2,22 @@
 
 ## Active Batch
 
-- Batch: `Dashboard refactor fixes`
-- Name: `repair a621919 review findings and re-verify dashboard package`
+- Batch: `Pixel Office rail quieting`
+- Name: `implement the approved quieting pass for the dashboard office rail`
 - Status: `complete`
 
 ## Goal
 
-Fix the concrete regressions identified in the dashboard refactor review for
-commit `a621919`, then rerun dashboard-package verification until green.
+Quiet the Pixel Office right rail without changing the existing cap/content
+model, keep the diff confined to the owned sidebar files, and re-run the
+dashboard package verification surfaces needed to prove the CSS pass did not
+break the build.
 
 ## Deliverables
 
-- `packages/dashboard/src/components/ForwardShell.tsx`
-- `packages/dashboard/src/demo-data.ts`
-- `packages/dashboard/src/store/event-store.ts`
-- `packages/dashboard/tests/dashboard-model.test.mjs`
-- `packages/dashboard/tests/event-store.test.mjs`
-- `.conitens/reviews/dashboard_refactor_code_security_review_2026-04-02.md`
-- `.conitens/reviews/dashboard_refactor_fix_execution_2026-04-02.md`
+- `packages/dashboard/src/office-sidebar.module.css`
+- `packages/dashboard/src/components/OfficeSidebar.tsx` only if markup changes
+  become necessary
 - Refreshed `.conitens/context/task_plan.md`
 - Refreshed `.conitens/context/findings.md`
 - Refreshed `.conitens/context/progress.md`
@@ -27,15 +25,16 @@ commit `a621919`, then rerun dashboard-package verification until green.
 
 ## Non-Goals
 
-- No broad dashboard redesign beyond the reviewed regressions
-- No runtime promotion decision
+- No stage-schema or room-layout changes
+- No rail-cap or view-model changes
 - No new dependencies
-- No claim that team mode succeeded when tmux-backed leader preconditions still fail
+- No claim that unrelated dashboard test debt was fixed in this pass
 
 ## Acceptance
 
-- [x] reviewed regressions were fixed in code
-- [x] build verification was rerun successfully
-- [x] test verification was rerun to green
-- [x] execution summary was written with file-backed evidence
-- [x] context files were refreshed for the new review task
+- [x] rail visuals were quieted without changing the row-cap/content model
+- [x] small-text readability was improved in the rail
+- [x] dashboard package build verification was rerun successfully
+- [x] dashboard package test verification was rerun and the remaining unrelated
+  failures were recorded accurately
+- [x] context files were refreshed for the scoped rail task
