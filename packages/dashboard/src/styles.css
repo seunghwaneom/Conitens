@@ -2743,3 +2743,84 @@ button:focus-visible {
   color: #eef4ff;
   border-bottom-color: rgba(123, 200, 255, 0.8);
 }
+
+@media (max-width: 768px) {
+  .forward-header {
+    flex-direction: column;
+    padding: 20px;
+    gap: 12px;
+  }
+
+  .forward-chip-row {
+    justify-content: flex-start;
+  }
+
+  .forward-main {
+    padding: 16px;
+  }
+
+  .forward-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .forward-form {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-fleet-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-fleet-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .proposal-queue {
+    grid-template-columns: 1fr;
+  }
+
+  .forward-tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .forward-tab {
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  .onboarding-card {
+    margin: 16px;
+    padding: 24px;
+  }
+}
+
+/* Onboarding Overlay */
+.onboarding-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  display: grid; place-items: center;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+}
+.onboarding-card {
+  max-width: 480px; padding: 40px;
+  background: rgba(12, 17, 28, 0.98); border: 1px solid rgba(255,255,255,0.12);
+  color: #eef4ff; text-align: center;
+}
+.onboarding-card h2 { margin: 0 0 16px; font-size: 28px; }
+.onboarding-card p { color: rgba(220,231,250,0.7); line-height: 1.6; margin: 0 0 20px; }
+.onboarding-code {
+  display: block; padding: 12px; margin-bottom: 24px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  font-size: 13px; color: rgba(123,200,255,0.9); word-break: break-all;
+}
+.onboarding-steps { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+.onboarding-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+.onboarding-dot.active { background: rgba(123,200,255,0.8); }
+.onboarding-actions { display: flex; justify-content: center; gap: 12px; }
+.onboarding-skip { background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5); padding: 10px 24px; cursor: pointer; }
+.onboarding-next { background: rgba(123,200,255,0.2); border: 1px solid rgba(123,200,255,0.5); color: #fff; padding: 10px 24px; cursor: pointer; }
+
+.agent-graph-container { background: rgba(8, 15, 28, 0.66); border: 1px solid rgba(255,255,255,0.08); padding: 20px; }
+.agent-graph-container text { fill: #eef4ff; font-size: 11px; text-anchor: middle; }
+.agent-graph-container line { stroke: rgba(255,255,255,0.25); stroke-width: 1.5; }
+.agent-graph-container circle { stroke: rgba(255,255,255,0.2); stroke-width: 2; }
