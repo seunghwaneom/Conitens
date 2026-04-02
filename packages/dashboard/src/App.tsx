@@ -267,6 +267,40 @@ export function App() {
     onSnapshot: handleStreamSnapshot,
   });
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (isOfficePreview) return;
+
+      switch (e.key) {
+        case "j": {
+          const idx = runItems.findIndex((item) => item.runId === route.runId);
+          const next = runItems[idx + 1];
+          if (next) openRun(next.runId);
+          break;
+        }
+        case "k": {
+          const idx = runItems.findIndex((item) => item.runId === route.runId);
+          const prev = runItems[idx - 1];
+          if (prev) openRun(prev.runId);
+          break;
+        }
+        case "r": {
+          e.preventDefault();
+          setLiveRevision((current) => current + 1);
+          break;
+        }
+        case "Escape": {
+          window.location.hash = buildForwardRoute({ screen: "runs", runId: null });
+          break;
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [runItems, route, isOfficePreview]);
+
   return (
     <div className={`forward-shell${isOfficePreview ? " forward-shell-preview" : ""}`}>
       <header className="forward-header">
