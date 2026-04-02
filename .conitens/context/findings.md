@@ -888,3 +888,108 @@
   fills the available vertical shell space more evenly.
 - `packages/dashboard/src/office-sidebar.module.css` now gives rail rows and
   task line groups slightly more vertical breathing room.
+
+## Dashboard Real-User Review Facts
+
+- Recent dashboard review scope was the latest Wave A-D surface in
+  `packages/dashboard`, centered on:
+  - `App.tsx`
+  - `forward-route.ts`
+  - `styles.css`
+  - `AgentFleetOverview.tsx`
+  - `AgentProfilePanel.tsx`
+  - `AgentRelationshipGraph.tsx`
+  - `OnboardingOverlay.tsx`
+  - `ProposalQueuePanel.tsx`
+  - `agent-fleet-model.ts`
+  - `evolution-model.ts`
+- The `Agents` route currently renders entirely from demo-only exports:
+  - `demoFleet`
+  - `demoEvolution`
+  - `demoLearningMetrics`
+  - `demoProposals`
+- The `Agents` route currently lacks a persistent demo/simulation disclaimer,
+  even though it visually sits beside the live forward shell route.
+- `ProposalQueuePanel.tsx` currently mutates proposal state only in local
+  component state and does not persist approve/reject decisions.
+- `AgentProfilePanel.tsx` currently exposes disabled lifecycle buttons
+  (`Pause`, `Resume`, `Retire`) as visible but nonfunctional controls.
+- `AgentRelationshipGraph.tsx` currently derives edges from a hard-coded
+  `DEMO_EDGES` constant rather than from runtime-backed relationship data.
+- `OnboardingOverlay.tsx` is currently a global blocking modal with generic
+  copy rather than route-aware contextual guidance.
+- Team-mode programmatic launch failed for this review because the current
+  leader session is not running inside a tmux leader pane:
+  - `omx_run_team_start(...)` returned a job
+  - `omx_run_team_status(jobId=omx-mnh7v86v)` returned `failed`
+  - failure text: `Team mode requires running inside tmux current leader pane`
+- Durable review artifact for this pass:
+  - `.conitens/reviews/dashboard_real_user_review_2026-04-02.md`
+
+## Dashboard Refactor Review Facts
+
+- Latest refactor review scope was commit `a621919`:
+  - `refactor: dashboard architecture overhaul — extract ForwardShell, fix bugs, add trust overlay`
+- `pnpm --filter @conitens/dashboard build` passed for the reviewed commit.
+- `pnpm --filter @conitens/dashboard test` did not fully pass:
+  - `67` tests passed
+  - `1` test failed
+  - failing assertion lives in `packages/dashboard/tests/dashboard-model.test.mjs`
+    and now disagrees with the dynamic timestamps generated in
+    `packages/dashboard/src/demo-data.ts`.
+- `packages/dashboard/src/components/ForwardShell.tsx` now resolves
+  `selectedTask` only from `useEventStore().tasks`, while demo task selection
+  paths still point at `demoTasks`; this leaves the newly wired demo
+  `TaskDetailModal` path functionally broken unless the store is explicitly
+  seeded.
+- `packages/dashboard/src/components/KanbanBoard.tsx` now emits
+  `task.status_changed` events into `event-store`, but
+  `packages/dashboard/src/store/event-store.ts` still updates task status only
+  for already-existing store tasks; no current consumer seeds the demo tasks
+  into the store before drag interactions.
+- `packages/dashboard/src/components/TrustBadge.tsx` and
+  `packages/dashboard/src/dashboard-model.ts::getConnectionPresentation()` now
+  exist but are not currently wired into the rendered `ForwardShell` UI.
+- `packages/dashboard/src/components/OverviewDashboard.tsx` still exposes
+  `Open Board` / `Open Timeline` controls, but `ForwardShell` currently wires
+  them to a no-op task-selection reset and `#/runs`, while
+  `packages/dashboard/src/components/Timeline.tsx` remains unmounted.
+- No new CRITICAL/HIGH frontend security issue was found in the changed files;
+  the strongest security-adjacent concern is trust/integrity signaling around
+  simulated vs live state.
+- Durable review artifact for this pass:
+  - `.conitens/reviews/dashboard_refactor_code_security_review_2026-04-02.md`
+
+## Dashboard Refactor Fix Execution Facts
+
+- The reviewed dashboard refactor regressions were addressed in:
+  - `packages/dashboard/src/components/ForwardShell.tsx`
+  - `packages/dashboard/src/demo-data.ts`
+  - `packages/dashboard/src/store/event-store.ts`
+  - `packages/dashboard/tests/dashboard-model.test.mjs`
+  - `packages/dashboard/tests/event-store.test.mjs`
+- `ForwardShell.tsx` now mounts `TrustBadge` in the header and uses
+  `getConnectionPresentation(...)` so the shell explicitly distinguishes
+  simulated/live/stale trust state.
+- `ForwardShell.tsx` now resolves demo/live dashboard data through the shared
+  `resolveDashboardData(...)` helper and uses the resolved task/event lists for
+  demo task selection, board interactions, timeline view, and task-detail modal.
+- `ForwardShell.tsx` now exposes a real demo `board/timeline` toggle path via
+  the overview CTA callbacks instead of routing `Open Timeline` to the generic
+  `#/runs` surface.
+- `event-store.ts` now creates missing tasks on later
+  `task.assigned` / `task.status_changed` / `task.completed` events instead of
+  silently ignoring those updates when the task was not already present.
+- `demo-data.ts` event timestamps are deterministic again, which restores
+  stable test expectations and avoids simulated data looking newly refreshed on
+  every render.
+- Dashboard verification after the fix pass:
+  - `pnpm --filter @conitens/dashboard build` -> passed
+  - `pnpm --filter @conitens/dashboard test` -> passed
+  - result: `70` passed, `0` failed
+- A fresh team runtime attempt still failed in this environment:
+  - `omx_run_team_start(jobId=omx-mnhgmhvy)` started
+  - `omx_run_team_status(jobId=omx-mnhgmhvy)` -> `failed`
+  - failure text: `Team mode requires running inside tmux current leader pane`
+- Durable execution artifact for this pass:
+  - `.conitens/reviews/dashboard_refactor_fix_execution_2026-04-02.md`

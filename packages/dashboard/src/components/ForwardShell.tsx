@@ -42,9 +42,16 @@ import { OnboardingOverlay } from "./OnboardingOverlay.js";
 import { KanbanBoard } from "./KanbanBoard.js";
 import { TaskDetailModal } from "./TaskDetailModal.js";
 import { OverviewDashboard } from "./OverviewDashboard.js";
+import { Timeline } from "./Timeline.js";
+import { TrustBadge } from "./TrustBadge.js";
 import { useEventStore } from "../store/event-store.js";
-import { demoAgents, demoEvents, demoTasks, demoFleet, demoProposals, demoEvolution, demoLearningMetrics } from "../demo-data.js";
-import { deriveDashboardMetrics } from "../dashboard-model.js";
+import { getDemoData } from "../demo-data.js";
+import {
+  deriveDashboardMetrics,
+  getConnectionPresentation,
+  getRecentEvents,
+  resolveDashboardData,
+} from "../dashboard-model.js";
 import { AgentFleetOverview } from "./AgentFleetOverview.js";
 import { AgentProfilePanel } from "./AgentProfilePanel.js";
 import { AgentRelationshipGraph } from "./AgentRelationshipGraph.js";
@@ -83,19 +90,56 @@ export function ForwardShell() {
   const isDemo = !config.token.trim() && !isOfficePreview;
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const selectedAgent = demoFleet.find(a => a.id === selectedAgentId) ?? null;
   const [agentView, setAgentView] = useState<"fleet" | "graph">("fleet");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [demoDetailView, setDemoDetailView] = useState<"board" | "timeline">("board");
   const storeEvents = useEventStore((s) => s.events);
   const storeTasks = useEventStore((s) => s.tasks);
-  const selectedTask = storeTasks.find((t) => t.taskId === selectedTaskId) ?? null;
+  const storeAgents = useEventStore((s) => s.agents);
+  const seedDemo = useEventStore((s) => s.seedDemo);
+  const demoData = useMemo(() => getDemoData(), []);
+  const {
+    agents: demoAgents,
+    tasks: demoTasks,
+    events: demoEvents,
+    fleet: demoFleet,
+    proposals: demoProposals,
+    evolution: demoEvolution,
+    learningMetrics: demoLearningMetrics,
+  } = demoData;
+  const selectedAgent = demoFleet.find(a => a.id === selectedAgentId) ?? null;
+  const resolvedDashboard = useMemo(
+    () =>
+      resolveDashboardData(
+        { tasks: storeTasks, agents: storeAgents, events: storeEvents },
+        { tasks: demoTasks, agents: demoAgents, events: demoEvents },
+      ),
+    [demoAgents, demoEvents, demoTasks, storeAgents, storeEvents, storeTasks],
+  );
+  const resolvedTasks = resolvedDashboard.tasks;
+  const resolvedAgents = resolvedDashboard.agents;
+  const resolvedEvents = resolvedDashboard.events;
+  const selectedTask = resolvedTasks.find((t) => t.taskId === selectedTaskId) ?? null;
 
-  const overviewTasks = storeTasks.length > 0 ? storeTasks : demoTasks;
-  const overviewAgents = storeEvents.length > 0 ? [] : demoAgents;
-  const overviewEvents = storeEvents.length > 0 ? storeEvents.slice(-20).reverse() : demoEvents.slice(0, 20);
+  const overviewTasks = resolvedTasks;
+  const overviewAgents = resolvedAgents;
+  const overviewEvents = useMemo(() => getRecentEvents(resolvedEvents, 20), [resolvedEvents]);
   const overviewQueuedTasks = overviewTasks.filter((t) => t.state === "draft" || t.state === "planned");
   const overviewMetrics = deriveDashboardMetrics(overviewAgents, overviewTasks, overviewEvents);
-  const connectionStatus = config.token.trim() ? "connected" : "demo";
+
+  useEffect(() => {
+    if (!isDemo) {
+      setSelectedTaskId(null);
+      return;
+    }
+    if (storeTasks.length === 0 && storeAgents.length === 0 && storeEvents.length === 0) {
+      seedDemo({
+        tasks: demoTasks,
+        agents: demoAgents,
+        events: demoEvents,
+      });
+    }
+  }, [demoAgents, demoEvents, demoTasks, isDemo, seedDemo, storeAgents.length, storeEvents.length, storeTasks.length]);
 
   useEffect(() => {
     const handleHashChange = () => setRoute(parseForwardRoute(window.location.hash));
@@ -291,6 +335,12 @@ export function ForwardShell() {
     enabled: route.screen === "run-detail" && !isOfficePreview,
     onSnapshot: handleStreamSnapshot,
   });
+  const connectionStatus = isDemo ? "demo" : liveStream.status;
+  const connectionPresentation = getConnectionPresentation(isDemo, liveStream.status);
+  const trustMode = isDemo ? "simulated" : liveStream.status === "open" ? "live" : "stale";
+  const lastTrustTimestamp = !isDemo
+    ? selectedRun?.run.updated_at ?? replay?.timeline[replay.timeline.length - 1]?.timestamp
+    : undefined;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -347,9 +397,10 @@ export function ForwardShell() {
             <span className="forward-chip">Design-only</span>
           ) : (
             <>
+              <TrustBadge mode={trustMode} lastEventTs={trustMode === "stale" ? lastTrustTimestamp : undefined} />
+              <span className="forward-chip">{connectionPresentation.label}</span>
               <span className="forward-chip">Bridge: {config.apiRoot}</span>
               <span className="forward-chip">{config.token ? "Token loaded" : "Token required"}</span>
-              <span className="forward-chip">Live: {liveStream.status}</span>
             </>
           )}
         </div>
@@ -408,8 +459,8 @@ export function ForwardShell() {
                 metrics={overviewMetrics}
                 connectionStatus={connectionStatus}
                 isDemo={isDemo}
-                onOpenBoard={() => setSelectedTaskId(null)}
-                onOpenTimeline={() => window.location.hash = buildForwardRoute({ screen: "runs", runId: null })}
+                onOpenBoard={() => setDemoDetailView("board")}
+                onOpenTimeline={() => setDemoDetailView("timeline")}
               />
             ) : null}
           </>
@@ -455,11 +506,15 @@ export function ForwardShell() {
             </div>
             {isDemo ? (
               <div className="forward-run-list">
-                {demoTasks.map((task) => (
+                {resolvedTasks.map((task) => (
                   <button
                     key={task.taskId}
                     className={`forward-run-item${task.state === "active" ? " running" : ""}`}
-                    onClick={() => setSelectedTaskId(task.taskId)}
+                    data-status={task.state === "active" ? "running" : task.state}
+                    onClick={() => {
+                      setDemoDetailView("board");
+                      setSelectedTaskId(task.taskId);
+                    }}
                   >
                     <div className="forward-run-topline">
                       <strong>{task.taskId}</strong>
@@ -484,6 +539,7 @@ export function ForwardShell() {
                     <button
                       key={item.runId}
                       className={`forward-run-item${route.runId === item.runId ? " active" : ""}${item.status === "running" ? " running" : ""}`}
+                      data-status={item.status}
                       onClick={() => openRun(item.runId)}
                     >
                       <div className="forward-run-topline">
@@ -507,7 +563,15 @@ export function ForwardShell() {
             <div className="forward-panel-header">
               <div>
                 <p className="forward-panel-label">Detail</p>
-                <h2>{isDemo ? demoTasks[0]?.taskId ?? "Demo run" : runDetail ? runDetail.title : "Select a run"}</h2>
+                <h2>
+                  {isDemo
+                    ? demoDetailView === "timeline"
+                      ? "Demo timeline"
+                      : selectedTask?.taskId ?? resolvedTasks[0]?.taskId ?? "Demo run"
+                    : runDetail
+                      ? runDetail.title
+                      : "Select a run"}
+                </h2>
               </div>
               <span className={`forward-state state-${isDemo ? "ready" : detailState}`}>{isDemo ? "demo" : detailState}</span>
             </div>
@@ -516,17 +580,25 @@ export function ForwardShell() {
                 <div className="forward-detail-hero">
                   <div>
                     <p className="forward-detail-label">demo-run-001</p>
-                    <h3>{demoTasks[0]?.taskId ?? "Sample objective"}</h3>
-                    <p>Sample data — connect to a live bridge to see real run details.</p>
+                    <h3>{demoDetailView === "timeline" ? "Event flow" : selectedTask?.taskId ?? resolvedTasks[0]?.taskId ?? "Sample objective"}</h3>
+                    <p>
+                      {demoDetailView === "timeline"
+                        ? "Read-only operator timeline from the simulated dataset."
+                        : "Sample data — connect to a live bridge to see real run details."}
+                    </p>
                   </div>
-                  <span className="forward-status-pill">{demoTasks[0]?.state ?? "idle"}</span>
+                  <span className="forward-status-pill">{selectedTask?.state ?? resolvedTasks[0]?.state ?? "idle"}</span>
                 </div>
                 <div className="forward-stats">
-                  <div><span>Agents</span><strong>{demoAgents.length}</strong></div>
-                  <div><span>Tasks</span><strong>{demoTasks.length}</strong></div>
-                  <div><span>Events</span><strong>{demoEvents.length}</strong></div>
+                  <div><span>Agents</span><strong>{resolvedAgents.length}</strong></div>
+                  <div><span>Tasks</span><strong>{resolvedTasks.length}</strong></div>
+                  <div><span>Events</span><strong>{resolvedEvents.length}</strong></div>
                 </div>
-                <KanbanBoard tasks={storeTasks.length > 0 ? storeTasks : demoTasks} onSelectTask={setSelectedTaskId} />
+                {demoDetailView === "timeline" ? (
+                  <Timeline events={resolvedEvents} />
+                ) : (
+                  <KanbanBoard tasks={resolvedTasks} onSelectTask={setSelectedTaskId} />
+                )}
               </div>
             ) : null}
             {!isDemo && route.screen !== "run-detail" ? (
@@ -623,7 +695,7 @@ export function ForwardShell() {
       {selectedTask !== null ? (
         <TaskDetailModal
           task={selectedTask}
-          events={storeEvents}
+          events={resolvedEvents}
           onClose={() => setSelectedTaskId(null)}
         />
       ) : null}
