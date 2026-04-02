@@ -18,19 +18,25 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from http.cookies import SimpleCookie
 from pathlib import Path
+import re
 from typing import Any
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from ensemble_agents import list_agent_runtimes, list_rooms
+from ensemble_ag2_room_adapter import AG2RoomAdapter
 from ensemble_context import update_context
 from ensemble_events import load_events
+from ensemble_insight_extractor import InsightExtractor
 from ensemble_memory import append_long_term_memory, append_shared_memory, show_memory
 from ensemble_office import collect_office_snapshot, generate_report
-from ensemble_room import create_room, post_room_message, show_room
-from ensemble_spawn import start_spawn, stop_spawn
+from ensemble_replay_service import ReplayService
+from ensemble_room import validate_room_id
+from ensemble_room_service import RoomService
+from ensemble_spawn import read_spawn_record, start_spawn, stop_spawn, validate_spawn_id
 
 
 DASHBOARD_AUTH_COOKIE = "conitens_dashboard_auth"
+SAFE_API_IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 
 
 def _host_is_loopback(host: str) -> bool:
@@ -89,10 +95,12 @@ def render_tui_snapshot(workspace: str | Path) -> str:
 
 
 def _dashboard_payload(workspace: str | Path) -> dict[str, Any]:
+    replay = ReplayService(workspace)
     return {
         "snapshot": collect_office_snapshot(workspace),
         "recent_events": load_events(workspace, limit=80),
         "shared_memory": show_memory(workspace, kind="shared"),
+        "insights": replay.insights(limit=20),
     }
 
 
@@ -137,6 +145,27 @@ def _request_has_dashboard_auth(handler: BaseHTTPRequestHandler, auth_token: str
     if handler.headers.get("Authorization") == f"Bearer {auth_token}":
         return True
     return _dashboard_auth_cookie_value(handler) == auth_token
+
+
+def _require_dashboard_read_access(handler: BaseHTTPRequestHandler, auth_token: str) -> bool:
+    if not _request_is_loopback(handler):
+        _json_response(handler, {"error": "Dashboard reads are only available from loopback clients."}, status=403)
+        return False
+    if not _request_has_dashboard_auth(handler, auth_token):
+        _json_response(handler, {"error": "Missing or invalid dashboard token."}, status=403)
+        return False
+    return True
+
+
+def _validate_api_identifier(value: str, *, field_name: str) -> str:
+    candidate = str(value).strip()
+    if not candidate:
+        raise ValueError(f"{field_name} is required")
+    if ".." in candidate or "/" in candidate or "\\" in candidate:
+        raise ValueError(f"Invalid {field_name}: {value}")
+    if not SAFE_API_IDENTIFIER_PATTERN.fullmatch(candidate):
+        raise ValueError(f"Invalid {field_name}: {value}")
+    return candidate
 
 
 def _safe_read_static(root: Path, request_path: str) -> tuple[bytes, str] | None:
@@ -283,7 +312,7 @@ def render_web_app_html() -> str:
     <div class="layout">
       <div class="column">
         <section class="panel"><div class="panel-header"><span>Agents</span><span id="agent-count">0</span></div><div class="panel-body"><div id="agents-list" class="list"></div></div></section>
-        <section class="panel"><div class="panel-header"><span>Rooms</span><span id="room-count">0</span></div><div class="panel-body"><div id="rooms-list" class="list"></div><div id="room-detail" class="codebox empty">Select a room to inspect its recent transcript.</div><form id="room-form" class="detail-grid"><input name="name" id="room-name" placeholder="new room name" /><input name="participants" id="room-participants" placeholder="participants comma-separated" /><textarea name="message" id="room-message" rows="2" placeholder="optional first message"></textarea><button type="submit">Create Room</button></form></div></section>
+        <section class="panel"><div class="panel-header"><span>Rooms</span><span id="room-count">0</span></div><div class="panel-body"><div id="rooms-list" class="list"></div><div id="room-detail" class="codebox empty">Select a room to inspect its recent transcript.</div><form id="room-form" class="detail-grid"><div class="field-grid"><input name="name" id="room-name" placeholder="new room name" /><select name="roomType" id="room-type"><option value="discussion">discussion</option><option value="debate">debate</option><option value="review">review</option><option value="decision">decision</option><option value="user-approval">user-approval</option></select></div><input name="participants" id="room-participants" placeholder="participants comma-separated" /><textarea name="message" id="room-message" rows="2" placeholder="optional first message"></textarea><button type="submit">Create Room</button></form></div></section>
         <section class="panel"><div class="panel-header"><span>Pending Gates</span><span id="gate-count">0</span></div><div class="panel-body"><div class="toolbar"><button id="approve-all-button" class="warn">Approve All</button></div><div id="gates-list"></div></div></section>
         <section class="panel">
           <div class="panel-header"><span>Launch Agent</span><span>spawn.start</span></div>
@@ -305,6 +334,7 @@ def render_web_app_html() -> str:
       <div class="column">
         <section class="panel"><div class="panel-header"><span>Timeline</span><span id="event-count">0</span></div><div class="panel-body"><select id="timeline-filter"><option value="all">all</option></select><div id="timeline-list"></div></div></section>
         <section class="panel"><div class="panel-header"><span>Memory</span><span id="memory-target">Shared</span></div><div class="panel-body"><div id="memory-panel"></div><form id="memory-form" class="detail-grid"><textarea name="text" id="memory-text" rows="2" placeholder="append memory entry"></textarea><input name="tags" id="memory-tags" placeholder="tags comma-separated" /><button type="submit">Add Memory</button></form></div></section>
+        <section class="panel"><div class="panel-header"><span>Insights</span><span id="insight-count">0</span></div><div class="panel-body"><div id="insights-list"></div></div></section>
       </div>
     </div>
     <div id="flash" style="padding:0 16px 16px;"></div>
@@ -453,6 +483,7 @@ def render_web_app_html() -> str:
       const rooms = snapshot.rooms || [];
       const questions = (snapshot.questions || []).filter((item) => ['pending', 'auto_selected_waiting_confirm'].includes(item.status));
       const recentEvents = state.payload.recent_events || [];
+      const insights = state.payload.insights || [];
       const timelinePrefixes = ['all', ...new Set(recentEvents.map((event) => String(event.type || '').split('_')[0].toLowerCase()))];
       const filterSelect = document.getElementById('timeline-filter');
       filterSelect.innerHTML = timelinePrefixes.map((prefix) => '<option value="' + escapeHtml(prefix) + '"' + (prefix === state.timelineFilter ? ' selected' : '') + '>' + escapeHtml(prefix) + '</option>').join('');
@@ -463,6 +494,7 @@ def render_web_app_html() -> str:
       document.getElementById('gate-count').textContent = String(questions.length);
       document.getElementById('task-count').textContent = String(tasks.length);
       document.getElementById('event-count').textContent = String(recentEvents.length);
+      document.getElementById('insight-count').textContent = String(insights.length);
 
       document.getElementById('metrics').innerHTML = [
         ['active', metrics.workflow_runs || 0],
@@ -507,9 +539,10 @@ def render_web_app_html() -> str:
 
       document.getElementById('room-detail').innerHTML = state.selectedRoom
         ? '<div class="detail-grid">' +
-            (state.selectedRoom.messages || []).slice(-8).map((message) =>
-              '<div class="memory-entry"><div class="row-meta mono">' + escapeHtml(message.ts_utc || '') + ' | ' + escapeHtml(message.sender || '') + '</div>' +
-              '<div>' + escapeHtml(message.text || '') + '</div></div>'
+            '<div class="memory-entry"><div class="row-title">' + escapeHtml((state.selectedRoom.room || {}).name || '') + '</div><div class="row-meta mono">' + escapeHtml((state.selectedRoom.room || {}).room_type || 'discussion') + '</div></div>' +
+            (state.selectedRoom.timeline || []).slice(-10).map((entry) =>
+              '<div class="memory-entry"><div class="row-meta mono">' + escapeHtml(entry.timestamp || '') + ' | ' + escapeHtml(entry.kind || '') + '</div>' +
+              '<div>' + escapeHtml((entry.payload && (entry.payload.content || entry.payload.summary || entry.payload.tool_name)) || entry.summary || '') + '</div></div>'
             ).join('') +
           '</div>'
         : '<div class="empty">Select a room to inspect its recent transcript.</div>';
@@ -575,6 +608,16 @@ def render_web_app_html() -> str:
             '</div>'
           ).join('')
         : '<div class="empty">No recent events.</div>';
+
+      document.getElementById('insights-list').innerHTML = insights.length
+        ? insights.slice(0, 12).map((insight) =>
+            '<div class="memory-entry">' +
+              '<div class="row-title">' + escapeHtml(insight.kind || 'insight') + '</div>' +
+              '<div>' + escapeHtml(insight.summary || '') + '</div>' +
+              '<div class="row-meta mono">' + escapeHtml(insight.created_at || '') + '</div>' +
+            '</div>'
+          ).join('')
+        : '<div class="empty">No insights extracted yet.</div>';
 
       const memoryRoot = document.getElementById('memory-panel');
       document.getElementById('memory-target').textContent = state.selectedAgentId || 'Shared';
@@ -710,7 +753,7 @@ def render_web_app_html() -> str:
       try {
         const result = await getJson('/api/actions/room-create', {
           method: 'POST',
-          body: JSON.stringify({ name: name || 'room', participants, message }),
+          body: JSON.stringify({ name: name || 'room', room_type: form.get('roomType'), participants, message }),
         });
         state.selectedRoomId = result.room_id;
         setFlash('info', 'Room created.');
@@ -765,28 +808,83 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
         def do_GET(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
             path = parsed.path
+            replay = ReplayService(workspace_root)
+            if path.startswith("/api/"):
+                if not _require_dashboard_read_access(self, auth_token):
+                    return
             if path == "/api/dashboard":
                 _json_response(self, _dashboard_payload(workspace_root))
                 return
             if path.startswith("/api/rooms/"):
                 room_id = unquote(path.removeprefix("/api/rooms/"))
                 try:
-                    _json_response(self, show_room(workspace_root, room_id))
+                    _json_response(self, replay.room_timeline(validate_room_id(room_id)))
+                except ValueError as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
                 except Exception as exc:
                     _json_response(self, {"error": str(exc)}, status=404)
+                return
+            if path.startswith("/api/replay/room/"):
+                room_id = unquote(path.removeprefix("/api/replay/room/"))
+                try:
+                    _json_response(self, replay.room_timeline(validate_room_id(room_id)))
+                except ValueError as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
+                except Exception as exc:
+                    _json_response(self, {"error": str(exc)}, status=404)
+                return
+            if path.startswith("/api/replay/run/"):
+                run_id = unquote(path.removeprefix("/api/replay/run/"))
+                try:
+                    _json_response(self, replay.run_timeline(_validate_api_identifier(run_id, field_name="run_id")))
+                except ValueError as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
+                except Exception as exc:
+                    _json_response(self, {"error": str(exc)}, status=404)
+                return
+            if path.startswith("/api/replay/iteration/"):
+                iteration_id = unquote(path.removeprefix("/api/replay/iteration/"))
+                try:
+                    _json_response(self, replay.iteration_timeline(_validate_api_identifier(iteration_id, field_name="iteration_id")))
+                except ValueError as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
+                except Exception as exc:
+                    _json_response(self, {"error": str(exc)}, status=404)
+                return
+            if path == "/api/insights":
+                query = parse_qs(parsed.query or "", keep_blank_values=False)
+                try:
+                    run_id = query.get("run_id", [None])[0] or None
+                    iteration_id = query.get("iteration_id", [None])[0] or None
+                    room_id = query.get("room_id", [None])[0] or None
+                    _json_response(
+                        self,
+                        replay.insights(
+                            run_id=_validate_api_identifier(run_id, field_name="run_id") if run_id else None,
+                            iteration_id=_validate_api_identifier(iteration_id, field_name="iteration_id") if iteration_id else None,
+                            room_id=validate_room_id(room_id) if room_id else None,
+                            limit=30,
+                        ),
+                    )
+                except ValueError as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
                 return
             if path.startswith("/api/memory/"):
                 parts = [unquote(part) for part in path.split("/") if part][2:]
                 if len(parts) == 2:
                     provider_id, agent_id = parts
                     try:
+                        safe_provider_id = _validate_api_identifier(provider_id, field_name="provider_id")
+                        safe_agent_id = _validate_api_identifier(agent_id, field_name="agent_id")
                         _json_response(
                             self,
                             {
-                                "persona": show_memory(workspace_root, kind="persona", provider_id=provider_id, agent_id=agent_id),
-                                "longterm": show_memory(workspace_root, kind="longterm", provider_id=provider_id, agent_id=agent_id),
+                                "persona": show_memory(workspace_root, kind="persona", provider_id=safe_provider_id, agent_id=safe_agent_id),
+                                "longterm": show_memory(workspace_root, kind="longterm", provider_id=safe_provider_id, agent_id=safe_agent_id),
                             },
                         )
+                    except ValueError as exc:
+                        _json_response(self, {"error": str(exc)}, status=400)
                     except Exception as exc:
                         _json_response(self, {"error": str(exc)}, status=404)
                 else:
@@ -794,15 +892,13 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
                 return
             if path.startswith("/api/spawns/") and path.endswith("/log"):
                 spawn_id = unquote(path.split("/")[3])
-                subagents_dir = workspace_root / ".notes" / "subagents"
-                active_record = subagents_dir / "ACTIVE" / f"{spawn_id}.json"
-                completed_record = subagents_dir / "COMPLETED" / f"{spawn_id}.json"
-                record_path = active_record if active_record.exists() else completed_record
-                if not record_path.exists():
-                    _json_response(self, {"error": f"Spawn not found: {spawn_id}"}, status=404)
-                    return
-                record = json.loads(record_path.read_text(encoding="utf-8"))
-                _json_response(self, {"spawn_id": spawn_id, "log_file": record.get("log_file"), "lines": _tail_text_file(record.get("log_file") or "")})
+                try:
+                    record = read_spawn_record(workspace_root, validate_spawn_id(spawn_id))
+                    _json_response(self, {"spawn_id": record.get("spawn_id"), "log_file": record.get("log_file"), "lines": _tail_text_file(record.get("log_file") or "")})
+                except ValueError as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
+                except Exception as exc:
+                    _json_response(self, {"error": str(exc)}, status=404)
                 return
             if path in {"/", "/index.html"}:
                 _text_response(
@@ -814,6 +910,8 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
                 )
                 return
             if path == "/office-report.html":
+                if not _require_dashboard_read_access(self, auth_token):
+                    return
                 office_report = generate_report(workspace_root, "html")
                 _text_response(self, office_report.read_text(encoding="utf-8"))
                 return
@@ -830,6 +928,9 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
 
         def do_POST(self) -> None:  # noqa: N802
             parsed = urlparse(self.path)
+            room_service = RoomService(workspace_root)
+            insight_extractor = InsightExtractor(workspace_root)
+            ag2_rooms = AG2RoomAdapter(workspace_root)
             if not _request_is_loopback(self):
                 _json_response(self, {"error": "Dashboard writes are only available from loopback clients."}, status=403)
                 return
@@ -840,7 +941,12 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
             body = self.rfile.read(length).decode("utf-8") if length else "{}"
             payload = json.loads(body or "{}")
             if parsed.path == "/api/actions/approve-question":
-                result = _run_approve_question(workspace_root, str(payload.get("question_id") or ""))
+                try:
+                    question_id = _validate_api_identifier(str(payload.get("question_id") or ""), field_name="question_id")
+                except ValueError as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
+                    return
+                result = _run_approve_question(workspace_root, question_id)
                 _json_response(self, result, status=200 if result.get("ok") else 400)
                 return
             if parsed.path == "/api/actions/update-context":
@@ -849,13 +955,18 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
                 return
             if parsed.path == "/api/actions/spawn-start":
                 try:
+                    safe_provider_id = _validate_api_identifier(str(payload.get("provider_id") or ""), field_name="provider_id")
+                    safe_agent_id = _validate_api_identifier(str(payload.get("agent_id") or ""), field_name="agent_id")
+                    safe_workspace_id = _validate_api_identifier(str(payload.get("workspace_id") or "default"), field_name="workspace_id")
+                    safe_task_id = _validate_api_identifier(str(payload.get("task_id") or ""), field_name="task_id") if payload.get("task_id") else None
+                    safe_room_id = validate_room_id(str(payload.get("room_id") or "")) if payload.get("room_id") else None
                     result = start_spawn(
                         workspace_root,
-                        provider_id=str(payload.get("provider_id") or ""),
-                        agent_id=str(payload.get("agent_id") or ""),
-                        workspace_id=str(payload.get("workspace_id") or "default"),
-                        task_id=str(payload.get("task_id") or "") or None,
-                        room_id=str(payload.get("room_id") or "") or None,
+                        provider_id=safe_provider_id,
+                        agent_id=safe_agent_id,
+                        workspace_id=safe_workspace_id,
+                        task_id=safe_task_id,
+                        room_id=safe_room_id,
                         summary=str(payload.get("summary") or "") or None,
                         actor="dashboard",
                     )
@@ -865,43 +976,112 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
                 return
             if parsed.path == "/api/actions/spawn-stop":
                 try:
-                    result = stop_spawn(workspace_root, spawn_id=str(payload.get("spawn_id") or ""), actor="dashboard")
+                    safe_spawn_id = validate_spawn_id(str(payload.get("spawn_id") or ""))
+                    result = stop_spawn(workspace_root, spawn_id=safe_spawn_id, actor="dashboard")
                     _json_response(self, result)
                 except Exception as exc:
                     _json_response(self, {"error": str(exc)}, status=400)
                 return
             if parsed.path == "/api/actions/approve-all":
-                question_ids = payload.get("question_ids") or []
-                results = [_run_approve_question(workspace_root, str(question_id)) for question_id in question_ids]
+                try:
+                    question_ids = payload.get("question_ids") or []
+                    safe_ids = [
+                        _validate_api_identifier(str(question_id), field_name="question_id")
+                        for question_id in question_ids
+                    ]
+                except ValueError as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
+                    return
+                results = [_run_approve_question(workspace_root, question_id) for question_id in safe_ids]
                 _json_response(self, {"results": results, "ok": all(item.get("ok") for item in results)})
                 return
             if parsed.path == "/api/actions/room-create":
                 try:
-                    room = create_room(
-                        workspace_root,
+                    safe_task_id = _validate_api_identifier(str(payload.get("task_id") or ""), field_name="task_id") if payload.get("task_id") else None
+                    safe_run_id = _validate_api_identifier(str(payload.get("run_id") or ""), field_name="run_id") if payload.get("run_id") else None
+                    safe_iteration_id = _validate_api_identifier(str(payload.get("iteration_id") or ""), field_name="iteration_id") if payload.get("iteration_id") else None
+                    room = room_service.create_room(
                         name=str(payload.get("name") or "room").strip() or "room",
+                        room_type=str(payload.get("room_type") or "discussion").strip() or "discussion",
                         participants=[str(item) for item in (payload.get("participants") or []) if str(item).strip()],
                         actor="dashboard",
-                        task_id=str(payload.get("task_id") or "") or None,
+                        task_id=safe_task_id,
+                        run_id=safe_run_id,
+                        iteration_id=safe_iteration_id,
                     )
                     message = str(payload.get("message") or "").strip()
                     if message:
-                        post_room_message(workspace_root, room_id=room["room_id"], sender="dashboard", text=message, task_id=room.get("task_id"))
+                        room_service.append_message(
+                            room_id=room["room_id"],
+                            sender="dashboard",
+                            sender_kind="agent",
+                            text=message,
+                            task_id=room.get("task_id"),
+                            run_id=room.get("run_id"),
+                            iteration_id=room.get("iteration_id"),
+                        )
+                    _json_response(self, room)
+                except Exception as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
+                return
+            if parsed.path == "/api/actions/room-episode":
+                try:
+                    safe_task_id = _validate_api_identifier(str(payload.get("task_id") or ""), field_name="task_id") if payload.get("task_id") else None
+                    safe_run_id = _validate_api_identifier(str(payload.get("run_id") or ""), field_name="run_id") if payload.get("run_id") else None
+                    safe_iteration_id = _validate_api_identifier(str(payload.get("iteration_id") or ""), field_name="iteration_id") if payload.get("iteration_id") else None
+                    room_kind = str(payload.get("room_kind") or "decision").strip() or "decision"
+                    method_name = {
+                        "debate": "create_debate_room",
+                        "review": "create_review_room",
+                        "decision": "create_decision_room",
+                        "user-approval": "create_user_approval_room",
+                    }.get(room_kind)
+                    if method_name is None:
+                        raise ValueError(f"Unsupported room kind: {room_kind}")
+                    room = getattr(ag2_rooms, method_name)(
+                        name=str(payload.get("name") or f"{room_kind}-room").strip() or f"{room_kind}-room",
+                        participants=[str(item) for item in (payload.get("participants") or []) if str(item).strip()],
+                        actor="dashboard",
+                        task_id=safe_task_id,
+                        run_id=safe_run_id,
+                        iteration_id=safe_iteration_id,
+                        objective=str(payload.get("objective") or "") or None,
+                    )
                     _json_response(self, room)
                 except Exception as exc:
                     _json_response(self, {"error": str(exc)}, status=400)
                 return
             if parsed.path == "/api/actions/room-post":
                 try:
-                    result = post_room_message(
-                        workspace_root,
-                        room_id=str(payload.get("room_id") or ""),
+                    room_id = validate_room_id(str(payload.get("room_id") or ""))
+                    safe_task_id = _validate_api_identifier(str(payload.get("task_id") or ""), field_name="task_id") if payload.get("task_id") else None
+                    safe_run_id = _validate_api_identifier(str(payload.get("run_id") or ""), field_name="run_id") if payload.get("run_id") else None
+                    safe_iteration_id = _validate_api_identifier(str(payload.get("iteration_id") or ""), field_name="iteration_id") if payload.get("iteration_id") else None
+                    result = room_service.append_message(
+                        room_id=room_id,
                         sender=str(payload.get("sender") or "dashboard"),
+                        sender_kind=str(payload.get("sender_kind") or "agent"),
                         text=str(payload.get("text") or ""),
                         message_type=str(payload.get("message_type") or "text"),
-                        task_id=str(payload.get("task_id") or "") or None,
+                        attachments=[str(item) for item in (payload.get("attachments") or []) if str(item).strip()],
+                        evidence_refs=[str(item) for item in (payload.get("evidence_refs") or []) if str(item).strip()],
+                        task_id=safe_task_id,
+                        run_id=safe_run_id,
+                        iteration_id=safe_iteration_id,
                     )
                     _json_response(self, result)
+                except Exception as exc:
+                    _json_response(self, {"error": str(exc)}, status=400)
+                return
+            if parsed.path == "/api/actions/extract-insights":
+                try:
+                    if payload.get("room_id"):
+                        result = insight_extractor.extract_from_room(validate_room_id(str(payload.get("room_id") or "")))
+                    elif payload.get("run_id"):
+                        result = insight_extractor.extract_from_run(_validate_api_identifier(str(payload.get("run_id") or ""), field_name="run_id"))
+                    else:
+                        raise ValueError("room_id or run_id is required")
+                    _json_response(self, {"insights": result, "ok": True})
                 except Exception as exc:
                     _json_response(self, {"error": str(exc)}, status=400)
                 return
@@ -909,16 +1089,20 @@ def _build_handler(workspace: str | Path, web_root: Path, auth_token: str) -> ty
                 try:
                     shared = bool(payload.get("shared"))
                     if shared:
-                        result = append_shared_memory(workspace_root, author="dashboard", text=str(payload.get("text") or ""), task_id=str(payload.get("task_id") or "") or None)
+                        safe_task_id = _validate_api_identifier(str(payload.get("task_id") or ""), field_name="task_id") if payload.get("task_id") else None
+                        result = append_shared_memory(workspace_root, author="dashboard", text=str(payload.get("text") or ""), task_id=safe_task_id)
                     else:
+                        safe_provider_id = _validate_api_identifier(str(payload.get("provider_id") or ""), field_name="provider_id")
+                        safe_agent_id = _validate_api_identifier(str(payload.get("agent_id") or ""), field_name="agent_id")
+                        safe_task_id = _validate_api_identifier(str(payload.get("task_id") or ""), field_name="task_id") if payload.get("task_id") else None
                         result = append_long_term_memory(
                             workspace_root,
-                            provider_id=str(payload.get("provider_id") or ""),
-                            agent_id=str(payload.get("agent_id") or ""),
+                            provider_id=safe_provider_id,
+                            agent_id=safe_agent_id,
                             author="dashboard",
                             text=str(payload.get("text") or ""),
                             tags=[str(item) for item in (payload.get("tags") or []) if str(item).strip()],
-                            task_id=str(payload.get("task_id") or "") or None,
+                            task_id=safe_task_id,
                         )
                     _json_response(self, result)
                 except Exception as exc:

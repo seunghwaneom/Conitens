@@ -4627,6 +4627,49 @@ def cmd_ui(args):
                 result["server"].shutdown()
 
 
+def cmd_forward(args):
+    """Expose a minimal read-only entry contract for the forward `.conitens` runtime."""
+    if args.action == "serve":
+        try:
+            from ensemble_forward_bridge import launch_forward_bridge
+        except ImportError:
+            print("??Forward bridge module not found. Ensure ensemble_forward_bridge.py is in the same directory.")
+            return
+        launched = launch_forward_bridge(
+            WORKSPACE,
+            host=args.host,
+            port=args.port,
+            reviewer_identity=getattr(args, "reviewer", None),
+        )
+        print(
+            json.dumps(
+                {
+                    "url": launched["url"],
+                    "api_root": launched["api_root"],
+                    "token": launched["token"],
+                    "reviewer_identity": launched["reviewer_identity"],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        if not args.once:
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                launched["server"].shutdown()
+        return
+    try:
+        from ensemble_forward import run_forward_action
+    except ImportError:
+        print("??Forward runtime module not found. Ensure ensemble_forward.py is in the same directory.")
+        return
+
+    output_format = getattr(args, "format", "text")
+    print(run_forward_action(WORKSPACE, action=args.action, output_format=output_format))
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # v4.2 UPGRADE SYSTEM
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -5091,6 +5134,11 @@ def main():
     )
     
     parser.add_argument("--version", "-v", action="version", version="Ensemble CLI v4.2.0")
+    parser.add_argument(
+        "--forward",
+        action="store_true",
+        help="Use the additive forward `.conitens` runtime surface for selected read-only commands.",
+    )
     
     parser.add_argument("--workspace", "-w",
         help="Workspace directory",
@@ -5369,6 +5417,15 @@ def main():
     p_ui.add_argument("--once", action="store_true", help="Render once and exit")
     p_ui.add_argument("--host", default="127.0.0.1")
     p_ui.add_argument("--port", type=int, default=8765)
+
+    # additive forward runtime entry contract
+    p_forward = subparsers.add_parser("forward", help="Read-only forward `.conitens` runtime entry surface")
+    p_forward.add_argument("action", choices=["status", "context-latest", "serve"], help="Forward action")
+    p_forward.add_argument("--host", default="127.0.0.1")
+    p_forward.add_argument("--port", type=int, default=8785)
+    p_forward.add_argument("--reviewer")
+    p_forward.add_argument("--once", action="store_true")
+    p_forward.add_argument("--format", choices=["text", "json"], default="text")
     
     # v4.2 Upgrade System
     p_upgrade_scan = subparsers.add_parser("upgrade-scan", help="Scan journals for upgrade candidates (v4.2)")
@@ -5390,6 +5447,13 @@ def main():
     
     args = parser.parse_args()
     WORKSPACE = os.path.abspath(args.workspace)
+
+    if getattr(args, "forward", False):
+        if args.command != "status":
+            parser.error("--forward currently supports only the read-only 'status' command. Use 'forward <action>' for explicit forward-runtime commands.")
+        args.command = "forward"
+        args.action = "status"
+        args.format = "text"
     
     commands = {
         "new": cmd_new,
@@ -5426,6 +5490,7 @@ def main():
         "memory": cmd_memory_ext,
         "room": cmd_room,
         "ui": cmd_ui,
+        "forward": cmd_forward,
         # v4.2 upgrade system
         "upgrade-scan": cmd_upgrade_scan,
         "upgrade-setup": cmd_upgrade_setup,
