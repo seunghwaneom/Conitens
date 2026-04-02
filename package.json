@@ -54,9 +54,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/seunghwan/conitens"
+    "url": "https://github.com/seunghwaneom/Conitens"
   },
-  "homepage": "https://github.com/seunghwan/conitens#readme",
+  "homepage": "https://github.com/seunghwaneom/Conitens#readme",
   "publishConfig": {
     "access": "public"
   },
@@ -70,7 +70,7 @@
     }
   },
   "bugs": {
-    "url": "https://github.com/seunghwan/conitens/issues"
+    "url": "https://github.com/seunghwaneom/Conitens/issues"
   },
   "scripts": {
     "postinstall": "node ./bin/postinstall.cjs",
