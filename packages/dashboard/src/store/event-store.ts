@@ -20,6 +20,12 @@ export interface EventRecord {
   payload: Record<string, unknown>;
 }
 
+interface SeedDemoData {
+  tasks?: TaskState[];
+  agents?: AgentState[];
+  events?: EventRecord[];
+}
+
 interface EventStoreState {
   events: EventRecord[];
   tasks: TaskState[];
@@ -27,6 +33,7 @@ interface EventStoreState {
   addEvent: (event: EventRecord) => void;
   setTasks: (tasks: TaskState[]) => void;
   setAgents: (agents: AgentState[]) => void;
+  seedDemo: (data: SeedDemoData) => void;
 }
 
 export const useEventStore = create<EventStoreState>((set) => ({
@@ -39,36 +46,62 @@ export const useEventStore = create<EventStoreState>((set) => ({
       const events = [...state.events, event].slice(-200); // Keep last 200
 
       // Update tasks from task events
-      const tasks = [...state.tasks];
+      let tasks = state.tasks;
       if (event.type.startsWith("task.")) {
         const taskId = event.task_id ?? (event.payload.task_id as string);
         if (taskId) {
-          const existing = tasks.find((t) => t.taskId === taskId);
+          const exists = tasks.some((t) => t.taskId === taskId);
           if (event.type === "task.created") {
-            if (!existing) tasks.push({ taskId, state: "draft" });
-          } else if (event.type === "task.assigned" && existing) {
-            existing.assignee = event.payload.assignee as string;
-            existing.state = "assigned";
-          } else if (event.type === "task.status_changed" && existing) {
-            existing.state = event.payload.to as string;
-          } else if (event.type === "task.completed" && existing) {
-            existing.state = "done";
+            if (!exists) {
+              tasks = [...tasks, { taskId, state: "draft" }];
+            }
+          } else if (event.type === "task.assigned") {
+            tasks = exists
+              ? tasks.map((t) =>
+                  t.taskId === taskId
+                    ? { ...t, assignee: event.payload.assignee as string, state: "assigned" }
+                    : t
+                )
+              : [...tasks, { taskId, assignee: event.payload.assignee as string, state: "assigned" }];
+          } else if (event.type === "task.status_changed") {
+            tasks = exists
+              ? tasks.map((t) =>
+                  t.taskId === taskId
+                    ? { ...t, state: event.payload.to as string }
+                    : t
+                )
+              : [...tasks, { taskId, state: event.payload.to as string }];
+          } else if (event.type === "task.completed") {
+            tasks = exists
+              ? tasks.map((t) =>
+                  t.taskId === taskId ? { ...t, state: "done" } : t
+                )
+              : [...tasks, { taskId, state: "done" }];
           }
         }
       }
 
       // Update agents from agent events
-      const agents = [...state.agents];
+      let agents = state.agents;
       if (event.type.startsWith("agent.")) {
         const agentId = event.actor.id;
-        const existing = agents.find((a) => a.agentId === agentId);
+        const exists = agents.some((a) => a.agentId === agentId);
         if (event.type === "agent.spawned") {
-          if (!existing) agents.push({ agentId, status: "running" });
-          else existing.status = "running";
-        } else if (event.type === "agent.terminated" && existing) {
-          existing.status = "terminated";
-        } else if (event.type === "agent.error" && existing) {
-          existing.status = "error";
+          if (!exists) {
+            agents = [...agents, { agentId, status: "running" }];
+          } else {
+            agents = agents.map((a) =>
+              a.agentId === agentId ? { ...a, status: "running" } : a
+            );
+          }
+        } else if (event.type === "agent.terminated") {
+          agents = agents.map((a) =>
+            a.agentId === agentId ? { ...a, status: "terminated" } : a
+          );
+        } else if (event.type === "agent.error") {
+          agents = agents.map((a) =>
+            a.agentId === agentId ? { ...a, status: "error" } : a
+          );
         }
       }
 
@@ -77,4 +110,11 @@ export const useEventStore = create<EventStoreState>((set) => ({
 
   setTasks: (tasks) => set({ tasks }),
   setAgents: (agents) => set({ agents }),
+
+  seedDemo: (data) =>
+    set((state) => ({
+      tasks: data.tasks ?? state.tasks,
+      agents: data.agents ?? state.agents,
+      events: data.events ?? state.events,
+    })),
 }));

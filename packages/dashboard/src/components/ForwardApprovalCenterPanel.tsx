@@ -10,11 +10,7 @@ import {
 } from "../forward-bridge.js";
 import { pickNextApprovalId } from "../forward-view-model.js";
 
-type LoadState = "idle" | "loading" | "ready" | "error";
-
-function toErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
+import { type LoadState, toErrorMessage } from "../types/async.js";
 
 export function ForwardApprovalCenterPanel({
   config,

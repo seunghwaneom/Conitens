@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { useEventStore } from "../src/store/event-store.ts";
+import { demoAgents, demoEvents, demoTasks } from "../src/demo-data.ts";
 
 function resetStore() {
   useEventStore.setState({
@@ -95,4 +96,58 @@ test("event store reduces agent lifecycle events into agent state", () => {
     status: "terminated",
   });
   assert.equal(useEventStore.getState().events.length, 3);
+});
+
+test("event store can seed demo data and apply subsequent task updates", () => {
+  resetStore();
+  const store = useEventStore.getState();
+
+  store.seedDemo({
+    tasks: demoTasks,
+    agents: demoAgents,
+    events: demoEvents,
+  });
+
+  store.addEvent({
+    event_id: "evt-demo-task-status",
+    type: "task.status_changed",
+    ts: "2026-04-02T12:00:00.000Z",
+    actor: { kind: "user", id: "dashboard" },
+    task_id: "wf_apply",
+    payload: { to: "review" },
+  });
+
+  const task = useEventStore.getState().tasks.find((entry) => entry.taskId === "wf_apply");
+
+  assert.equal(task?.state, "review");
+  assert.equal(useEventStore.getState().agents.length, demoAgents.length);
+  assert.equal(useEventStore.getState().events.length, demoEvents.length + 1);
+});
+
+test("event store can seed demo state for later board interactions", () => {
+  resetStore();
+  const store = useEventStore.getState();
+
+  store.seedDemo({
+    tasks: [{ taskId: "wf_apply", state: "active", assignee: "architect" }],
+    agents: [{ agentId: "architect", status: "running" }],
+    events: [],
+  });
+
+  store.addEvent({
+    event_id: "evt-task-review",
+    type: "task.status_changed",
+    ts: "2026-03-21T09:10:00.000Z",
+    actor: { kind: "user", id: "dashboard" },
+    task_id: "wf_apply",
+    payload: { to: "review" },
+  });
+
+  assert.deepEqual(useEventStore.getState().tasks[0], {
+    taskId: "wf_apply",
+    state: "review",
+    assignee: "architect",
+  });
+  assert.equal(useEventStore.getState().agents[0]?.agentId, "architect");
+  assert.equal(useEventStore.getState().events.length, 1);
 });

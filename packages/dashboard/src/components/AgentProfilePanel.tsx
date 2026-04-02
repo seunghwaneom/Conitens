@@ -1,17 +1,7 @@
 import React from "react";
 import type { AgentProfile, AgentLifecycleStatus } from "../agent-fleet-model.js";
 import type { EvolutionEntry, LearningMetric } from "../evolution-model.js";
-
-function timeAgo(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  return `${diffD}d ago`;
-}
+import { timeAgo } from "../utils.js";
 
 function statusColor(status: AgentLifecycleStatus): string {
   switch (status) {
@@ -71,8 +61,6 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
     );
   }
 
-  const canPause = agent.status === "running" || agent.status === "idle" || agent.status === "assigned";
-  const canResume = agent.status === "paused";
   const errorPct = agent.errorRate * 100;
 
   return (
@@ -130,21 +118,7 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
 
       <div className="agent-profile-section">
         <p className="forward-panel-label">Actions</p>
-        <div className="agent-action-bar">
-          {canPause && (
-            <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
-              Pause
-            </button>
-          )}
-          {canResume && (
-            <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
-              Resume
-            </button>
-          )}
-          <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
-            Retire
-          </button>
-        </div>
+        <p className="agent-lifecycle-note">Lifecycle controls planned for a future release.</p>
       </div>
 
       {evolution.length > 0 && (

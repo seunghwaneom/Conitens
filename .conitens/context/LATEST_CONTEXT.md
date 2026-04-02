@@ -64,6 +64,27 @@ Read this file before substantial work.
   the office preview.
 - Local Claude review reliability is now improved with an explicit wrapper and
   a verified `medium` / 5-minute invocation profile.
+- A dashboard real-user review artifact now exists for the latest Wave A-D
+  updates, focused on trust gaps, practical UX improvements, and next features.
+- The strongest new dashboard review finding is that the `Agents` route still
+  presents demo-backed data and local-only actions with live-operator visual
+  weight.
+- A team-mode attempt for this review failed because the current leader session
+  is not running inside a tmux leader pane, so this pass stayed grounded in
+  direct local inspection.
+- A code + security review artifact now exists for the latest dashboard refactor
+  commit `a621919`.
+- The refactor build passes, but the dashboard package test suite still has
+  one failing assertion after the demo timestamp changes.
+- The strongest new refactor-review findings are a broken demo board/task-detail
+  flow and a trust badge/presentation path that was added but not actually
+  mounted in `ForwardShell`.
+- The dashboard refactor fix pass is now complete: the package build passes and
+  the dashboard test suite is green again.
+- Demo board/task-detail interactions now run through a seeded/resolved store
+  path, and the trust badge is now mounted in the rendered shell header.
+- Team mode was attempted again during the fix pass but still failed because
+  the current OMX runtime does not detect a tmux-backed leader pane.
 
 ## Guardrails
 
@@ -196,6 +217,9 @@ Read this file before substantial work.
 - Frontend bridge boundary: `docs/frontend/BRIDGE_BOUNDARY.md`
 - Frontend BE-1b API: `docs/frontend/BE1B_API.md`
 - Frontend review doc: `docs/frontend/FRONTEND_REVIEW_2026-04-02.md`
+- Real-user dashboard review: `.conitens/reviews/dashboard_real_user_review_2026-04-02.md`
+- Dashboard refactor code/security review: `.conitens/reviews/dashboard_refactor_code_security_review_2026-04-02.md`
+- Dashboard refactor fix execution: `.conitens/reviews/dashboard_refactor_fix_execution_2026-04-02.md`
 - Forward operator usage guide: `docs/frontend/FORWARD_OPERATOR_USAGE.md`
 - Frontend FE-6 approval center: `docs/frontend/FE6_APPROVAL_CENTER.md`
 - Frontend FE-7 insights view: `docs/frontend/FE7_INSIGHTS_VIEW.md`
