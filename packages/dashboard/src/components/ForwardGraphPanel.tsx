@@ -24,12 +24,7 @@ export function ForwardGraphPanel({ model }: { model: ForwardGraphModel | null }
           </div>
         </div>
         <div className="forward-placeholder">
-          <h3>Textual fallback</h3>
-          <ul>
-            {(model?.summary || ["No structured graph data surfaced yet."]).map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+          <p className="forward-empty">Graph builds after the first multi-step iteration completes.</p>
         </div>
       </section>
     );

@@ -349,7 +349,7 @@ export function App() {
               {runItems.map((item) => (
                 <button
                   key={item.runId}
-                  className={`forward-run-item${route.runId === item.runId ? " active" : ""}`}
+                  className={`forward-run-item${route.runId === item.runId ? " active" : ""}${item.status === "running" ? " running" : ""}`}
                   onClick={() => openRun(item.runId)}
                 >
                   <div className="forward-run-topline">
