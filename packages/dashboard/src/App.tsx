@@ -38,9 +38,17 @@ import {
   toRunDetailViewModel,
   toRunListItemViewModel,
 } from "./forward-view-model.js";
+import { OnboardingOverlay } from "./components/OnboardingOverlay.js";
 import { demoAgents, demoEvents, demoTasks } from "./demo-data.js";
+import { AgentFleetOverview } from "./components/AgentFleetOverview.js";
+import { AgentProfilePanel } from "./components/AgentProfilePanel.js";
+import { AgentRelationshipGraph } from "./components/AgentRelationshipGraph.js";
+import { ProposalQueuePanel } from "./components/ProposalQueuePanel.js";
+import { demoFleet } from "./agent-fleet-model.js";
+import { demoProposals, demoEvolution, demoLearningMetrics } from "./evolution-model.js";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
+type DetailTab = "operations" | "intelligence" | "data";
 
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -70,7 +78,13 @@ export function App() {
   const [roomError, setRoomError] = useState<string | null>(null);
   const [route, setRoute] = useState(() => parseForwardRoute(window.location.hash));
   const [liveRevision, setLiveRevision] = useState(0);
+  const [detailTab, setDetailTab] = useState<DetailTab>("operations");
   const isOfficePreview = route.screen === "office-preview";
+  const isDemo = !config.token.trim() && !isOfficePreview;
+  const [showConnectForm, setShowConnectForm] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const selectedAgent = demoFleet.find(a => a.id === selectedAgentId) ?? null;
+  const [agentView, setAgentView] = useState<"fleet" | "graph">("fleet");
 
   useEffect(() => {
     const handleHashChange = () => setRoute(parseForwardRoute(window.location.hash));
@@ -267,8 +281,43 @@ export function App() {
     onSnapshot: handleStreamSnapshot,
   });
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (isOfficePreview) return;
+
+      switch (e.key) {
+        case "j": {
+          const idx = runItems.findIndex((item) => item.runId === route.runId);
+          const next = runItems[idx + 1];
+          if (next) openRun(next.runId);
+          break;
+        }
+        case "k": {
+          const idx = runItems.findIndex((item) => item.runId === route.runId);
+          const prev = runItems[idx - 1];
+          if (prev) openRun(prev.runId);
+          break;
+        }
+        case "r": {
+          e.preventDefault();
+          setLiveRevision((current) => current + 1);
+          break;
+        }
+        case "Escape": {
+          window.location.hash = buildForwardRoute({ screen: "runs", runId: null });
+          break;
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [runItems, route, isOfficePreview]);
+
   return (
     <div className={`forward-shell${isOfficePreview ? " forward-shell-preview" : ""}`}>
+      <OnboardingOverlay />
       <header className="forward-header">
         <div>
           <p className="forward-eyebrow">{isOfficePreview ? "Conitens / office preview" : "Conitens / forward runtime"}</p>
@@ -280,8 +329,9 @@ export function App() {
           </p>
         </div>
         <div className="forward-chip-row">
-          <a className="forward-chip forward-chip-link" href="#/runs">Forward Shell</a>
-          <a className="forward-chip forward-chip-link" href="#/office-preview">Pixel Office Preview</a>
+          <a className={`forward-chip forward-chip-link${route.screen === "runs" || route.screen === "run-detail" ? " active" : ""}`} href="#/runs">Forward Shell</a>
+          <a className={`forward-chip forward-chip-link${isOfficePreview ? " active" : ""}`} href="#/office-preview">Pixel Office Preview</a>
+          <a className={`forward-chip forward-chip-link${route.screen === "agents" ? " active" : ""}`} href="#/agents">Agents</a>
           {isOfficePreview ? (
             <span className="forward-chip">Design-only</span>
           ) : (
@@ -298,35 +348,75 @@ export function App() {
         <main className="forward-main">
           <PixelOffice agents={demoAgents} tasks={demoTasks} events={demoEvents} />
         </main>
+      ) : route.screen === "agents" ? (
+        <main className="forward-main">
+          <div className="forward-tab-bar">
+            <button
+              className={`forward-tab${agentView === "fleet" ? " active" : ""}`}
+              onClick={() => setAgentView("fleet")}
+            >
+              Fleet
+            </button>
+            <button
+              className={`forward-tab${agentView === "graph" ? " active" : ""}`}
+              onClick={() => setAgentView("graph")}
+            >
+              Relationships
+            </button>
+          </div>
+          {agentView === "fleet" ? (
+            <div className="agent-fleet-layout">
+              <AgentFleetOverview agents={demoFleet} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
+              <AgentProfilePanel
+                agent={selectedAgent}
+                evolution={demoEvolution.filter(e => e.agentId === selectedAgentId)}
+                metrics={demoLearningMetrics.find(m => m.agentId === selectedAgentId) ?? null}
+              />
+            </div>
+          ) : (
+            <AgentRelationshipGraph agents={demoFleet} />
+          )}
+          <ProposalQueuePanel proposals={demoProposals} agents={demoFleet} />
+        </main>
       ) : (
       <main className="forward-main">
-        <section className="forward-setup">
-          <form className="forward-form" onSubmit={connect}>
-            <label>
-              <span>API root</span>
-              <input
-                value={draftConfig.apiRoot}
-                onChange={(event) => setDraftConfig((current) => ({ ...current, apiRoot: event.target.value }))}
-                placeholder="http://127.0.0.1:8785/api"
-              />
-            </label>
-            <label>
-              <span>Bearer token</span>
-              <input
-                type="password"
-                autoComplete="off"
-                value={draftConfig.token}
-                onChange={(event) => setDraftConfig((current) => ({ ...current, token: event.target.value }))}
-                placeholder="Paste token from `ensemble forward serve`"
-              />
-            </label>
-            <button type="submit">Connect</button>
-          </form>
-          <p className="forward-help">
-            Launch the bridge with <code>python scripts/ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8785</code>
-          </p>
-          <p className="forward-help">The bearer token is kept in-memory only and is not persisted across reloads.</p>
-        </section>
+        {isDemo ? (
+          <div className="forward-demo-banner">
+            <span>Demo mode — showing sample data. Connect to a live bridge to see real runs.</span>
+            <button type="button" onClick={() => setShowConnectForm((v) => !v)}>
+              {showConnectForm ? "Hide form" : "Connect to live bridge"}
+            </button>
+          </div>
+        ) : null}
+        {!isDemo || showConnectForm ? (
+          <section className="forward-setup">
+            <form className="forward-form" onSubmit={connect}>
+              <label>
+                <span>API root</span>
+                <input
+                  value={draftConfig.apiRoot}
+                  onChange={(event) => setDraftConfig((current) => ({ ...current, apiRoot: event.target.value }))}
+                  placeholder="http://127.0.0.1:8785/api"
+                />
+              </label>
+              <label>
+                <span>Bearer token</span>
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={draftConfig.token}
+                  onChange={(event) => setDraftConfig((current) => ({ ...current, token: event.target.value }))}
+                  placeholder="Paste token from `ensemble forward serve`"
+                />
+              </label>
+              <button type="submit">Connect</button>
+            </form>
+            <p className="forward-help">
+              Launch the bridge with <code>python scripts/ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8785</code>
+            </p>
+            <p className="forward-help">The bearer token is kept in-memory only and is not persisted across reloads.</p>
+          </section>
+        ) : null}
 
         <section className="forward-grid">
           <aside className="forward-sidebar">
@@ -335,59 +425,92 @@ export function App() {
                 <p className="forward-panel-label">Runs</p>
                 <h2>Forward run list</h2>
               </div>
-              <span className={`forward-state state-${runsState}`}>{runsState}</span>
+              <span className={`forward-state state-${isDemo ? "ready" : runsState}`}>{isDemo ? "demo" : runsState}</span>
             </div>
-            {runsState === "idle" ? (
-              <p className="forward-empty">Enter bridge connection details to load forward runs.</p>
-            ) : null}
-            {runsState === "loading" ? <p className="forward-empty">Loading runs...</p> : null}
-            {runsState === "error" ? <p className="forward-error">{runsError}</p> : null}
-            {runsState === "ready" && runItems.length === 0 ? (
-              <p className="forward-empty">No forward runs yet.</p>
-            ) : null}
-            <div className="forward-run-list">
-              {runItems.map((item) => (
-                <button
-                  key={item.runId}
-                  className={`forward-run-item${route.runId === item.runId ? " active" : ""}`}
-                  onClick={() => openRun(item.runId)}
-                >
-                  <div className="forward-run-topline">
-                    <strong>{item.title}</strong>
-                    <span>{item.status}</span>
-                  </div>
-                  <p>{item.subtitle}</p>
-                  <div className="forward-metric-row">
-                    {item.metrics.map((metric) => (
-                      <span key={metric}>{metric}</span>
-                    ))}
-                  </div>
-                </button>
-              ))}
-            </div>
+            {isDemo ? (
+              <div className="forward-run-list">
+                {demoTasks.map((task) => (
+                  <button key={task.taskId} className={`forward-run-item${task.state === "active" ? " running" : ""}`}>
+                    <div className="forward-run-topline">
+                      <strong>{task.taskId}</strong>
+                      <span>{task.state}</span>
+                    </div>
+                    <p>{task.assignee}</p>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <>
+                {runsState === "idle" ? (
+                  <p className="forward-empty">Enter bridge connection details to load forward runs.</p>
+                ) : null}
+                {runsState === "loading" ? <p className="forward-empty">Loading runs...</p> : null}
+                {runsState === "error" ? <p className="forward-error">{runsError}</p> : null}
+                {runsState === "ready" && runItems.length === 0 ? (
+                  <p className="forward-empty">No forward runs yet.</p>
+                ) : null}
+                <div className="forward-run-list">
+                  {runItems.map((item) => (
+                    <button
+                      key={item.runId}
+                      className={`forward-run-item${route.runId === item.runId ? " active" : ""}${item.status === "running" ? " running" : ""}`}
+                      onClick={() => openRun(item.runId)}
+                    >
+                      <div className="forward-run-topline">
+                        <strong>{item.title}</strong>
+                        <span>{item.status}</span>
+                      </div>
+                      <p>{item.subtitle}</p>
+                      <div className="forward-metric-row">
+                        {item.metrics.map((metric) => (
+                          <span key={metric}>{metric}</span>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </aside>
 
           <section className="forward-detail">
             <div className="forward-panel-header">
               <div>
                 <p className="forward-panel-label">Detail</p>
-                <h2>{runDetail ? runDetail.title : "Select a run"}</h2>
+                <h2>{isDemo ? demoTasks[0]?.taskId ?? "Demo run" : runDetail ? runDetail.title : "Select a run"}</h2>
               </div>
-              <span className={`forward-state state-${detailState}`}>{detailState}</span>
+              <span className={`forward-state state-${isDemo ? "ready" : detailState}`}>{isDemo ? "demo" : detailState}</span>
             </div>
-            {route.screen !== "run-detail" ? (
+            {isDemo ? (
+              <div className="forward-detail-body">
+                <div className="forward-detail-hero">
+                  <div>
+                    <p className="forward-detail-label">demo-run-001</p>
+                    <h3>{demoTasks[0]?.taskId ?? "Sample objective"}</h3>
+                    <p>Sample data — connect to a live bridge to see real run details.</p>
+                  </div>
+                  <span className="forward-status-pill">{demoTasks[0]?.state ?? "idle"}</span>
+                </div>
+                <div className="forward-stats">
+                  <div><span>Agents</span><strong>{demoAgents.length}</strong></div>
+                  <div><span>Tasks</span><strong>{demoTasks.length}</strong></div>
+                  <div><span>Events</span><strong>{demoEvents.length}</strong></div>
+                </div>
+              </div>
+            ) : null}
+            {!isDemo && route.screen !== "run-detail" ? (
               <div className="forward-placeholder">
                 <h3>Run detail placeholder</h3>
                 <p>Select a run to inspect replay, state docs, context digests, and room timeline.</p>
               </div>
             ) : null}
-            {route.screen === "run-detail" && detailState === "loading" ? (
+            {!isDemo && route.screen === "run-detail" && detailState === "loading" ? (
               <p className="forward-empty">Loading run detail...</p>
             ) : null}
-            {route.screen === "run-detail" && detailState === "error" ? (
+            {!isDemo && route.screen === "run-detail" && detailState === "error" ? (
               <p className="forward-error">{detailError}</p>
             ) : null}
-            {route.screen === "run-detail" && runDetail ? (
+            {!isDemo && route.screen === "run-detail" && runDetail ? (
               <ErrorBoundary>
                 <div className="forward-detail-body">
                   <div className="forward-detail-hero">
@@ -418,24 +541,47 @@ export function App() {
                       </ul>
                     )}
                   </div>
-                  <ForwardReplayPanel replay={replay} state={replayState} error={replayError} />
-                  <ForwardApprovalCenterPanel config={config} runId={runDetail.runId} />
-                  <ForwardGraphPanel model={graphModel} />
-                  <ForwardInsightsPanel
-                    insights={insightCards}
-                    findingsSummary={findingsSummary}
-                    validatorCorrelations={validatorCorrelations}
-                  />
-                  <ForwardStateDocsPanel stateDocs={stateDocs} state={stateDocsState} error={stateDocsError} />
-                  <ForwardContextPanel contextLatest={contextLatest} state={contextState} error={contextError} />
-                  <ForwardRoomPanel
-                    roomOptions={roomOptions}
-                    selectedRoomId={selectedRoomId}
-                    onSelectRoom={setSelectedRoomId}
-                    roomTimeline={roomTimeline}
-                    state={roomState}
-                    error={roomError}
-                  />
+                  <div className="forward-tab-bar">
+                    {(["operations", "intelligence", "data"] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        className={`forward-tab${detailTab === tab ? " active" : ""}`}
+                        onClick={() => setDetailTab(tab)}
+                      >
+                        {tab === "operations" ? "Operations" : tab === "intelligence" ? "Intelligence" : "Data"}
+                      </button>
+                    ))}
+                  </div>
+                  {detailTab === "operations" && (
+                    <>
+                      <ForwardApprovalCenterPanel config={config} runId={runDetail.runId} />
+                      <ForwardReplayPanel replay={replay} state={replayState} error={replayError} />
+                    </>
+                  )}
+                  {detailTab === "intelligence" && (
+                    <>
+                      <ForwardGraphPanel model={graphModel} />
+                      <ForwardInsightsPanel
+                        insights={insightCards}
+                        findingsSummary={findingsSummary}
+                        validatorCorrelations={validatorCorrelations}
+                      />
+                    </>
+                  )}
+                  {detailTab === "data" && (
+                    <>
+                      <ForwardStateDocsPanel stateDocs={stateDocs} state={stateDocsState} error={stateDocsError} />
+                      <ForwardContextPanel contextLatest={contextLatest} state={contextState} error={contextError} />
+                      <ForwardRoomPanel
+                        roomOptions={roomOptions}
+                        selectedRoomId={selectedRoomId}
+                        onSelectRoom={setSelectedRoomId}
+                        roomTimeline={roomTimeline}
+                        state={roomState}
+                        error={roomError}
+                      />
+                    </>
+                  )}
                 </div>
               </ErrorBoundary>
             ) : null}
