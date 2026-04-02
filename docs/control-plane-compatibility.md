@@ -7,6 +7,15 @@ This repository currently contains two architectural lineages:
 
 The current branch uses lineage 1 as the operational source of truth.
 
+The repo now also exposes a narrow explicit forward-runtime entry contract:
+
+- `ensemble forward status`
+- `ensemble forward context-latest`
+- compatibility alias: `ensemble --forward status`
+
+This forward entry surface is read-only and additive. It does not promote the
+forward stack to the active runtime truth.
+
 ## Current Rule
 
 - Use `.notes/` for machine state and replayable artifacts.

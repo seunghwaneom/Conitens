@@ -1,0 +1,27 @@
+schema_v: 1
+default_policy: review
+actions:
+  - action_type: write_file
+    risk_level: medium
+    approval_required: true
+    notes: "Writing or overwriting repository files requires confirmation."
+  - action_type: delete_file
+    risk_level: high
+    approval_required: true
+    notes: "Deletion is destructive and must never run silently."
+  - action_type: shell_execution
+    risk_level: high
+    approval_required: true
+    notes: "Shell commands triggered by loop execution require review."
+  - action_type: network_access
+    risk_level: high
+    approval_required: true
+    notes: "Outbound network actions require explicit approval."
+  - action_type: secret_usage
+    risk_level: critical
+    approval_required: true
+    notes: "Secret access and use must be reviewable."
+  - action_type: deploy_publish
+    risk_level: critical
+    approval_required: true
+    notes: "Deploy, merge, publish, or release actions must be approved."

@@ -825,7 +825,16 @@ class OperationsLayerTests(unittest.TestCase):
                 self.assertNotIn(launched["token"], index_html)
                 self.assertIsNotNone(dashboard_cookie)
                 self.assertIn("conitens_dashboard_auth=", dashboard_cookie)
-                with urlopen("http://127.0.0.1:8876/api/dashboard", timeout=10) as response:
+                with self.assertRaises(HTTPError) as exc_info:
+                    urlopen("http://127.0.0.1:8876/api/dashboard", timeout=10)
+                self.assertEqual(exc_info.exception.code, 403)
+                exc_info.exception.close()
+
+                dashboard_request = Request(
+                    "http://127.0.0.1:8876/api/dashboard",
+                    headers={"Cookie": dashboard_cookie},
+                )
+                with urlopen(dashboard_request, timeout=10) as response:
                     dashboard = json.loads(response.read().decode("utf-8"))
                 self.assertIn("snapshot", dashboard)
                 self.assertIn("shared_memory", dashboard)
@@ -867,6 +876,136 @@ class OperationsLayerTests(unittest.TestCase):
                 with urlopen(authorized, timeout=10) as response:
                     update_result = json.loads(response.read().decode("utf-8"))
                 self.assertTrue(update_result["ok"])
+
+                with self.assertRaises(HTTPError) as office_exc:
+                    urlopen("http://127.0.0.1:8876/office-report.html", timeout=10)
+                self.assertEqual(office_exc.exception.code, 403)
+                office_exc.exception.close()
+
+                office_request = Request(
+                    "http://127.0.0.1:8876/office-report.html",
+                    headers={"Authorization": f"Bearer {launched['token']}"},
+                )
+                with urlopen(office_request, timeout=10) as response:
+                    office_html = response.read().decode("utf-8")
+                self.assertIn("Conitens Office Report", office_html)
+
+                invalid_room_request = Request(
+                    "http://127.0.0.1:8876/api/rooms/..%2F..%2Fsecret",
+                    headers={"Authorization": f"Bearer {launched['token']}"},
+                )
+                with self.assertRaises(HTTPError) as invalid_exc:
+                    urlopen(invalid_room_request, timeout=10)
+                self.assertEqual(invalid_exc.exception.code, 400)
+                invalid_exc.exception.close()
+
+                invalid_spawn_request = Request(
+                    "http://127.0.0.1:8876/api/spawns/..%2F..%2Fevil/log",
+                    headers={"Authorization": f"Bearer {launched['token']}"},
+                )
+                with self.assertRaises(HTTPError) as invalid_spawn_exc:
+                    urlopen(invalid_spawn_request, timeout=10)
+                self.assertEqual(invalid_spawn_exc.exception.code, 400)
+                invalid_spawn_exc.exception.close()
+
+                invalid_memory_request = Request(
+                    "http://127.0.0.1:8876/api/memory/..%2F..%2Fevil/..%2F..%2Fpersona",
+                    headers={"Authorization": f"Bearer {launched['token']}"},
+                )
+                with self.assertRaises(HTTPError) as invalid_memory_exc:
+                    urlopen(invalid_memory_request, timeout=10)
+                self.assertEqual(invalid_memory_exc.exception.code, 400)
+                invalid_memory_exc.exception.close()
+
+                invalid_approve = Request(
+                    "http://127.0.0.1:8876/api/actions/approve-question",
+                    data=json.dumps({"question_id": "../evil"}).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {launched['token']}",
+                    },
+                    method="POST",
+                )
+                with self.assertRaises(HTTPError) as invalid_approve_exc:
+                    urlopen(invalid_approve, timeout=10)
+                self.assertEqual(invalid_approve_exc.exception.code, 400)
+                invalid_approve_exc.exception.close()
+
+                invalid_approve_all = Request(
+                    "http://127.0.0.1:8876/api/actions/approve-all",
+                    data=json.dumps({"question_ids": ["../evil"]}).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {launched['token']}",
+                    },
+                    method="POST",
+                )
+                with self.assertRaises(HTTPError) as invalid_approve_all_exc:
+                    urlopen(invalid_approve_all, timeout=10)
+                self.assertEqual(invalid_approve_all_exc.exception.code, 400)
+                invalid_approve_all_exc.exception.close()
+
+                invalid_memory_append = Request(
+                    "http://127.0.0.1:8876/api/actions/memory-append",
+                    data=json.dumps(
+                        {
+                            "shared": False,
+                            "provider_id": "../evil",
+                            "agent_id": "../persona",
+                            "text": "bad",
+                        }
+                    ).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {launched['token']}",
+                    },
+                    method="POST",
+                )
+                with self.assertRaises(HTTPError) as invalid_memory_append_exc:
+                    urlopen(invalid_memory_append, timeout=10)
+                self.assertEqual(invalid_memory_append_exc.exception.code, 400)
+                invalid_memory_append_exc.exception.close()
+
+                invalid_spawn_start = Request(
+                    "http://127.0.0.1:8876/api/actions/spawn-start",
+                    data=json.dumps(
+                        {
+                            "provider_id": "python-test",
+                            "agent_id": "../evil",
+                            "workspace_id": "default",
+                            "summary": "bad",
+                        }
+                    ).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {launched['token']}",
+                    },
+                    method="POST",
+                )
+                with self.assertRaises(HTTPError) as invalid_spawn_start_exc:
+                    urlopen(invalid_spawn_start, timeout=10)
+                self.assertEqual(invalid_spawn_start_exc.exception.code, 400)
+                invalid_spawn_start_exc.exception.close()
+
+                invalid_room_create = Request(
+                    "http://127.0.0.1:8876/api/actions/room-create",
+                    data=json.dumps(
+                        {
+                            "name": "room",
+                            "room_type": "discussion",
+                            "task_id": "../evil",
+                        }
+                    ).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {launched['token']}",
+                    },
+                    method="POST",
+                )
+                with self.assertRaises(HTTPError) as invalid_room_create_exc:
+                    urlopen(invalid_room_create, timeout=10)
+                self.assertEqual(invalid_room_create_exc.exception.code, 400)
+                invalid_room_create_exc.exception.close()
             finally:
                 launched["server"].shutdown()
 

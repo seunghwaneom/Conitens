@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Conitens Orchestration Office</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Press+Start+2P&display=swap');
+
+    :root {
+      /* Palette */
+      --bg-base: #faf9f6; 
+      --ui-border: #e2dfd8;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      
+      --floor-lobby: #efede0;
+      --floor-control: #edf4f8;
+      --floor-workspace: #f3ecdf;
+      --floor-lab: #edf3ea;
+      
+      --accent-info: #3b82f6;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
+      --accent-success: #10b981;
+
+      --role-orch: #ff7043;
+      --role-impl: #66bb6a;
+      --role-rsch: #ab47bc;
+      --role-revw: #42a5f5;
+      --role-vald: #ef5350;
+
+      /* Typography */
+      --font-pixel: 'Press Start 2P', cursive;
+      --font-ui: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-ui);
+      color: var(--text-main);
+      background-color: var(--bg-base);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Minimal Top Navigation */
+    header {
+      height: 48px;
+      border-bottom: 1px solid var(--ui-border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      background: #fff;
+      gap: 16px;
+    }
+    .brand {
+      font-family: var(--font-pixel);
+      font-size: 10px;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+      color: #000;
+    }
+    .header-links {
+      display: flex;
+      gap: 24px;
+      margin-left: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .header-links span { cursor: pointer; }
+    .header-links span.active { color: var(--text-main); }
+    .header-links span:hover { color: var(--text-main); }
+
+    /* 2-Column Dashboard Layout */
+    .dashboard {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px; /* Strong Focal Point vs Context Rail */
+      height: calc(100vh - 48px);
+    }
+
+    /* Left: The Visual Anchor (Pixel Office Stage) */
+    .office-stage {
+      background: var(--floor-workspace);
+      position: relative;
+      overflow: hidden;
+      /* Subtle grid background for the 'floor' */
+      background-image: radial-gradient(var(--ui-border) 1px, transparent 1px);
+      background-size: 24px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Card-less flat grid layout for the simulation */
+    .room-container {
+      width: 800px;
+      height: 600px;
+      background: #fff;
+      border: 1px solid var(--ui-border);
+      display: grid;
+      grid-template-columns: 200px 1fr 200px;
+      grid-template-rows: 200px 1fr;
+      gap: 1px;
+      background-color: var(--ui-border); 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.02); /* Very minimal elevation */
+    }
+
+    .room {
+      position: relative;
+      padding: 16px;
+    }
+    .room-title {
+      font-family: var(--font-pixel);
+      font-size: 8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .room.lobby { background: var(--floor-lobby); grid-row: 1 / 3; }
+    .room.control { background: var(--floor-control); }
+    .room.workspace { background: var(--floor-workspace); }
+    .room.lab { background: var(--floor-lab); grid-column: 2 / 4; }
+
+    /* Right: Context Rail (Dense Operational Data) */
+    .context-rail {
+      background: #fff;
+      border-left: 1px solid var(--ui-border);
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Utility UI Components */
+    .data-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--ui-border);
+      font-size: 13px;
+    }
+    .data-row:last-child { border-bottom: none; }
+    
+    .agent-name {
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* Pixel specific micro-badges using color dot */
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .bg-orch { background: var(--role-orch); }
+    .bg-impl { background: var(--role-impl); }
+    .bg-rsch { background: var(--role-rsch); }
+    .bg-revw { background: var(--role-revw); }
+    .bg-vald { background: var(--role-vald); }
+
+    .metric-value {
+      font-variant-numeric: tabular-nums;
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    /* Minimal Task Quueue */
+    .task-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--ui-border);
+    }
+    .task-meta {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .task-title {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    /* Progress bar (Sleek) */
+    .progress-bar {
+      margin-top: 8px;
+      height: 4px;
+      background: var(--ui-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-success);
+    }
+
+    /* In-Canvas Elements */
+    .avatar-node {
+      position: absolute;
+      width: 48px;
+      height: 64px;
+      z-index: 10;
+      transition: transform 0.2s;
+      /* idle breathing */
+      animation: idle-breathe 2s steps(2) infinite;
+    }
+    .avatar-node canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+    }
+    .avatar-node:hover {
+      transform: translateY(-4px);
+    }
+    @keyframes idle-breathe {
+      0%, 100% { margin-top: 0px; }
+      50% { margin-top: -4px; }
+    }
+    .avatar-node.orch { left: 120px; top: 70px; animation-delay: 0.1s; }
+    .avatar-node.impl { left: 40px; top: 70px; animation-delay: 0.5s; }
+    .avatar-node.rsch { left: 240px; top: 110px; animation-delay: 1.0s; }
+    .avatar-node.revw { left: 120px; top: 40px; animation-delay: 0.3s; }
+    .avatar-node.vald { left: 40px; top: 100px; animation-delay: 0.8s; }
+    
+    .speech {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border: 1px solid var(--text-main);
+      padding: 2px 6px;
+      font-family: var(--font-pixel);
+      font-size: 6px;
+      white-space: nowrap;
+      box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation (No heavy cards) -->
+  <header>
+    <div class="brand">Conitens</div>
+    <div class="header-links">
+      <span class="active">Overview</span>
+      <span>Workflows</span>
+      <span>Metrics</span>
+      <span>Audit Log</span>
+    </div>
+  </header>
+
+  <!-- 2-Column Dashboard (Anchor + Rail) -->
+  <div class="dashboard">
+    
+    <!-- Left: Office Stage (Visual Anchor) -->
+    <div class="office-stage">
+      <div class="room-container">
+        
+        <div class="room lobby">
+          <div class="room-title">Lobby</div>
+          <div class="avatar-node impl" data-role="impl">
+            <canvas></canvas>
+            <div class="speech">Running</div>
+          </div>
+          <div class="avatar-node revw" data-role="revw">
+            <canvas></canvas>
+          </div>
+        </div>
+        
+        <div class="room control">
+          <div class="room-title">Control Center</div>
+          <div class="avatar-node orch" data-role="orch">
+            <canvas></canvas>
+            <div class="speech">Review</div>
+          </div>
+          <div class="avatar-node vald" data-role="vald">
+            <canvas></canvas>
+          </div>
+        </div>
+        
+        <div class="room workspace">
+          <div class="room-title">Workspace (Pod A)</div>
+          <div class="avatar-node rsch" data-role="rsch">
+             <canvas></canvas>
+          </div>
+        </div>
+        
+        <div class="room lab">
+          <div class="room-title">Research Lab</div>
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- Right: Context Rail (Dense Operational Data) -->
+    <div class="context-rail">
+      
+      <!-- Section 1: Resident Dossiers -->
+      <section>
+        <div class="section-title">
+          <span>Active Agents</span>
+          <span>5 Online</span>
+        </div>
+        <ul class="data-list">
+          <li class="data-row">
+            <div class="agent-name"><span class="status-dot bg-orch"></span> Orchestrator</div>
+            <div class="metric-value">Idle</div>
+          </li>
+          <li class="data-row">
+            <div class="agent-name"><span class="status-dot bg-impl"></span> Implementer</div>
+            <div class="metric-value" style="color: var(--accent-info)">Running</div>
+          </li>
+          <li class="data-row">
+            <div class="agent-name"><span class="status-dot bg-rsch"></span> Researcher</div>
+            <div class="metric-value" style="color: var(--accent-warning)">Blocked</div>
+          </li>
+          <li class="data-row">
+            <div class="agent-name"><span class="status-dot bg-revw"></span> Reviewer</div>
+            <div class="metric-value">Idle</div>
+          </li>
+          <li class="data-row">
+            <div class="agent-name"><span class="status-dot bg-vald"></span> Validator</div>
+            <div class="metric-value">Idle</div>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Section 2: Active Tasks -->
+      <section>
+        <div class="section-title">
+          <span>Task Queue</span>
+          <span>2/8</span>
+        </div>
+        <div class="task-list">
+          <div class="task-item">
+            <div class="task-meta">
+              <span>Impl-01</span> • <span>In Progress</span>
+            </div>
+            <div class="task-title">Refactor Pixel Office Dashboard UI components to remove card styling</div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 70%"></div></div>
+          </div>
+          <div class="task-item">
+            <div class="task-meta">
+              <span style="color: var(--accent-danger)">Rsch-04</span> • <span>Blocked</span>
+            </div>
+            <div class="task-title">Investigate Figma API node tree update limits for 24x32px sprites</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Recent Handoffs (Information Density) -->
+      <section>
+        <div class="section-title">
+          <span>Recent Handoffs</span>
+        </div>
+        <ul class="data-list">
+          <li class="data-row">
+            <div style="color: var(--text-muted); font-size:12px;">Orch → Impl</div>
+            <div style="font-size:12px;">12:04 PM</div>
+          </li>
+          <li class="data-row">
+            <div style="color: var(--text-muted); font-size:12px;">Rsch → Orch</div>
+            <div style="font-size:12px;">11:59 AM</div>
+          </li>
+          <li class="data-row">
+            <div style="color: var(--text-muted); font-size:12px;">Revw → Vald</div>
+            <div style="font-size:12px;">11:42 AM</div>
+          </li>
+        </ul>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    const scale = 2; // draw small, scale up via CSS
+    const pw = 24;
+    const ph = 32;
+
+    const roles = {
+      orch: b => {
+        b(2,0,8,3,'#5b4133'); b(1,1,1,4,'#5b4133'); b(10,1,1,4,'#5b4133'); b(3,2,2,1,'#4a3528'); // Hair
+        b(2,3,8,7,'#f2c8a3'); // Skin
+        b(3,5,2,2,'#ffffff'); b(4,5,1,2,'#2e392e'); b(3,5,1,1,'#ffffff'); // Eye L
+        b(7,5,2,2,'#ffffff'); b(7,5,1,2,'#2e392e'); b(8,5,1,1,'#ffffff'); // Eye R
+        b(3,4,2,1,'#3d2b1f'); b(7,4,2,1,'#3d2b1f'); // Brow
+        b(5,8,2,1,'#c9887a'); // Mouth
+        b(2,10,8,8,'#365c82'); b(0,11,2,5,'#365c82'); b(10,11,2,2,'#365c82'); b(4,10,1,2,'#ffffff'); b(7,10,1,2,'#ffffff'); b(5,10,2,5,'#c98b12'); b(5,10,2,1,'#a07010'); // Suit
+        b(3,18,3,6,'#2a3a50'); b(6,18,3,6,'#2a3a50'); b(3,23,3,1,'#1a1a1a'); b(6,23,3,1,'#1a1a1a'); // Legs
+        b(4,-2,1,2,'#ffd700'); b(5,-3,2,3,'#ffd700'); b(7,-2,1,2,'#ffd700'); // Crown
+        b(10,13,3,4,'#e0e0e0'); b(10,14,3,2,'#508dd4'); // Tablet
+      },
+      impl: b => {
+        b(1,0,10,4,'#2f3137'); b(2,4,8,2,'#2f3137'); b(0,2,1,5,'#2f3137'); b(11,2,1,4,'#2f3137'); // Hair
+        b(2,3,8,7,'#f0c3a1'); // Skin
+        b(3,6,2,1,'#ffffff'); b(4,6,1,1,'#2e392e'); b(7,6,2,1,'#ffffff'); b(7,6,1,1,'#2e392e'); // Eyes
+        b(5,8,2,2,'#c08870'); b(5,9,2,1,'#a05550'); // Mouth
+        b(2,10,8,8,'#5a7f4d'); b(0,11,2,5,'#5a7f4d'); b(10,11,2,5,'#5a7f4d'); b(3,10,6,2,'#3d5a34'); b(5,14,2,2,'#3d5a34'); // Hoodie
+        b(3,18,3,6,'#3d4a5c'); b(6,18,3,6,'#3d4a5c'); b(3,23,3,1,'#1a1a1a'); b(6,23,3,1,'#1a1a1a'); // Legs
+        b(2,17,8,1,'#8b6914'); b(3,17,1,2,'#c0c0c0'); b(8,17,1,2,'#ffd700'); // Belt
+        b(10,13,2,5,'#c0c0c0'); b(10,12,1,2,'#c0c0c0'); b(11,12,1,1,'#c0c0c0'); // Wrench
+      },
+      rsch: b => {
+        b(2,0,8,3,'#6a4b7c'); b(1,1,2,10,'#6a4b7c'); b(9,1,2,10,'#6a4b7c'); b(0,8,1,4,'#6a4b7c'); b(11,8,1,4,'#6a4b7c'); // Hair
+        b(2,3,8,7,'#eec7b0'); // Skin
+        b(3,5,2,2,'#ffffff'); b(4,5,1,2,'#2e392e'); b(7,5,2,2,'#ffffff'); b(7,5,1,2,'#2e392e'); // Eyes
+        b(3,4,3,4,'rgba(141,108,184,0.4)'); b(7,4,3,4,'rgba(141,108,184,0.4)'); b(3,4,7,1,'#8d6cb8'); // Glasses
+        b(5,8,2,1,'#c9887a'); b(4,7,1,1,'#c9887a'); // Mouth
+        b(2,10,8,9,'#ffffff'); b(4,10,4,3,'#8d6cb8'); b(3,10,1,8,'#e0e0e0'); b(7,13,2,1,'#8d6cb8'); b(0,11,2,5,'#ffffff'); b(10,11,2,2,'#ffffff'); // Coat
+        b(3,19,2,5,'#5c4a6e'); b(7,19,2,5,'#5c4a6e'); b(3,23,2,1,'#1a1a1a'); b(7,23,2,1,'#1a1a1a'); // Legs
+        b(3,-1,3,2,'#c8e0ff'); b(6,-1,3,2,'#c8e0ff'); b(2,0,8,1,'#222222'); // Goggles
+        b(10,12,3,4,'#f5e6c8'); b(10,12,1,4,'#c98b12'); // Notebook
+      },
+      revw: b => {
+        b(2,0,8,3,'#8a5b3e'); b(1,1,1,4,'#8a5b3e'); b(10,1,1,4,'#8a5b3e'); b(2,1,5,2,'#6a452e'); // Hair
+        b(1,-1,10,2,'#ffffff'); b(2,1,8,1,'#42a5f5'); // Visor
+        b(2,3,8,7,'#f4cfb5'); // Skin
+        b(3,5,2,2,'#ffffff'); b(4,5,1,2,'#2e392e'); b(7,5,2,2,'#ffffff'); b(7,5,1,2,'#2e392e'); b(2,4,3,1,'#5a3a2a'); b(7,3,3,1,'#5a3a2a'); // Eyes
+        b(5,8,2,1,'#c9887a'); // Mouth
+        b(2,10,8,8,'#4c78b6'); b(4,10,1,2,'#ffffff'); b(7,10,1,2,'#ffffff'); b(0,11,2,4,'#4c78b6'); b(10,11,2,4,'#4c78b6'); b(0,15,2,2,'#f4cfb5'); b(10,15,2,2,'#f4cfb5'); // Shirt
+        b(3,18,3,6,'#3a5a85'); b(6,18,3,6,'#3a5a85'); b(3,23,3,1,'#333333'); b(6,23,3,1,'#333333'); // Legs
+        b(11,14,1,5,'#a0a0a0'); b(10,18,1,1,'#222222'); // Stylus
+      },
+      vald: b => {
+        b(3,0,6,2,'#3d3d46'); b(2,1,1,3,'#3d3d46'); b(9,1,1,3,'#3d3d46'); // Hair
+        b(2,3,8,7,'#f0c4a6'); // Skin
+        b(3,5,2,2,'#ffffff'); b(4,5,1,2,'#2e392e'); b(7,5,2,2,'#ffffff'); b(7,5,1,2,'#2e392e'); b(3,4,3,2,'#222222'); b(6,4,3,2,'#222222'); // Eyes
+        b(4,8,4,1,'#b8776a'); // Mouth
+        b(2,10,8,8,'#d05b58'); b(3,10,2,8,'#b04442'); b(7,10,2,8,'#b04442'); b(0,11,2,5,'#8b3e3c'); b(10,11,2,5,'#8b3e3c'); // Vest
+        b(4,12,4,1,'#ffffff'); b(4,13,4,2,'#ffffff'); b(5,15,2,1,'#ffffff'); // Emblem
+        b(3,18,3,6,'#8b3e3c'); b(6,18,3,6,'#8b3e3c'); b(2,22,8,2,'#4a2423'); b(3,23,3,1,'#222222'); b(6,23,3,1,'#222222'); // Legs
+        b(-3,11,4,6,'#ef5350'); b(-3,12,1,4,'#ff8a80'); b(-2,17,2,1,'#ef5350'); // Shield
+        b(11,14,2,2,'#ffd700'); b(11,16,2,1,'#c98b12'); // Stamp
+      }
+    };
+
+    document.querySelectorAll('.avatar-node').forEach(node => {
+      const role = node.getAttribute('data-role');
+      const canvas = node.querySelector('canvas');
+      if (!canvas || !roles[role]) return;
+
+      canvas.width = pw * scale;
+      canvas.height = ph * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+
+      const ox = 6, oy = 6;
+      const b = (x, y, w, h, c) => {
+        ctx.fillStyle = c;
+        ctx.fillRect((x + ox) * scale, (y + oy) * scale, w * scale, h * scale);
+      };
+
+      roles[role](b);
+    });
+  </script>
+</body>
+</html>
