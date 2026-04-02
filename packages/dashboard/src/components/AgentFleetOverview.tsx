@@ -1,16 +1,6 @@
 import React from "react";
 import type { AgentProfile, AgentLifecycleStatus } from "../agent-fleet-model.js";
-
-function timeAgo(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  return `${diffD}d ago`;
-}
+import { timeAgo } from "../utils.js";
 
 function statusDotClass(status: AgentLifecycleStatus): string {
   switch (status) {

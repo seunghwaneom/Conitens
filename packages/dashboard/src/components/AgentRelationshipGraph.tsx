@@ -3,6 +3,7 @@ import type { AgentProfile } from "../agent-fleet-model.js";
 
 interface AgentRelationshipGraphProps {
   agents: AgentProfile[];
+  edges?: Array<{ from: string; to: string }>;
 }
 
 const ROLE_COLORS: Record<AgentProfile["role"], string> = {
@@ -29,7 +30,7 @@ const RADIUS = 140;
 const NODE_R = 28;
 const MARKER_ID = "arrowhead";
 
-export function AgentRelationshipGraph({ agents }: AgentRelationshipGraphProps) {
+export function AgentRelationshipGraph({ agents, edges: edgesProps }: AgentRelationshipGraphProps) {
   const count = agents.length;
 
   const positions = agents.map((agent, index) => {
@@ -44,7 +45,7 @@ export function AgentRelationshipGraph({ agents }: AgentRelationshipGraphProps) 
 
   const posMap = new Map(positions.map((p) => [p.id, p]));
 
-  const edges = DEMO_EDGES.flatMap((edge) => {
+  const edgesList = (edgesProps ?? DEMO_EDGES).flatMap((edge) => {
     const from = posMap.get(edge.from);
     const to = posMap.get(edge.to);
     if (!from || !to) return [];
@@ -85,7 +86,7 @@ export function AgentRelationshipGraph({ agents }: AgentRelationshipGraphProps) 
           </marker>
         </defs>
 
-        {edges.map((edge) => (
+        {edgesList.map((edge) => (
           <line
             key={edge.key}
             x1={edge.x1}

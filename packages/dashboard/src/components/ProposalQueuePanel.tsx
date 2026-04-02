@@ -8,20 +8,23 @@ interface ProposalQueuePanelProps {
 }
 
 export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProps) {
-  const [localProposals, setLocalProposals] = useState<ImprovementProposal[]>(proposals);
+  const [decisions, setDecisions] = useState<Record<string, "approved" | "rejected" | undefined>>({});
 
-  const pendingCount = localProposals.filter(p => p.status === "pending").length;
+  const pendingCount = proposals.filter(p => {
+    const s = decisions[p.id] ?? p.status;
+    return s === "pending";
+  }).length;
 
   function agentName(agentId: string): string {
     return agents.find(a => a.id === agentId)?.name ?? agentId;
   }
 
   function approve(id: string): void {
-    setLocalProposals(prev => prev.map(p => p.id === id ? { ...p, status: "approved" } : p));
+    setDecisions(prev => ({ ...prev, [id]: "approved" }));
   }
 
   function reject(id: string): void {
-    setLocalProposals(prev => prev.map(p => p.id === id ? { ...p, status: "rejected" } : p));
+    setDecisions(prev => ({ ...prev, [id]: "rejected" }));
   }
 
   return (
@@ -37,14 +40,15 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
       </div>
 
       <div className="proposal-queue-list">
-        {localProposals.map(proposal => {
-          const isPending = proposal.status === "pending";
+        {proposals.map(proposal => {
+          const status = decisions[proposal.id] ?? proposal.status;
+          const isPending = status === "pending";
           const confidencePct = Math.round(proposal.confidence * 100);
 
           return (
             <div
               key={proposal.id}
-              className={`proposal-card proposal-card-${proposal.status}`}
+              className={`proposal-card proposal-card-${status}`}
             >
               <div className="proposal-card-header">
                 <strong className="proposal-card-title">{proposal.title}</strong>
@@ -96,8 +100,8 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
                   </div>
                 )}
                 {!isPending && (
-                  <span className={`badge badge-${proposal.status === "approved" ? "success" : proposal.status === "rejected" ? "danger" : "neutral"}`}>
-                    {proposal.status}
+                  <span className={`badge badge-${status === "approved" ? "success" : status === "rejected" ? "danger" : "neutral"}`}>
+                    {status}
                   </span>
                 )}
               </div>
