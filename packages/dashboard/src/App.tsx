@@ -39,6 +39,9 @@ import {
   toRunListItemViewModel,
 } from "./forward-view-model.js";
 import { demoAgents, demoEvents, demoTasks } from "./demo-data.js";
+import { AgentFleetOverview } from "./components/AgentFleetOverview.js";
+import { AgentProfilePanel } from "./components/AgentProfilePanel.js";
+import { demoFleet } from "./agent-fleet-model.js";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 type DetailTab = "operations" | "intelligence" | "data";
@@ -75,6 +78,8 @@ export function App() {
   const isOfficePreview = route.screen === "office-preview";
   const isDemo = !config.token.trim() && !isOfficePreview;
   const [showConnectForm, setShowConnectForm] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const selectedAgent = demoFleet.find(a => a.id === selectedAgentId) ?? null;
 
   useEffect(() => {
     const handleHashChange = () => setRoute(parseForwardRoute(window.location.hash));
@@ -339,9 +344,9 @@ export function App() {
         </main>
       ) : route.screen === "agents" ? (
         <main className="forward-main">
-          <div className="forward-placeholder">
-            <h3>Agent Fleet</h3>
-            <p>Agent management interface — coming soon.</p>
+          <div className="agent-fleet-layout">
+            <AgentFleetOverview agents={demoFleet} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
+            <AgentProfilePanel agent={selectedAgent} />
           </div>
         </main>
       ) : (
