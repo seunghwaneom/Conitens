@@ -78,16 +78,22 @@ export function ForwardApprovalCenterPanel({
     if (!config.token.trim() || !runId) {
       return;
     }
+    let cancelled = false;
     const intervalId = setInterval(() => {
       forwardListApprovals(config, { runId })
         .then((payload) => {
+          if (cancelled) return;
           setApprovals(payload.approvals);
           setSelectedApprovalId((current) => pickNextApprovalId(current, payload.approvals));
           setListState("ready");
         })
-        .catch(() => {});
+        .catch((err: Error) => {
+          if (cancelled) return;
+          setListState("error");
+        });
     }, 5000);
     return () => {
+      cancelled = true;
       clearInterval(intervalId);
     };
   }, [config, runId]);
