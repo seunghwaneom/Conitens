@@ -19,6 +19,7 @@ from ensemble_gate import list_gate_records
 from ensemble_handoff import list_handoffs
 from ensemble_meeting import list_meetings
 from ensemble_office import collect_context, collect_locks, collect_office_snapshot, collect_questions, collect_tasks, collect_workflow_runs
+from ensemble_replay_service import ReplayService
 from ensemble_registry import registry_summary
 from ensemble_workflow import explain_workflow
 
@@ -93,6 +94,45 @@ TOOLS = [
         "description": "Return the current office snapshot as JSON.",
         "inputSchema": {"type": "object", "properties": {}},
     },
+    {
+        "name": "replay.room",
+        "description": "Return the persisted replay timeline for a room.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["room_id"],
+            "properties": {"room_id": {"type": "string"}},
+        },
+    },
+    {
+        "name": "replay.run",
+        "description": "Return the persisted replay timeline for a run.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["run_id"],
+            "properties": {"run_id": {"type": "string"}},
+        },
+    },
+    {
+        "name": "replay.iteration",
+        "description": "Return the persisted replay timeline for an iteration.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["iteration_id"],
+            "properties": {"iteration_id": {"type": "string"}},
+        },
+    },
+    {
+        "name": "insights.list",
+        "description": "List stored replay insights.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "run_id": {"type": "string"},
+                "iteration_id": {"type": "string"},
+                "room_id": {"type": "string"},
+            },
+        },
+    },
 ]
 
 RESOURCES = [
@@ -105,6 +145,8 @@ RESOURCES = [
     {"uri": "conitens://gates/pending", "name": "Pending Gates", "description": "Durable approval gate records."},
     {"uri": "conitens://office/snapshot", "name": "Office Snapshot", "description": "Current office operational snapshot."},
     {"uri": "conitens://registry/summary", "name": "Registry Summary", "description": "Agent/skill/workflow/gate registry validation summary."},
+    {"uri": "conitens://replay/latest", "name": "Latest Replay", "description": "Latest replayable run timeline."},
+    {"uri": "conitens://insights/latest", "name": "Latest Insights", "description": "Latest extracted replay insights."},
 ]
 
 PROMPTS = [
@@ -170,6 +212,16 @@ def read_resource(workspace: str | Path, uri: str) -> Any:
         return collect_office_snapshot(workspace)
     if uri == "conitens://registry/summary":
         return registry_summary(workspace)
+    if uri == "conitens://replay/latest":
+        replay = ReplayService(workspace)
+        active = collect_office_snapshot(workspace).get("workflow_runs", [])
+        if active:
+            latest_run = active[0].get("correlation_id") or active[0].get("run_id")
+            if latest_run:
+                return replay.run_timeline(str(latest_run))
+        return {"timeline": []}
+    if uri == "conitens://insights/latest":
+        return ReplayService(workspace).insights(limit=20)
     raise KeyError(f"Unsupported resource: {uri}")
 
 
@@ -254,6 +306,19 @@ def call_tool(workspace: str | Path, name: str, arguments: dict[str, Any] | None
         return registry_summary(workspace)
     if name == "office.snapshot":
         return collect_office_snapshot(workspace)
+    if name == "replay.room":
+        return ReplayService(workspace).room_timeline(str(arguments.get("room_id") or ""))
+    if name == "replay.run":
+        return ReplayService(workspace).run_timeline(str(arguments.get("run_id") or ""))
+    if name == "replay.iteration":
+        return ReplayService(workspace).iteration_timeline(str(arguments.get("iteration_id") or ""))
+    if name == "insights.list":
+        return ReplayService(workspace).insights(
+            run_id=str(arguments.get("run_id") or "") or None,
+            iteration_id=str(arguments.get("iteration_id") or "") or None,
+            room_id=str(arguments.get("room_id") or "") or None,
+            limit=30,
+        )
     raise KeyError(f"Unsupported tool: {name}")
 
 

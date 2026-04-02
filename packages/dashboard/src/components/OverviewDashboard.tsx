@@ -1,16 +1,11 @@
 import React from "react";
-import type { DashboardMetrics } from "../dashboard-model.js";
+import {
+  getOverviewActions,
+  getRuntimeLedger,
+  type DashboardMetrics,
+} from "../dashboard-model.js";
 import type { AgentState, EventRecord, TaskState } from "../store/event-store.js";
 import { getEventFamily, getTaskTone } from "../utils.js";
-
-const PRIORITY_STATES = new Set(["active", "blocked", "review"]);
-const SHORTCUT_ITEMS = [
-  { key: "1", label: "Overview" },
-  { key: "2", label: "Board" },
-  { key: "3", label: "Timeline" },
-  { key: "4", label: "Office" },
-  { key: "Esc", label: "Close task" },
-];
 
 function EventSparkline({ events }: { events: EventRecord[] }) {
   if (events.length < 2) return null;
@@ -76,7 +71,14 @@ export function OverviewDashboard({
   const latestEvent = recentEvents[0];
   const runningAgents = agents.filter((agent) => agent.status === "running").length;
   const focusTask = queuedTasks[0];
-  const priorityTasks = tasks.filter((task) => PRIORITY_STATES.has(task.state)).slice(0, 4);
+  const overviewActions = getOverviewActions(tasks, recentEvents);
+  const attentionTotal = metrics.blockedTasks + metrics.reviewQueue + metrics.approvalSignals;
+  const runtimeLedger = getRuntimeLedger({
+    connectionStatus,
+    latestEventType: latestEvent?.type,
+    runningAgents,
+    totalAgents: agents.length,
+  });
 
   return (
     <div className="overview-layout">
@@ -111,24 +113,14 @@ export function OverviewDashboard({
         </div>
 
         <div className="rail-section">
-          <p className="panel-kicker">SHORTCUTS</p>
-          <div className="stack shortcut-list">
-            {SHORTCUT_ITEMS.map((item) => (
-              <div key={item.key} className="shortcut-row">
-                <span className="shortcut-key">{item.key}</span>
-                <span className="shortcut-label">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rail-section rail-actions">
+          <div className="rail-actions">
           <button className="primary-button" type="button" onClick={onOpenBoard}>
             Open Board
           </button>
           <button className="secondary-button" type="button" onClick={onOpenTimeline}>
             Open Timeline
           </button>
+          </div>
         </div>
       </aside>
 
@@ -151,23 +143,40 @@ export function OverviewDashboard({
               </div>
             </div>
 
-            <div className="summary-chip-row">
-              <span className={`signal-chip ${isDemo ? "demo" : "live"}`}>
-                {isDemo ? "demo snapshot" : "live event bus"}
-              </span>
-              <span className="signal-chip neutral">socket {connectionStatus}</span>
-              <span className="signal-chip info">handoffs {metrics.handoffSignals}</span>
-              <span className="signal-chip warning">approvals {metrics.approvalSignals}</span>
-              <span className="signal-chip neutral">running agents {runningAgents}</span>
+            {/* P0-1: AttentionStrip — primary KPI strip */}
+            <AttentionStrip
+              blocked={metrics.blockedTasks}
+              review={metrics.reviewQueue}
+              approvals={metrics.approvalSignals}
+            />
+
+            <div className="overview-action-ledger">
+              <div className="section-head">
+                <p className="panel-kicker">IMMEDIATE_ACTIONS</p>
+                <span className="section-meta">{overviewActions.length} surfaced lanes</span>
+              </div>
+              <div className="stack">
+                {overviewActions.length === 0 ? (
+                  <div className="empty-state compact">
+                    No active actions surfaced from tasks or recent signals
+                  </div>
+                ) : (
+                  overviewActions.map((action) => (
+                    <div key={action.id} className={`action-ledger-row ${action.tone}`}>
+                      <div className="action-ledger-main">
+                        <span className={`badge ${action.tone}`}>{action.lane}</span>
+                        <div>
+                          <strong>{action.target}</strong>
+                          <div className="muted">{action.summary}</div>
+                        </div>
+                      </div>
+                      <span className="action-ledger-meta">{action.meta}</span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
 
-            <div className="metrics-grid">
-              <MetricCard label="Active Agents" value={metrics.activeAgents.toString()} accent />
-              <MetricCard label="Blocked Tasks" value={metrics.blockedTasks.toString()} tone="danger" />
-              <MetricCard label="Review Queue" value={metrics.reviewQueue.toString()} tone="info" />
-              <MetricCard label="Approval Signals" value={metrics.approvalSignals.toString()} tone="warning" />
-              <MetricCard label="Handoff Signals" value={metrics.handoffSignals.toString()} />
-            </div>
           </div>
         </section>
 
@@ -188,7 +197,7 @@ export function OverviewDashboard({
                         <strong>{task.taskId}</strong>
                         <div className="muted">{task.assignee ?? "unassigned"}</div>
                       </div>
-                      <span className={`state-pill ${getTaskTone(task.state)}`}>{task.state}</span>
+                      <span className={`badge state ${getTaskTone(task.state)}`}>{task.state}</span>
                     </div>
                   ))
                 )}
@@ -209,7 +218,7 @@ export function OverviewDashboard({
                   recentEvents.map((event) => (
                     <div key={event.event_id} className="event-stream-row">
                       <div className="event-stream-main">
-                        <span className={`event-pill ${getEventFamily(event.type)}`}>
+                        <span className={`chip event ${getEventFamily(event.type)}`}>
                           {getEventFamily(event.type)}
                         </span>
                         <strong>{event.type}</strong>
@@ -232,57 +241,35 @@ export function OverviewDashboard({
         <section className="panel">
           <div className="panel-body">
             <div className="section-head">
-              <p className="panel-kicker">RUNTIME_STATUS</p>
-              <span className={`signal-chip ${isDemo ? "demo" : "live"}`}>
+              <p className="panel-kicker">RUNTIME_LEDGER</p>
+              <span className={`chip ${isDemo ? "demo" : "live"}`}>
                 {isDemo ? "demo" : "live"}
               </span>
             </div>
-            <div className="status-grid">
-              <div className="status-card">
-                <span className="status-card-label">socket</span>
-                <strong>{connectionStatus}</strong>
-              </div>
-              <div className="status-card">
-                <span className="status-card-label">tasks</span>
-                <strong>{tasks.length}</strong>
-              </div>
-              <div className="status-card">
-                <span className="status-card-label">events</span>
-                <strong>{recentEvents.length}</strong>
-              </div>
-              <div className="status-card">
-                <span className="status-card-label">running</span>
-                <strong>{runningAgents}</strong>
-              </div>
-              <div className="status-card">
-                <span className="status-card-label">latest family</span>
-                <strong>{getEventFamily(latestEvent?.type ?? "system")}</strong>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel-body">
-            <div className="section-head">
-              <p className="panel-kicker">ACTIVE_LANES</p>
-              <span className="section-meta">{priorityTasks.length} need attention</span>
-            </div>
-            <div className="stack">
-              {priorityTasks.length === 0 ? (
-                <div className="empty-state compact">No active, blocked, or review tasks</div>
-              ) : (
-                priorityTasks.map((task) => (
-                  <div key={task.taskId} className="rich-list-row">
-                    <div>
-                      <strong>{task.taskId}</strong>
-                      <div className="muted">{task.assignee ?? "unassigned"}</div>
-                    </div>
-                    <span className={`state-pill ${getTaskTone(task.state)}`}>{task.state}</span>
+            <div className="runtime-ledger">
+              {runtimeLedger.map((row) => (
+                <div key={row.label} className="runtime-row">
+                  <span className="runtime-row-label">{row.label}</span>
+                  <div className="runtime-row-value">
+                    {row.tone ? (
+                      <span className={`chip ${row.tone}`}>{row.value}</span>
+                    ) : (
+                      <strong>{row.value}</strong>
+                    )}
                   </div>
-                ))
-              )}
+                </div>
+              ))}
             </div>
+            <p className="runtime-summary-line">
+              {attentionTotal > 0 ? (
+                <>
+                  <strong>{attentionTotal}</strong> operator signals remain open across blocked,
+                  review, and approval lanes.
+                </>
+              ) : (
+                "System pressure is low. No blocked, review, or approval backlog is visible."
+              )}
+            </p>
           </div>
         </section>
 
@@ -304,7 +291,7 @@ export function OverviewDashboard({
                         <div className="muted">{assignedCount} assigned</div>
                       </div>
                     </div>
-                    <span className={`state-pill ${getTaskTone(agent.status)}`}>{agent.status}</span>
+                    <span className={`badge state ${getTaskTone(agent.status)}`}>{agent.status}</span>
                   </div>
                 );
               })}
@@ -316,21 +303,36 @@ export function OverviewDashboard({
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  accent = false,
-  tone = "neutral",
+function AttentionStrip({
+  blocked,
+  review,
+  approvals,
 }: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  tone?: string;
+  blocked: number;
+  review: number;
+  approvals: number;
 }) {
+  const hasAlert = blocked > 0 || review > 0 || approvals > 0;
+  const total = blocked + review + approvals;
+
   return (
-    <div className={`metric-card ${tone}`}>
-      <div className="metric-label">{label}</div>
-      <div className={`metric-value${accent ? " accent-text" : ""}`}>{value}</div>
+    <div className={`attention-strip${hasAlert ? " has-alert" : ""}`}>
+      {hasAlert ? (
+        <>
+          <span className="attention-label">{total} needs attention</span>
+          {blocked > 0 && (
+            <span className="attention-item danger">{blocked} blocked</span>
+          )}
+          {review > 0 && (
+            <span className="attention-item info">{review} in review</span>
+          )}
+          {approvals > 0 && (
+            <span className="attention-item warning">{approvals} approvals</span>
+          )}
+        </>
+      ) : (
+        <span className="attention-item clear">All clear — no action required</span>
+      )}
     </div>
   );
 }

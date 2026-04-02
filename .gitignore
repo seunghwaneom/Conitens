@@ -17,6 +17,18 @@ docs/.pdca-status.json
 # OMC state
 .omc/
 
+# Playwright MCP snapshots
+.playwright-mcp/
+
+# Screenshots (temp)
+office-preview-full.png
+office-preview-fixed.png
+office-sidebar-final.png
+office-final.png
+forward-shell.png
+forward-shell-fixed.png
+
 # OS
 .DS_Store
 Thumbs.db
+.npmrc

@@ -1,0 +1,80 @@
+{
+  "db_path": ".vibe/brain/context.sqlite3",
+  "latest_context_path": ".vibe/context/LATEST_CONTEXT.md",
+  "digest_path": ".vibe/context/LATEST_CONTEXT.md",
+  "typecheck_baseline_path": ".vibe/baselines/typecheck.json",
+  "doctor_report_path": ".vibe/context/DOCTOR_REPORT.md",
+  "doctor_report_path": ".vibe/context/DOCTOR_REPORT.md",
+  "typecheck_baseline_path": ".vibe/baselines/typecheck_baseline.json",
+  "include_globs": [
+    "scripts/*.py",
+    "scripts/**/*.py",
+    "tests/*.py",
+    "tests/**/*.py",
+    "packages/*.ts",
+    "packages/*.tsx",
+    "packages/*.js",
+    "packages/*.mjs",
+    "packages/*.cjs",
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "packages/**/*.js",
+    "packages/**/*.mjs",
+    "packages/**/*.cjs",
+    ".vibe/brain/*.py",
+    ".vibe/brain/**/*.py"
+  ],
+  "scan_globs": [
+    "scripts/*.py",
+    "scripts/**/*.py",
+    "tests/*.py",
+    "tests/**/*.py",
+    "packages/*.ts",
+    "packages/*.tsx",
+    "packages/*.js",
+    "packages/*.mjs",
+    "packages/*.cjs",
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "packages/**/*.js",
+    "packages/**/*.mjs",
+    "packages/**/*.cjs",
+    ".vibe/brain/*.py",
+    ".vibe/brain/**/*.py"
+  ],
+  "ignore_dirs": [
+    ".git",
+    ".omx",
+    ".notes",
+    ".conitens",
+    ".vibe",
+    "node_modules",
+    "dist",
+    "build",
+    ".pytest_cache",
+    "__pycache__",
+    "coverage"
+  ],
+  "watch_extensions": [
+    ".py",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".mjs",
+    ".cjs"
+  ],
+  "temp_suffixes": [
+    ".tmp",
+    ".temp",
+    ".swp",
+    ".swx",
+    "~"
+  ],
+  "debounce_ms": 500,
+  "recent_change_limit": 8,
+  "hotspot_limit": 8,
+  "fast_smoke_tests": [
+    "python -m unittest tests.test_vibe_brain"
+  ],
+  "use_fts5": true
+}

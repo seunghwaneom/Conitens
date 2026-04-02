@@ -1,0 +1,25 @@
+{
+  "record_id": "string",
+  "agent_id": "string",
+  "namespace": "string",
+  "kind": [
+    "identity",
+    "procedural",
+    "episodic",
+    "reflection"
+  ],
+  "summary": "string",
+  "tags": [
+    "string"
+  ],
+  "evidence_refs": [
+    "string"
+  ],
+  "confidence": "float",
+  "salience": "float",
+  "ttl_days": "integer|null",
+  "approved": "boolean",
+  "source_type": "string",
+  "source_ref": "string",
+  "created_at": "iso8601"
+}
