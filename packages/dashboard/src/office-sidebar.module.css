@@ -1,36 +1,15 @@
 .office-rail {
   gap: 18px;
-  padding-left: 18px;
-  border-left: 1px solid var(--line);
+  padding-left: 14px;
+  border-left: 1px solid rgba(46, 57, 46, 0.08);
   min-height: 100%;
 }
 
 .office-rail-section {
-  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-left: 10px;
-}
-
-.office-rail-section::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 2px;
-  bottom: 2px;
-  width: 3px;
-  background: rgba(46, 57, 46, 0.12);
-}
-
-.agents::before { background: rgba(59, 130, 246, 0.7); }
-.queue::before { background: rgba(217, 119, 6, 0.72); }
-.handoffs::before { background: rgba(15, 118, 110, 0.72); }
-
-.agents,
-.queue,
-.handoffs {
-  padding-bottom: 2px;
+  gap: 8px;
+  padding-left: 0;
 }
 
 .office-staff-list,
@@ -47,25 +26,23 @@
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 12px 12px;
-  border-top: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.94);
-  border-right: 1px solid rgba(46, 57, 46, 0.12);
-  border-bottom: 1px solid rgba(46, 57, 46, 0.12);
-  border-left: 1px solid rgba(46, 57, 46, 0.12);
-  border-radius: 0;
+  padding: 9px 2px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(46, 57, 46, 0.08);
   text-align: left;
+  color: var(--text);
 }
 
 .office-staff-row:first-child,
 .office-data-row:first-child {
-  border-top: none;
-  padding-top: 10px;
+  padding-top: 4px;
 }
 
 .office-staff-row:last-child,
 .office-data-row:last-child {
-  padding-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: none;
 }
 
 .office-staff-row {
@@ -73,14 +50,18 @@
 }
 
 .office-staff-row:hover {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(17, 122, 69, 0.04);
 }
 
 .office-staff-row strong,
 .office-task-main strong,
 .office-data-row strong {
   color: var(--text);
-  letter-spacing: 0.015em;
+  letter-spacing: 0.02em;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .selected {
@@ -123,64 +104,27 @@
 .office-task-main {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   min-width: 0;
 }
 
 .office-task-row {
-  position: relative;
-  background: rgba(255, 252, 245, 0.96);
+  background: transparent;
   transition: background 120ms ease;
 }
 
 .office-task-row:hover {
-  background: rgba(255, 255, 255, 1);
+  background: rgba(17, 122, 69, 0.04);
 }
-
-.office-task-row::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: rgba(104, 113, 102, 0.3);
-}
-
-.office-task-row.info::before { background: rgba(29, 143, 214, 0.78); }
-.office-task-row.warning::before { background: rgba(201, 139, 18, 0.82); }
-.office-task-row.danger::before { background: rgba(193, 73, 73, 0.82); }
-.office-task-row.success::before { background: rgba(79, 176, 98, 0.82); }
-.office-task-row.neutral::before { background: rgba(104, 113, 102, 0.44); }
-
-.office-progress-track {
-  height: 3px;
-  background: rgba(46, 57, 46, 0.1);
-  overflow: hidden;
-}
-
-.office-progress-bar {
-  display: block;
-  height: 100%;
-  background: var(--accent-info);
-}
-
-.office-progress-bar.info { background: var(--accent-info); }
-.office-progress-bar.warning { background: var(--accent-warning); }
-.office-progress-bar.danger { background: var(--accent-danger); }
-.office-progress-bar.success { background: var(--accent-success); }
-.office-progress-bar.neutral { background: var(--muted); }
 
 .office-route-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  align-items: center;
   flex: 0 0 auto;
 }
 
 .office-data-row:hover {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(17, 122, 69, 0.04);
 }
 
 .office-focus-card {
@@ -188,14 +132,11 @@
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 6px;
-  padding: 8px 12px;
-  border-top: 1px solid rgba(46, 57, 46, 0.16);
-  border-right: none;
-  border-bottom: none;
-  border-left: 3px solid var(--accent-strong, #117a45);
-  background: rgba(255, 252, 245, 0.72);
+  gap: 8px;
+  margin-top: 2px;
+  padding: 4px 0 0;
+  border: none;
+  background: transparent;
 }
 
 .office-focus-head {
@@ -208,9 +149,9 @@
   margin: 0;
   flex: 1 1 220px;
   font-size: 11px;
-  line-height: 1.4;
-  color: var(--muted);
-  letter-spacing: 0.02em;
+  line-height: 1.45;
+  color: rgba(17, 24, 39, 0.58);
+  letter-spacing: 0.01em;
 }
 
 .office-focus-meta {
