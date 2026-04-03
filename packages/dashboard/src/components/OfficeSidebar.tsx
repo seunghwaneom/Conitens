@@ -59,7 +59,6 @@ export function OfficeSidebar({
       <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.agents}`}>
         <div className="section-head">
           <p className="panel-kicker">ACTIVE AGENTS</p>
-          <span className="section-meta">{residents.length} online</span>
         </div>
         <div className={sidebarStyles["office-staff-list"]}>
           {rail.visibleResidents.length === 0 ? (
@@ -114,7 +113,6 @@ export function OfficeSidebar({
       <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.queue}`}>
         <div className="section-head">
           <p className="panel-kicker">TASK QUEUE</p>
-          <span className="section-meta">{queuedTasks.length} surfaced</span>
         </div>
         <div className={sidebarStyles["office-data-list"]}>
           {rail.visibleTasks.length === 0 ? (
@@ -136,12 +134,6 @@ export function OfficeSidebar({
                     <div className="muted">
                       {(task.assignee ?? "unassigned")} / {task.state}
                     </div>
-                    <div className={sidebarStyles["office-progress-track"]} aria-hidden="true">
-                      <span
-                        className={[sidebarStyles["office-progress-bar"], sidebarStyles[tone]].join(" ")}
-                        style={{ width: `${getQueueProgress(task.state)}%` }}
-                      />
-                    </div>
                   </div>
                   <span className={`badge state ${tone}`}>{task.state}</span>
                 </div>
@@ -157,7 +149,6 @@ export function OfficeSidebar({
       <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.handoffs}`}>
         <div className="section-head">
           <p className="panel-kicker">RECENT HANDOFFS</p>
-          <span className="section-meta">{handoffs.length} live routes</span>
         </div>
         <div className={sidebarStyles["office-data-list"]}>
           {rail.visibleHandoffs.length === 0 ? (
@@ -172,11 +163,11 @@ export function OfficeSidebar({
                   <div className="muted">
                     {handoff.actorId}
                     {handoff.targetId ? ` to ${handoff.targetId}` : ""}
+                    {` / ${handoff.timestamp.slice(11, 19)}`}
                   </div>
                 </div>
                 <div className={sidebarStyles["office-route-meta"]}>
                   <span className="chip info">{handoff.taskId}</span>
-                  <span className="muted">{handoff.timestamp.slice(11, 19)}</span>
                 </div>
               </div>
             ))

@@ -11,6 +11,7 @@ export interface OfficeFixtureRenderSpec {
   border?: string;
   borderRadius?: string;
   boxShadow?: string;
+  glow?: boolean;
   transform?: string;
 }
 
@@ -32,15 +33,23 @@ function createSpriteSpec(
   };
 }
 
+function createGlowingSpriteSpec(
+  index: number,
+  width: number = 20,
+  height: number = 20,
+): OfficeFixtureRenderSpec {
+  return { ...createSpriteSpec(index, width, height), glow: true };
+}
+
 export const OFFICE_FIXTURE_REGISTRY = {
   desk: createSpriteSpec(0, 24, 24),
   bench: createSpriteSpec(1, 24, 14),
-  console: createSpriteSpec(2, 24, 16),
+  console: createGlowingSpriteSpec(2, 24, 16),
   reception: createSpriteSpec(3, 28, 16),
   chair: createSpriteSpec(4, 24, 24),
-  monitor: createSpriteSpec(5, 24, 24),
-  screen: createSpriteSpec(6, 24, 24),
-  terminal: createSpriteSpec(7, 24, 24),
+  monitor: createGlowingSpriteSpec(5, 24, 24),
+  screen: createGlowingSpriteSpec(6, 24, 24),
+  terminal: createGlowingSpriteSpec(7, 24, 24),
   plant: createSpriteSpec(8, 24, 24),
   board: createSpriteSpec(9, 24, 24),
   "reception-return": createSpriteSpec(10, 18, 24),
@@ -77,7 +86,9 @@ export function getOfficeFixtureStyle(kind: string): CSSProperties {
     backgroundColor: spec.backgroundColor,
     border: spec.border,
     borderRadius: spec.borderRadius,
-    boxShadow: spec.boxShadow,
+    boxShadow: spec.glow
+      ? `${spec.boxShadow ?? ""} 0 0 6px 2px var(--glow-current, rgba(80, 141, 212, 0.15))`.trim()
+      : spec.boxShadow,
     transform: spec.transform,
   };
 }

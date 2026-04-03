@@ -48,10 +48,10 @@ const FONT = "'JetBrains Mono', 'Fira Code', monospace";
 const DISPLAY_LIMIT = 100;
 
 /** Width of the panel in pixels. */
-const PANEL_WIDTH = 300;
+const PANEL_WIDTH = 340;
 
 /** Height of the panel (scrollable area) in pixels. */
-const PANEL_MAX_HEIGHT = 340;
+const PANEL_MAX_HEIGHT = 450;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -344,8 +344,9 @@ export function CommandLogPanel({
     <div
       style={{
         position:   "fixed",
-        bottom:      88,  // above CommandDispatchStatusBar area
-        right:       16,
+        top:         0,
+        right:       0,
+        width:       PANEL_WIDTH,
         zIndex:      180,
         fontFamily:  FONT,
         fontSize:    10,
@@ -361,19 +362,19 @@ export function CommandLogPanel({
           display:        "flex",
           alignItems:     "center",
           gap:             5,
-          padding:        "4px 10px",
-          background:     "rgba(0, 0, 10, 0.75)",
-          border:         `1px solid ${indicatorColor}44`,
-          borderRadius:    3,
+          padding:        "12px 16px",
+          background:     "rgba(10, 10, 14, 0.95)",
+          border:         "none",
+          borderLeft:     "1px solid #222233",
+          borderBottom:   `1px solid ${indicatorColor}44`,
+          borderRadius:    0,
           cursor:          "pointer",
           color:           "#7788aa",
           fontFamily:      FONT,
-          fontSize:        9,
+          fontSize:        10,
           letterSpacing:  "0.08em",
-          backdropFilter:  "blur(6px)",
-          boxShadow:      "0 2px 8px rgba(0,0,0,0.4)",
           outline:         "none",
-          marginBottom:    expanded ? 4 : 0,
+          marginBottom:    0,
           transition:     "border-color 0.2s",
         }}
       >
@@ -425,12 +426,13 @@ export function CommandLogPanel({
       {expanded && (
         <div
           style={{
-            width:          PANEL_WIDTH,
-            background:     "rgba(4, 6, 16, 0.9)",
-            border:         "1px solid #1a2233",
-            borderRadius:    4,
-            boxShadow:      "0 4px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03)",
-            backdropFilter:  "blur(10px)",
+            width:          "100%",
+            background:     "rgba(10, 10, 14, 0.95)",
+            border:         "none",
+            borderLeft:     "1px solid #222233",
+            borderBottom:   "1px solid #222233",
+            borderRadius:    0,
+            boxShadow:      "none",
             overflow:        "hidden",
           }}
         >
@@ -440,9 +442,9 @@ export function CommandLogPanel({
               display:        "flex",
               alignItems:     "center",
               gap:             6,
-              padding:        "5px 10px",
-              borderBottom:   "1px solid #1a2233",
-              background:     "rgba(0,0,0,0.3)",
+              padding:        "12px 16px",
+              borderBottom:   "1px solid #222233",
+              background:     "transparent",
             }}
           >
             <span
@@ -561,9 +563,9 @@ function CommandStatusSummary({ entries }: { entries: CommandLifecycleEntry[] })
       style={{
         display:        "flex",
         gap:             6,
-        padding:        "4px 10px",
-        borderBottom:   "1px solid #0d1220",
-        background:     "rgba(0,0,0,0.15)",
+        padding:        "6px 16px",
+        borderBottom:   "1px solid #222233",
+        background:     "transparent",
         flexWrap:        "wrap",
       }}
     >

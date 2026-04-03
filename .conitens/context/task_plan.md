@@ -2,22 +2,32 @@
 
 ## Active Batch
 
-- Batch: `Pixel Office rail quieting`
-- Name: `implement the approved quieting pass for the dashboard office rail`
-- Status: `complete`
+- Batch: `Pixel Office architectural quieting`
+- Name: `research 2D pixel-office references and apply a schema-preserving quieting pass to the dashboard preview`
+- Status: `partial`
 
 ## Goal
 
-Quiet the Pixel Office right rail without changing the existing cap/content
-model, keep the diff confined to the owned sidebar files, and re-run the
-dashboard package verification surfaces needed to prove the CSS pass did not
-break the build.
+Ground the Conitens Pixel Office in stronger 2D pixel-operator references, then
+reduce simulation energy and rail weight without changing the existing room
+schema or floorplate contract.
 
 ## Deliverables
 
+- `.omx/context/conitens-pixel-office-refresh-20260402T204552Z.md`
+- `.omx/plans/ralplan-pixel-office-design-refresh-2026-04-03.md`
+- `.omx/plans/prd-pixel-office-design-refresh.md`
+- `.omx/plans/test-spec-pixel-office-design-refresh.md`
+- `output/pencil/pixel-office-upgrade-v3.pen`
+- `output/pencil/exports/iAXv0.png`
+- `packages/dashboard/src/components/OfficeRoomScene.tsx`
+- `packages/dashboard/src/components/TaskNode.tsx`
+- `packages/dashboard/src/components/OfficeSidebar.tsx`
 - `packages/dashboard/src/office-sidebar.module.css`
-- `packages/dashboard/src/components/OfficeSidebar.tsx` only if markup changes
-  become necessary
+- `packages/dashboard/src/office.module.css`
+- `packages/dashboard/src/office-stage-schema.ts`
+- `packages/dashboard/src/office-stage.module.css`
+- `packages/dashboard/src/office-sidebar.module.css`
 - Refreshed `.conitens/context/task_plan.md`
 - Refreshed `.conitens/context/findings.md`
 - Refreshed `.conitens/context/progress.md`
@@ -25,16 +35,18 @@ break the build.
 
 ## Non-Goals
 
-- No stage-schema or room-layout changes
-- No rail-cap or view-model changes
+- No room ID changes
+- No `OFFICE_STAGE_ROOMS` geometry rewrite
+- No `ROOM_GRID_AREAS` rewrite
 - No new dependencies
-- No claim that unrelated dashboard test debt was fixed in this pass
+- No false claim that team mode succeeded in this dirty-worktree session
 
 ## Acceptance
 
-- [x] rail visuals were quieted without changing the row-cap/content model
-- [x] small-text readability was improved in the rail
+- [x] reference direction was researched and summarized
+- [x] consensus plan plus PRD/test-spec artifacts were written
+- [x] stage/rail quieting changes were applied in the owned preview files
 - [x] dashboard package build verification was rerun successfully
-- [x] dashboard package test verification was rerun and the remaining unrelated
-  failures were recorded accurately
+- [x] dashboard package test verification fully passed
+- [ ] fresh screenshot-based visual QA reached pass threshold
 - [x] context files were refreshed for the scoped rail task

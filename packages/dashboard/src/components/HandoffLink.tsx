@@ -1,5 +1,5 @@
 import React from "react";
-import stageStyles from "../office-stage.module.css";
+import stageStyles from "../office-entities.module.css";
 
 function toPercent(value: number) {
   return `${value}%`;

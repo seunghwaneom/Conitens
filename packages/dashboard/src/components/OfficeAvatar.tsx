@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import type { AgentOfficeProfile } from "../agent-profiles.js";
 import { drawPixelAvatar } from "../pixel-canvas-avatar.js";
 import type { OfficeAvatarFacing, OfficeAvatarPose } from "../office-avatar-sprites.js";
-import stageStyles from "../office-stage.module.css";
+import stageStyles from "../office-ambient.module.css";
 
 const AVATAR_SCALE = 4;
 const AVATAR_W = 24;

@@ -2551,13 +2551,8 @@ export function HUD({ cameraPreset, onPresetChange }: HUDProps) {
       */}
       <MeetingProtocolPanel />
 
-      {/*
-        Sub-AC 10b/10c: Active sessions panel — bottom-right HUD corner.
-        Lists all active collaboration sessions with participant count,
-        role badges, and INSPECT / terminate controls.
-      */}
-      <ActiveSessionsPanel />
-
+      {/* ActiveSessionsPanel removed from HUD layer, now globally rendered in App.tsx */}
+      
       {/*
         Sub-AC 10c: Meeting session detail panel — left-side overlay.
         Full session detail: status, participants, transcript feed, termination.
@@ -2746,27 +2741,31 @@ const styles: Record<string, React.CSSProperties> = {
   },
   detailPanel: {
     position: "absolute",
-    right: 16,
+    right: 0,
     top: "50%",
     transform: "translateY(-50%)",
-    background: "rgba(10, 10, 20, 0.85)",
-    border: "1px solid #333355",
-    borderRadius: 6,
+    background: "rgba(10, 10, 14, 0.95)",
+    border: "none",
+    borderLeft: "1px solid #222233",
+    borderBottom: "1px solid #222233",
+    borderTop: "1px solid #222233",
+    borderRadius: 0,
     padding: "12px 16px",
-    backdropFilter: "blur(8px)",
     maxWidth: 280,
     pointerEvents: "auto",
   },
   agentDetailPanel: {
     position: "absolute",
-    left: 16,
+    left: 0,
     top: "50%",
     transform: "translateY(-50%)",
-    background: "rgba(10, 10, 20, 0.85)",
-    border: "1px solid #333355",
-    borderRadius: 6,
+    background: "rgba(10, 10, 14, 0.95)",
+    border: "none",
+    borderRight: "1px solid #222233",
+    borderBottom: "1px solid #222233",
+    borderTop: "1px solid #222233",
+    borderRadius: 0,
     padding: "12px 16px",
-    backdropFilter: "blur(8px)",
     maxWidth: 280,
     pointerEvents: "auto",
   },

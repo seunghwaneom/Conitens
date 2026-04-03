@@ -184,6 +184,10 @@ export function App() {
           <HUD cameraPreset={cameraPreset} onPresetChange={setCameraPreset} />
         </>
       )}
+      
+      {/* Unified Global Context Rail */}
+      <ActiveSessionsPanel />
+      <CommandLogPanel defaultExpanded={true} />
       {/* Bridge/panel components temporarily disabled for React 19 + Zustand 5 compat. */}
     </div>
     </TaskGroupsBootstrap>

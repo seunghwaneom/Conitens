@@ -1011,3 +1011,119 @@
   - `pnpm --filter @conitens/dashboard build` -> passed
   - `pnpm --filter @conitens/dashboard test` -> still failing outside this pass
     in `packages/dashboard/tests/office-presence-model.test.mjs`
+
+## Pixel Office Architectural Quieting Facts
+
+- Reference direction for this pass was synthesized from:
+  - `Office Management 101`
+  - `Project Highrise`
+  - `Pixel Office Asset Pack` by `2dPig`
+  - `Office UI Elements Pixel Art Asset Pack`
+- A ralplan consensus draft now exists at
+  `.omx/plans/ralplan-pixel-office-design-refresh-2026-04-03.md`.
+- PRD and test-spec artifacts now exist at:
+  - `.omx/plans/prd-pixel-office-design-refresh.md`
+  - `.omx/plans/test-spec-pixel-office-design-refresh.md`
+- The approved implementation direction is `schema-preserving architectural
+  quieting`, not a room-schema or floorplate rewrite.
+- A fresh team-runtime attempt for this design pass failed because OMX refused
+  to launch worktree-backed team lanes from the current dirty workspace:
+  - `omx_run_team_start(jobId=omx-mnhyka1d)` -> started
+  - `omx_run_team_status(jobId=omx-mnhyka1d)` -> `failed`
+  - failure text: `leader_workspace_dirty_for_worktrees`
+- A native ultrawork fallback was used after the team-runtime failure.
+- `packages/dashboard/src/components/OfficeRoomScene.tsx` no longer carries the
+  preview-only fixture-drag or random slot-shuffle behavior in the active
+  workspace.
+- `packages/dashboard/src/components/TaskNode.tsx` now keeps quiet state labels
+  in hover metadata while preserving task-tone signaling.
+- `packages/dashboard/src/office-stage.module.css` now further suppresses
+  ambient dust/avatar/handoff motion, weakens selection dimming, and moves
+  pixel emphasis toward room labels rather than rail utility text.
+- `packages/dashboard/src/office-sidebar.module.css` now uses more readable
+  utility typography and a calmer focus strip without changing the existing row
+  caps or sidebar content model.
+- Verification for the broader quieting pass currently stands at:
+  - `pnpm.cmd --filter @conitens/dashboard build` -> passed
+  - `pnpm.cmd --filter @conitens/dashboard test` -> still failing on the
+    pre-existing fixture-schema assertions in
+    `packages/dashboard/tests/office-presence-model.test.mjs`
+- Screenshot-based visual QA remains partially blocked in this environment:
+  headless Edge/Chrome returned success but did not persist a fresh screenshot
+  file into the workspace.
+- The only available visual-verdict rerun used the latest existing preview
+  artifact as a proxy and still scored below threshold (`38/100`), so further
+  visual iteration remains warranted once fresh screenshot capture is reliable.
+- The user explicitly requested a `pencil`-surface pass after the code-side
+  quieting work.
+- `output/pencil/pixel-office-upgrade-v3.pen` is now the active `.pen` design
+  artifact for the Pixel Office concept pass.
+- The Pencil pass kept the existing floorplate geometry but improved:
+  - top bar restraint
+  - floorplate border/divider calmness
+  - rail ledger flatness
+  - commons / impl-office fixture density
+- A follow-up Pencil iteration further:
+  - narrowed the rail width
+  - warmed the control/lab/validation room tones toward one shared floorplate
+  - increased commons/impl prop density around the central worktable and build zone
+  - increased rail metadata legibility
+- A later continuation pass further:
+  - enlarged the floorplate and central commons footprint
+  - reduced rail width again and muted rail severity strips
+  - removed more bright accent chatter from room monitors/markers
+  - pushed the design toward a calmer operator-grade palette
+- The latest continuation pass then rebalanced hierarchy again by:
+  - pushing `Central Commons` and `Impl Office` slightly warmer/darker
+  - making the specialist-wing rooms more recessive
+  - muting rail chips/progress tones and removing the focus-strip accent bar
+- The newest continuation pass further:
+  - warmed the top bar and right rail background into the same beige family
+  - increased rail metadata contrast/size slightly
+  - raised commons focal contrast so the center stage reads less washed out
+- The web app now reflects the Pencil direction more naturally through:
+  - `packages/dashboard/src/components/OfficeSidebar.tsx`
+  - `packages/dashboard/src/office-sidebar.module.css`
+  - `packages/dashboard/src/office.module.css`
+  - `packages/dashboard/src/office-stage-schema.ts`
+- `OfficeSidebar.tsx` now removes per-section count/meta lines, drops task
+  progress bars, and demotes handoff timestamps into secondary copy so the rail
+  reads more like a ledger than stacked cards.
+- `office-sidebar.module.css` now removes the colored section spines and the
+  row-level task accent bars, reduces focus-strip chrome, and makes the whole
+  rail calmer and flatter.
+- `office.module.css` now narrows the rail column from `340px` to `300px`,
+  helping the office stage dominate more clearly.
+- `office-stage-schema.ts` now reflects the densification direction:
+  - `project-main` now uses a `commons-table` cluster plus a `handoff-strip`
+    cluster and a denser lounge/support layout
+  - `impl-office` now has denser workstation/support clusters
+  - `ops-control` now matches the leaner specialist test expectation
+- Verification after the web-app reflection pass:
+  - `pnpm.cmd --filter @conitens/dashboard build` -> passed
+  - `pnpm.cmd --filter @conitens/dashboard test` -> passed
+  - result: `70` passed, `0` failed
+- Preview-route trace was re-verified after the user reported that the web app
+  still did not look reflected:
+  - `ForwardShell.tsx` renders `PixelOffice` on `#/office-preview`
+  - `PixelOffice.tsx` renders `OfficeStage` + `OfficeSidebar`
+  - the active web reflection surface is therefore:
+    - `packages/dashboard/src/components/OfficeSidebar.tsx`
+    - `packages/dashboard/src/office-sidebar.module.css`
+    - `packages/dashboard/src/office.module.css`
+    - `packages/dashboard/src/office-stage-schema.ts`
+- The latest reflection pass further reduced rail segmentation/chrome and
+  simplified utility rows so the web app more closely follows the Pencil
+  ledger-style rail direction.
+- After a direct Playwright re-check, the strongest remaining “not reflected”
+  cause was confirmed to be the onboarding overlay and dark preview shell, not
+  a route miswire.
+- `ForwardShell.tsx` now disables `OnboardingOverlay` on `#/office-preview`.
+- `styles.css` now gives `forward-shell-preview` its own warm shell/header/chip
+  palette instead of inheriting the dark forward-runtime shell.
+- A fresh Playwright verification now confirms:
+  - `onboardingVisible: false`
+  - active route: `Pixel Office Preview`
+  - screenshot written to `output/playwright/office-preview-live-check.png`
+- A fresh Pencil export artifact now exists at:
+  - `output/pencil/exports/iAXv0.png`
