@@ -17,13 +17,23 @@ export function OfficeStage({
   onSelectRoom: (roomId: string) => void;
   onSelectResident: (agentId: string) => void;
 }) {
+  const selectedRoom = rooms.find((room) => room.roomId === selectedRoomId) ?? rooms[0] ?? null;
+  const liveRoomCount = rooms.filter((room) => room.snapshot.runningCount > 0).length;
+
   return (
     <section className={`${layoutStyles["office-panel"]} ${stageStyles["office-stage-panel"]}`}>
       <div className={stageStyles["office-stage-header"]}>
-        <p className={stageStyles["office-stage-kicker"]}>OFFICE STAGE</p>
-        <span className={stageStyles["office-stage-meta"]}>
-          {rooms.length} rooms / stage-first operator floorplate
-        </span>
+        <div className={stageStyles["office-stage-header-copy"]}>
+          <p className={stageStyles["office-stage-kicker"]}>OFFICE STAGE</p>
+          <span className={stageStyles["office-stage-meta"]}>stage-first operator floorplate</span>
+        </div>
+        <div className={stageStyles["office-stage-status"]}>
+          <span className={stageStyles["office-stage-pill"]}>{rooms.length} rooms</span>
+          <span className={stageStyles["office-stage-pill"]}>{liveRoomCount} live</span>
+          <span className={stageStyles["office-stage-pill"]}>
+            {selectedRoom ? `focus ${selectedRoom.label}` : "select a room"}
+          </span>
+        </div>
       </div>
 
       <div className={stageStyles["office-stage-shell"]}>

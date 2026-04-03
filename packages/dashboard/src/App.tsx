@@ -324,7 +324,7 @@ export function App() {
           <h1>{isOfficePreview ? "Pixel Office Preview" : "Read-only operator shell"}</h1>
           <p className="forward-subtitle">
             {isOfficePreview
-              ? "Design-only route for visual verification. Static sample data only."
+              ? "Spatial verification lane for room density, rail hierarchy, and crew focus. Static sample data only."
               : "Forward bridge only. Runs, replay, state docs, and context digests stay separate from the legacy control plane."}
           </p>
         </div>
@@ -345,7 +345,7 @@ export function App() {
       </header>
 
       {isOfficePreview ? (
-        <main className="forward-main">
+        <main className="forward-main forward-main-preview">
           <PixelOffice agents={demoAgents} tasks={demoTasks} events={demoEvents} />
         </main>
       ) : route.screen === "agents" ? (
