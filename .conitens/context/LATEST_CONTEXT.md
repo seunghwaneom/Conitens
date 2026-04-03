@@ -4,7 +4,7 @@ Read this file before substantial work.
 
 ## Current State
 
-- Active batch: `Forward review hardening`
+- Active batch: `Frontend design polish upgrade`
 - Status: `complete`
 - Current live runtime truth remains `scripts/ensemble.py` plus `.notes/` and
   `.agent/`.
@@ -62,6 +62,12 @@ Read this file before substantial work.
   with no major blocking visual issue found.
 - A final proportional stage-fill polish is now applied, reducing dead space in
   the office preview.
+- The office preview now has an operator-summary band, stage status pills, rail
+  section counts, accessible avatar controls, reduced-motion handling, and
+  refreshed browser evidence for the 2026-04-03 polish slice.
+- A reference-driven workspace pass is now applied too: the preview has a
+  correlated-signal strip and a sticky desktop context rail inspired by current
+  open-source workflow / observability UIs, with refreshed screenshot evidence.
 - Local Claude review reliability is now improved with an explicit wrapper and
   a verified `medium` / 5-minute invocation profile.
 
@@ -205,6 +211,8 @@ Read this file before substantial work.
 - Forward bridge module: `scripts/ensemble_forward_bridge.py`
 - Forward runtime CLI tests: `tests/test_forward_runtime_mode.py`
 - Forward bridge tests: `tests/test_forward_bridge.py`
+- Latest office-preview evidence:
+  `output/playwright/office-preview-2026-04-03-polish.png`
 - Dashboard FE-1 shell: `packages/dashboard/src/App.tsx`
 - Dashboard FE-1 client: `packages/dashboard/src/forward-bridge.ts`
 - Dashboard FE-1 route: `packages/dashboard/src/forward-route.ts`

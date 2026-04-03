@@ -90,10 +90,12 @@ test("office focus strip favors resident detail when a resident is selected", ()
     },
   });
 
+  assert.equal(focus.eyebrow, "Ops Control");
   assert.equal(focus.headline, "agent-1");
-  assert.match(focus.summary, /Ops Control/);
+  assert.match(focus.summary, /orchestrator/);
   assert.match(focus.summary, /running/);
   assert.match(focus.summary, /3 active/);
+  assert.match(focus.detail, /Ops Control/);
 });
 
 test("office focus strip falls back to room summary when no resident is selected", () => {
@@ -147,8 +149,9 @@ test("office focus strip falls back to room summary when no resident is selected
     roleLabels: {},
   });
 
+  assert.equal(focus.eyebrow, "Advising Team");
   assert.equal(focus.headline, "Central Commons");
-  assert.match(focus.summary, /Advising Team/);
   assert.match(focus.summary, /2 residents/);
   assert.match(focus.summary, /4 tasks/);
+  assert.match(focus.detail, /live operator lanes|Quiet room/);
 });

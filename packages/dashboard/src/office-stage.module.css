@@ -1,5 +1,5 @@
 .office-stage-panel {
-  gap: 10px;
+  gap: 14px;
   min-height: 100%;
 }
 
@@ -7,8 +7,15 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  align-items: center;
-  padding: 0 2px;
+  align-items: end;
+  padding: 0 2px 12px;
+  border-bottom: 1px solid rgba(46, 57, 46, 0.08);
+}
+
+.office-stage-header-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
 
 .office-stage-kicker {
@@ -26,6 +33,26 @@
   line-height: 1.3;
 }
 
+.office-stage-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.office-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid rgba(46, 57, 46, 0.1);
+  background: rgba(255, 252, 245, 0.72);
+  color: rgba(30, 36, 31, 0.66);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .office-stage-shell {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr) 232px;
@@ -40,7 +67,9 @@
   min-height: 0;
   border: 1px solid rgba(46, 57, 46, 0.1);
   background: rgba(200, 184, 154, 0.55);
-  box-shadow: 0 10px 24px rgba(38, 43, 34, 0.05);
+  box-shadow:
+    0 18px 42px rgba(38, 43, 34, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34);
 }
 
 .area-project-main {
@@ -75,6 +104,7 @@
   border: none;
   background-color: #f6f1e6;
   text-align: left;
+  transition: box-shadow 160ms ease, transform 160ms ease, filter 160ms ease;
 }
 
 .office-room-tile::before {
@@ -90,7 +120,19 @@
 }
 
 .selected {
-  box-shadow: inset 0 0 0 2px rgba(17, 122, 69, 0.22);
+  box-shadow:
+    inset 0 0 0 2px rgba(17, 122, 69, 0.22),
+    0 10px 24px rgba(17, 122, 69, 0.08);
+}
+
+.office-room-tile:hover {
+  filter: saturate(1.02);
+}
+
+.office-room-tile:focus-visible,
+.office-room-avatar-slot:focus-visible {
+  outline: 2px solid rgba(17, 122, 69, 0.64);
+  outline-offset: 2px;
 }
 
 .office-room-tile.tone-lobby { background-color: var(--floor-lobby, #efede0); }
@@ -118,6 +160,7 @@
 .office-room-meta strong {
   font-size: 11px;
   font-weight: 800;
+  letter-spacing: 0.01em;
 }
 
 .office-room-meta .badge {
@@ -161,6 +204,7 @@
   gap: 4px 6px;
   font-size: 8px;
   color: var(--muted);
+  letter-spacing: 0.03em;
 }
 
 .office-room-post,
@@ -486,6 +530,10 @@
     text-align: left;
   }
 
+  .office-stage-status {
+    justify-content: flex-start;
+  }
+
   .office-stage-shell {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: repeat(4, minmax(160px, auto));
@@ -507,5 +555,16 @@
       "research"
       "validation"
       "review";
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .office-room-meta .badge.live,
+  .office-status-dot.status-blocked,
+  .office-pixel-avatar,
+  .office-room-avatar-slot.status-running .office-pixel-avatar,
+  .office-room-avatar-slot.status-idle .office-pixel-avatar,
+  .office-room-avatar-slot.status-error .office-pixel-avatar {
+    animation: none !important;
   }
 }

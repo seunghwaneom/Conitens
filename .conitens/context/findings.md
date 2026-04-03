@@ -888,3 +888,44 @@
   fills the available vertical shell space more evenly.
 - `packages/dashboard/src/office-sidebar.module.css` now gives rail rows and
   task line groups slightly more vertical breathing room.
+
+## Frontend Design Polish 2026-04-03 Facts
+
+- `packages/dashboard/src/components/PixelOffice.tsx` now renders a preview
+  summary band above the stage with live-room, running-agent, surfaced-task,
+  and live-route metrics derived from the existing office model.
+- `packages/dashboard/src/office.module.css` now allocates a wider
+  approximately-`1fr / 336px` stage-to-rail split and styles the new preview
+  summary band without introducing a separate card stack.
+- `packages/dashboard/src/components/OfficeStage.tsx` and
+  `packages/dashboard/src/office-stage.module.css` now expose compact room/live/
+  focus status pills in the stage header and add stronger focus visibility for
+  room tiles and avatar slots.
+- `packages/dashboard/src/components/OfficeSidebar.tsx` now shows section-level
+  counts for active agents, surfaced tasks, and live routes, and the focus
+  strip now uses explicit `eyebrow`, `headline`, `summary`, and `detail`
+  fields from `buildOfficeFocusStripView(...)`.
+- `packages/dashboard/src/components/OfficeRoomScene.tsx` no longer places
+  clickable avatar controls inside an `aria-hidden` scene container, and avatar
+  buttons now carry explicit labels.
+- `packages/dashboard/src/office-stage.module.css` now includes a
+  `prefers-reduced-motion: reduce` branch that disables the preview's looping
+  badge/avatar motion.
+- Refreshed browser evidence for this slice now exists at:
+  - `output/playwright/office-preview-2026-04-03-pre-polish.png`
+  - `output/playwright/office-preview-2026-04-03-polish.png`
+
+## Frontend Design Research 2026-04-03 Facts
+
+- Current official reference review on 2026-04-03 used these surfaces:
+  - n8n editor docs for `top bar`, `canvas`, and right-side `nodes panel`
+  - Plane homepage for unified workspace / multiple-layout product framing
+  - SigNoz homepage for correlated signals across traces, metrics, and logs
+  - Langfuse official product description for traces / observations / sessions
+- The follow-up preview pass translated those references into Conitens by:
+  - adding a correlated-signal strip for focus, queue head, and latest handoff
+  - making the right rail sticky on desktop so the stage remains the primary
+    canvas while secondary context stays anchored
+  - keeping the stage itself dominant instead of expanding card chrome
+- Refreshed browser evidence for the research-driven pass now exists at:
+  - `output/playwright/office-preview-2026-04-03-research-pass.png`

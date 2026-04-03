@@ -31,6 +31,7 @@ export function OfficeRoomScene({
     <div
       role="button"
       tabIndex={0}
+      aria-pressed={room.roomId === selectedRoomId}
       className={[
         stageStyles["office-room-tile"],
         stageStyles[`area-${room.roomId}`],
@@ -79,8 +80,8 @@ export function OfficeRoomScene({
         <span>{room.snapshot.taskCount} tasks</span>
         <span>{latestFamily}</span>
       </div>
-      <div className={stageStyles["office-room-scene"]} aria-hidden="true">
-        <div className={stageStyles["office-room-fixtures"]}>
+      <div className={stageStyles["office-room-scene"]}>
+        <div className={stageStyles["office-room-fixtures"]} aria-hidden="true">
           {room.schema.fixtureClusters.flatMap((cluster) =>
             cluster.fixtures.map((fixture, index) => (
               <span
@@ -113,6 +114,7 @@ export function OfficeRoomScene({
               <button
                 key={resident.agentId}
                 type="button"
+                aria-label={`${resident.agentId} in ${room.label}`}
                 className={[
                   stageStyles["office-room-avatar-slot"],
                   stageStyles[`status-${resident.status}`],
