@@ -84,15 +84,18 @@ body {
 .forward-shell-preview .forward-header {
   align-items: center;
   padding-block: 22px 16px;
+  border-bottom-color: rgba(74, 84, 74, 0.08);
 }
 
 .forward-shell-preview .forward-header h1 {
   font-size: clamp(24px, 4vw, 38px);
   letter-spacing: -0.03em;
+  color: var(--text);
 }
 
 .forward-shell-preview .forward-subtitle {
   max-width: 38ch;
+  color: rgba(30, 36, 31, 0.62);
 }
 
 .forward-shell-preview .forward-chip-row {
@@ -100,6 +103,33 @@ body {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
+}
+
+.forward-shell.forward-shell-preview {
+  background:
+    radial-gradient(circle at top right, rgba(160, 140, 104, 0.12), transparent 24%),
+    linear-gradient(180deg, #fbf7ef 0%, #f2ebdd 100%);
+  color: var(--text);
+}
+
+.forward-shell-preview .forward-eyebrow,
+.forward-shell-preview .forward-panel-label,
+.forward-shell-preview .forward-detail-label {
+  color: rgba(104, 113, 102, 0.78);
+}
+
+.forward-shell-preview .forward-chip,
+.forward-shell-preview .forward-state,
+.forward-shell-preview .forward-status-pill {
+  border-color: rgba(74, 84, 74, 0.1);
+  background: rgba(255, 252, 245, 0.84);
+  color: rgba(30, 36, 31, 0.72);
+}
+
+.forward-shell-preview .forward-chip-link.active {
+  background: rgba(40, 180, 99, 0.08);
+  border-color: rgba(17, 122, 69, 0.22);
+  color: var(--text);
 }
 
 .forward-eyebrow,

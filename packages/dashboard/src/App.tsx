@@ -317,7 +317,7 @@ export function App() {
 
   return (
     <div className={`forward-shell${isOfficePreview ? " forward-shell-preview" : ""}`}>
-      <OnboardingOverlay />
+      {!isOfficePreview ? <OnboardingOverlay /> : null}
       <header className="forward-header">
         <div>
           <p className="forward-eyebrow">{isOfficePreview ? "Conitens / office preview" : "Conitens / forward runtime"}</p>
