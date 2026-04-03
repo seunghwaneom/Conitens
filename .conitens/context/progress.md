@@ -1006,3 +1006,59 @@ The final polish slice is complete. The office stage now fills the preview shell
 more proportionally, the right rail breathes slightly better, and the frontend
 review document is effectively down to minor optional polish and structural
 cleanup rather than visual or behavioral blockers.
+
+## Frontend Design Polish 2026-04-03 Status
+
+- [x] preview-summary band added above the office stage
+- [x] stage header status pills added
+- [x] right-rail counts and focus strip upgraded
+- [x] avatar accessibility path fixed inside room scenes
+- [x] reduced-motion preview handling added
+- [x] refreshed browser screenshots captured
+- [x] dashboard typecheck and build passed
+- [x] dashboard tests passed with `--test-isolation=none`
+- [x] `.conitens/context/*` refreshed
+
+## Frontend Design Polish 2026-04-03 Commands Run
+
+- `node 'D:\Google\.Conitens\node_modules\vite\bin\vite.js' --host 127.0.0.1 --port 4173 --strictPort`
+- `PLAYWRIGHT_CLI_SESSION=conitens-office ... playwright_cli.sh open http://127.0.0.1:4173/#/office-preview`
+- `PLAYWRIGHT_CLI_SESSION=conitens-office ... playwright_cli.sh snapshot`
+- `PLAYWRIGHT_CLI_SESSION=conitens-office ... playwright_cli.sh run-code "async page => { await page.screenshot(...) }"`
+- `node --experimental-strip-types --test tests/*.test.mjs`
+- `node --experimental-strip-types --test --test-isolation=none tests/*.test.mjs`
+- `node 'D:\Google\.Conitens\node_modules\typescript\bin\tsc' -b`
+- `node 'D:\Google\.Conitens\node_modules\vite\bin\vite.js' build`
+
+## Current Outcome
+
+The office-preview upgrade slice is complete. The first viewport now reads as a
+deliberate operator preview instead of a loose stage dump, the rail exposes its
+counts and focus state with less scanning effort, and the preview retains the
+existing six-room structure while improving motion/accessibility hygiene.
+
+## Frontend Design Research 2026-04-03 Status
+
+- [x] similar open-source operator/workflow UIs reviewed
+- [x] correlated-signal strip added above the stage
+- [x] sticky desktop context rail added
+- [x] research-pass screenshot captured
+- [x] dashboard tests, typecheck, and build still pass
+- [x] `.conitens/context/*` refreshed
+
+## Frontend Design Research 2026-04-03 Commands Run
+
+- official web review of n8n / Plane / SigNoz / Langfuse pages on `2026-04-03`
+- `PLAYWRIGHT_CLI_SESSION=conitens-office-ref ... playwright_cli.sh open http://127.0.0.1:4173/#/office-preview`
+- `PLAYWRIGHT_CLI_SESSION=conitens-office-ref ... playwright_cli.sh snapshot`
+- `PLAYWRIGHT_CLI_SESSION=conitens-office-ref ... playwright_cli.sh run-code "async page => { await page.screenshot(...) }"`
+- `node --experimental-strip-types --test --test-isolation=none tests/*.test.mjs`
+- `node 'D:\Google\.Conitens\node_modules\typescript\bin\tsc' -b`
+- `node 'D:\Google\.Conitens\node_modules\vite\bin\vite.js' build`
+
+## Current Outcome
+
+The office preview now carries a clearer open-source control-plane vocabulary:
+canvas first, correlated signals near the top of the workspace, and a sticky
+secondary rail. The result is still recognizably Conitens, but it scans more
+like a real operator surface than a static visual mock.

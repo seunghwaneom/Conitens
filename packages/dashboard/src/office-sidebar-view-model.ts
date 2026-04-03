@@ -16,8 +16,10 @@ export interface OfficeSidebarRailView {
 }
 
 export interface OfficeFocusStripView {
+  eyebrow: string;
   headline: string;
   summary: string;
+  detail: string;
 }
 
 export function buildOfficeSidebarRailView({
@@ -50,30 +52,36 @@ export function buildOfficeFocusStripView({
 }): OfficeFocusStripView {
   if (selectedResident) {
     return {
+      eyebrow: selectedResident.roomLabel,
       headline: selectedResident.agentId,
       summary: [
-        selectedResident.roomLabel,
         roleLabels[selectedResident.profile.role] ?? selectedResident.profile.role,
         selectedResident.status,
         `${selectedResident.taskCount} active`,
       ].join(" · "),
+      detail: `${selectedResident.profile.archetype} lane · stay on ${selectedResident.roomLabel}`,
     };
   }
 
   if (selectedRoom) {
     return {
+      eyebrow: selectedRoom.teamLabel,
       headline: selectedRoom.label,
       summary: [
-        selectedRoom.teamLabel,
         `${selectedRoom.snapshot.agentCount} residents`,
         `${selectedRoom.snapshot.taskCount} tasks`,
         selectedRoom.snapshot.latestFamily ?? "stable",
       ].join(" · "),
+      detail: selectedRoom.snapshot.runningCount > 0
+        ? `${selectedRoom.snapshot.runningCount} live operator lanes in view`
+        : "Quiet room held for the next handoff",
     };
   }
 
   return {
+    eyebrow: "Preview focus",
     headline: "No focus selected",
     summary: "Select a room or resident to focus the rail.",
+    detail: "The office shell keeps room cadence, task load, and handoff flow visible at a glance.",
   };
 }
