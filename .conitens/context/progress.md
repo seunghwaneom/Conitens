@@ -1150,3 +1150,125 @@ rail is flatter and quieter, dense copy is easier to scan, and the blocked
 signal now matches the repo's non-flashing ambient direction. The dashboard
 build passes, while the remaining dashboard test failures are unrelated
 fixture-schema assertions already outside this rail-only scope.
+
+## Pixel Office Architectural Quieting Status
+
+- [x] current Pixel Office implementation and local design artifacts inspected
+- [x] external pixel-office/operator references researched
+- [x] ralplan consensus draft written and approved
+- [x] PRD + test-spec artifacts written
+- [x] OMX team launch attempted
+- [x] OMX team failure captured (`leader_workspace_dirty_for_worktrees`)
+- [x] ultrawork/native-subagent fallback used
+- [x] stage/scene quieting changes applied in owned preview files
+- [x] rail typography/readability refinements applied
+- [x] dashboard build rerun successfully
+- [x] dashboard test run rerun and pre-existing failures isolated
+- [ ] fresh screenshot capture succeeded in-workspace
+- [ ] screenshot-based visual QA passed threshold
+
+## Pixel Office Architectural Quieting Commands Run
+
+- `Get-Content docs/pixel-office-figma-upgrade-spec.md`
+- `Get-Content packages/dashboard/src/components/PixelOffice.tsx`
+- `Get-Content packages/dashboard/src/components/OfficeStage.tsx`
+- `Get-Content packages/dashboard/src/components/OfficeSidebar.tsx`
+- `Get-Content packages/dashboard/src/office-stage.module.css`
+- `Get-Content packages/dashboard/src/office-sidebar.module.css`
+- web research for:
+  - `Office Management 101`
+  - `Project Highrise`
+  - `Pixel Office Asset Pack`
+  - `Office UI Elements Pixel Art Asset Pack`
+- planner / architect / critic consensus loop via native agents
+- `omx_run_team_start(jobId=omx-mnhyka1d)`
+- `omx_run_team_status(jobId=omx-mnhyka1d)`
+- native executor subagents for stage/rail lanes
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- headless Edge / Chrome screenshot attempts against `#/office-preview`
+
+## Current Outcome
+
+The broader Pixel Office architectural quieting pass is partially complete. The
+preview now uses calmer room/header emphasis, reduced ambient motion, and more
+readable utility typography while preserving the current schema and floorplate
+contracts. The dashboard build passes, but the package test suite still fails on
+two pre-existing fixture-schema assertions outside this pass, and fresh
+screenshot-based visual QA remains blocked by unreliable headless capture in the
+current environment.
+
+## Pixel Office Pencil Pass Status
+
+- [x] switched execution surface to `output/pencil/pixel-office-upgrade-v3.pen`
+- [x] current `.pen` floorplate and rail nodes inspected before edits
+- [x] shell/rail restraint pass applied in Pencil
+- [x] commons + impl-office density pass applied in Pencil
+- [x] placeholder lifecycle completed cleanly
+- [x] fresh Pencil PNG export written
+
+## Pixel Office Pencil Pass Commands Run
+
+- `pencil get_editor_state(include_schema=false)`
+- `pencil open_document(output/pencil/pixel-office-upgrade-v3.pen)`
+- `pencil batch_get(...)` over top-level/stage/rail nodes
+- `pencil get_variables(output/pencil/pixel-office-upgrade-v3.pen)`
+- `pencil batch_design(...)` for shell + rail quieting
+- `pencil batch_design(...)` for commons + impl-office density
+- `pencil get_screenshot(nodeId=iAXv0)` after each major pass
+- `pencil export_nodes(nodeIds=[iAXv0], outputDir=output/pencil/exports)`
+
+## Current Outcome
+
+The `.pen` design now better matches the Conitens pixel-office direction without
+changing the six-room floorplate. The top bar and rail are flatter, the
+floorplate reads a bit more intentionally, and the center/impl areas are less
+empty. A fresh export now exists at `output/pencil/exports/iAXv0.png`.
+
+The follow-up iteration tightened the rail further, unified room warmth, and
+added more prop density around the commons/work zones so the stage now reads
+more clearly as the dominant surface.
+
+The latest continuation pass then enlarged the floorplate, slimmed the rail
+again, and muted bright internal accents so the screen reads less like a toy UI
+and more like a restrained operator board.
+
+The current continuation also rebalanced tonal hierarchy so the commons/work
+zones come forward a little more while the specialist wing and rail recede.
+
+The latest continuation then brought nav/rail warmth and utility-text contrast
+ closer to the same operator palette, while increasing central commons contrast.
+
+## Pixel Office Web-App Reflection Status
+
+- [x] Pencil-derived hierarchy decisions translated into the web app
+- [x] sidebar segmentation reduced in component/CSS
+- [x] rail width reduced in the office layout
+- [x] commons/impl density reflected in `office-stage-schema.ts`
+- [x] dashboard build rerun successfully
+- [x] dashboard test suite rerun to green
+
+## Pixel Office Web-App Reflection Commands Run
+
+- `Get-Content packages/dashboard/src/components/OfficeSidebar.tsx`
+- `Get-Content packages/dashboard/src/office-sidebar.module.css`
+- `Get-Content packages/dashboard/src/office.module.css`
+- `Get-Content packages/dashboard/src/office-stage-schema.ts`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `pnpm.cmd --filter @conitens/dashboard test`
+
+## Current Outcome
+
+The web app now tracks the Pencil direction more naturally. The office preview
+rail is flatter and less segmented, the rail column is slimmer, and the stage
+schema better supports denser commons/impl zones. Both the dashboard build and
+test suite are green again after this reflection pass.
+
+The preview-route wiring was then re-checked end-to-end after the user reported
+that the web app still looked unchanged. The active route was confirmed, and the
+latest web pass was applied directly to the route-driving sidebar/layout/schema
+files rather than only to design artifacts.
+
+The strongest remaining blocker then turned out to be the onboarding overlay and
+dark shell, so those were fixed and re-verified with Playwright on the live
+route.

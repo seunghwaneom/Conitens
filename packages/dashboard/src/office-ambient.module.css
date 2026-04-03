@@ -1,0 +1,202 @@
+.office-room-dust {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.office-room-dust::before,
+.office-room-dust::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(160, 148, 128, 0.45) 50%, transparent 50%),
+    radial-gradient(1px 1px at 34% 42%, rgba(160, 148, 128, 0.35) 50%, transparent 50%),
+    radial-gradient(1px 1px at 56% 68%, rgba(160, 148, 128, 0.4) 50%, transparent 50%),
+    radial-gradient(1px 1px at 78% 28%, rgba(160, 148, 128, 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 22% 76%, rgba(160, 148, 128, 0.35) 50%, transparent 50%),
+    radial-gradient(1px 1px at 68% 84%, rgba(160, 148, 128, 0.25) 50%, transparent 50%),
+    radial-gradient(1px 1px at 88% 52%, rgba(160, 148, 128, 0.4) 50%, transparent 50%);
+  animation: none;
+  opacity: 0.32;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .office-room-dust::before {
+    animation: dust-float var(--ambient-slow, 8s) ease-in-out infinite;
+  }
+  .office-room-dust::after {
+    animation: dust-float 12s ease-in-out infinite reverse;
+  }
+}
+
+.office-room-dust::after {
+  background-image:
+    radial-gradient(1px 1px at 8% 56%, rgba(140, 128, 108, 0.3) 50%, transparent 50%),
+    radial-gradient(1px 1px at 44% 22%, rgba(140, 128, 108, 0.35) 50%, transparent 50%),
+    radial-gradient(1px 1px at 62% 48%, rgba(140, 128, 108, 0.28) 50%, transparent 50%),
+    radial-gradient(1px 1px at 82% 72%, rgba(140, 128, 108, 0.32) 50%, transparent 50%),
+    radial-gradient(1px 1px at 28% 88%, rgba(140, 128, 108, 0.25) 50%, transparent 50%);
+  animation: none;
+  opacity: 0.2;
+}
+
+@keyframes dust-float {
+  0%, 100% { transform: translate(0, 0); opacity: 0.38; }
+  25% { transform: translate(2px, -2px); opacity: 0.48; }
+  50% { transform: translate(-1px, -4px); opacity: 0.32; }
+  75% { transform: translate(3px, -1px); opacity: 0.44; }
+}
+
+/* .selected applied to pixel avatar span — mirrors the room-level selection indicator */
+.selected {
+  box-shadow:
+    inset 0 0 0 2px rgba(17, 122, 69, 0.28),
+    0 0 0 1px rgba(79, 176, 98, 0.12);
+  z-index: 2;
+}
+
+.office-pixel-avatar {
+  position: relative;
+  display: inline-flex;
+  width: 24px;
+  height: 32px;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1;
+  animation: none;
+}
+
+.office-pixel-mark {
+  position: absolute;
+  right: -5px;
+  top: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--office-accent, var(--accent-strong));
+  font-size: 8px;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(46, 57, 46, 0.06);
+}
+
+.office-room-avatar-slot.status-running .office-pixel-avatar {
+  animation: none;
+}
+
+.office-room-avatar-slot.status-idle .office-pixel-avatar {
+  animation: none;
+}
+
+.office-room-avatar-slot.status-error .office-pixel-avatar {
+  animation: none;
+}
+
+.office-speech-bubble {
+  position: absolute;
+  top: -38px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border: 2px solid currentColor;
+  background: #fff;
+  color: var(--accent-info, #508dd4);
+  font-family: var(--font-pixel, "Press Start 2P", cursive);
+  font-size: 7px;
+  white-space: nowrap;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.16);
+  pointer-events: none;
+}
+
+.office-speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  background: #fff;
+}
+
+.info { color: var(--accent-info, #508dd4); }
+.warning { color: var(--accent-warning, #c98b12); }
+.danger { color: var(--accent-danger, #c14949); }
+.success { color: var(--accent-success, #4fb062); }
+
+@keyframes idle-breathe {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-1px); }
+}
+
+@keyframes typing-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.5px); }
+}
+
+@keyframes error-shake {
+  0%, 85%, 100% { transform: translateX(0); }
+  88% { transform: translateX(-1px); }
+  91% { transform: translateX(1px); }
+  94% { transform: translateX(-0.5px); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .office-room-avatar-slot.status-running .office-pixel-avatar {
+    animation: typing-bob 1.5s ease-in-out infinite;
+  }
+  .office-room-avatar-slot.status-idle .office-pixel-avatar {
+    animation: idle-breathe var(--ambient-medium, 4s) ease-in-out infinite;
+  }
+  .office-room-avatar-slot.status-error .office-pixel-avatar {
+    animation: error-shake 3s ease-in-out infinite;
+  }
+}
+
+.office-handoff-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.office-handoff-path {
+  animation: none;
+}
+
+.desk-status-led {
+  position: absolute;
+  bottom: 0;
+  right: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--led-color, #4fb062);
+  box-shadow: 0 0 3px 1px var(--led-color, rgba(79, 176, 98, 0.4));
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .desk-status-led {
+    animation: led-pulse 2s ease-in-out infinite;
+  }
+  .desk-status-led.led-error {
+    animation: led-pulse 1s ease-in-out infinite;
+  }
+}

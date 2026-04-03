@@ -1,9 +1,18 @@
-import React from "react";
+import React, { useRef, useCallback } from "react";
 import { OfficeAvatar } from "./OfficeAvatar.js";
-import { TaskNode } from "./TaskNode.js";
-import { getOfficeFixtureStyle } from "../office-fixture-registry.js";
 import type { OfficeRoomPresence } from "../office-presence-model.js";
-import stageStyles from "../office-stage.module.css";
+import roomStyles from "../office-room.module.css";
+import entityStyles from "../office-entities.module.css";
+import ambientStyles from "../office-ambient.module.css";
+
+function getLedColor(status: string): string {
+  switch (status) {
+    case "running": return "#4fb062";
+    case "idle": return "#c98b12";
+    case "error": return "#c14949";
+    default: return "#84929f";
+  }
+}
 
 function getRoomBadgeLabel(room: OfficeRoomPresence) {
   if (room.snapshot.runningCount > 0) return "live";
@@ -26,19 +35,66 @@ export function OfficeRoomScene({
 }) {
   const stationMap = new Map(room.schema.stationAnchors.map((station) => [station.id, station]));
   const latestFamily = room.snapshot.latestFamily ?? "stable";
+  const dragState = useRef<{ startX: number; startY: number; moved: boolean } | null>(null);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLSpanElement>) => {
+    e.stopPropagation();
+    const target = e.currentTarget;
+    target.setPointerCapture(e.pointerId);
+    dragState.current = { startX: e.clientX, startY: e.clientY, moved: false };
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLSpanElement>) => {
+    const ds = dragState.current;
+    if (!ds) return;
+    const dx = e.clientX - ds.startX;
+    const dy = e.clientY - ds.startY;
+    if (!ds.moved && Math.abs(dx) + Math.abs(dy) > 3) ds.moved = true;
+    if (!ds.moved) return;
+    const parent = e.currentTarget.parentElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const el = e.currentTarget;
+    const baseLeft = parseFloat(el.dataset.baseLeft ?? "0");
+    const baseTop = parseFloat(el.dataset.baseTop ?? "0");
+    el.style.left = `${baseLeft + (dx / rect.width) * 100}%`;
+    el.style.top = `${baseTop + (dy / rect.height) * 100}%`;
+    el.style.zIndex = "10";
+    el.style.cursor = "grabbing";
+  }, []);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLSpanElement>, agentId: string) => {
+    const ds = dragState.current;
+    dragState.current = null;
+    e.currentTarget.style.zIndex = "";
+    e.currentTarget.style.cursor = "";
+    if (!ds?.moved) {
+      e.stopPropagation();
+      onSelectResident(agentId);
+    }
+  }, [onSelectResident]);
+
+  const glowMap: Record<string, string> = {
+    control: "rgba(80, 141, 212, 0.15)",
+    workspace: "rgba(201, 168, 60, 0.12)",
+    lab: "rgba(171, 71, 188, 0.12)",
+    validation: "rgba(239, 83, 80, 0.12)",
+    review: "rgba(66, 165, 245, 0.12)",
+    lobby: "rgba(79, 176, 98, 0.10)",
+  };
 
   return (
     <div
       role="button"
       tabIndex={0}
       className={[
-        stageStyles["office-room-tile"],
-        stageStyles[`area-${room.roomId}`],
-        stageStyles[`kind-${room.kind}`],
-        stageStyles[`tone-${room.schema.floorTone ?? room.kind}`],
-        stageStyles[`priority-${room.schema.priority}`],
-        stageStyles[`status-${room.snapshot.tone}`],
-        room.roomId === selectedRoomId ? stageStyles.selected : "",
+        roomStyles["office-room-tile"],
+        roomStyles[`area-${room.roomId}`],
+        roomStyles[`kind-${room.kind}`],
+        roomStyles[`tone-${room.schema.floorTone ?? room.kind}`],
+        roomStyles[`priority-${room.schema.priority}`],
+        roomStyles[`status-${room.snapshot.tone}`],
+        room.roomId === selectedRoomId ? roomStyles.selected : "",
       ].filter(Boolean).join(" ")}
       onClick={() => onSelectRoom(room.roomId)}
       onKeyDown={(event) => {
@@ -48,92 +104,65 @@ export function OfficeRoomScene({
         }
       }}
     >
-      <span className={`${stageStyles["office-room-post"]} ${stageStyles["post-nw"]}`} aria-hidden="true" />
-      <span className={`${stageStyles["office-room-post"]} ${stageStyles["post-ne"]}`} aria-hidden="true" />
-      <span className={`${stageStyles["office-room-post"]} ${stageStyles["post-sw"]}`} aria-hidden="true" />
-      <span className={`${stageStyles["office-room-post"]} ${stageStyles["post-se"]}`} aria-hidden="true" />
-      {room.schema.windows.map((window, index) => (
-        <span
-          key={`${room.roomId}-window-${index}`}
-          className={stageStyles["office-room-window"]}
-          style={{ left: `${window.left}%`, top: `${window.top}%`, width: `${window.width}%` }}
-          aria-hidden="true"
-        />
-      ))}
-      {room.schema.doors.map((door, index) => (
-        <span
-          key={`${room.roomId}-door-${index}`}
-          className={[stageStyles["office-room-door"], stageStyles[door.state]].join(" ")}
-          style={{ left: `${door.left}%`, top: `${door.top}%` }}
-          aria-hidden="true"
-        />
-      ))}
-      <div className={stageStyles["office-room-meta"]}>
+      <div className={roomStyles["office-room-meta"]}>
         <div>
           <strong>{room.label}</strong>
         </div>
         <span className={`badge ${room.snapshot.tone}`}>{getRoomBadgeLabel(room)}</span>
       </div>
-      <div className={stageStyles["office-room-stats"]}>
+      <div className={roomStyles["office-room-stats"]}>
         <span>{room.snapshot.agentCount} seated</span>
         <span>{room.snapshot.taskCount} tasks</span>
         <span>{latestFamily}</span>
       </div>
-      <div className={stageStyles["office-room-scene"]} aria-hidden="true">
-        <div className={stageStyles["office-room-fixtures"]}>
+      <div
+        className={roomStyles["office-room-scene"]}
+        style={{ "--glow-current": glowMap[room.kind] ?? "rgba(80, 141, 212, 0.15)" } as React.CSSProperties}
+        aria-hidden="true"
+      >
+        <div className={roomStyles["office-room-fixtures"]}>
           {room.residents.length === 0 && (
-            <span className={stageStyles["office-room-dust"]} aria-hidden="true" />
+            <span className={ambientStyles["office-room-dust"]} aria-hidden="true" />
           )}
-          {room.schema.fixtureClusters.flatMap((cluster) =>
-            cluster.fixtures.map((fixture, index) => (
-              <span
-                key={`${cluster.id}-${fixture.kind}-${index}`}
-                className={stageStyles["office-fixture"]}
-                style={{
-                  ...getOfficeFixtureStyle(fixture.kind),
-                  left: `${fixture.left}%`,
-                  top: `${fixture.top}%`,
-                }}
-              />
-            )),
-          )}
-          {room.taskNodes.map((taskNode) => (
-            <TaskNode
-              key={taskNode.taskId}
-              taskId={taskNode.taskId}
-              tone={taskNode.tone}
-              state={taskNode.state}
-              left={taskNode.left}
-              top={taskNode.top}
-            />
-          ))}
         </div>
-        <div className={stageStyles["office-room-avatars"]}>
+        <div className={roomStyles["office-room-avatars"]}>
           {room.visibleResidents.map((resident, index) => {
             const slot = room.schema.slots[index];
             const station = stationMap.get(slot.stationId);
             if (!station) return null;
+            const baseLeft = station.left + (slot.offsetX ?? 0);
+            const baseTop = station.top + (slot.offsetY ?? 0);
             return (
-              <button
+              <span
                 key={resident.agentId}
-                type="button"
+                role="button"
+                tabIndex={0}
                 className={[
-                  stageStyles["office-room-avatar-slot"],
-                  stageStyles[`status-${resident.status}`],
-                  resident.agentId === selectedResidentId ? stageStyles.selected : "",
+                  entityStyles["office-room-avatar-slot"],
+                  entityStyles[`status-${resident.status}`],
+                  resident.agentId === selectedResidentId ? entityStyles.selected : "",
                 ].filter(Boolean).join(" ")}
-              style={{
-                  left: `${station.left + (slot.offsetX ?? 0)}%`,
-                  top: `${station.top + (slot.offsetY ?? 0)}%`,
+                style={{
+                  left: `${baseLeft}%`,
+                  top: `${baseTop}%`,
                   "--office-accent": resident.profile.accent,
+                  cursor: "grab",
                 } as React.CSSProperties}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onSelectResident(resident.agentId);
+                data-base-left={baseLeft}
+                data-base-top={baseTop}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={(e) => handlePointerUp(e, resident.agentId)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onSelectResident(resident.agentId);
+                  }
                 }}
               >
-                <span className={stageStyles["office-avatar-ring"]} aria-hidden="true" />
-                <span className={stageStyles["office-avatar-shadow"]} aria-hidden="true" />
+                <span className={entityStyles["office-avatar-ring"]} aria-hidden="true" />
+                <span className={entityStyles["office-avatar-shadow"]} aria-hidden="true" />
                 <OfficeAvatar
                   profile={resident.profile}
                   label={resident.agentId}
@@ -141,12 +170,30 @@ export function OfficeRoomScene({
                   pose={slot.pose}
                   facing={slot.facing}
                 />
-              </button>
+                <span
+                  className={[
+                    ambientStyles["desk-status-led"],
+                    resident.status === "error" ? ambientStyles["led-error"] : "",
+                  ].filter(Boolean).join(" ")}
+                  style={{ "--led-color": getLedColor(resident.status) } as React.CSSProperties}
+                  aria-hidden="true"
+                />
+                {resident.status === "error" && (
+                  <span className={`${ambientStyles["office-speech-bubble"]} ${ambientStyles.danger}`}>
+                    blocked!
+                  </span>
+                )}
+                {resident.status === "running" && (
+                  <span className={`${ambientStyles["office-speech-bubble"]} ${ambientStyles.info}`}>
+                    ...
+                  </span>
+                )}
+              </span>
             );
           })}
           {room.overflowCount > 0 && (
             <span
-              className={stageStyles["office-room-overflow"]}
+              className={entityStyles["office-room-overflow"]}
               style={{
                 left: `${room.schema.overflowSlot.left}%`,
                 top: `${room.schema.overflowSlot.top}%`,
@@ -156,7 +203,7 @@ export function OfficeRoomScene({
             </span>
           )}
           {room.residents.length === 0 && (
-            <span className={stageStyles["office-room-awaiting"]}>
+            <span className={entityStyles["office-room-awaiting"]}>
               awaiting crew
             </span>
           )}

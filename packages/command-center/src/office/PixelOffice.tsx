@@ -128,34 +128,75 @@ function drawRooms(g: Graphics, layouts: RoomLayout[]): void {
     const fill = ROOM_COLORS[room.roomType] ?? 0x141618;
     const accent = ROOM_ACCENTS[room.roomType] ?? 0x384048;
 
-    // Floor fill
+    // Floor fill 
     g.rect(x, y, w, h).fill(fill);
 
-    // Grid lines
+    // Subtle checkered or grid pattern
     for (let gx = SCALE; gx < w; gx += SCALE) {
-      g.moveTo(x + gx, y).lineTo(x + gx, y + h).stroke({ color: accent, width: 1, alpha: 0.1 });
+      g.moveTo(x + gx, y).lineTo(x + gx, y + h).stroke({ color: accent, width: 1, alpha: 0.15 });
     }
     for (let gy = SCALE; gy < h; gy += SCALE) {
-      g.moveTo(x, y + gy).lineTo(x + w, y + gy).stroke({ color: accent, width: 1, alpha: 0.1 });
+      g.moveTo(x, y + gy).lineTo(x + w, y + gy).stroke({ color: accent, width: 1, alpha: 0.15 });
     }
 
-    // Border
+    // Walls (Outer border + inner depth for top/bottom walls)
+    const wallThick = 4;
     g.rect(x, y, w, h).stroke({ color: accent, width: 2 });
-
-    // Desk (top area)
-    const deskW = Math.min(w * 0.5, 120);
-    const deskH = 16;
-    const deskX = x + (w - deskW) / 2;
-    const deskY = y + 24;
-    g.rect(deskX, deskY, deskW, deskH).fill(0x252535).stroke({ color: 0x353545, width: 1 });
-
-    // Monitor on desk
-    const monW = 24;
-    const monH = 12;
-    g.rect(deskX + (deskW - monW) / 2, deskY + 2, monW, monH).fill(accent).stroke({ color: 0x555566, width: 1 });
-
-    // Chair (small circle below desk)
-    g.circle(deskX + deskW / 2, deskY + deskH + 14, 6).fill(0x2a2a3a).stroke({ color: 0x3a3a4a, width: 1 });
+    g.rect(x, y, w, wallThick).fill(accent);           // Top wall
+    g.rect(x, y + h - wallThick, w, wallThick).fill(accent); // Bottom wall
+    
+    // Draw specific room props based on type
+    if (room.roomType === "lobby") {
+      // Reception desk
+      g.rect(x + w / 2 - 40, y + h / 2 - 20, 80, 20).fill(0x353545).stroke({ color: 0x454555, width: 1 });
+      // Sofas
+      g.roundRect(x + 20, y + 20, 40, 20, 4).fill(0x2a3a4a).stroke({ color: 0x3a4a5a, width: 1 });
+      g.roundRect(x + Math.max(w - 60, 70), y + 20, 40, 20, 4).fill(0x2a3a4a).stroke({ color: 0x3a4a5a, width: 1 });
+      // Plants
+      g.circle(x + 20, y + h - 20, 8).fill(0x4CAF50).stroke({ color: 0x388E3C, width: 1 });
+      g.circle(x + Math.max(w - 20, 30), y + h - 20, 8).fill(0x4CAF50).stroke({ color: 0x388E3C, width: 1 });
+    } 
+    else if (room.roomType === "control" || room.roomType === "office") {
+      // Main central command desk
+      const deskW = Math.min(w * 0.6, 160);
+      const deskH = 24;
+      const deskX = x + (w - deskW) / 2;
+      const deskY = y + 30;
+      g.roundRect(deskX, deskY, deskW, deskH, 2).fill(0x222233).stroke({ color: 0x3c3c4c, width: 1 });
+      
+      // Multiple Monitors
+      const monW = 20;
+      const monH = 10;
+      for (let i = 0; i < 3; i++) {
+        if (deskX + 10 + i * 40 + monW > deskX + deskW) break;
+        g.rect(deskX + 10 + i * 40, deskY + 4, monW, monH).fill(0x111115).stroke({ color: accent, width: 1 });
+        // screen glow
+        g.rect(deskX + 12 + i * 40, deskY + 6, monW - 4, monH - 4).fill(accent);
+      }
+      // Chairs
+      g.circle(deskX + deskW * 0.3, deskY + deskH + 15, 6).fill(0x1a1a2a);
+      g.circle(deskX + deskW * 0.7, deskY + deskH + 15, 6).fill(0x1a1a2a);
+      
+      if (room.roomType === "office") {
+         // Whiteboard against top wall
+         g.rect(x + 20, y + 2, Math.min(w - 40, 100), 4).fill(0xeeeeee);
+      }
+    }
+    else if (room.roomType === "lab" || room.roomType === "archive") {
+      // Server racks
+      const rackW = 24;
+      const rackH = 40;
+      for (let i = 0; i < 5; i++) {
+        const rx = x + 20 + i * (rackW + 10);
+        if (rx + rackW > x + w - 10) continue;
+        const ry = y + 24;
+        g.rect(rx, ry, rackW, rackH).fill(0x1c1c24).stroke({ color: 0x2c2c34, width: 1 });
+        // blinking lights represented as small blocks
+        g.rect(rx + 4, ry + 4, 4, 4).fill(0x00FF00); 
+        g.rect(rx + 4, ry + 12, 4, 4).fill(0x00cc00);
+        g.rect(rx + 16, ry + 20, 4, 4).fill(0xFF3333); 
+      }
+    }
   }
 }
 

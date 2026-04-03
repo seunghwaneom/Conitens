@@ -1,6 +1,6 @@
 import React from "react";
 import layoutStyles from "../office.module.css";
-import stageStyles from "../office-stage.module.css";
+import stageStyles from "../office-stage-layout.module.css";
 import { OfficeRoomScene } from "./OfficeRoomScene.js";
 import type { OfficeRoomPresence } from "../office-presence-model.js";
 
@@ -26,7 +26,8 @@ export function OfficeStage({
         </span>
       </div>
 
-      <div className={stageStyles["office-stage-shell"]}>
+      {/* data-has-selection drives non-selected room dimming in office-room.module.css */}
+      <div className={stageStyles["office-stage-shell"]} style={{ position: "relative" }} data-has-selection={selectedRoomId ? "" : undefined}>
         {rooms.map((room) => (
           <OfficeRoomScene
             key={room.roomId}

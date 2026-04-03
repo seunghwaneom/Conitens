@@ -1,0 +1,170 @@
+/* .selected applied to avatar slots — mirrors the room-level selection indicator */
+.selected {
+  box-shadow:
+    inset 0 0 0 2px rgba(40, 180, 99, 0.28),
+    0 0 0 1px var(--accent, rgba(40, 180, 99, 0.12));
+  z-index: 2;
+}
+
+.office-room-avatar-slot {
+  pointer-events: auto;
+}
+
+.office-task-node {
+  position: absolute;
+  width: 9px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  background: rgba(112, 122, 133, 0.84);
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.office-task-node-dot {
+  position: absolute;
+  left: 3px;
+  top: 2px;
+  width: 2px;
+  height: 2px;
+  background: rgba(248, 249, 246, 0.92);
+}
+
+.tone-neutral { background-color: rgba(104, 113, 102, 0.92); }
+.tone-info { background-color: rgba(80, 141, 212, 0.92); }
+.tone-warning { background-color: rgba(201, 139, 18, 0.92); }
+.tone-danger { background-color: rgba(193, 73, 73, 0.92); }
+
+.task-pulse-danger {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 0 1px rgba(193, 73, 73, 0.18);
+}
+
+.task-pulse-info {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 0 1px rgba(80, 141, 212, 0.14);
+}
+
+.task-pulse-warning {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 0 1px rgba(201, 139, 18, 0.16);
+}
+
+.task-pulse-neutral {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.office-task-node[data-task-label] {
+  cursor: default;
+}
+
+.office-task-node[data-task-label]:hover::after {
+  content: attr(data-task-label);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 7px;
+  background: rgba(18, 22, 18, 0.92);
+  color: #e8e6df;
+  font-family: var(--font-pixel, "Press Start 2P", cursive);
+  font-size: 6px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.office-room-avatar-slot {
+  position: absolute;
+  width: 30px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  transform: translate(-50%, -82%);
+  transition: left 280ms ease-out, top 280ms ease-out;
+}
+
+.office-avatar-ring {
+  position: absolute;
+  left: 5px;
+  bottom: 1px;
+  width: 20px;
+  height: 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(132, 146, 159, 0.12);
+}
+
+.office-avatar-shadow {
+  position: absolute;
+  left: 7px;
+  bottom: 3px;
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.office-room-avatar-slot.status-running .office-avatar-ring {
+  background: rgba(79, 176, 98, 0.18);
+  border-color: rgba(79, 176, 98, 0.3);
+  box-shadow: 0 0 0 1px rgba(79, 176, 98, 0.14);
+}
+
+.office-room-avatar-slot.status-idle .office-avatar-ring {
+  background: rgba(201, 139, 18, 0.16);
+  border-color: rgba(201, 139, 18, 0.24);
+  box-shadow: 0 0 0 1px rgba(201, 139, 18, 0.12);
+}
+
+.office-room-avatar-slot.status-error .office-avatar-ring {
+  background: rgba(193, 73, 73, 0.18);
+  border-color: rgba(193, 73, 73, 0.3);
+  box-shadow: 0 0 0 1px rgba(193, 73, 73, 0.16);
+}
+
+.office-room-avatar-slot.selected .office-avatar-ring {
+  border-color: var(--office-accent, rgba(79, 176, 98, 0.48));
+  box-shadow:
+    0 0 0 1px var(--office-accent, rgba(79, 176, 98, 0.35)),
+    0 0 8px rgba(0, 0, 0, 0.08);
+  border-width: 2px;
+}
+
+.office-room-overflow {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid var(--line, rgba(74, 84, 74, 0.14));
+  background: var(--header, #141915);
+  color: var(--panel-strong, #ffffff);
+  font-size: 10px;
+  font-weight: 700;
+  transform: translate(-50%, -50%);
+}
+
+.office-room-awaiting {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px dashed rgba(46, 57, 46, 0.18);
+  background: var(--bg, rgba(255, 255, 255, 0.74));
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0.74;
+}

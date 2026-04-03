@@ -1,36 +1,15 @@
 .office-rail {
-  gap: 16px;
-  padding-left: 16px;
-  border-left: 1px solid rgba(46, 57, 46, 0.12);
+  gap: 18px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(46, 57, 46, 0.08);
   min-height: 100%;
 }
 
 .office-rail-section {
-  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-left: 8px;
-}
-
-.office-rail-section::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 4px;
-  bottom: 4px;
-  width: 2px;
-  background: rgba(46, 57, 46, 0.14);
-}
-
-.agents::before { background: rgba(59, 130, 246, 0.32); }
-.queue::before { background: rgba(217, 119, 6, 0.34); }
-.handoffs::before { background: rgba(15, 118, 110, 0.34); }
-
-.agents,
-.queue,
-.handoffs {
-  padding-bottom: 2px;
+  gap: 8px;
+  padding-left: 0;
 }
 
 .office-staff-list,
@@ -50,7 +29,7 @@
   padding: 9px 2px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(46, 57, 46, 0.12);
+  border-bottom: 1px solid rgba(46, 57, 46, 0.08);
   text-align: left;
   color: var(--text);
 }
@@ -78,10 +57,11 @@
 .office-task-main strong,
 .office-data-row strong {
   color: var(--text);
-  letter-spacing: 0.08em;
-  font-family: var(--font-pixel, "Press Start 2P", monospace);
-  font-size: 9px;
-  line-height: 1.45;
+  letter-spacing: 0.02em;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .selected {
@@ -125,12 +105,11 @@
 .office-task-main {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 }
 
 .office-task-row {
-  position: relative;
   background: transparent;
   transition: background 120ms ease;
 }
@@ -139,45 +118,9 @@
   background: rgba(17, 122, 69, 0.04);
 }
 
-.office-task-row::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 7px;
-  bottom: 7px;
-  width: 2px;
-  background: rgba(104, 113, 102, 0.24);
-}
-
-.office-task-row.info::before { background: rgba(29, 143, 214, 0.5); }
-.office-task-row.warning::before { background: rgba(201, 139, 18, 0.54); }
-.office-task-row.danger::before { background: rgba(193, 73, 73, 0.56); }
-.office-task-row.success::before { background: rgba(79, 176, 98, 0.54); }
-.office-task-row.neutral::before { background: rgba(104, 113, 102, 0.3); }
-
-.office-progress-track {
-  height: 2px;
-  background: rgba(46, 57, 46, 0.08);
-  overflow: hidden;
-}
-
-.office-progress-bar {
-  display: block;
-  height: 100%;
-  background: var(--accent-info);
-}
-
-.office-progress-bar.info { background: var(--accent-info); }
-.office-progress-bar.warning { background: var(--accent-warning); }
-.office-progress-bar.danger { background: var(--accent-danger); }
-.office-progress-bar.success { background: var(--accent-success); }
-.office-progress-bar.neutral { background: var(--muted); }
-
 .office-route-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
+  align-items: center;
   flex: 0 0 auto;
 }
 
@@ -190,11 +133,10 @@
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 6px;
-  padding: 8px 10px 0;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 4px 0 0;
   border: none;
-  border-top: 1px solid rgba(46, 57, 46, 0.12);
   background: transparent;
 }
 
@@ -207,9 +149,9 @@
 .office-focus-copy {
   margin: 0;
   flex: 1 1 220px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(17, 24, 39, 0.58);
   letter-spacing: 0.01em;
 }
 
@@ -249,8 +191,8 @@
 .office-task-main :global(.muted),
 .office-data-row :global(.muted),
 .office-route-meta :global(.muted) {
-  font-size: 12px;
-  line-height: 1.35;
+  font-size: 11px;
+  line-height: 1.4;
   letter-spacing: 0.01em;
 }
 

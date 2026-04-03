@@ -1,5 +1,5 @@
 import React from "react";
-import stageStyles from "../office-stage.module.css";
+import stageStyles from "../office-entities.module.css";
 
 function getPulseClass(state: string | undefined, tone: string): string {
   if (state === "blocked") return "task-pulse-danger";

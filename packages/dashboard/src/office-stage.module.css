@@ -8,22 +8,24 @@
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  padding: 0 2px;
+  padding: 0;
 }
 
 .office-stage-kicker {
   margin: 0;
   color: var(--muted);
   font-family: var(--font-pixel, "Press Start 2P", cursive);
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  opacity: 0.76;
 }
 
 .office-stage-meta {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.3;
+  opacity: 0.7;
 }
 
 .office-stage-shell {
@@ -82,7 +84,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 6px;
+  height: 4px;
   background: rgba(200, 184, 154, 0.8);
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   pointer-events: none;
@@ -95,7 +97,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 5px;
+  height: 3px;
   background: rgba(200, 184, 154, 0.68);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   pointer-events: none;
@@ -104,9 +106,8 @@
 
 .selected {
   box-shadow:
-    inset 0 0 0 2px rgba(17, 122, 69, 0.34),
-    0 0 0 1px rgba(79, 176, 98, 0.16),
-    0 8px 16px rgba(79, 176, 98, 0.1);
+    inset 0 0 0 2px rgba(17, 122, 69, 0.28),
+    0 0 0 1px rgba(79, 176, 98, 0.12);
   z-index: 2;
 }
 
@@ -115,13 +116,13 @@
 }
 
 .office-stage-shell:has(.selected) .office-room-tile:not(.selected) {
-  filter: brightness(0.96) saturate(0.94);
-  opacity: 0.86;
+  filter: brightness(0.98) saturate(0.98);
+  opacity: 0.92;
 }
 
 .office-stage-shell:has(.selected) .office-room-tile:not(.selected):hover {
-  filter: brightness(0.98) saturate(0.98);
-  opacity: 0.94;
+  filter: brightness(1) saturate(1);
+  opacity: 0.98;
 }
 
 .office-room-tile.tone-lobby { background-color: var(--floor-lobby, #e8ebe6); }
@@ -147,8 +148,11 @@
 }
 
 .office-room-meta strong {
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-pixel, "Press Start 2P", cursive);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .office-room-meta .badge {
@@ -184,7 +188,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px 6px;
-  font-size: 8px;
+  font-size: 9px;
   color: var(--muted);
 }
 
@@ -500,7 +504,8 @@
     radial-gradient(1px 1px at 22% 76%, rgba(160, 148, 128, 0.35) 50%, transparent 50%),
     radial-gradient(1px 1px at 68% 84%, rgba(160, 148, 128, 0.25) 50%, transparent 50%),
     radial-gradient(1px 1px at 88% 52%, rgba(160, 148, 128, 0.4) 50%, transparent 50%);
-  animation: dust-float 18s ease-in-out infinite;
+  animation: none;
+  opacity: 0.32;
 }
 
 .office-room-dust::after {
@@ -510,8 +515,8 @@
     radial-gradient(1px 1px at 62% 48%, rgba(140, 128, 108, 0.28) 50%, transparent 50%),
     radial-gradient(1px 1px at 82% 72%, rgba(140, 128, 108, 0.32) 50%, transparent 50%),
     radial-gradient(1px 1px at 28% 88%, rgba(140, 128, 108, 0.25) 50%, transparent 50%);
-  animation: dust-float 24s ease-in-out infinite reverse;
-  animation-delay: -4s;
+  animation: none;
+  opacity: 0.2;
 }
 
 @keyframes dust-float {
@@ -529,7 +534,7 @@
   align-items: flex-start;
   justify-content: center;
   z-index: 1;
-  animation: idle-breathe 4.8s ease-in-out infinite;
+  animation: none;
 }
 
 .office-pixel-mark {
@@ -549,15 +554,15 @@
 }
 
 .office-room-avatar-slot.status-running .office-pixel-avatar {
-  animation: idle-breathe 4.8s ease-in-out infinite;
+  animation: none;
 }
 
 .office-room-avatar-slot.status-idle .office-pixel-avatar {
-  animation: idle-breathe 5.4s ease-in-out infinite;
+  animation: none;
 }
 
 .office-room-avatar-slot.status-error .office-pixel-avatar {
-  animation: idle-breathe 4.8s ease-in-out infinite;
+  animation: none;
 }
 
 .office-speech-bubble {
@@ -609,12 +614,7 @@
 }
 
 .office-handoff-path {
-  animation: handoff-march 1.8s linear infinite;
-}
-
-/* stroke-dashoffset period must match strokeDasharray sum in HandoffOverlay.tsx (currently 2+2=4) */
-@keyframes handoff-march {
-  to { stroke-dashoffset: -4; }
+  animation: none;
 }
 
 @media (max-width: 1220px) {
