@@ -48,7 +48,7 @@ export function toOperatorWorkspaceListItems(
       workspace.linked_run_id ? `run ${workspace.linked_run_id}` : "unlinked",
       `${workspace.task_ids_json.length} task refs`,
     ],
-    targetHash: buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId: workspace.workspace_id }),
+    targetHash: buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId: workspace.workspace_id, threadId: null, agentId: null }),
   }));
 }
 
