@@ -14,7 +14,7 @@ export function ForwardReplayPanel({
       <div className="forward-section-header">
         <div>
           <p className="forward-panel-label">Replay</p>
-          <h3>Run timeline</h3>
+          <h3>Replay ledger</h3>
         </div>
         <span className={`forward-state state-${state}`}>{state}</span>
       </div>
