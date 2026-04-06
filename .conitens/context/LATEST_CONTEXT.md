@@ -14,6 +14,9 @@ Read this file before substantial work.
   orchestration skeleton, a working iterative execution loop, and a persisted
   approval-control path for risky actions, plus a dual-written collaboration /
   replay layer for rooms, messages, insights, and handoff packets.
+- Candidate patch review hardening now requires recorded proposal provenance and
+  a concrete behavior delta before a candidate patch is surfaced as pending or
+  allowed through the apply path.
 - `.vibe/` carries repo intelligence plus fast-lane and doctor quality gates.
 - A current Korean architecture/status overview now lives in
   `docs/current-architecture-status-ko.md`.
@@ -370,6 +373,9 @@ Read this file before substantial work.
 - Batch 5 personas: `.conitens/personas/*.yaml`
 - Batch 5 memory module: `scripts/ensemble_persona_memory.py`
 - Batch 5 patch zone: `.conitens/personas/candidate_patches/`
+- Candidate patch hardening: `scripts/ensemble_agent_registry.py`,
+  `scripts/ensemble_improver.py`,
+  `tests/test_candidate_patch_hardening.py`
 - Batch 6 skills: `.agents/skills/*/SKILL.md`
 - Batch 6 loader: `scripts/ensemble_skill_loader.py`
 - Batch 7 assembler: `scripts/ensemble_context_assembler.py`

@@ -23,7 +23,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from ensemble_events import append_event
+from ensemble_contracts import parse_contract_file, split_frontmatter
+from ensemble_events import append_event, load_events
 from ensemble_hermes import create_hermes_profile
 from ensemble_paths import candidate_notes_dirs, ensure_notes_dir
 
@@ -35,10 +36,113 @@ NOTES_DIR = REPO_ROOT / ".notes"
 
 VALID_ROLES = ("supervisor", "recorder", "improver", "worker")
 VALID_STATUSES = ("active", "archived", "draft")
+PATCH_PROPOSAL_EVENT_TYPES = frozenset({"agent.patch_proposed", "improver.patch_generated"})
+PATCH_TERMINAL_EVENT_TYPES = frozenset({"agent.patch_approved", "agent.patch_applied"})
+PATCH_PLACEHOLDER_MARKERS = (
+    "<!-- fill in specific persona changes below -->",
+    "<!-- fill in specific skill changes below -->",
+    "<!-- fill in specific workflow changes below -->",
+)
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _patch_body_has_concrete_changes(body: str) -> bool:
+    for raw_line in body.splitlines():
+        stripped = raw_line.strip()
+        lowered = stripped.lower()
+        if not stripped:
+            continue
+        if stripped == "---":
+            continue
+        if stripped.startswith("#"):
+            continue
+        if lowered.startswith("rationale:"):
+            continue
+        if stripped.startswith("<!--") and stripped.endswith("-->"):
+            continue
+        if lowered in PATCH_PLACEHOLDER_MARKERS:
+            continue
+        return True
+    return False
+
+
+def _patch_event_index() -> tuple[dict[str, dict[str, Any]], set[str]]:
+    proposal_events: dict[str, dict[str, Any]] = {}
+    terminal_patch_ids: set[str] = set()
+    for event in load_events(str(NOTES_DIR)):
+        event_type = str(event.get("type") or "")
+        payload = event.get("payload") or {}
+        patch_id = str(payload.get("patch_id") or "").strip()
+        if not patch_id:
+            continue
+        if event_type in PATCH_PROPOSAL_EVENT_TYPES:
+            proposal_events.setdefault(patch_id, event)
+            continue
+        if event_type in PATCH_TERMINAL_EVENT_TYPES:
+            terminal_patch_ids.add(patch_id)
+    return proposal_events, terminal_patch_ids
+
+
+def _load_patch_candidate(
+    patch_path: Path,
+    *,
+    proposal_events: dict[str, dict[str, Any]],
+    terminal_patch_ids: set[str],
+    expected_patch_id: str | None = None,
+    expected_agent_id: str | None = None,
+) -> dict[str, Any]:
+    document = parse_contract_file(patch_path)
+    frontmatter = document.frontmatter
+    patch_id = str(frontmatter.get("patch_id") or patch_path.stem).strip()
+    agent_id = str(frontmatter.get("agent_id") or "").strip()
+    if not patch_id:
+        raise ValueError(f"Patch {patch_path.name} is missing patch_id frontmatter")
+    if not agent_id:
+        raise ValueError(f"Patch {patch_id} is missing agent_id frontmatter")
+    if expected_patch_id and patch_id != expected_patch_id:
+        raise ValueError(f"Patch file {patch_path.name} does not match requested patch id {expected_patch_id}")
+    if expected_agent_id and agent_id != expected_agent_id:
+        raise ValueError(f"Patch {patch_id} targets {agent_id}, not {expected_agent_id}")
+    proposal_event = proposal_events.get(patch_id)
+    if proposal_event is None:
+        raise ValueError(f"Patch {patch_id} has no recorded proposal event")
+    proposal_payload = proposal_event.get("payload") or {}
+    event_agent_id = str(proposal_payload.get("agent_id") or agent_id).strip()
+    if event_agent_id and event_agent_id != agent_id:
+        raise ValueError(f"Patch {patch_id} has mismatched agent ids between file and event log")
+    if patch_id in terminal_patch_ids:
+        raise ValueError(f"Patch {patch_id} is already approved or applied")
+    if not _patch_body_has_concrete_changes(document.body):
+        raise ValueError(f"Patch {patch_id} does not contain a concrete behavior delta")
+    return {
+        "patch_id": patch_id,
+        "agent_id": agent_id,
+        "file": patch_path.name,
+        "path": str(patch_path),
+    }
+
+
+def _list_pending_patches(agent_id: str) -> list[dict[str, Any]]:
+    if not PATCHES_DIR.exists():
+        return []
+    proposal_events, terminal_patch_ids = _patch_event_index()
+    patches: list[dict[str, Any]] = []
+    for patch_file in sorted(PATCHES_DIR.glob(f"{agent_id}-*.md")):
+        try:
+            patches.append(
+                _load_patch_candidate(
+                    patch_file,
+                    proposal_events=proposal_events,
+                    terminal_patch_ids=terminal_patch_ids,
+                    expected_agent_id=agent_id,
+                )
+            )
+        except ValueError:
+            continue
+    return patches
 
 
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
@@ -237,12 +341,7 @@ def agent_show(agent_id: str) -> dict[str, Any]:
         raise FileNotFoundError(f"Agent {agent_id} not found at {yaml_path}")
     data = _read_yaml(yaml_path)
 
-    # Attach pending patches
-    patches = []
-    if PATCHES_DIR.exists():
-        for patch_file in PATCHES_DIR.glob(f"{agent_id}-*.md"):
-            patches.append({"file": str(patch_file.name), "path": str(patch_file)})
-    data["pending_patches"] = patches
+    data["pending_patches"] = _list_pending_patches(agent_id)
     return data
 
 
@@ -265,8 +364,15 @@ def agent_patch(agent_id: str, *, patch_file: str, rationale: str = "") -> dict[
         if not str(resolved).startswith(str(REPO_ROOT)):
             raise ValueError(f"patch_file must be within the repository: {patch_file}")
         source_content = resolved.read_text(encoding="utf-8")
+        validation_body = parse_contract_file(resolved).body
     else:
         source_content = patch_file
+        _, validation_body = split_frontmatter(source_content)
+        if not validation_body:
+            validation_body = source_content
+
+    if not _patch_body_has_concrete_changes(validation_body):
+        raise ValueError("Patch content must contain a concrete behavior delta")
 
     # Event-first: emit event before writing patch file (I-1)
     append_event(
@@ -304,6 +410,13 @@ def agent_apply_patch(patch_id: str) -> dict[str, Any]:
     patch_path = PATCHES_DIR / f"{patch_id}.md"
     if not patch_path.exists():
         raise FileNotFoundError(f"Patch {patch_id} not found")
+    proposal_events, terminal_patch_ids = _patch_event_index()
+    _load_patch_candidate(
+        patch_path,
+        proposal_events=proposal_events,
+        terminal_patch_ids=terminal_patch_ids,
+        expected_patch_id=patch_id,
+    )
 
     append_event(
         str(NOTES_DIR),
