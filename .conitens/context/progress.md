@@ -1,5 +1,34 @@
 # progress.md
 
+## 2026-04-05 Workspace Archive Follow-Up
+
+- [x] Reviewed the archived-workspace bridge mutation path against the new
+  read-only contract
+- [x] Patched the bridge to reject same-status archived `PATCH` requests
+- [x] Patched the dashboard quick-archive flow to require visible rationale
+- [x] Added regression coverage for the bridge and dashboard helper path
+- [x] Re-ran targeted Python, dashboard test, typecheck, build, and diagnostics
+
+## 2026-04-05 Commands Run
+
+- `python3 -m unittest tests.test_forward_bridge tests.test_loop_state`
+- `node --experimental-strip-types --test --test-isolation=none tests/forward-bridge.test.mjs`
+- `npx --yes tsc -b`
+- `npx --yes vite build`
+- `pnpm --dir /mnt/d/Google/.Conitens/packages/dashboard test` (environment
+  wrapper failure: missing Windows-side `pnpm.cjs`)
+- `pnpm --dir /mnt/d/Google/.Conitens/packages/dashboard build` (same wrapper
+  failure)
+- OMX diagnostics:
+  - `npx tsc --noEmit --pretty false` on `/mnt/d/Google/.Conitens/packages/dashboard`
+  - `npx tsc --noEmit --pretty false` on `/mnt/d/Google/.Conitens`
+
+## 2026-04-05 Outcome
+
+Archived workspaces now honor the read-only contract through the shared bridge
+update path, and the dashboard only offers quick archive once an explicit
+archive rationale has been provided.
+
 ## Batch 0 Status
 
 - [x] Repo inspected before edits
@@ -1062,3 +1091,774 @@ The office preview now carries a clearer open-source control-plane vocabulary:
 canvas first, correlated signals near the top of the workspace, and a sticky
 secondary rail. The result is still recognizably Conitens, but it scans more
 like a real operator surface than a static visual mock.
+
+## Frontend Post-Main Rebaseline Status
+
+- [x] latest `origin/main` fetched
+- [x] merged main commit inspected
+- [x] branch-vs-main code delta checked
+- [x] current frontend review doc re-read against merged state
+- [x] next-step plan reordered from merged `main`
+- [x] `.conitens/context/*` refreshed
+
+## Frontend Post-Main Rebaseline Commands Run
+
+- `git status --short`
+- `git branch --show-current`
+- `git remote -v`
+- `git fetch origin main`
+- `git rev-parse origin/main`
+- `git merge-base HEAD origin/main`
+- `git log --oneline --decorate -n 8 origin/main`
+- `git diff HEAD..origin/main`
+- `git show --stat --summary --format=fuller origin/main --`
+- `sed -n '1,260p' docs/frontend/FRONTEND_REVIEW_2026-04-02.md`
+
+## Current Outcome
+
+The new `main` already contains the recent preview hierarchy work, so the next
+frontend iteration should not start from more Pixel Office polish. The correct
+next move is to rebaseline the planning/review docs to match the merged code,
+then choose structural cleanup as the primary implementation lane.
+
+## Frontend Review Doc Rebaseline Status
+
+- [x] Ralph planning gate artifacts created for this slice
+- [x] `FRONTEND_REVIEW_2026-04-02.md` rewritten against merged `main`
+- [x] stale FE-4 / Pixel Office pending-language removed
+- [x] architect review artifact retained
+- [x] `.conitens/context/*` refreshed
+
+## Frontend Review Doc Rebaseline Commands Run
+
+- `sed -n '1,260p' docs/frontend/FRONTEND_REVIEW_2026-04-02.md`
+- `git fetch origin main`
+- `git show --stat --summary --format=fuller origin/main --`
+- review artifact creation under `.omx/plans/` and `.omx/artifacts/`
+
+## Current Outcome
+
+The frontend review document is now aligned with merged `main`. Future work no
+longer needs to re-argue whether FE-4 or recent Pixel Office hierarchy slices
+are shipped; the next implementation lane is clearly structural cleanup after a
+fresh dashboard baseline capture.
+
+## Frontend Dashboard Baseline Capture Status
+
+- [x] Ralph context snapshot created
+- [x] Ralph PRD / test spec created
+- [x] dashboard tests passed
+- [x] dashboard typecheck passed
+- [x] dashboard build passed
+- [x] baseline artifact recorded
+- [x] `tsconfig.tsbuildinfo` restored after verification
+- [x] review/context docs refreshed
+
+## Frontend Dashboard Baseline Capture Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none tests/*.test.mjs`
+- `node 'D:\Google\.Conitens\node_modules\typescript\bin\tsc' -b`
+- `node 'D:\Google\.Conitens\node_modules\vite\bin\vite.js' build`
+- `git show HEAD:packages/dashboard/tsconfig.tsbuildinfo > packages/dashboard/tsconfig.tsbuildinfo`
+
+## Current Outcome
+
+The merged-main dashboard baseline is now captured and recorded. Structural
+cleanup can start from a known green state instead of older preview-oriented
+evidence.
+
+## Dashboard Design Unification Status
+
+- [x] shared shell language applied across runs / run-detail / preview / agents
+- [x] `styles.css` converted into an import hub
+- [x] inline onboarding panel replaces blocking overlay
+- [x] preview top strip compressed for stage-first composition
+- [x] preview room proportions / fixture density rebalanced
+- [x] agents surface aligned to the same shell language
+- [x] dashboard tests passed
+- [x] dashboard typecheck passed
+- [x] dashboard build passed
+- [x] route screenshots captured
+- [x] responsive screenshots captured
+- [x] `.conitens/context/*` refreshed
+
+## Dashboard Design Unification Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none tests/*.test.mjs`
+- `node 'D:\Google\.Conitens\node_modules\typescript\bin\tsc' -b`
+- `node 'D:\Google\.Conitens\node_modules\vite\bin\vite.js' build`
+- `node 'D:\Google\.Conitens\node_modules\vite\bin\vite.js' --host 127.0.0.1 --port 4174 --strictPort`
+- Playwright screenshots for `#/runs`, `#/runs/demo-run-001`, `#/office-preview`, `#/agents`
+- Playwright responsive screenshots for `1220` and `820`
+
+## Current Outcome
+
+The dashboard now reads as one product instead of a preview page plus separate
+operator screens. The live shell sets the tone, the preview behaves like a
+spatial lens inside that shell, and the agents surface now shares the same
+panel/chrome language.
+
+## Forward Bridge Cleanup Status
+
+- [x] bridge responsibilities mapped before edits
+- [x] `forward-bridge.ts` converted into a barrel export
+- [x] types / parsers / client / storage / stream modules created
+- [x] dashboard tests passed
+- [x] dashboard typecheck passed
+- [x] dashboard build passed
+- [x] `.conitens/context/*` refreshed
+
+## Forward Bridge Cleanup Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none tests/*.test.mjs`
+- `node 'D:\Google\.Conitens\node_modules\typescript\bin\tsc' -b`
+- `node 'D:\Google\.Conitens\node_modules\vite\bin\vite.js' build`
+
+## Current Outcome
+
+The bridge cleanup slice is complete. `forward-bridge.ts` no longer mixes
+types, parsers, HTTP helpers, storage, and stream logic in one file, but the
+rest of the app still imports the same public surface.
+
+## Ralph Planning Verification 2026-04-03 Status
+
+- [x] Ralph context snapshot created
+- [x] post-main plan artifact created
+- [x] architect-style review approved the planning artifact
+- [x] Phase 2 pre-flight baseline requirement folded into the plan
+
+## Comparative Planning Status
+
+- [x] Current Conitens runtime and repo digests re-read before planning
+- [x] External Paperclip repository inspected directly from source and docs
+- [x] UI/UX, frontend, backend, and rollout gaps compared
+- [x] Additive adopt / defer / avoid guidance written
+- [x] Comparative planning artifact saved
+- [x] `.conitens/context/*` refreshed for the planning task
+
+## Comparative Planning Commands Run
+
+- `git clone --depth 1 https://github.com/paperclipai/paperclip.git /tmp/paperclip`
+- `git ls-remote --heads --tags https://github.com/paperclipai/paperclip.git`
+- direct inspection of `/tmp/paperclip/README.md`, `doc/spec/ui.md`,
+  `ui/src/*`, `server/src/*`, `packages/db/src/schema/*`,
+  `packages/adapters/*`, `packages/plugins/sdk/*`
+- GitHub metadata / issue / PR inspection for `paperclipai/paperclip`
+- `omx_run_team_start` attempted for parallel analysis and failed with
+  `spawn EFTYPE`
+
+## Current Outcome
+
+Comparative planning is complete. A detailed additive integration plan now
+exists at `docs/PAPERCLIP_CONITENS_INTEGRATION_PLAN_2026-04-04.md`. The
+recommended direction is to adopt Paperclip as a product and operator-UX
+reference while preserving Conitens’ current forward-loop, replay, approval,
+room, and pixel-office differentiation.
+
+## Phase 1 Backlog Planning Status
+
+- [x] comparative Paperclip strategy re-read before backlog breakdown
+- [x] current route, bridge type, parser, and test surfaces inspected directly
+- [x] Phase 1 narrowed to read-only productization and projection-first work
+- [x] FE / BE / API / test task list written
+- [x] context files refreshed for the backlog-planning slice
+
+## Phase 1 Backlog Planning Commands Run
+
+- `sed` reads of:
+  - `docs/PAPERCLIP_CONITENS_INTEGRATION_PLAN_2026-04-04.md`
+  - `.conitens/reviews/paperclip_conitens_integration_plan_2026-04-04.md`
+  - `docs/frontend/VIEW_MODEL.md`
+  - `packages/dashboard/src/forward-bridge-types.ts`
+  - `packages/dashboard/tests/forward-bridge.test.mjs`
+  - `scripts/ensemble_loop_repository.py`
+  - `tests/test_forward_bridge.py`
+- context dedupe and follow-up planning updates
+
+## Current Outcome
+
+Phase 1 backlog planning is complete. Conitens now has an execution-ready
+Phase 1 document at `docs/PAPERCLIP_CONITENS_PHASE1_BACKLOG_2026-04-04.md`
+that breaks the Paperclip adoption strategy into exact route, bridge, model,
+component, and test slices without crossing into runtime rewrite territory.
+
+## Phase 1 Implementation Slice 1 Status
+
+- [x] operator summary projection added to the forward bridge
+- [x] bridge type / parser / client support added
+- [x] `overview` route added to the forward shell
+- [x] overview summary model and panel added
+- [x] backend bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the implementation slice
+
+## Phase 1 Implementation Slice 1 Commands Run
+
+- `python3 -m unittest tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The first implementation slice from the Paperclip Phase 1 backlog is complete.
+Conitens now has a real `overview` route backed by a read-only operator summary
+projection, which is the first concrete step away from a runs-only forward
+inspector toward an operator workbench.
+
+## Phase 1 Implementation Slice 2 Status
+
+- [x] operator inbox projection added to the forward bridge
+- [x] bridge type / parser / client support added
+- [x] `inbox` route added to the forward shell
+- [x] inbox model and panel added
+- [x] backend bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the implementation slice
+
+## Phase 1 Implementation Slice 2 Commands Run
+
+- `python3 -m unittest tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The second implementation slice from the Paperclip Phase 1 backlog is complete.
+Conitens now has a first-class `inbox` route backed by a read-only operator
+attention projection, which makes approvals, validator failures, blocked
+handoffs, and stale runs visible without forcing operators to start from replay.
+
+## Phase 1 Implementation Slice 3 Status
+
+- [x] operator agents projection added to the forward bridge
+- [x] bridge type / parser / client support added
+- [x] `agents` route now uses live projection data when connected
+- [x] live roster metadata added to the agents surface
+- [x] backend bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the implementation slice
+
+## Phase 1 Implementation Slice 3 Commands Run
+
+- `python3 -m unittest tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The third implementation slice from the Paperclip Phase 1 backlog is complete.
+Conitens now has a live operator roster on the `agents` route, backed by a
+read-only projection over existing forward state instead of demo data only.
+
+## Phase 2 Owned API Slice 1 Status
+
+- [x] canonical `operator_tasks` storage added to the loop repository
+- [x] bridge list/detail/create task endpoints added
+- [x] bridge type / parser / client support added
+- [x] repository tests passed
+- [x] forward bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the owned API slice
+
+## Phase 2 Owned API Slice 1 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The first Phase 2 owned API slice is complete. Conitens now has canonical
+operator-task storage plus bridge list/detail/create contracts, which is the
+first step from pure projection-only productization toward durable operator
+objects.
+
+## Phase 2 Owned API Slice 2 Status
+
+- [x] `tasks` and `task-detail` routes added to the forward shell
+- [x] canonical task list/detail data is now rendered in the dashboard
+- [x] tasks list/detail model and panel added
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the UI slice
+
+## Phase 2 Owned API Slice 2 Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The second Phase 2 owned API slice is complete. Conitens now has a first-class
+`tasks` shell route backed by canonical operator task data, which is the first
+UI surface directly attached to a durable operator object instead of a pure
+projection.
+
+## Phase 2 Owned API Slice 3 Status
+
+- [x] task-detail now loads linked execution context through `linked_run_id`
+- [x] linked approval queue renders inside task detail
+- [x] linked replay ledger renders inside task detail
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the linkage slice
+
+## Phase 2 Owned API Slice 3 Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The third Phase 2 owned API slice is complete. Conitens task detail views can
+now step directly into linked execution evidence instead of stopping at the
+canonical operator record.
+
+## Phase 2 Owned API Slice 4 Status
+
+- [x] canonical task update endpoint added
+- [x] create/edit task client helpers added
+- [x] create task form added to `tasks`
+- [x] edit task form added to `task-detail`
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the write slice
+
+## Phase 2 Owned API Slice 4 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The fourth Phase 2 owned API slice is complete. Conitens now has a minimal
+operator task write workflow, so canonical task records are no longer backend-
+only objects; operators can create and update them from the shell.
+
+## Phase 2 Owned API Slice 5 Status
+
+- [x] tasks list now supports status filter
+- [x] tasks list now supports owner filter
+- [x] task-detail now exposes quick status actions
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the workflow slice
+
+## Phase 2 Owned API Slice 5 Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The fifth Phase 2 owned API slice is complete. Conitens tasks now behave more
+like an operator work queue: operators can filter by status/owner and move a
+task through the main status transitions from the detail panel.
+
+## Phase 2 Owned API Slice 6 Status
+
+- [x] task-detail now renders linked state docs
+- [x] task-detail now renders linked runtime/repo digests
+- [x] task-detail now renders linked room timeline
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the evidence slice
+
+## Phase 2 Owned API Slice 6 Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The sixth Phase 2 owned API slice is complete. Conitens task-detail views now
+pull together the canonical operator task, linked approvals, replay, state
+docs, digests, and room timeline into one evidence-bearing operator surface.
+
+## Phase 2 Owned API Slice 7 Status
+
+- [x] task status transition guardrails added
+- [x] pending-approval-sensitive mutation checks added
+- [x] quick status UI now exposes only valid next transitions
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the guardrail slice
+
+## Phase 2 Owned API Slice 7 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The seventh Phase 2 owned API slice is complete. Conitens operator tasks now
+have basic mutation discipline: invalid status transitions are blocked, and
+linked-run task mutations no longer drift while a pending approval is open.
+
+## Phase 2 Owned API Slice 8 Status
+
+- [x] approval storage now supports optional task linkage
+- [x] task approval request endpoint added
+- [x] task-detail can request approval directly
+- [x] task approval panel now filters by `task_id`
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the approval-linkage slice
+
+## Phase 2 Owned API Slice 8 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The eighth Phase 2 owned API slice is complete. Conitens canonical operator
+tasks can now enter the approval workflow directly from task-detail, and the
+approval panel can show task-scoped approvals instead of only run-scoped ones.
+
+## Phase 2 Owned API Slice 9 Status
+
+- [x] task approval requests now carry rationale
+- [x] task approval requests now carry requested-change payloads
+- [x] task approval UI now shows rationale and requested changes
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the approval-UX slice
+
+## Phase 2 Owned API Slice 9 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The ninth Phase 2 owned API slice is complete. Conitens task approvals now
+carry structured rationale and requested-change payloads, so approval review is
+no longer just a generic snapshot dump.
+
+## Phase 2 Owned API Slice 10 Status
+
+- [x] task editor now previews changed fields
+- [x] task editor now highlights approval-sensitive fields
+- [x] approval request payload reuses the same change-detection output
+- [x] dashboard parser tests passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the mutation-hint slice
+
+## Phase 2 Owned API Slice 10 Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The tenth Phase 2 owned API slice is complete. Conitens task mutation UX now
+warns about approval-sensitive changes before save instead of only failing late
+at mutation time.
+
+## Phase 2 Owned API Slice 11 Status
+
+- [x] canonical operator task delete path added to the loop repository
+- [x] `DELETE /api/operator/tasks/:task_id` added to the forward bridge
+- [x] delete guardrails now block deletion while task-scoped approvals are pending
+- [x] delete guardrails now block deletion while linked-run approvals are pending
+- [x] task-detail now exposes a guarded delete action
+- [x] bridge client now surfaces backend error messages for failed mutations
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the delete-guardrail slice
+
+## Phase 2 Owned API Slice 11 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The eleventh Phase 2 owned API slice is complete. Conitens canonical operator
+tasks now support guarded deletion from task-detail, and the delete path
+respects pending approval state instead of letting operators discard active
+review context.
+
+## Phase 2 Owned API Slice 12 Status
+
+- [x] `operator_tasks` now track `archived_at`
+- [x] archive and restore repository methods added
+- [x] `POST /api/operator/tasks/:task_id/archive` added
+- [x] `POST /api/operator/tasks/:task_id/restore` added
+- [x] tasks list now hides archived records by default
+- [x] tasks list now supports showing archived records on demand
+- [x] delete now requires archive-first lifecycle progression
+- [x] archive and restore are blocked while approvals are pending
+- [x] task-detail now exposes archive / restore actions
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the archive-first slice
+
+## Phase 2 Owned API Slice 12 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The twelfth Phase 2 owned API slice is complete. Conitens operator task
+lifecycle is now archive-first: operators can remove tasks from the active
+queue without destroying evidence, and permanent delete has become an explicit
+second-step action.
+
+## Phase 2 Owned API Slice 13 Status
+
+- [x] operator task archive metadata now includes `archived_by`
+- [x] operator task archive metadata now includes `archive_note`
+- [x] archive now requires a rationale
+- [x] archived tasks are read-only until restored
+- [x] archived tasks cannot request task-scoped approvals
+- [x] archived task-detail now renders archive rationale and actor metadata
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the archive-guardrail slice
+
+## Phase 2 Owned API Slice 13 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The thirteenth Phase 2 owned API slice is complete. Archived operator tasks now
+behave like frozen records instead of hidden active tasks, and archive actions
+carry a real rationale that remains visible in task detail until the task is
+restored.
+
+## Phase 2 Owned API Slice 14 Status
+
+- [x] current task filter state now persists locally
+- [x] named saved task filter presets now exist in the sidebar
+- [x] saved presets can be applied and deleted
+- [x] bulk archive now acts on the current filtered queue
+- [x] bulk restore now acts on the current filtered queue
+- [x] bulk archive still requires a rationale
+- [x] frontend storage helper regression test added
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser/storage tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the saved-filter / bulk-action slice
+
+## Phase 2 Owned API Slice 14 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The fourteenth Phase 2 owned API slice is complete. Conitens task operations
+now support reusable local filter presets and safe bulk archive/restore flows
+on the currently filtered queue, without broadening the destructive surface.
+
+## Phase 2 Owned API Slice 15 Status
+
+- [x] per-task sidebar selection now exists
+- [x] selection can target visible, active-only, or archived-only subsets
+- [x] bulk lifecycle actions now prefer selected tasks over the full filtered queue
+- [x] bulk lifecycle results now render structured success/failure details
+- [x] dashboard parser/storage tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] loop repository and bridge tests passed
+- [x] context files refreshed for the selection/reporting slice
+
+## Phase 2 Owned API Slice 15 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The fifteenth Phase 2 owned API slice is complete. Bulk task operations are now
+more operator-friendly: users can select exact tasks from the sidebar and see a
+clear success/failure report after each bulk lifecycle action.
+
+## Phase 2 Owned API Slice 16 Status
+
+- [x] canonical operator workspace storage added
+- [x] workspace list/detail/create/update bridge routes added
+- [x] workspace parser/client coverage added
+- [x] `workspaces` and `workspace-detail` routes added to the shell
+- [x] workspace list/detail/editor UI added
+- [x] task detail can now link to canonical workspace detail
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the workspace slice
+
+## Phase 2 Owned API Slice 16 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The sixteenth Phase 2 owned API slice is complete. Conitens now has a first
+canonical workspace registry in the forward stack, and the dashboard can list,
+inspect, create, and update operator workspaces as durable objects.
+
+## Phase 2 Owned API Slice 17 Status
+
+- [x] task workspace input now uses canonical workspace selection
+- [x] task create/update now validates canonical workspace refs
+- [x] unchanged unresolved legacy workspace refs remain tolerated
+- [x] workspace detail now derives linked task ids from task records
+- [x] task create/update/delete now refresh derived workspace membership
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the task/workspace integrity slice
+
+## Phase 2 Owned API Slice 17 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The seventeenth Phase 2 owned API slice is complete. Conitens task/workspace
+links now respect canonical workspace ids by default, and the task shell no
+longer treats workspace linkage as a generic free-form string.
+
+## Phase 2 Owned API Slice 18 Status
+
+- [x] task editor now shows a richer selected-workspace summary
+- [x] unresolved workspace refs now show explicit migration shortcuts
+- [x] task detail can now stage and save workspace-ref migration directly
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the workspace-selector slice
+
+## Phase 2 Owned API Slice 18 Commands Run
+
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The eighteenth Phase 2 owned API slice is complete. Conitens task/workspace
+linkage now has a more usable operator UX: selected workspaces are legible in
+the editor, and unresolved legacy refs can be migrated to canonical workspaces
+without leaving task detail.
+
+## Phase 2 Owned API Slice 19 Status
+
+- [x] workspace quick status controls now exist
+- [x] workspace status transitions are now validated
+- [x] archived workspaces are now read-only in the shell
+- [x] task create/update cannot newly attach archived workspaces
+- [x] workspace archive is blocked while active linked tasks remain attached
+- [x] workspace editor now treats task refs as derived membership, not editable truth
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the workspace-policy slice
+
+## Phase 2 Owned API Slice 19 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The nineteenth Phase 2 owned API slice is complete. Conitens workspaces now
+have the first real lifecycle policy layer: archived workspaces are frozen,
+workspace archiving respects linked active tasks, and task/workspace linkage is
+safer by default.
+
+## Phase 2 Owned API Slice 20 Status
+
+- [x] workspaces now store archive metadata and rationale
+- [x] workspace archive now requires a rationale
+- [x] archived workspace detail now renders archive metadata
+- [x] workspace editor now exposes archive rationale when archiving
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the workspace-archive-metadata slice
+
+## Phase 2 Owned API Slice 20 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The twentieth Phase 2 owned API slice is complete. Conitens workspaces now
+carry explicit archive metadata and rationale, so workspace archive policy is
+no longer just a bare status flip.
+
+## Phase 2 Owned API Slice 21 Status
+
+- [x] task list endpoint now supports `workspace_ref` filtering
+- [x] workspace detail now loads linked tasks
+- [x] linked tasks can be detached from workspace detail
+- [x] linked tasks can be archived from workspace detail
+- [x] linked-task resolution refreshes workspace membership immediately
+- [x] loop repository and bridge tests passed
+- [x] dashboard parser tests passed
+- [x] dashboard package typecheck passed
+- [x] dashboard package build passed
+- [x] context files refreshed for the workspace-blocker-resolution slice
+
+## Phase 2 Owned API Slice 21 Commands Run
+
+- `python3 -m unittest tests.test_loop_state tests.test_forward_bridge`
+- `node --experimental-strip-types --test --test-isolation=none packages/dashboard/tests/forward-bridge.test.mjs`
+- `cd packages/dashboard && node ../../node_modules/typescript/bin/tsc -b`
+- `cd packages/dashboard && node ../../node_modules/vite/bin/vite.js build`
+
+## Current Outcome
+
+The twenty-first Phase 2 owned API slice is complete. Workspace archive
+blockers are no longer passive error states; operators can now resolve linked
+tasks directly from workspace detail without manually bouncing between surfaces.

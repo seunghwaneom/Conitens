@@ -13,8 +13,8 @@ export function ForwardContextPanel({
     <section className="forward-section">
       <div className="forward-section-header">
         <div>
-          <p className="forward-panel-label">Digests</p>
-          <h3>Runtime vs repo context</h3>
+          <p className="forward-panel-label">Context</p>
+          <h3>Runtime vs repo digests</h3>
         </div>
         <span className={`forward-state state-${state}`}>{state}</span>
       </div>
