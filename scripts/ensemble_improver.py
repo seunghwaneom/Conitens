@@ -8,7 +8,7 @@ All patches require approval before application (approval-gated).
 
 CLI usage:
     python scripts/ensemble_improver.py mine [--since YYYY-MM-DD]
-    python scripts/ensemble_improver.py patch <agent_id> --type persona|skill|workflow --rationale "reason"
+    python scripts/ensemble_improver.py patch <agent_id> --type persona|skill|workflow --rationale "reason" (--proposal "text" | --proposal-file path)
     python scripts/ensemble_improver.py report [--since YYYY-MM-DD]
     python scripts/ensemble_improver.py waste [--since YYYY-MM-DD]
 """
@@ -22,6 +22,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
 
+from ensemble_contracts import split_frontmatter
 from ensemble_events import append_event
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -29,6 +30,11 @@ NOTES_DIR = REPO_ROOT / ".notes"
 EVENTS_DIR = NOTES_DIR / "EVENTS"
 REVIEWS_DIR = NOTES_DIR / "70_Reviews"
 PATCHES_DIR = REPO_ROOT / ".conitens" / "personas" / "candidate_patches"
+PATCH_PLACEHOLDER_MARKERS = (
+    "<!-- fill in specific persona changes below -->",
+    "<!-- fill in specific skill changes below -->",
+    "<!-- fill in specific workflow changes below -->",
+)
 
 
 def _utc_now() -> str:
@@ -37,6 +43,86 @@ def _utc_now() -> str:
 
 def _date_str() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def _proposal_has_concrete_changes(proposal_text: str) -> bool:
+    for raw_line in proposal_text.splitlines():
+        stripped = raw_line.strip()
+        lowered = stripped.lower()
+        if not stripped:
+            continue
+        if stripped == "---":
+            continue
+        if stripped.startswith("#"):
+            continue
+        if lowered.startswith("rationale:"):
+            continue
+        if stripped.startswith("<!--") and stripped.endswith("-->"):
+            continue
+        if lowered in PATCH_PLACEHOLDER_MARKERS:
+            continue
+        return True
+    return False
+
+
+def _load_patch_proposal(*, proposal: str | None, proposal_file: str | None) -> str:
+    if proposal and proposal_file:
+        raise ValueError("Provide either --proposal or --proposal-file, not both")
+    if proposal_file:
+        proposal_text = Path(proposal_file).read_text(encoding="utf-8")
+    elif proposal is not None:
+        proposal_text = proposal
+    else:
+        raise ValueError("Concrete proposal content is required; use --proposal or --proposal-file")
+    _, body = split_frontmatter(proposal_text)
+    return body or proposal_text
+
+
+def _write_candidate_patch(
+    *,
+    subject_key: str,
+    subject_id: str,
+    patch_id: str,
+    patch_type: str,
+    rationale: str,
+    section_heading: str,
+    proposal_text: str,
+) -> dict[str, Any]:
+    if not _proposal_has_concrete_changes(proposal_text):
+        raise ValueError("Patch proposal must contain a concrete behavior delta")
+
+    PATCHES_DIR.mkdir(parents=True, exist_ok=True)
+    patch_path = PATCHES_DIR / f"{patch_id}.md"
+    append_event(
+        str(NOTES_DIR),
+        event_type="improver.patch_generated",
+        actor={"type": "agent", "name": "improver-core"},
+        payload={subject_key: subject_id, "patch_id": patch_id, "type": patch_type, "rationale": rationale},
+    )
+
+    patch_path.write_text(
+        "\n".join(
+            [
+                "---",
+                f"patch_id: {patch_id}",
+                f"{subject_key}: {subject_id}",
+                f"type: {patch_type}",
+                "status: proposed",
+                f"rationale: \"{rationale}\"",
+                f"created_at: {_utc_now()}",
+                "---",
+                "",
+                section_heading,
+                "",
+                f"Rationale: {rationale}",
+                "",
+                proposal_text.rstrip(),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return {"patch_id": patch_id, "type": patch_type, subject_key: subject_id, "path": str(patch_path)}
 
 
 def _read_events(since: str | None = None) -> list[dict[str, Any]]:
@@ -111,106 +197,50 @@ def mine_failure_patterns(since: str | None = None) -> dict[str, Any]:
     }
 
 
-def generate_persona_patch(agent_id: str, rationale: str) -> dict[str, Any]:
+def generate_persona_patch(agent_id: str, rationale: str, proposal_text: str) -> dict[str, Any]:
     """Generate a candidate persona patch for an agent."""
-    PATCHES_DIR.mkdir(parents=True, exist_ok=True)
     date = _date_str()
     seq = len(list(PATCHES_DIR.glob(f"{agent_id}-{date}-*.md"))) + 1
     patch_id = f"{agent_id}-{date}-{seq:03d}"
-    patch_path = PATCHES_DIR / f"{patch_id}.md"
-
-    append_event(
-        str(NOTES_DIR),
-        event_type="improver.patch_generated",
-        actor={"type": "agent", "name": "improver-core"},
-        payload={"agent_id": agent_id, "patch_id": patch_id, "type": "persona", "rationale": rationale},
+    return _write_candidate_patch(
+        subject_key="agent_id",
+        subject_id=agent_id,
+        patch_id=patch_id,
+        patch_type="persona",
+        rationale=rationale,
+        section_heading="## Proposed Persona Changes",
+        proposal_text=proposal_text,
     )
 
-    patch_path.write_text("\n".join([
-        "---",
-        f"patch_id: {patch_id}",
-        f"agent_id: {agent_id}",
-        "type: persona",
-        "status: proposed",
-        f"rationale: \"{rationale}\"",
-        f"created_at: {_utc_now()}",
-        "---",
-        "",
-        "## Proposed Persona Changes",
-        "",
-        f"Rationale: {rationale}",
-        "",
-        "<!-- Fill in specific persona changes below -->",
-        "",
-    ]), encoding="utf-8")
 
-    return {"patch_id": patch_id, "type": "persona", "agent_id": agent_id, "path": str(patch_path)}
-
-
-def generate_skill_patch(skill_id: str, rationale: str) -> dict[str, Any]:
+def generate_skill_patch(skill_id: str, rationale: str, proposal_text: str) -> dict[str, Any]:
     """Generate a candidate skill patch."""
-    PATCHES_DIR.mkdir(parents=True, exist_ok=True)
     date = _date_str()
     patch_id = f"skill-{skill_id}-{date}"
-    patch_path = PATCHES_DIR / f"{patch_id}.md"
-
-    append_event(
-        str(NOTES_DIR),
-        event_type="improver.patch_generated",
-        actor={"type": "agent", "name": "improver-core"},
-        payload={"skill_id": skill_id, "patch_id": patch_id, "type": "skill", "rationale": rationale},
+    return _write_candidate_patch(
+        subject_key="skill_id",
+        subject_id=skill_id,
+        patch_id=patch_id,
+        patch_type="skill",
+        rationale=rationale,
+        section_heading="## Proposed Skill Changes",
+        proposal_text=proposal_text,
     )
 
-    patch_path.write_text("\n".join([
-        "---",
-        f"patch_id: {patch_id}",
-        f"skill_id: {skill_id}",
-        "type: skill",
-        "status: proposed",
-        f"rationale: \"{rationale}\"",
-        f"created_at: {_utc_now()}",
-        "---",
-        "",
-        "## Proposed Skill Changes",
-        "",
-        f"Rationale: {rationale}",
-        "",
-    ]), encoding="utf-8")
 
-    return {"patch_id": patch_id, "type": "skill", "skill_id": skill_id, "path": str(patch_path)}
-
-
-def generate_workflow_patch(workflow_id: str, rationale: str) -> dict[str, Any]:
+def generate_workflow_patch(workflow_id: str, rationale: str, proposal_text: str) -> dict[str, Any]:
     """Generate a candidate workflow patch."""
-    PATCHES_DIR.mkdir(parents=True, exist_ok=True)
     date = _date_str()
     patch_id = f"wf-{workflow_id}-{date}"
-    patch_path = PATCHES_DIR / f"{patch_id}.md"
-
-    append_event(
-        str(NOTES_DIR),
-        event_type="improver.patch_generated",
-        actor={"type": "agent", "name": "improver-core"},
-        payload={"workflow_id": workflow_id, "patch_id": patch_id, "type": "workflow", "rationale": rationale},
+    return _write_candidate_patch(
+        subject_key="workflow_id",
+        subject_id=workflow_id,
+        patch_id=patch_id,
+        patch_type="workflow",
+        rationale=rationale,
+        section_heading="## Proposed Workflow Changes",
+        proposal_text=proposal_text,
     )
-
-    patch_path.write_text("\n".join([
-        "---",
-        f"patch_id: {patch_id}",
-        f"workflow_id: {workflow_id}",
-        "type: workflow",
-        "status: proposed",
-        f"rationale: \"{rationale}\"",
-        f"created_at: {_utc_now()}",
-        "---",
-        "",
-        "## Proposed Workflow Changes",
-        "",
-        f"Rationale: {rationale}",
-        "",
-    ]), encoding="utf-8")
-
-    return {"patch_id": patch_id, "type": "workflow", "workflow_id": workflow_id, "path": str(patch_path)}
 
 
 def generate_token_waste_report(since: str | None = None) -> dict[str, Any]:
@@ -320,6 +350,8 @@ def main() -> int:
     p.add_argument("agent_id")
     p.add_argument("--type", required=True, choices=["persona", "skill", "workflow"])
     p.add_argument("--rationale", required=True)
+    p.add_argument("--proposal", default=None)
+    p.add_argument("--proposal-file", default=None)
 
     r = sub.add_parser("report")
     r.add_argument("--since", default=None)
@@ -333,12 +365,13 @@ def main() -> int:
         result = mine_failure_patterns(args.since)
         print(json.dumps(result, indent=2))
     elif args.command == "patch":
+        proposal_text = _load_patch_proposal(proposal=args.proposal, proposal_file=args.proposal_file)
         if args.type == "persona":
-            result = generate_persona_patch(args.agent_id, args.rationale)
+            result = generate_persona_patch(args.agent_id, args.rationale, proposal_text)
         elif args.type == "skill":
-            result = generate_skill_patch(args.agent_id, args.rationale)
+            result = generate_skill_patch(args.agent_id, args.rationale, proposal_text)
         else:
-            result = generate_workflow_patch(args.agent_id, args.rationale)
+            result = generate_workflow_patch(args.agent_id, args.rationale, proposal_text)
         print(json.dumps(result, indent=2))
     elif args.command == "report":
         result = generate_weekly_report(args.since)
