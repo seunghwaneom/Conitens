@@ -45,6 +45,45 @@ export function classifyPath(p: string): PathClass {
 }
 
 // ---------------------------------------------------------------------------
+// .notes/ path classification (ADR-0002)
+// ---------------------------------------------------------------------------
+// Separate from the 5-Plane taxonomy which classifies .conitens/-relative paths.
+// Notes zones classify .notes/-relative paths for the Obsidian projection layer.
+
+export const NOTES_ZONES = [
+  "inbox", "agents", "workspaces", "runs",
+  "comms", "decisions", "memory", "reviews",
+  "archive", "index", "events",
+] as const;
+export type NotesZone = (typeof NOTES_ZONES)[number];
+
+/**
+ * Classify a .notes/-relative path into its zone.
+ * @throws Error if path cannot be classified.
+ */
+export function classifyNotesPath(p: string): NotesZone {
+  if (p.startsWith("00_Inbox/"))       return "inbox";
+  if (p.startsWith("10_Agents/"))      return "agents";
+  if (p.startsWith("20_Workspaces/"))  return "workspaces";
+  if (p.startsWith("30_Runs/"))        return "runs";
+  if (p.startsWith("40_Comms/"))       return "comms";
+  if (p.startsWith("50_Decisions/"))   return "decisions";
+  if (p.startsWith("60_Memory/"))      return "memory";
+  if (p.startsWith("70_Reviews/"))     return "reviews";
+  if (p.startsWith("80_Archive/"))     return "archive";
+  if (p.startsWith(".index/"))         return "index";
+  if (p.startsWith("EVENTS/"))         return "events";
+  throw new Error(`Unclassified .notes/ path: ${p}`);
+}
+
+/** Check if a .notes/ zone is a projection target (written by reducers). */
+export function isProjectionZone(zone: NotesZone): boolean {
+  return zone === "agents" || zone === "comms"
+      || zone === "reviews" || zone === "runs"
+      || zone === "inbox";
+}
+
+// ---------------------------------------------------------------------------
 // Well-known paths
 // ---------------------------------------------------------------------------
 
@@ -86,6 +125,17 @@ export const PATHS = {
   AGENTS_DIR: "agents/",
   POLICIES_DIR: "policies/",
   CONFIG_DIR: "config/",
+  // .notes/ Obsidian Vault directories (ADR-0002)
+  NOTES_INBOX: ".notes/00_Inbox/",
+  NOTES_AGENTS: ".notes/10_Agents/",
+  NOTES_WORKSPACES: ".notes/20_Workspaces/",
+  NOTES_RUNS: ".notes/30_Runs/",
+  NOTES_COMMS: ".notes/40_Comms/",
+  NOTES_DECISIONS: ".notes/50_Decisions/",
+  NOTES_MEMORY: ".notes/60_Memory/",
+  NOTES_REVIEWS: ".notes/70_Reviews/",
+  NOTES_ARCHIVE: ".notes/80_Archive/",
+  NOTES_INDEX: ".notes/.index/",
 } as const;
 
 /** Check if a path is replay-relevant (not operational). */

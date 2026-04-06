@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "supervisor",
+        "recorder",
+        "improver",
+        "worker"
+      ]
+    },
+    "public_persona": {
+      "type": "string",
+      "minLength": 1
+    },
+    "private_policy": {
+      "type": "object",
+      "properties": {
+        "approval_required_for": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "approval_required_for"
+      ],
+      "additionalProperties": false
+    },
+    "skills": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "memory_namespace": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hermes_profile": {
+      "type": "string"
+    },
+    "handoff_required_fields": {
+      "default": [
+        "objective",
+        "constraints",
+        "decisions",
+        "evidence_refs",
+        "next_actions"
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "obsidian_note": {
+      "type": "string"
+    },
+    "status": {
+      "default": "draft",
+      "type": "string",
+      "enum": [
+        "active",
+        "archived",
+        "draft"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "role",
+    "public_persona",
+    "skills",
+    "memory_namespace",
+    "handoff_required_fields",
+    "status"
+  ],
+  "additionalProperties": false
+}

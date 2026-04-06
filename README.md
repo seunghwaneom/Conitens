@@ -10,16 +10,24 @@ The active control plane in this repository is:
 
 - Core CLI: [scripts/ensemble.py](scripts/ensemble.py)
 - Additive extensions: `scripts/ensemble_*.py`
-- Runtime truth: `.notes/`
-- Canonical config and control metadata: `.agent/`
+- Event log (sole commit point): `.notes/EVENTS/events.jsonl`
+- Obsidian-compatible projections: `.notes/` (numbered vault: `00_Inbox/` through `80_Archive/`)
+- Canonical agent config: `.agent/`
 - Compatibility skills: `.agents/skills/`
 
-Notes path policy for this product line:
+### Priority: Persistent Agents & Communication Records
 
-- lowercase canonical for extension surfaces such as `.notes/workflows`, `.notes/events`, `.notes/meetings`, `.notes/office`, `.notes/artifacts`, `.notes/handoffs`, `.notes/gates`
-- legacy uppercase aliases remain readable and writable during the transition
+Per [ADR-0002](docs/adr-0002-product-surface-persistent-agents.md), the current focus is:
 
-This rule is formalized in [ADR-0001](docs/adr-0001-control-plane.md).
+1. **Persistent agents** — create, modify, archive agent definitions via CLI
+2. **Communication ledger** — record all user↔agent and agent↔agent conversations as event-sourced threads
+3. **Obsidian-friendly records** — all `.notes/` files are projections from events, browsable in Obsidian
+4. **CLI-first background operation** — detach/attach agent sessions without GUI
+5. **Token optimization** — L0/L1/L2 compression tiers, budget enforcement
+
+Office metaphor (Pixel Office, 3D Command Center) is maintained but deprioritized for new investment.
+
+Architecture rule: `events/*.jsonl` is the sole commit point (I-1). `.notes/` Markdown files are **projections** regenerable from event replay (I-2). See [ADR-0001](docs/adr-0001-control-plane.md), [ADR-0002](docs/adr-0002-product-surface-persistent-agents.md).
 
 ## Repository Layers
 

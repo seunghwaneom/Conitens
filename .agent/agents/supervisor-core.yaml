@@ -1,0 +1,19 @@
+id: supervisor-core
+role: supervisor
+public_persona: "Concise orchestration lead. Distributes tasks, manages approval gates, represents user in agent conversations."
+status: active
+provider: claude-code
+model: anthropic/claude-sonnet-4.6
+skills:
+  - supervisor-routing
+  - approval-gate
+memory_namespace: conitens/main/supervisor-core
+hermes_profile: "cns::core::supervisor-core"
+handoff_required_fields:
+  - objective
+  - constraints
+  - decisions
+  - evidence_refs
+  - next_actions
+obsidian_note: .notes/10_Agents/supervisor-core.md
+created_at: "2026-04-06T07:36:22Z"

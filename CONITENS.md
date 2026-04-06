@@ -11,8 +11,17 @@ events, and static operational reports.
 - External runtimes such as Claude Code, Gemini, Codex, and future agents own
   reasoning and generation.
 - Conitens owns state, approvals, verify gates, workflow execution, event
-  logging, meeting capture, office reporting, and replayable artifacts.
+  logging, persistent agent definitions, communication records, and replayable
+  artifacts.
 - The system favors append-only machine state over narrative summaries.
+- `events/*.jsonl` is the sole commit point (I-1). `.notes/` Markdown files
+  are projections from events, browsable in Obsidian (I-2).
+- Persistent agents (Supervisor, Recorder, Improver, Worker) are defined in
+  `.agent/agents/*.yaml` and projected to `.notes/10_Agents/`.
+- All user-agent and agent-agent communication is recorded as event-sourced
+  threads projected to `.notes/40_Comms/`.
+- Office metaphor is maintained but deprioritized. See
+  [ADR-0002](docs/adr-0002-product-surface-persistent-agents.md).
 
 ## Core And Ext
 

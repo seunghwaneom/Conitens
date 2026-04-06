@@ -13,9 +13,9 @@ export interface OperatorInboxItemViewModel {
 
 function toTargetHash(item: ForwardOperatorInboxItem): string {
   if (item.run_id) {
-    return buildForwardRoute({ screen: "run-detail", runId: item.run_id, taskId: null });
+    return buildForwardRoute({ screen: "run-detail", runId: item.run_id, taskId: null, workspaceId: null, threadId: null, agentId: null });
   }
-  return buildForwardRoute({ screen: "runs", runId: null, taskId: null });
+  return buildForwardRoute({ screen: "runs", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
 }
 
 function toMeta(item: ForwardOperatorInboxItem): string {

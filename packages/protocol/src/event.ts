@@ -152,6 +152,42 @@ export const EVENT_TYPES = [
   // icon, label) of one or more fixture panels to reflect the new command state.
   // This event is the downstream half of the command → fixture indicator-update chain.
   "fixture.state_sync",         // sync fixture indicator state from a command state change
+  // -------------------------------------------------------------------------
+  // Thread / Communication — persistent communication ledger events
+  // Threads record all user↔agent, agent↔agent, and agent↔agent↔user
+  // conversations as append-only event streams projected to .notes/40_Comms/.
+  // -------------------------------------------------------------------------
+  "thread.created",             // a new communication thread was opened
+  "thread.message_appended",    // a message was added to an existing thread
+  "thread.closed",              // a thread was closed (with summary)
+  "thread.summary_updated",     // L0/L1 summary refreshed (payload includes summary text for idempotent rebuild)
+  "thread.decision_recorded",   // a decision was formally recorded within a thread
+  // -------------------------------------------------------------------------
+  // Agent Registry — persistent agent lifecycle events
+  // These are REGISTRY lifecycle events (create/archive/patch an agent definition).
+  // Distinct from the RUNTIME lifecycle events above (agent.spawned/terminated/etc.)
+  // which track a running agent instance's operational state.
+  // -------------------------------------------------------------------------
+  "agent.created",              // a new persistent agent definition was registered
+  "agent.patch_proposed",       // a candidate patch was proposed for an agent's persona/config
+  "agent.patch_approved",       // a candidate patch was approved by a reviewer
+  "agent.patch_applied",        // an approved patch was applied to the agent definition
+  "agent.archived",             // an agent definition was archived (soft-delete)
+  // -------------------------------------------------------------------------
+  // Improver — self-improvement loop events
+  // The Improver agent mines failure patterns and generates candidate patches.
+  // All patches require approval before application (approval-gated self-improvement).
+  // -------------------------------------------------------------------------
+  "improver.pattern_mined",     // a recurring failure pattern was detected
+  "improver.patch_generated",   // a candidate improvement patch was generated
+  "improver.report_generated",  // a weekly/periodic improvement report was generated
+  // -------------------------------------------------------------------------
+  // Background — CLI background session lifecycle events
+  // Track detached terminal sessions for workspace agents.
+  // -------------------------------------------------------------------------
+  "background.session_started", // a background agent session was launched
+  "background.session_stopped", // a background agent session was stopped
+  "background.log_ingested",    // session logs were ingested into the communication ledger
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
@@ -265,6 +301,13 @@ export const OBSOLETE_ALIASES: Readonly<Record<string, EventType>> = {
   "artifact.generated": "task.artifact_added",
   "approval.required":  "approval.requested",
   "memory.updated":     "memory.update_proposed",
+  // Legacy SCREAMING_CASE events found in .notes/EVENTS/events.jsonl
+  "QUESTION_CREATED":   "approval.requested",
+  "APPROVAL_REQUESTED": "approval.requested",
+  "AUTO_SELECTED":      "approval.granted",
+  "MEMORY_APPENDED":    "memory.update_proposed",
+  "ROOM_CREATED":       "thread.created",
+  "ROOM_MESSAGE":       "thread.message_appended",
 };
 
 export function resolveAlias(type: string): EventType | null {

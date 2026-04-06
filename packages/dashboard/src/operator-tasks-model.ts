@@ -52,7 +52,7 @@ export function toOperatorTaskListItems(
       task.linked_run_id ? `run ${task.linked_run_id}` : "unlinked",
       `${task.acceptance_json.length} acceptance`,
     ],
-    targetHash: buildForwardRoute({ screen: "task-detail", runId: null, taskId: task.task_id }),
+    targetHash: buildForwardRoute({ screen: "task-detail", runId: null, taskId: task.task_id, workspaceId: null, threadId: null, agentId: null }),
   }));
 }
 

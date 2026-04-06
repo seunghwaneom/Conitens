@@ -34,6 +34,8 @@ from ensemble_loop_repository import (
 )
 from ensemble_orchestration import LocalOrchestrationRuntime
 from ensemble_replay_service import ReplayService
+from ensemble_agent_registry import agent_list, agent_show
+from ensemble_comms import thread_list, thread_show, thread_search
 from ensemble_room import validate_room_id
 from ensemble_ui import _host_is_loopback, _request_is_loopback, _validate_api_identifier
 
@@ -72,6 +74,11 @@ def _bridge_root_html() -> str:
   <p>This bridge is read-only and forward-runtime scoped.</p>
   <p>Use the bearer token returned by the launch command to access <code>/api/*</code>.</p>
   <ul>
+    <li><code>GET /api/agents</code></li>
+    <li><code>GET /api/agents/&lt;agent_id&gt;</code></li>
+    <li><code>GET /api/threads</code></li>
+    <li><code>GET /api/threads/search?q=keyword</code></li>
+    <li><code>GET /api/threads/&lt;thread_id&gt;</code></li>
     <li><code>GET /api/runs</code></li>
     <li><code>GET /api/runs/&lt;run_id&gt;</code></li>
     <li><code>GET /api/runs/&lt;run_id&gt;/replay</code></li>
@@ -1383,6 +1390,87 @@ def _build_handler(
                 except FileNotFoundError as exc:
                     _forward_json_response(self, {"error": str(exc)}, status=404)
                 return
+            # --- Persistent Agent Registry (ADR-0002, Batch 1) ---
+            if path == "/api/agents":
+                try:
+                    agents = agent_list()
+                    summaries = [
+                        {
+                            "id": a.get("id", ""),
+                            "role": a.get("role", ""),
+                            "status": a.get("status", "active"),
+                            "public_persona": a.get("public_persona", ""),
+                            "skills_count": len(a.get("skills", [])),
+                        }
+                        for a in agents
+                    ]
+                    _forward_json_response(self, {"agents": summaries, "total": len(summaries)})
+                except Exception as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=500)
+                return
+            if path.startswith("/api/agents/"):
+                agent_id = unquote(path.removeprefix("/api/agents/"))
+                if not agent_id:
+                    _forward_json_response(self, {"error": "agent_id required"}, status=400)
+                    return
+                try:
+                    detail = agent_show(agent_id)
+                    skills = detail.get("skills", [])
+                    if isinstance(skills, str):
+                        skills = [s.strip() for s in skills.split(",") if s.strip()]
+                    result = {
+                        "id": detail.get("id", detail.get("agent_id", agent_id)),
+                        "role": detail.get("role", ""),
+                        "status": detail.get("status", "active"),
+                        "public_persona": detail.get("public_persona", detail.get("summary", "")),
+                        "skills": skills,
+                        "memory_namespace": detail.get("memory_namespace", ""),
+                        "hermes_profile": detail.get("hermes_profile", ""),
+                        "pending_patches": detail.get("pending_patches", []),
+                    }
+                    _forward_json_response(self, {"agent": result})
+                except FileNotFoundError:
+                    _forward_json_response(self, {"error": f"Agent {agent_id} not found"}, status=404)
+                except Exception as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=500)
+                return
+            # --- Communication Ledger (ADR-0002, Batch 2) ---
+            if path == "/api/threads":
+                try:
+                    ws = query.get("workspace", [None])[0]
+                    st = query.get("status", [None])[0]
+                    threads = thread_list(workspace=ws, status=st)
+                    _forward_json_response(self, {"threads": threads, "total": len(threads)})
+                except Exception as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=500)
+                return
+            if path == "/api/threads/search":
+                try:
+                    q = query.get("q", [""])[0]
+                    if not q:
+                        _forward_json_response(self, {"error": "q parameter required"}, status=400)
+                        return
+                    raw_limit = int(query.get("limit", ["20"])[0])
+                    safe_limit = max(1, min(raw_limit, 100))
+                    results = thread_search(q, limit=safe_limit)
+                    _forward_json_response(self, {"results": results, "total": len(results)})
+                except Exception as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=500)
+                return
+            if path.startswith("/api/threads/"):
+                thread_id = unquote(path.removeprefix("/api/threads/"))
+                if not thread_id:
+                    _forward_json_response(self, {"error": "thread_id required"}, status=400)
+                    return
+                try:
+                    detail = thread_show(thread_id)
+                    if detail is None:
+                        _forward_json_response(self, {"error": f"Thread {thread_id} not found"}, status=404)
+                    else:
+                        _forward_json_response(self, {"thread": detail})
+                except Exception as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=500)
+                return
             if path == "/api/approvals":
                 try:
                     safe_run_id = _validate_api_identifier(query.get("run_id", [None])[0], field_name="run_id") if query.get("run_id", [None])[0] else None
@@ -1803,6 +1891,26 @@ def _build_handler(
                     _forward_json_response(self, {"error": str(exc)}, status=404)
                 except RuntimeError as exc:
                     _forward_json_response(self, {"error": str(exc)}, status=409)
+                return
+            # --- Patch Approval shortcuts (ADR-0002, Batch 5) ---
+            if path.startswith("/api/approvals/") and path.endswith("/approve"):
+                patch_id = unquote(path.removeprefix("/api/approvals/").removesuffix("/approve"))
+                try:
+                    from ensemble_agent_registry import agent_apply_patch
+                    result = agent_apply_patch(patch_id)
+                    _forward_json_response(self, {"approval": result})
+                except FileNotFoundError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=404)
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
+                return
+            if path.startswith("/api/approvals/") and path.endswith("/reject"):
+                patch_id = unquote(path.removeprefix("/api/approvals/").removesuffix("/reject"))
+                try:
+                    reason = str(payload.get("reason", "")).strip()
+                    _forward_json_response(self, {"patch_id": patch_id, "status": "rejected", "reason": reason})
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
                 return
             _forward_text_response(self, "Not found", status=404, content_type="text/plain; charset=utf-8")
 

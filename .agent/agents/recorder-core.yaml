@@ -1,0 +1,18 @@
+id: recorder-core
+role: recorder
+public_persona: "Silent observer. Records all communications, generates thread notes, daily digests, and decision documents."
+status: active
+provider: claude-code
+model: anthropic/claude-sonnet-4.6
+skills:
+  - recorder-log-sync
+memory_namespace: conitens/main/recorder-core
+hermes_profile: "cns::core::recorder-core"
+handoff_required_fields:
+  - objective
+  - constraints
+  - decisions
+  - evidence_refs
+  - next_actions
+obsidian_note: .notes/10_Agents/recorder-core.md
+created_at: "2026-04-06T07:36:22Z"

@@ -300,7 +300,7 @@ export function App() {
     const handleHashChange = () => setRoute(parseForwardRoute(window.location.hash));
     window.addEventListener("hashchange", handleHashChange);
     if (!window.location.hash) {
-      window.location.hash = buildForwardRoute({ screen: "overview", runId: null, taskId: null });
+      window.location.hash = buildForwardRoute({ screen: "overview", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
     }
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
@@ -1007,15 +1007,15 @@ export function App() {
   };
 
   const openRun = (runId: string) => {
-    window.location.hash = buildForwardRoute({ screen: "run-detail", runId, taskId: null });
+    window.location.hash = buildForwardRoute({ screen: "run-detail", runId, taskId: null, workspaceId: null, threadId: null, agentId: null });
   };
 
   const openTask = (taskId: string) => {
-    window.location.hash = buildForwardRoute({ screen: "task-detail", runId: null, taskId });
+    window.location.hash = buildForwardRoute({ screen: "task-detail", runId: null, taskId, workspaceId: null, threadId: null, agentId: null });
   };
 
   const openWorkspace = (workspaceId: string) => {
-    window.location.hash = buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId });
+    window.location.hash = buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId, threadId: null, agentId: null });
   };
 
   function applySavedTaskFilterPreset(preset: SavedTaskFilterPreset) {
@@ -1079,10 +1079,10 @@ export function App() {
     if (nextTaskId) {
       const taskPayload = await forwardGetOperatorTask(config, nextTaskId);
       setSelectedTask(taskPayload);
-      window.location.hash = buildForwardRoute({ screen: "task-detail", runId: null, taskId: nextTaskId });
+      window.location.hash = buildForwardRoute({ screen: "task-detail", runId: null, taskId: nextTaskId, workspaceId: null, threadId: null, agentId: null });
     } else {
       setSelectedTask(null);
-      window.location.hash = buildForwardRoute({ screen: "tasks", runId: null, taskId: null });
+      window.location.hash = buildForwardRoute({ screen: "tasks", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
     }
     setLiveRevision((current) => current + 1);
   }
@@ -1093,10 +1093,10 @@ export function App() {
     if (nextWorkspaceId) {
       const workspacePayload = await forwardGetOperatorWorkspace(config, nextWorkspaceId);
       setSelectedWorkspace(workspacePayload);
-      window.location.hash = buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId: nextWorkspaceId });
+      window.location.hash = buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId: nextWorkspaceId, threadId: null, agentId: null });
     } else {
       setSelectedWorkspace(null);
-      window.location.hash = buildForwardRoute({ screen: "workspaces", runId: null, taskId: null, workspaceId: null });
+      window.location.hash = buildForwardRoute({ screen: "workspaces", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
     }
     setLiveRevision((current) => current + 1);
   }
@@ -1497,7 +1497,7 @@ export function App() {
           break;
         }
         case "Escape": {
-          window.location.hash = buildForwardRoute({ screen: "overview", runId: null, taskId: null });
+          window.location.hash = buildForwardRoute({ screen: "overview", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
           break;
         }
       }
@@ -2148,6 +2148,8 @@ export function App() {
                           runId: null,
                           taskId: null,
                           workspaceId: linkedWorkspaceOption.id,
+                          threadId: null,
+                          agentId: null,
                         })}
                       >
                         Open workspace
