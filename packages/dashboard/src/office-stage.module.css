@@ -1,5 +1,5 @@
 .office-stage-panel {
-  gap: 14px;
+  gap: 12px;
   min-height: 100%;
 }
 
@@ -8,8 +8,8 @@
   justify-content: space-between;
   gap: 12px;
   align-items: end;
-  padding: 0 2px 12px;
-  border-bottom: 1px solid rgba(46, 57, 46, 0.08);
+  padding: 0 2px 10px;
+  border-bottom: 1px solid rgba(196, 210, 228, 0.12);
 }
 
 .office-stage-header-copy {
@@ -20,7 +20,7 @@
 
 .office-stage-kicker {
   margin: 0;
-  color: var(--muted);
+  color: rgba(216, 228, 243, 0.62);
   font-family: var(--font-pixel, "Press Start 2P", cursive);
   font-size: 9px;
   letter-spacing: 0.08em;
@@ -28,8 +28,8 @@
 }
 
 .office-stage-meta {
-  color: var(--muted);
-  font-size: 11px;
+  color: rgba(216, 228, 243, 0.56);
+  font-size: 10px;
   line-height: 1.3;
 }
 
@@ -43,11 +43,11 @@
 .office-stage-pill {
   display: inline-flex;
   align-items: center;
-  padding: 6px 10px;
-  border: 1px solid rgba(46, 57, 46, 0.1);
-  background: rgba(255, 252, 245, 0.72);
-  color: rgba(30, 36, 31, 0.66);
-  font-size: 10px;
+  padding: 5px 8px;
+  border: 1px solid rgba(196, 210, 228, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(216, 228, 243, 0.72);
+  font-size: 9px;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -55,8 +55,8 @@
 
 .office-stage-shell {
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr) 232px;
-  grid-template-rows: minmax(140px, 164fr) minmax(150px, 176fr) minmax(140px, 164fr);
+  grid-template-columns: 296px minmax(0, 1.04fr) 296px;
+  grid-template-rows: minmax(168px, 0.88fr) minmax(192px, 1fr) minmax(176px, 0.92fr);
   grid-template-areas:
     "control commons research"
     "impl commons validation"
@@ -65,11 +65,11 @@
   flex: 1 1 auto;
   padding: 2px;
   min-height: 0;
-  border: 1px solid rgba(46, 57, 46, 0.1);
-  background: rgba(200, 184, 154, 0.55);
+  border: 1px solid rgba(196, 210, 228, 0.16);
+  background: rgba(193, 173, 140, 0.42);
   box-shadow:
-    0 18px 42px rgba(38, 43, 34, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.34);
+    0 28px 54px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .area-project-main {
@@ -85,7 +85,7 @@
   position: absolute;
   inset: 0;
   background-image: radial-gradient(rgba(46, 57, 46, 0.06) 1px, transparent 1px);
-  background-size: 16px 16px;
+  background-size: 20px 20px;
   pointer-events: none;
 }
 .area-ops-control { grid-area: control; }
@@ -100,7 +100,7 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  padding: 8px;
+  padding: 7px;
   border: none;
   background-color: #f6f1e6;
   text-align: left;
@@ -113,7 +113,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 10px;
+  height: 8px;
   background: var(--wall-sand, #c8b89a);
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
   pointer-events: none;
@@ -158,7 +158,7 @@
 }
 
 .office-room-meta strong {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.01em;
 }
@@ -166,8 +166,8 @@
 .office-room-meta .badge {
   display: inline-flex;
   align-items: center;
-  padding: 1px 6px;
-  font-size: 8px;
+  padding: 1px 5px;
+  font-size: 7px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -202,8 +202,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px 6px;
-  font-size: 8px;
-  color: var(--muted);
+  font-size: 7px;
+  color: rgba(74, 84, 74, 0.64);
   letter-spacing: 0.03em;
 }
 
@@ -257,17 +257,17 @@
 .office-room-scene {
   position: relative;
   flex: 1 1 auto;
-  min-height: 118px;
-  margin-top: 4px;
+  min-height: 132px;
+  margin-top: 2px;
   border: 1px solid rgba(86, 96, 111, 0.18);
   background: url("/office-floor-stage.png") repeat;
   background-size: 24px 24px;
   overflow: hidden;
 }
 
-.office-room-tile.priority-hero .office-room-scene { min-height: 148px; }
-.office-room-tile.priority-support .office-room-scene { min-height: 130px; }
-.office-room-tile.priority-quiet .office-room-scene { min-height: 132px; }
+.office-room-tile.priority-hero .office-room-scene { min-height: 156px; }
+.office-room-tile.priority-support .office-room-scene { min-height: 138px; }
+.office-room-tile.priority-quiet .office-room-scene { min-height: 134px; }
 
 .area-research-lab .office-room-scene,
 .area-validation-office .office-room-scene,
@@ -315,7 +315,7 @@
 .area-research-lab.office-room-tile::before,
 .area-validation-office.office-room-tile::before,
 .area-review-office.office-room-tile::before {
-  height: 6px;
+  height: 5px;
 }
 
 .office-room-fixtures,

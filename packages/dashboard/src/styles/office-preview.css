@@ -1,0 +1,25 @@
+.forward-shell-preview .forward-header {
+  border-bottom-color: var(--shell-line);
+  background: none;
+}
+
+.forward-shell-preview .forward-subtitle,
+.forward-shell-preview .forward-eyebrow,
+.forward-shell-preview .forward-panel-label,
+.forward-shell-preview .forward-detail-label {
+  color: var(--shell-muted);
+}
+
+.forward-shell-preview .forward-chip,
+.forward-shell-preview .forward-state,
+.forward-shell-preview .forward-status-pill {
+  border-color: var(--shell-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(237, 243, 251, 0.76);
+}
+
+.forward-shell-preview .forward-chip-link.active {
+  background: rgba(139, 210, 255, 0.12);
+  border-color: rgba(139, 210, 255, 0.24);
+  color: #f4f9ff;
+}

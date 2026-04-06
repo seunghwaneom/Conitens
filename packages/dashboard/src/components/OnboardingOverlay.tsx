@@ -10,9 +10,24 @@ export function OnboardingOverlay() {
   const next = () => step < 2 ? setStep(step + 1) : dismiss();
 
   const steps = [
-    { title: "Welcome to Conitens", body: "A local-first multi-agent orchestration OS. Monitor and manage AI agents collaborating on development tasks — all from your browser.", code: undefined, action: "Next" },
-    { title: "Connect Your Bridge", body: "Launch the bridge server, then paste the token to see live agent data.", code: "python scripts/ensemble.py --workspace . forward serve", action: "Next" },
-    { title: "Explore", body: "Three views await: Forward Shell for run monitoring, Pixel Office for spatial visualization, and Agents for fleet management.", code: undefined, action: "Get Started" },
+    {
+      title: "Welcome to Conitens",
+      body: "Use the control plane to inspect runs, approvals, rooms, and agent activity without leaving the shell.",
+      code: undefined,
+      action: "Next",
+    },
+    {
+      title: "Connect the bridge",
+      body: "Launch the bridge server, then paste the token to switch the shell from demo data to live runtime state.",
+      code: "python scripts/ensemble.py --workspace . forward serve",
+      action: "Next",
+    },
+    {
+      title: "Use the shell",
+      body: "Runs is the primary workspace. Spatial Lens adds room topology, and Agents exposes fleet-level status and proposal flow.",
+      code: undefined,
+      action: "Dismiss",
+    },
   ];
 
   return (

@@ -85,6 +85,7 @@ export function AgentFleetOverview({ agents, selectedAgentId, onSelectAgent }: A
               <span>{agent.taskCount} tasks</span>
               <span>{agent.memoryCount} mem</span>
               <span>{(agent.errorRate * 100).toFixed(0)}% err</span>
+              {typeof agent.pendingApprovals === "number" ? <span>{agent.pendingApprovals} approvals</span> : null}
             </div>
             <p className="agent-card-last-active">{timeAgo(agent.lastActive)}</p>
           </button>

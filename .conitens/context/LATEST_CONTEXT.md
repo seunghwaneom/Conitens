@@ -4,7 +4,7 @@ Read this file before substantial work.
 
 ## Current State
 
-- Active batch: `Frontend design polish upgrade`
+- Active batch: `Paperclip phase 2 owned API slice 21`
 - Status: `complete`
 - Current live runtime truth remains `scripts/ensemble.py` plus `.notes/` and
   `.agent/`.
@@ -68,8 +68,212 @@ Read this file before substantial work.
 - A reference-driven workspace pass is now applied too: the preview has a
   correlated-signal strip and a sticky desktop context rail inspired by current
   open-source workflow / observability UIs, with refreshed screenshot evidence.
+- Newly fetched `origin/main` now includes that preview hierarchy work via merge
+  commit `9c4ba0e`, so the next frontend iteration should start from document
+  rebaseline and structural cleanup rather than more branch-local preview work.
+- `docs/frontend/FRONTEND_REVIEW_2026-04-02.md` is now rebaselined to that
+  merged state and no longer treats shipped FE-4 / Pixel Office work as pending.
+- A merged-main dashboard verification baseline is now captured too: tests,
+  typecheck, and build all pass, and the next lane is structural cleanup of
+  `styles.css` and `forward-bridge.ts`.
+- A dashboard-wide design unification pass is now applied: the live shell is the
+  shared visual baseline across runs, preview, and agents; onboarding is now an
+  inline panel; preview composition is more stage-first; and route screenshot
+  evidence exists for runs, run-detail, preview, and agents.
+- Additional responsive evidence also now exists for `1220` and `820`
+  breakpoints on the unified shell / preview surfaces.
+- `forward-bridge.ts` is now structurally split into internal modules while
+  preserving the dashboard app's existing public import surface.
 - Local Claude review reliability is now improved with an explicit wrapper and
   a verified `medium` / 5-minute invocation profile.
+- A Paperclip comparative planning pass is now complete too: `paperclipai/paperclip`
+  was analyzed as a product and architecture reference, and additive adoption
+  guidance for Conitens now exists in both `docs/` and `.conitens/reviews/`.
+- The recommended direction from that planning pass is to import Paperclip's
+  operator-product layer selectively, especially inbox/task/workspace
+  information architecture, while preserving Conitens' stronger
+  validator/approval/replay/room execution core.
+- A detailed comparative planning artifact now exists at
+  `docs/PAPERCLIP_CONITENS_INTEGRATION_PLAN_2026-04-04.md`, mapping how
+  `paperclipai/paperclip` can inform current Conitens across UI/UX, frontend,
+  backend, data model, and phased rollout.
+- A repo-scoped comparative planning artifact for the same task now also exists
+  at `.conitens/reviews/paperclip_conitens_integration_plan_2026-04-04.md`,
+  written against direct source inspection of `paperclipai/paperclip` commit
+  `8adae84`.
+- That comparative plan recommends adopting Paperclip as a product/operator UX
+  reference while preserving Conitens’ current forward-loop, replay, approval,
+  room, and pixel-office differentiation instead of copying Paperclip’s runtime
+  model literally.
+- An OMX team-style parallel analysis launch for the Paperclip comparison was
+  attempted and failed in this environment with `spawn EFTYPE`, so the work was
+  completed through native parallel subagents instead.
+- A follow-up Phase 1 backlog planning pass is now complete too, turning that
+  comparative strategy into an executable read-only productization slice.
+- The new Phase 1 backlog keeps the first implementation step projection-first:
+  operator summary and inbox routes, new view-model layers, and forward bridge
+  read aggregations before any durable task/workspace schema work.
+- The concrete Phase 1 backlog artifact now exists at
+  `docs/PAPERCLIP_CONITENS_PHASE1_BACKLOG_2026-04-04.md`.
+- The first implementation slice from that backlog is now complete too:
+  a read-only `GET /api/operator/summary` projection plus a first-class
+  `overview` route in the forward shell.
+- The overview slice added new bridge type/parser/client support, a dedicated
+  operator summary view-model, and a new dashboard summary panel without
+  introducing a durable task schema.
+- Verification for that slice passed through Python forward-bridge tests,
+  dashboard parser tests, and a package-scoped dashboard build.
+- The second implementation slice from that backlog is now complete too:
+  a read-only `GET /api/operator/inbox` projection plus a first-class `inbox`
+  route in the forward shell.
+- The inbox slice added new bridge type/parser/client support, a dedicated
+  operator inbox view-model, and a new dashboard inbox panel without
+  introducing a durable task/workspace registry.
+- The inbox slice currently projects approvals, validator failures, blocked
+  handoffs, and stale runs only; broader task/workspace objects remain deferred.
+- Verification for that slice also passed through Python forward-bridge tests,
+  dashboard parser tests, and a package-scoped dashboard build.
+- The third implementation slice from that backlog is now complete too:
+  a read-only `GET /api/operator/agents` projection plus a live operator roster
+  upgrade on the `agents` route.
+- The agents slice added new bridge type/parser/client support, a dedicated
+  operator agents view-model, and live roster metadata in the existing agents
+  surface without introducing a durable agent registry.
+- The agents slice currently derives roster entries from approvals, task-plan
+  ownership, orchestration checkpoints, room participants, handoff packets, and
+  memory records only; live graph and proposal/evolution projections remain
+  deferred.
+- Verification for that slice also passed through Python forward-bridge tests,
+  dashboard parser tests, and a package-scoped dashboard build.
+- The first Phase 2 owned API slice is now complete too:
+  canonical `operator_tasks` storage now exists in the loop repository and is
+  exposed through `GET/POST /api/operator/tasks` plus task detail reads.
+- This tasks slice is intentionally backend-first: no tasks UI route, no
+  editing/deletion path, and no run execution binding yet.
+- Repository snapshots now include operator tasks linked to a run, and the new
+  bridge contract has parser/client coverage plus repository/bridge test
+  coverage.
+- The second Phase 2 owned API slice is now complete too:
+  the forward shell now includes `tasks` and `task-detail` routes backed by the
+  canonical operator task API.
+- The tasks slice added a dedicated operator tasks view-model and a task detail
+  panel, making canonical operator tasks visible in the dashboard for the first
+  time.
+- This tasks UI slice is still intentionally narrow: no task create/edit UI, no
+  run execution binding, and no task-specific replay composition yet.
+- The third Phase 2 owned API slice is now complete too:
+  `task-detail` now renders linked approval and replay context when a canonical
+  operator task has `linked_run_id`.
+- This linkage slice still leaves task-specific room/state-doc composition
+  deferred, but it closes the main gap between durable task records and
+  execution evidence.
+- The fourth Phase 2 owned API slice is now complete too:
+  canonical operator tasks now support create and update flows from the shell.
+- The tasks shell now exposes a minimal create form on `tasks` and an edit form
+  on `task-detail`, backed by canonical API writes.
+- This write slice still leaves delete flows, execution/resume controls, and
+  deeper task-specific evidence composition deferred.
+- The fifth Phase 2 owned API slice is now complete too:
+  tasks now support status/owner filtering and quick status transitions.
+- This workflow slice makes the tasks surface behave more like an operator work
+  queue while still leaving bulk actions, saved filters, and delete flows
+  deferred.
+- The sixth Phase 2 owned API slice is now complete too:
+  `task-detail` now composes linked state docs, runtime/repo digests, and room
+  timeline in addition to linked approvals and replay.
+- This evidence-composition slice makes canonical operator tasks feel closer to
+  full operator dossiers, while task-specific write flows for rooms/state docs
+  remain deferred.
+- The seventh Phase 2 owned API slice is now complete too:
+  task mutations now enforce status-transition guardrails and approval-sensitive
+  conflict checks.
+- This guardrail slice prevents canonical task state from drifting away from
+  paused execution state when linked runs still have pending approvals.
+- The eighth Phase 2 owned API slice is now complete too:
+  canonical operator tasks can now request and display task-scoped approvals.
+- This approval-linkage slice adds `task_id`-aware approvals and a direct
+  `request approval` action from task-detail, while leaving approval templates
+  and deeper task-specific approval UX deferred.
+- The ninth Phase 2 owned API slice is now complete too:
+  task approvals now carry rationale and requested-change payloads.
+- This approval-UX slice makes task-scoped approval review more legible without
+  changing the underlying approval decision flow.
+- The tenth Phase 2 owned API slice is now complete too:
+  the task editor now previews changed fields and approval-sensitive changes
+  before save.
+- This mutation-hint slice makes approval requirements more legible earlier in
+  the operator workflow, without changing the underlying guardrail semantics.
+- The eleventh Phase 2 owned API slice is now complete too:
+  canonical operator tasks can now be deleted from the shell through a guarded
+  `DELETE /api/operator/tasks/:task_id` path.
+- This delete slice blocks removal while task-scoped or linked-run approvals
+  are still pending, keeps linked execution evidence intact, and surfaces
+  backend error payloads directly in the task UI instead of status-only errors.
+- The twelfth Phase 2 owned API slice is now complete too:
+  canonical operator tasks now support archive-first lifecycle control through
+  `archived_at`, plus dedicated archive and restore bridge actions.
+- This archive slice hides archived tasks from the default queue, allows
+  operators to opt back into viewing them, and requires archive-first
+  progression before permanent delete is allowed.
+- The thirteenth Phase 2 owned API slice is now complete too:
+  archive actions now record `archived_by` and `archive_note`, and archived
+  tasks are treated as read-only records until restored.
+- A 2026-04-05 post-review follow-up is now applied too:
+  archived workspaces reject same-status `PATCH` mutations until reactivated,
+  preventing archive metadata rewrites through the generic bridge surface.
+- The same follow-up also fixes the dashboard quick-archive affordance:
+  archive rationale stays visible before archiving, quick archive is disabled
+  until the rationale exists, and dashboard helper coverage now locks that
+  behavior in.
+- This archive-guardrail slice blocks archived task edits and archived
+  task-scoped approval requests, and makes archive rationale a first-class part
+  of the task-detail lifecycle UI.
+- The fourteenth Phase 2 owned API slice is now complete too:
+  task sidebar filters now persist locally, named filter presets can be saved
+  and reapplied, and bulk archive / restore can operate on the current filtered
+  queue.
+- This saved-filter / bulk-action slice stays frontend-local for presets, keeps
+  bulk delete deferred, and preserves archive-first rationale requirements even
+  when multiple tasks are archived together.
+- The fifteenth Phase 2 owned API slice is now complete too:
+  task sidebar rows now support per-task selection, and bulk lifecycle actions
+  prefer selected tasks before falling back to the filtered queue.
+- This selection/reporting slice also upgrades bulk result feedback from a flat
+  error summary to a structured success/failure report in the sidebar.
+- The sixteenth Phase 2 owned API slice is now complete too:
+  canonical operator workspaces now exist as owned objects with list/detail and
+  create/update bridge surfaces plus a minimal workspace shell route.
+- This workspace slice turns `workspace_ref` into a possible durable link
+  target, but still leaves referential integrity and workspace lifecycle policy
+  as later work.
+- The seventeenth Phase 2 owned API slice is now complete too:
+  task/workspace linkage now validates canonical workspace ids and the task
+  editor uses workspace selection instead of a free-form workspace field.
+- This integrity slice also derives workspace-linked task refs from task truth
+  so workspace detail reflects actual task membership rather than trusting
+  user-edited workspace task-id payloads.
+- The eighteenth Phase 2 owned API slice is now complete too:
+  task workspace selection now renders richer canonical workspace context and
+  unresolved legacy workspace refs can be migrated in-place from task detail.
+- This selector slice is frontend-only and does not add new backend routes, but
+  it makes canonical workspace adoption materially easier for existing tasks.
+- The nineteenth Phase 2 owned API slice is now complete too:
+  workspaces now have the first lifecycle/policy guardrails, including validated
+  status transitions, archived-workspace read-only behavior, and archive
+  blocking while active linked tasks remain attached.
+- This workspace-policy slice also prevents new task links to archived
+  workspaces and stops the workspace editor from implying that task membership
+  is manually authoritative.
+- The twentieth Phase 2 owned API slice is now complete too:
+  workspaces now carry archive metadata and rationale, and workspace archiving
+  requires an explicit reason instead of only changing status.
+- This workspace-archive-metadata slice brings workspace archive behavior closer
+  to task archive behavior without introducing a dedicated archive event log yet.
+- The twenty-first Phase 2 owned API slice is now complete too:
+  workspace detail now loads linked tasks and provides direct detach/archive
+  actions to resolve workspace archive blockers in place.
+- This blocker-resolution slice adds a targeted task/workspace detach path and a
+  workspace-scoped task filter without widening into full bulk resolution flows.
 
 ## Guardrails
 
@@ -202,6 +406,24 @@ Read this file before substantial work.
 - Frontend bridge boundary: `docs/frontend/BRIDGE_BOUNDARY.md`
 - Frontend BE-1b API: `docs/frontend/BE1B_API.md`
 - Frontend review doc: `docs/frontend/FRONTEND_REVIEW_2026-04-02.md`
+- Paperclip comparative plan: `docs/PAPERCLIP_CONITENS_INTEGRATION_PLAN_2026-04-04.md`
+- Paperclip Phase 1 backlog: `docs/PAPERCLIP_CONITENS_PHASE1_BACKLOG_2026-04-04.md`
+- Paperclip comparative review artifact:
+  `.conitens/reviews/paperclip_conitens_integration_plan_2026-04-04.md`
+- Operator summary bridge module:
+  `scripts/ensemble_forward_bridge.py`
+- Overview summary model:
+  `packages/dashboard/src/operator-summary-model.ts`
+- Overview summary panel:
+  `packages/dashboard/src/components/OperatorSummaryPanel.tsx`
+- Operator inbox model:
+  `packages/dashboard/src/operator-inbox-model.ts`
+- Operator inbox panel:
+  `packages/dashboard/src/components/OperatorInboxPanel.tsx`
+- Operator agents model:
+  `packages/dashboard/src/operator-agents-model.ts`
+- Operator tasks repository owner:
+  `scripts/ensemble_loop_repository.py`
 - Forward operator usage guide: `docs/frontend/FORWARD_OPERATOR_USAGE.md`
 - Frontend FE-6 approval center: `docs/frontend/FE6_APPROVAL_CENTER.md`
 - Frontend FE-7 insights view: `docs/frontend/FE7_INSIGHTS_VIEW.md`

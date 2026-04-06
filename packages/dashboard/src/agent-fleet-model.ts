@@ -11,6 +11,11 @@ export interface AgentProfile {
   lastActive: string;
   memoryCount: number;
   errorRate: number;
+  latestRunId?: string | null;
+  latestRunStatus?: string | null;
+  latestBlocker?: string | null;
+  pendingApprovals?: number;
+  workspaceRef?: string | null;
 }
 
 export const demoFleet: AgentProfile[] = [

@@ -4,16 +4,33 @@ import {
   parseApprovalDetailResponse,
   parseApprovalResumeResponse,
   parseApprovalsResponse,
+  parseOperatorAgentsResponse,
   parseContextLatestResponse,
+  parseOperatorInboxResponse,
+  parseOperatorTaskDeleteResponse,
+  parseOperatorTaskDetailResponse,
+  parseOperatorTasksResponse,
+  parseOperatorWorkspaceDetailResponse,
+  parseOperatorWorkspacesResponse,
+  parseOperatorSummaryResponse,
   parseForwardEventStreamChunk,
   parseReplayResponse,
   parseRoomTimelineResponse,
   parseRunDetailResponse,
   parseRunsResponse,
+  persistSavedTaskFilterPresets,
+  persistTaskFilterState,
+  readInitialTaskFilterState,
+  readSavedTaskFilterPresets,
   parseStateDocsResponse,
   parseStreamSnapshot,
 } from "../src/forward-bridge.ts";
 import { buildForwardRoute, parseForwardRoute } from "../src/forward-route.ts";
+import {
+  buildOperatorWorkspaceMutationBody,
+  getOperatorWorkspaceQuickStatusActions,
+} from "../src/operator-workspace-actions.ts";
+import { toOperatorTaskDetail } from "../src/operator-tasks-model.ts";
 import {
   extractRoomOptions,
   pickInitialApprovalId,
@@ -55,6 +72,305 @@ test("parseRunsResponse validates the BE-1a run list shape", () => {
   assert.equal(parsed.count, 1);
   assert.equal(parsed.runs[0].run_id, "run-1");
   assert.equal(parsed.runs[0].counts.messages, 4);
+});
+
+test("parseOperatorSummaryResponse validates the overview summary shape", () => {
+  const parsed = parseOperatorSummaryResponse({
+    generated_at: "2026-04-04T00:00:00Z",
+    runs: {
+      total: 2,
+      active: 1,
+      awaiting_approval: 1,
+      with_failures: 1,
+      latest_run_id: "run-2",
+      latest_status: "active",
+    },
+    approvals: {
+      pending: 1,
+    },
+    rooms: {
+      active: 2,
+      review: 1,
+    },
+    validation: {
+      failing_runs: 1,
+      latest_failure_reason: "validator failed",
+    },
+    handoffs: {
+      open: 2,
+      blocked: 1,
+    },
+  });
+
+  assert.equal(parsed.runs.latest_run_id, "run-2");
+  assert.equal(parsed.validation.latest_failure_reason, "validator failed");
+  assert.equal(parsed.handoffs.blocked, 1);
+});
+
+test("parseOperatorInboxResponse validates the inbox summary shape", () => {
+  const parsed = parseOperatorInboxResponse({
+    count: 2,
+    items: [
+      {
+        id: "approval:approval-1",
+        kind: "approval",
+        severity: "warning",
+        title: "Approval required for shell_execution",
+        summary: "sample-agent requested shell_execution",
+        run_id: "run-1",
+        iteration_id: "iter-1",
+        room_id: null,
+        created_at: "2026-04-04T00:00:00Z",
+        action_label: "Review approval",
+      },
+      {
+        id: "validator:run-1:1",
+        kind: "validator_failure",
+        severity: "danger",
+        title: "Validator failed for run-1",
+        summary: "validator failed",
+        run_id: "run-1",
+        iteration_id: "iter-1",
+        room_id: null,
+        created_at: "2026-04-04T00:01:00Z",
+        action_label: "Inspect run",
+      },
+    ],
+  });
+
+  assert.equal(parsed.count, 2);
+  assert.equal(parsed.items[0].kind, "approval");
+  assert.equal(parsed.items[1].severity, "danger");
+});
+
+test("parseOperatorAgentsResponse validates the agents projection shape", () => {
+  const parsed = parseOperatorAgentsResponse({
+    count: 1,
+    agents: [
+      {
+        agent_id: "sample-agent",
+        name: "sample-agent",
+        role: "implementer",
+        archetype: "Builder",
+        status: "running",
+        room_id: "room-1",
+        task_count: 2,
+        last_active: "2026-04-04T00:00:00Z",
+        memory_count: 3,
+        error_rate: 0.5,
+        latest_run_id: "run-1",
+        latest_run_status: "active",
+        latest_blocker: "approval pending: shell_execution",
+        pending_approvals: 1,
+        workspace_ref: null,
+      },
+    ],
+  });
+
+  assert.equal(parsed.count, 1);
+  assert.equal(parsed.agents[0].agent_id, "sample-agent");
+  assert.equal(parsed.agents[0].latest_run_status, "active");
+  assert.equal(parsed.agents[0].pending_approvals, 1);
+});
+
+test("parseOperatorTasksResponse and parseOperatorTaskDetailResponse validate the owned task shape", () => {
+  const listParsed = parseOperatorTasksResponse({
+    count: 1,
+    tasks: [
+      {
+        task_id: "otask-1",
+        title: "Introduce canonical operator task",
+        objective: "Create the first owned operator API slice",
+        status: "todo",
+        priority: "high",
+        owner_agent_id: "sample-agent",
+        linked_run_id: "run-1",
+        linked_iteration_id: "iter-1",
+        linked_room_ids_json: ["room-1"],
+        blocked_reason: null,
+        acceptance_json: ["task exists"],
+        workspace_ref: null,
+        archived_at: null,
+        archived_by: null,
+        archive_note: null,
+        created_at: "2026-04-04T00:00:00Z",
+        updated_at: "2026-04-04T00:00:00Z",
+      },
+    ],
+  });
+  const detailParsed = parseOperatorTaskDetailResponse({
+    task: {
+      task_id: "otask-1",
+      title: "Introduce canonical operator task",
+      objective: "Create the first owned operator API slice",
+      status: "todo",
+      priority: "high",
+      owner_agent_id: "sample-agent",
+      linked_run_id: "run-1",
+      linked_iteration_id: "iter-1",
+      linked_room_ids_json: ["room-1"],
+      blocked_reason: null,
+      acceptance_json: ["task exists"],
+      workspace_ref: null,
+      archived_at: null,
+      archived_by: null,
+      archive_note: null,
+      created_at: "2026-04-04T00:00:00Z",
+      updated_at: "2026-04-04T00:00:00Z",
+    },
+  });
+
+  assert.equal(listParsed.count, 1);
+  assert.equal(listParsed.tasks[0].task_id, "otask-1");
+  assert.equal(detailParsed.task.owner_agent_id, "sample-agent");
+  assert.equal(detailParsed.task.acceptance_json[0], "task exists");
+  const detailView = toOperatorTaskDetail(detailParsed);
+  assert.equal(detailView.linkedRunId, "run-1");
+  assert.equal(detailView.linkedIterationId, "iter-1");
+  assert.equal(detailView.linkedRoomIds[0], "room-1");
+  assert.equal(detailView.archivedAt, null);
+  assert.equal(detailView.archivedBy, null);
+  assert.equal(detailView.archiveNote, null);
+});
+
+test("parseOperatorTaskDeleteResponse validates the delete payload shape", () => {
+  const parsed = parseOperatorTaskDeleteResponse({
+    deleted_task_id: "otask-1",
+  });
+
+  assert.equal(parsed.deleted_task_id, "otask-1");
+});
+
+test("parseOperatorWorkspacesResponse and parseOperatorWorkspaceDetailResponse validate the owned workspace shape", () => {
+  const listParsed = parseOperatorWorkspacesResponse({
+    count: 1,
+    workspaces: [
+      {
+        workspace_id: "owork-1",
+        label: "Dashboard repo",
+        path: "packages/dashboard",
+        kind: "repo",
+        status: "active",
+        owner_agent_id: "sample-agent",
+        linked_run_id: "run-1",
+        linked_iteration_id: "iter-1",
+        task_ids_json: ["otask-1"],
+        notes: "Primary frontend workspace.",
+        archived_at: null,
+        archived_by: null,
+        archive_note: null,
+        created_at: "2026-04-05T00:00:00Z",
+        updated_at: "2026-04-05T00:00:00Z",
+      },
+    ],
+  });
+  const detailParsed = parseOperatorWorkspaceDetailResponse({
+    workspace: {
+      workspace_id: "owork-1",
+      label: "Dashboard repo",
+      path: "packages/dashboard",
+      kind: "repo",
+      status: "active",
+      owner_agent_id: "sample-agent",
+      linked_run_id: "run-1",
+      linked_iteration_id: "iter-1",
+      task_ids_json: ["otask-1"],
+      notes: "Primary frontend workspace.",
+      archived_at: null,
+      archived_by: null,
+      archive_note: null,
+      created_at: "2026-04-05T00:00:00Z",
+      updated_at: "2026-04-05T00:00:00Z",
+    },
+  });
+
+  assert.equal(listParsed.count, 1);
+  assert.equal(listParsed.workspaces[0].workspace_id, "owork-1");
+  assert.equal(detailParsed.workspace.path, "packages/dashboard");
+  assert.equal(detailParsed.workspace.task_ids_json[0], "otask-1");
+});
+
+test("workspace quick archive stays gated on rationale and mutation bodies only carry archive note when archiving", () => {
+  const draft = {
+    label: "Dashboard repo",
+    path: "packages/dashboard",
+    kind: "repo",
+    status: "active",
+    archiveNote: "",
+    ownerAgentId: "",
+    linkedRunId: "",
+    linkedIterationId: "",
+    taskIds: "otask-1, otask-2",
+    notes: "",
+  };
+
+  const gatedActions = getOperatorWorkspaceQuickStatusActions("active", draft);
+  const gatedArchive = gatedActions.find((action) => action.status === "archived");
+  assert.equal(gatedArchive?.disabled, true);
+  assert.match(gatedArchive?.reason ?? "", /archive rationale/i);
+
+  const archivableDraft = { ...draft, archiveNote: "Freeze after delivery." };
+  const enabledArchive = getOperatorWorkspaceQuickStatusActions("active", archivableDraft).find(
+    (action) => action.status === "archived",
+  );
+  assert.equal(enabledArchive?.disabled, false);
+  assert.equal(enabledArchive?.reason, null);
+
+  const activeBody = buildOperatorWorkspaceMutationBody(archivableDraft);
+  assert.equal(Object.hasOwn(activeBody, "archive_note"), false);
+  assert.deepEqual(activeBody.task_ids_json, ["otask-1", "otask-2"]);
+
+  const archivedBody = buildOperatorWorkspaceMutationBody(archivableDraft, "archived");
+  assert.equal(archivedBody.archive_note, "Freeze after delivery.");
+});
+
+test("task filter storage helpers persist current filter state and presets", () => {
+  const originalWindow = globalThis.window;
+  const storage = new Map();
+  globalThis.window = {
+    location: { search: "", pathname: "/", hash: "" },
+    history: { replaceState() {} },
+    localStorage: {
+      getItem(key) {
+        return storage.has(key) ? storage.get(key) : null;
+      },
+      setItem(key, value) {
+        storage.set(key, String(value));
+      },
+      removeItem(key) {
+        storage.delete(key);
+      },
+    },
+  };
+
+  try {
+    persistTaskFilterState({
+      status: "blocked",
+      ownerAgentId: "validator",
+      includeArchived: true,
+    });
+    persistSavedTaskFilterPresets([
+      {
+        id: "preset-1",
+        name: "Blocked queue",
+        status: "blocked",
+        ownerAgentId: "validator",
+        includeArchived: true,
+      },
+    ]);
+
+    const current = readInitialTaskFilterState();
+    const presets = readSavedTaskFilterPresets();
+
+    assert.equal(current.status, "blocked");
+    assert.equal(current.ownerAgentId, "validator");
+    assert.equal(current.includeArchived, true);
+    assert.equal(presets.length, 1);
+    assert.equal(presets[0].name, "Blocked queue");
+    assert.equal(presets[0].includeArchived, true);
+  } finally {
+    globalThis.window = originalWindow;
+  }
 });
 
 test("parseRunDetailResponse validates the BE-1a detail shape", () => {
@@ -106,11 +422,23 @@ test("parseRunDetailResponse validates the BE-1a detail shape", () => {
 });
 
 test("forward route round-trips between hash and route object", () => {
-  assert.deepEqual(parseForwardRoute("#/runs"), { screen: "runs", runId: null });
-  assert.deepEqual(parseForwardRoute("#/runs/run-1"), { screen: "run-detail", runId: "run-1" });
-  assert.deepEqual(parseForwardRoute("#/office-preview"), { screen: "office-preview", runId: null });
-  assert.equal(buildForwardRoute({ screen: "run-detail", runId: "run-1" }), "#/runs/run-1");
-  assert.equal(buildForwardRoute({ screen: "office-preview", runId: null }), "#/office-preview");
+  assert.deepEqual(parseForwardRoute("#/overview"), { screen: "overview", runId: null, taskId: null, workspaceId: null });
+  assert.deepEqual(parseForwardRoute("#/inbox"), { screen: "inbox", runId: null, taskId: null, workspaceId: null });
+  assert.deepEqual(parseForwardRoute("#/tasks"), { screen: "tasks", runId: null, taskId: null, workspaceId: null });
+  assert.deepEqual(parseForwardRoute("#/tasks/otask-1"), { screen: "task-detail", runId: null, taskId: "otask-1", workspaceId: null });
+  assert.deepEqual(parseForwardRoute("#/workspaces"), { screen: "workspaces", runId: null, taskId: null, workspaceId: null });
+  assert.deepEqual(parseForwardRoute("#/workspaces/owork-1"), { screen: "workspace-detail", runId: null, taskId: null, workspaceId: "owork-1" });
+  assert.deepEqual(parseForwardRoute("#/runs"), { screen: "runs", runId: null, taskId: null, workspaceId: null });
+  assert.deepEqual(parseForwardRoute("#/runs/run-1"), { screen: "run-detail", runId: "run-1", taskId: null, workspaceId: null });
+  assert.deepEqual(parseForwardRoute("#/office-preview"), { screen: "office-preview", runId: null, taskId: null, workspaceId: null });
+  assert.equal(buildForwardRoute({ screen: "overview", runId: null, taskId: null, workspaceId: null }), "#/overview");
+  assert.equal(buildForwardRoute({ screen: "inbox", runId: null, taskId: null, workspaceId: null }), "#/inbox");
+  assert.equal(buildForwardRoute({ screen: "tasks", runId: null, taskId: null, workspaceId: null }), "#/tasks");
+  assert.equal(buildForwardRoute({ screen: "task-detail", runId: null, taskId: "otask-1", workspaceId: null }), "#/tasks/otask-1");
+  assert.equal(buildForwardRoute({ screen: "workspaces", runId: null, taskId: null, workspaceId: null }), "#/workspaces");
+  assert.equal(buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId: "owork-1" }), "#/workspaces/owork-1");
+  assert.equal(buildForwardRoute({ screen: "run-detail", runId: "run-1", taskId: null, workspaceId: null }), "#/runs/run-1");
+  assert.equal(buildForwardRoute({ screen: "office-preview", runId: null, taskId: null, workspaceId: null }), "#/office-preview");
 });
 
 test("forward view models stay compact and UI-shaped", () => {
@@ -266,6 +594,7 @@ test("parseApprovalsResponse validates approval list payloads", () => {
         request_id: "approval-1",
         run_id: "run-1",
         iteration_id: "iter-1",
+        task_id: "otask-1",
         actor: "sample-agent",
         action_type: "shell_execution",
         action_payload: { command: "echo hi" },
@@ -281,6 +610,7 @@ test("parseApprovalsResponse validates approval list payloads", () => {
 
   assert.equal(parsed.approvals[0].status, "pending");
   assert.equal(parsed.approvals[0].action_type, "shell_execution");
+  assert.equal(parsed.approvals[0].task_id, "otask-1");
 });
 
 test("parseApprovalDetailResponse and parseApprovalResumeResponse validate mutation payloads", () => {

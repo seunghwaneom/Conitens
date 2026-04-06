@@ -261,6 +261,18 @@ class LoopStateTests(unittest.TestCase):
                 created_at="2026-04-01T00:00:05.000000Z",
                 updated_at="2026-04-01T00:00:05.000000Z",
             )
+            repository.create_operator_task(
+                task_id="otask-1",
+                title="Operator task",
+                objective="Own the next product slice",
+                status="todo",
+                priority="high",
+                owner_agent_id="agent-a",
+                linked_run_id=run["run_id"],
+                linked_iteration_id=iteration["iteration_id"],
+                linked_room_ids=["room-1"],
+                acceptance=["ship tests"],
+            )
             repository.append_memory_record(
                 record_id="mem-1",
                 agent_id="agent-a",
@@ -303,6 +315,7 @@ class LoopStateTests(unittest.TestCase):
             self.assertEqual(len(restored["tool_events"]), 1)
             self.assertEqual(len(restored["insights"]), 1)
             self.assertEqual(len(restored["handoff_packets"]), 1)
+            self.assertEqual(len(restored["operator_tasks"]), 1)
             self.assertEqual(len(restored["memory_records"]), 1)
             self.assertEqual(len(restored["candidate_policy_patches"]), 1)
 
@@ -338,8 +351,243 @@ class LoopStateTests(unittest.TestCase):
 
             self.assertEqual(written["source_of_truth"]["approval_decision"]["owner"], "sqlite:approval_requests")
             self.assertEqual(written["source_of_truth"]["room_event_log"]["owner"], "sqlite:messages")
+            self.assertEqual(written["source_of_truth"]["operator_task"]["owner"], "sqlite:operator_tasks")
             self.assertEqual(written["runs"][0]["approval_requests"][0]["request_id"], "approval-2")
             self.assertEqual(written["runs"][0]["progress_entries"][0]["summary"], "append-only progress")
+
+    def test_create_and_list_operator_tasks(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            run = RunService(repository).create_run("Operator task registry")
+            iteration = IterationService(repository).append_iteration(run["run_id"], "Registry iteration")
+
+            created = repository.create_operator_task(
+                task_id="otask-1",
+                title="Create operator task registry",
+                objective="Introduce the first owned operator API slice",
+                status="todo",
+                priority="high",
+                owner_agent_id="architect",
+                linked_run_id=run["run_id"],
+                linked_iteration_id=iteration["iteration_id"],
+                linked_room_ids=["room-1"],
+                blocked_reason=None,
+                acceptance=["api exists"],
+                workspace_ref="workspace-a",
+            )
+
+            listed = repository.list_operator_tasks(owner_agent_id="architect")
+
+            self.assertEqual(created["task_id"], "otask-1")
+            self.assertEqual(created["linked_room_ids_json"], ["room-1"])
+            self.assertEqual(created["acceptance_json"], ["api exists"])
+            self.assertEqual(listed[0]["workspace_ref"], "workspace-a")
+
+    def test_update_operator_task(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            run = RunService(repository).create_run("Operator task update")
+            iteration = IterationService(repository).append_iteration(run["run_id"], "Update iteration")
+            repository.create_operator_task(
+                task_id="otask-1",
+                title="Initial title",
+                objective="Initial objective",
+                status="todo",
+                priority="medium",
+                owner_agent_id="architect",
+                linked_run_id=run["run_id"],
+                linked_iteration_id=iteration["iteration_id"],
+                linked_room_ids=[],
+                acceptance=["initial"],
+            )
+
+            updated = repository.update_operator_task(
+                task_id="otask-1",
+                title="Updated title",
+                objective="Updated objective",
+                status="blocked",
+                priority="high",
+                blocked_reason="Needs operator decision",
+                acceptance=["updated"],
+            )
+
+            self.assertEqual(updated["title"], "Updated title")
+            self.assertEqual(updated["status"], "blocked")
+            self.assertEqual(updated["blocked_reason"], "Needs operator decision")
+            self.assertEqual(updated["acceptance_json"], ["updated"])
+
+    def test_invalid_operator_task_status_transition_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            repository.create_operator_task(
+                task_id="otask-1",
+                title="Initial title",
+                objective="Initial objective",
+                status="todo",
+                priority="medium",
+            )
+
+            with self.assertRaises(ValueError) as exc_info:
+                repository.update_operator_task(
+                    task_id="otask-1",
+                    status="done",
+                )
+
+            self.assertIn("Invalid operator task status transition", str(exc_info.exception))
+
+    def test_delete_operator_task(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            repository.create_operator_task(
+                task_id="otask-1",
+                title="Initial title",
+                objective="Initial objective",
+                status="todo",
+                priority="medium",
+            )
+
+            deleted = repository.delete_operator_task("otask-1")
+
+            self.assertEqual(deleted["task_id"], "otask-1")
+            self.assertIsNone(repository.get_operator_task("otask-1"))
+            self.assertEqual(repository.list_operator_tasks(), [])
+
+    def test_archive_and_restore_operator_task(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            repository.create_operator_task(
+                task_id="otask-1",
+                title="Initial title",
+                objective="Initial objective",
+                status="todo",
+                priority="medium",
+            )
+
+            archived = repository.archive_operator_task(
+                "otask-1",
+                archived_by="operator-1",
+                archive_note="Shipped and removed from the active queue.",
+            )
+            visible_after_archive = repository.list_operator_tasks()
+            visible_with_archived = repository.list_operator_tasks(include_archived=True)
+            restored = repository.restore_operator_task("otask-1")
+
+            self.assertIsNotNone(archived["archived_at"])
+            self.assertEqual(archived["archived_by"], "operator-1")
+            self.assertEqual(archived["archive_note"], "Shipped and removed from the active queue.")
+            self.assertEqual(visible_after_archive, [])
+            self.assertEqual(len(visible_with_archived), 1)
+            self.assertIsNone(restored["archived_at"])
+            self.assertIsNone(restored["archived_by"])
+            self.assertIsNone(restored["archive_note"])
+            self.assertEqual(len(repository.list_operator_tasks()), 1)
+
+    def test_create_and_update_operator_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            run = RunService(repository).create_run("Operator workspace registry")
+            iteration = IterationService(repository).append_iteration(run["run_id"], "Workspace iteration")
+
+            created = repository.create_operator_workspace(
+                workspace_id="owork-1",
+                label="Dashboard repo",
+                path="packages/dashboard",
+                kind="repo",
+                status="active",
+                owner_agent_id="architect",
+                linked_run_id=run["run_id"],
+                linked_iteration_id=iteration["iteration_id"],
+                task_ids=["otask-1"],
+                notes="Primary frontend workspace.",
+            )
+
+            updated = repository.update_operator_workspace(
+                workspace_id="owork-1",
+                status="blocked",
+                task_ids=["otask-1", "otask-2"],
+                notes="Blocked on validator pass.",
+            )
+
+            listed = repository.list_operator_workspaces(owner_agent_id="architect")
+
+            self.assertEqual(created["workspace_id"], "owork-1")
+            self.assertEqual(created["task_ids_json"], ["otask-1"])
+            self.assertEqual(updated["status"], "blocked")
+            self.assertEqual(updated["task_ids_json"], ["otask-1", "otask-2"])
+            self.assertEqual(listed[0]["notes"], "Blocked on validator pass.")
+
+    def test_invalid_operator_workspace_status_transition_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            repository.create_operator_workspace(
+                workspace_id="owork-1",
+                label="Dashboard repo",
+                path="packages/dashboard",
+                kind="repo",
+                status="archived",
+            )
+
+            with self.assertRaises(ValueError) as exc_info:
+                repository.update_operator_workspace(
+                    workspace_id="owork-1",
+                    status="blocked",
+                )
+
+            self.assertIn("Invalid operator workspace status transition", str(exc_info.exception))
+
+    def test_workspace_archive_metadata_is_recorded_and_cleared(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            repository.create_operator_workspace(
+                workspace_id="owork-1",
+                label="Dashboard repo",
+                path="packages/dashboard",
+                kind="repo",
+                status="active",
+            )
+
+            archived = repository.update_operator_workspace(
+                workspace_id="owork-1",
+                status="archived",
+                archived_by="operator-1",
+                archive_note="Freeze the workspace after delivery.",
+            )
+            restored = repository.update_operator_workspace(
+                workspace_id="owork-1",
+                status="active",
+            )
+
+            self.assertIsNotNone(archived["archived_at"])
+            self.assertEqual(archived["archived_by"], "operator-1")
+            self.assertEqual(archived["archive_note"], "Freeze the workspace after delivery.")
+            self.assertIsNone(restored["archived_at"])
+            self.assertIsNone(restored["archived_by"])
+            self.assertIsNone(restored["archive_note"])
+
+    def test_detach_operator_task_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            repository.create_operator_task(
+                task_id="otask-1",
+                title="Initial title",
+                objective="Initial objective",
+                status="todo",
+                priority="medium",
+                workspace_ref="owork-1",
+            )
+
+            detached = repository.detach_operator_task_workspace("otask-1")
+
+            self.assertIsNone(detached["workspace_ref"])
 
 
 if __name__ == "__main__":

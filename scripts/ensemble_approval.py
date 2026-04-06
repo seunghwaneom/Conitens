@@ -76,6 +76,7 @@ class ApprovalInterruptAdapter:
         *,
         run_id: str,
         iteration_id: str,
+        task_id: str | None = None,
         actor: str,
         action_type: str,
         action_payload: dict[str, Any],
@@ -85,6 +86,7 @@ class ApprovalInterruptAdapter:
             request_id=f"approval-{uuid.uuid4().hex}",
             run_id=run_id,
             iteration_id=iteration_id,
+            task_id=task_id,
             actor=actor,
             action_type=action_type,
             action_payload=classification["action_payload"],
@@ -99,7 +101,7 @@ class ApprovalInterruptAdapter:
             self.workspace,
             event_type="APPROVAL_REQUESTED",
             actor={"type": "agent", "name": actor},
-            scope={"run_id": run_id, "task_id": run_id, "correlation_id": run_id},
+            scope={"run_id": run_id, "task_id": task_id or run_id, "correlation_id": run_id},
             payload={"request_id": request["request_id"], "action_type": action_type, "risk_level": request["risk_level"]},
         )
         self.progress.regenerate(run_id)
