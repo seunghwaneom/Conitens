@@ -10,7 +10,12 @@ task meaningfully changes, update `.conitens/context/task_plan.md`,
 
 - Current runtime truth for the existing Conitens product line remains
   `scripts/ensemble.py` + `.notes/` + `.agent/`.
-- `.conitens/` is the forward Batch 0 contract surface for Ralph-aware,
+- `events/*.jsonl` is the sole commit point (I-1). All state mutations must
+  emit events via `append_event()` before writing files.
+- `.notes/` files are **projections** from events, regenerable via
+  `ensemble_obsidian.py rebuild` (I-2). Do not write to `.notes/` directly
+  from new modules — emit events and let the projection layer handle it.
+- `.conitens/` is the forward contract surface for Ralph-aware,
   restartable, disk-backed loop work. Do not claim it replaces the current
   runtime until a later batch explicitly does so.
 - Extend the Python core additively through `scripts/ensemble_*.py`. Do not
