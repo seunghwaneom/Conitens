@@ -1,5 +1,7 @@
 # Conitens
 
+> Last updated: 2026-04-07
+
 > **Conitens는 외부 CLI 에이전트를 위한 verify-gated operations/control plane이다.**
 
 Conitens does not replace Claude Code, Codex, Gemini, or future runtimes. It coordinates them through files, workflow contracts, approvals, verify gates, events, meetings, office reports, and replayable artifacts.
