@@ -33,10 +33,19 @@ Architecture rule: `events/*.jsonl` is the sole commit point (I-1). `.notes/` Ma
 
 ### Active Runtime
 
-- `.notes/` stores task state, events, meetings, workflow runs, handoffs, office reports, and context snapshots.
-- `.agent/` stores rules, workflows, canonical agent manifests, canonical skill manifests, and gate policies.
-- `scripts/ensemble.py` preserves the existing operations core.
-- `scripts/ensemble_workflow.py`, `scripts/ensemble_mcp_server.py`, `scripts/ensemble_office.py`, `scripts/ensemble_meeting.py`, and related modules extend that core additively.
+- `.notes/` — Obsidian Vault (projections from events). Numbered structure: `00_Inbox/` through `80_Archive/`, with `.index/` for SQLite FTS.
+- `.notes/EVENTS/events.jsonl` — append-only event log, sole commit point (I-1).
+- `.agent/` — canonical agent config (manifests, policies, skills, workflows, providers, rooms).
+- `scripts/ensemble.py` — existing operations core (preserved, never replaced).
+- Extension modules (additive, event-first):
+  - `ensemble_agent_registry.py` — persistent agent CRUD (create/list/patch/apply/archive)
+  - `ensemble_comms.py` — communication ledger (thread create/append/close/search)
+  - `ensemble_obsidian.py` — single-writer Obsidian projection layer with `rebuild_all()` (I-2)
+  - `ensemble_background.py` — CLI background sessions (subprocess/tmux adapter)
+  - `ensemble_token_budget.py` — L0/L1/L2 compression, budget enforcement
+  - `ensemble_improver.py` — self-improvement loop (failure mining, candidate patches, weekly reports)
+  - `ensemble_hermes.py` — Hermes profile mapping + OpenViking interface stubs
+  - `ensemble_events.py` — event logging with type validation via `sync_event_types.py`
 
 ### Command Center (`packages/command-center`)
 
@@ -68,6 +77,18 @@ cd packages/command-center && pnpm dev
 # Open http://localhost:3100
 ```
 
+### Dashboard (`packages/dashboard`)
+
+Operational dashboard for persistent agents and communication threads. Screens:
+
+- **Runs** — task execution list and detail
+- **Threads** — communication ledger browser with search
+- **Agents** — agent studio (list, detail, pending patches)
+- **Approvals** — approval center for pending patches and gate decisions
+- **Office Preview** — pixel office visualization (secondary)
+
+Data source: Forward Bridge API (`scripts/ensemble_forward_bridge.py`) serving `/api/agents`, `/api/threads`, `/api/approvals`, `/api/runs`.
+
 ### Reference / Parity Surfaces
 
 - `packages/protocol` — event types, validation, ownership rules
@@ -79,24 +100,52 @@ These remain important design references, but they are not the active runtime tr
 ## Quick Start
 
 ```bash
+# Task lifecycle
 ensemble init-owner
-ensemble new --mode GCC --case MODIFY --title "Add typed workflow handoffs"
+ensemble new --mode SOLO --case MODIFY --title "Add typed workflow handoffs"
 ensemble start
 ensemble log --done "Prepared implementation slice" --change "scripts/ensemble_workflow.py" --next "Run verify"
 ensemble verify --files scripts/ensemble_workflow.py
 ensemble close
+
+# Persistent agents
+python scripts/ensemble_agent_registry.py create my-worker --role worker --persona "Backend specialist"
+python scripts/ensemble_agent_registry.py list
+
+# Communication threads
+python scripts/ensemble_comms.py create --kind user_agent --workspace ws-main --participants "user,supervisor-core"
+python scripts/ensemble_comms.py list
+python scripts/ensemble_comms.py search "keyword"
+
+# Background sessions
+python scripts/ensemble_background.py up ws-main --agent worker --cmd "python my_task.py"
+python scripts/ensemble_background.py ps
+python scripts/ensemble_background.py logs ws-main worker
+python scripts/ensemble_background.py stop ws-main worker
+
+# Token budget
+python scripts/ensemble_token_budget.py validate --file .notes/40_Comms/thread.md --type thread_summary
+
+# Improvement reports
+python scripts/ensemble_improver.py report
 ```
 
 ## Core Capabilities
 
 - Verify-before-close task lifecycle
 - Owner approval and question queue
-- Append-only event logging
-- Append-only meeting transcripts with derived summaries
+- Append-only event logging (sole commit point, I-1)
+- Event-first architecture: all mutations emit events, `.notes/` files are projections (I-2)
+- Persistent agent registry (create, modify, archive via CLI)
+- Communication ledger with thread-based recording (user-agent, agent-agent, agent-agent-user)
+- Obsidian-compatible `.notes/` vault (frontmatter, wikilinks, tags)
+- SQLite FTS thread search
+- CLI-first background session management (detach/attach without GUI)
+- L0/L1/L2 token compression with budget enforcement
+- Self-improvement loop (failure mining, candidate patches, weekly reports)
+- Approval-gated agent self-modification (patches require review)
 - Markdown workflow contracts with run records
-- Durable gate records and artifact manifests
-- Read-only MCP resources/prompts/tools surface for safe inspection
-- Static office reports for operational visibility
+- Read-only MCP resources/prompts/tools surface
 - Typed handoff artifacts for delegated workflow steps
 
 ## Workflow Example
@@ -163,6 +212,8 @@ ensemble workflow run --workflow wf.parallel-workcell --set task_id=TASK-... --s
 - [CONITENS.md](CONITENS.md): canonical architecture and state meaning
 - [USAGE_GUIDE.md](USAGE_GUIDE.md): operator-oriented CLI usage
 - [docs/adr-0001-control-plane.md](docs/adr-0001-control-plane.md): current truth boundaries
+- [docs/adr-0002-product-surface-persistent-agents.md](docs/adr-0002-product-surface-persistent-agents.md): persistent agents, event-first architecture, .notes/ vault
+- [docs/superpowers/plans/2026-04-06-conitens-improvement-plan.md](docs/superpowers/plans/2026-04-06-conitens-improvement-plan.md): 6-batch implementation plan (approved)
 - [docs/control-plane-compatibility.md](docs/control-plane-compatibility.md): active vs reference surfaces
 - [docs/OPERATIONS_LAYER.md](docs/OPERATIONS_LAYER.md): Core/Ext overview
 - [docs/LOCAL_RUNTIME_POLICY.md](docs/LOCAL_RUNTIME_POLICY.md): what stays local-only vs tracked
@@ -207,7 +258,10 @@ python -m unittest tests.test_operations_layer
 
 ## Non-Goals For This Product Line
 
-- remote write-capable MCP by default
-- bypassing owner approval through Telegram, MCP, or workflow helpers
-- replacing `scripts/ensemble.py` with a new runtime
-- treating `.context/` or `.conitens/` as active task truth for the current branch
+- Remote write-capable MCP by default
+- Bypassing owner approval through Telegram, MCP, or workflow helpers
+- Replacing `scripts/ensemble.py` with a new runtime
+- Office metaphor expansion (frozen per ADR-0002; maintained, not extended)
+- Full transcript prompt stuffing (use L0/L1 summaries instead)
+- Unapproved agent self-modification (candidate patches require review)
+- Vector DB or embeddings in v0
