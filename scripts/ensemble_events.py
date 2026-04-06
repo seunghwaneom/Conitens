@@ -129,6 +129,12 @@ def append_event(
     rules: list[str] | None = None,
     shard_by_date: bool = False,
 ) -> dict[str, Any]:
+    # Validate event_type against protocol-synced allow-list (ADR-0002)
+    try:
+        from ensemble_allowed_events import resolve_event_type
+        event_type = resolve_event_type(event_type)
+    except ImportError:
+        pass  # Graceful fallback if sync not yet run
     ts = utc_now()
     payload = payload or {}
     redacted_payload, applied_rules = redact_data(deepcopy(payload), rules)
