@@ -1,0 +1,256 @@
+.forward-grid {
+  grid-template-columns: 344px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.forward-sidebar,
+.forward-detail,
+.forward-approval-detail,
+.forward-graph-shell,
+.forward-doc-card,
+.forward-insight-card,
+.agent-fleet-metrics,
+.agent-profile,
+.agent-card,
+.proposal-card,
+.agent-graph-container {
+  border: 1px solid var(--shell-line);
+  background: var(--shell-panel);
+  box-shadow: var(--shell-shadow);
+  backdrop-filter: none;
+}
+
+.forward-sidebar,
+.forward-detail {
+  min-height: 560px;
+  padding: 22px;
+}
+
+.forward-panel-header {
+  margin-bottom: 16px;
+  align-items: end;
+}
+
+.forward-panel-header h2,
+.forward-section-header h3,
+.forward-detail-hero h3 {
+  color: var(--shell-text);
+  line-height: 1.08;
+}
+
+.forward-panel-header h2 {
+  font-size: 24px;
+}
+
+.forward-run-list {
+  gap: 8px;
+}
+
+.forward-run-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+}
+
+.forward-run-item,
+.forward-approval-item,
+.forward-timeline li,
+.forward-doc-card,
+.forward-insight-card,
+.forward-approval-detail,
+.forward-stats div {
+  border: 1px solid var(--shell-line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.forward-run-item {
+  padding: 14px 16px;
+}
+
+.forward-task-select {
+  display: grid;
+  place-items: center;
+  min-width: 58px;
+  padding: 10px 8px;
+  border: 1px solid var(--shell-line);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--shell-muted);
+  font-size: 11px;
+  gap: 6px;
+  border-radius: 14px;
+}
+
+.forward-task-select input {
+  margin: 0;
+}
+
+.forward-run-item:hover,
+.forward-approval-item:hover,
+.forward-chip-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.forward-run-item.active,
+.forward-approval-item.active,
+.forward-chip-button.active {
+  background: rgba(139, 210, 255, 0.1);
+  border-color: rgba(139, 210, 255, 0.24);
+}
+
+.forward-chip-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.forward-run-item.running {
+  animation: none;
+  box-shadow: inset 0 0 0 1px rgba(93, 204, 152, 0.22);
+}
+
+.forward-run-topline strong {
+  font-size: 15px;
+  color: var(--shell-text);
+}
+
+.forward-run-item p,
+.forward-placeholder p,
+.forward-empty,
+.forward-doc-header span,
+.forward-approval-meta,
+.forward-metric-row span,
+.forward-stats span,
+.forward-timeline li p {
+  color: var(--shell-muted);
+}
+
+.forward-placeholder {
+  min-height: 320px;
+}
+
+.forward-section {
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--shell-line);
+}
+
+.forward-section-header {
+  align-items: end;
+}
+
+.forward-timeline {
+  gap: 8px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.forward-timeline li {
+  padding: 12px 14px;
+}
+
+.forward-timeline-topline strong,
+.forward-doc-header strong,
+.forward-insight-header strong {
+  color: var(--shell-text);
+}
+
+.forward-doc-card pre {
+  color: rgba(237, 243, 251, 0.92);
+  background: rgba(10, 14, 21, 0.34);
+}
+
+.forward-doc-header {
+  border-bottom-color: var(--shell-line);
+}
+
+.forward-approval-layout {
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.forward-approval-note {
+  gap: 8px;
+}
+
+.forward-approval-actions {
+  gap: 8px;
+}
+
+.forward-graph-shell {
+  overflow: hidden;
+}
+
+.forward-graph-shell svg {
+  min-width: 720px;
+}
+
+.forward-graph-edge {
+  stroke: rgba(139, 210, 255, 0.36);
+}
+
+.forward-graph-node {
+  fill: rgba(255, 255, 255, 0.03);
+  stroke: var(--shell-line);
+}
+
+.forward-graph-label {
+  fill: var(--shell-text);
+}
+
+.forward-detail-hero {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--shell-line);
+}
+
+.forward-stats {
+  gap: 10px;
+}
+
+.forward-stats div {
+  padding: 12px 14px;
+}
+
+.forward-stats strong {
+  color: var(--shell-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.forward-error {
+  color: var(--shell-danger);
+}
+
+.state-idle {
+  color: var(--shell-muted);
+}
+
+.state-loading {
+  color: var(--shell-warning);
+}
+
+.state-ready {
+  color: var(--shell-success);
+}
+
+.state-error {
+  color: var(--shell-danger);
+}
+
+@media (max-width: 1220px) {
+  .forward-grid,
+  .forward-approval-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .forward-sidebar,
+  .forward-detail {
+    padding: 18px;
+    min-height: auto;
+  }
+
+  .forward-tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

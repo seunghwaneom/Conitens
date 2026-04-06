@@ -13,8 +13,8 @@ export function ForwardStateDocsPanel({
     <section className="forward-section">
       <div className="forward-section-header">
         <div>
-          <p className="forward-panel-label">State docs</p>
-          <h3>Projected runtime documents</h3>
+          <p className="forward-panel-label">Runtime Docs</p>
+          <h3>Projected state documents</h3>
         </div>
         <span className={`forward-state state-${state}`}>{state}</span>
       </div>

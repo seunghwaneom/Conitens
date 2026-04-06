@@ -20,8 +20,8 @@ export function ForwardRoomPanel({
     <section className="forward-section">
       <div className="forward-section-header">
         <div>
-          <p className="forward-panel-label">Room</p>
-          <h3>Read-only room timeline</h3>
+          <p className="forward-panel-label">Spatial Lens</p>
+          <h3>Room timeline</h3>
         </div>
         <span className={`forward-state state-${state}`}>{state}</span>
       </div>

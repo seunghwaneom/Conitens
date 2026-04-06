@@ -125,7 +125,28 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
             <span>Room</span>
             <strong className="agent-stat-room">{agent.roomId}</strong>
           </div>
+          {agent.latestRunId ? (
+            <div className="agent-stat-item">
+              <span>Latest run</span>
+              <strong className="agent-stat-room">{agent.latestRunId}</strong>
+            </div>
+          ) : null}
+          {typeof agent.pendingApprovals === "number" ? (
+            <div className="agent-stat-item">
+              <span>Approvals</span>
+              <strong>{agent.pendingApprovals}</strong>
+            </div>
+          ) : null}
         </div>
+        {agent.latestRunStatus ? (
+          <p className="agent-health-active">Latest run status: {agent.latestRunStatus}</p>
+        ) : null}
+        {agent.latestBlocker ? (
+          <p className="agent-health-active">Latest blocker: {agent.latestBlocker}</p>
+        ) : null}
+        {agent.workspaceRef ? (
+          <p className="agent-health-active">Workspace: {agent.workspaceRef}</p>
+        ) : null}
       </div>
 
       <div className="agent-profile-section">

@@ -17,7 +17,7 @@ export function ForwardInsightsPanel({
       <div className="forward-section-header">
         <div>
           <p className="forward-panel-label">Insights</p>
-          <h3>Post-run insight view</h3>
+          <h3>Evidence & insight view</h3>
         </div>
       </div>
       {insights.length === 0 && !hasFindings && !hasCorrelations ? (
