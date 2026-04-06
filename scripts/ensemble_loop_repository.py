@@ -15,8 +15,25 @@ from typing import Any, Iterator
 from ensemble_loop_paths import loop_state_db_path, loop_state_debug_path
 
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 14
 ACTIVE_RUN_STATUSES = ("active", "running")
+OPERATOR_TASK_ALLOWED_TRANSITIONS = {
+    "backlog": {"backlog", "todo", "cancelled"},
+    "todo": {"todo", "in_progress", "blocked", "cancelled"},
+    "in_progress": {"in_progress", "blocked", "in_review", "done", "cancelled"},
+    "blocked": {"blocked", "todo", "in_progress", "cancelled"},
+    "in_review": {"in_review", "in_progress", "blocked", "done", "cancelled"},
+    "done": {"done"},
+    "cancelled": {"cancelled"},
+}
+OPERATOR_WORKSPACE_KINDS = ("repo", "branch", "scratch", "review")
+OPERATOR_WORKSPACE_STATUSES = ("active", "idle", "blocked", "archived")
+OPERATOR_WORKSPACE_ALLOWED_TRANSITIONS = {
+    "active": {"active", "idle", "blocked", "archived"},
+    "idle": {"idle", "active", "blocked", "archived"},
+    "blocked": {"blocked", "active", "idle", "archived"},
+    "archived": {"archived", "active"},
+}
 FINDING_CATEGORIES = (
     "discovery",
     "constraint",
@@ -61,6 +78,16 @@ AUTHORITATIVE_STATE_OWNERS = {
         "mode": "append_only_projection",
         "append_only": True,
     },
+    "operator_task": {
+        "owner": "sqlite:operator_tasks",
+        "artifact": None,
+        "mode": "authoritative_additive",
+    },
+    "operator_workspace": {
+        "owner": "sqlite:operator_workspaces",
+        "artifact": None,
+        "mode": "authoritative_additive",
+    },
 }
 
 
@@ -81,6 +108,22 @@ def decode_json(value: str | None, default: Any) -> Any:
 
 def debug_json_path(workspace: str | Path) -> Path:
     return loop_state_debug_path(workspace)
+
+
+def validate_operator_task_transition(current_status: str, next_status: str) -> None:
+    allowed = OPERATOR_TASK_ALLOWED_TRANSITIONS.get(current_status)
+    if allowed is None:
+        raise ValueError(f"Unsupported current operator task status: {current_status}")
+    if next_status not in allowed:
+        raise ValueError(f"Invalid operator task status transition: {current_status} -> {next_status}")
+
+
+def validate_operator_workspace_transition(current_status: str, next_status: str) -> None:
+    allowed = OPERATOR_WORKSPACE_ALLOWED_TRANSITIONS.get(current_status)
+    if allowed is None:
+        raise ValueError(f"Unsupported current operator workspace status: {current_status}")
+    if next_status not in allowed:
+        raise ValueError(f"Invalid operator workspace status transition: {current_status} -> {next_status}")
 
 
 MIGRATIONS: dict[int, str] = {
@@ -379,6 +422,77 @@ MIGRATIONS: dict[int, str] = {
     CREATE INDEX IF NOT EXISTS idx_handoff_packets_run_updated
         ON handoff_packets (run_id, updated_at DESC);
     """,
+    9: """
+    CREATE TABLE IF NOT EXISTS operator_tasks (
+        task_id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        objective TEXT NOT NULL,
+        status TEXT NOT NULL,
+        priority TEXT NOT NULL,
+        owner_agent_id TEXT,
+        linked_run_id TEXT,
+        linked_iteration_id TEXT,
+        linked_room_ids_json TEXT NOT NULL,
+        blocked_reason TEXT,
+        acceptance_json TEXT NOT NULL,
+        workspace_ref TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (linked_run_id) REFERENCES runs(run_id) ON DELETE SET NULL,
+        FOREIGN KEY (linked_iteration_id) REFERENCES iterations(iteration_id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_operator_tasks_status_updated
+        ON operator_tasks (status, updated_at DESC, task_id DESC);
+    CREATE INDEX IF NOT EXISTS idx_operator_tasks_owner_updated
+        ON operator_tasks (owner_agent_id, updated_at DESC, task_id DESC);
+    CREATE INDEX IF NOT EXISTS idx_operator_tasks_run_updated
+        ON operator_tasks (linked_run_id, updated_at DESC, task_id DESC);
+    """,
+    10: """
+    ALTER TABLE approval_requests ADD COLUMN task_id TEXT;
+    CREATE INDEX IF NOT EXISTS idx_approval_requests_task_status
+        ON approval_requests (task_id, status, updated_at DESC);
+    """,
+    11: """
+    ALTER TABLE operator_tasks ADD COLUMN archived_at TEXT;
+    CREATE INDEX IF NOT EXISTS idx_operator_tasks_archived_updated
+        ON operator_tasks (archived_at, updated_at DESC, task_id DESC);
+    """,
+    12: """
+    ALTER TABLE operator_tasks ADD COLUMN archived_by TEXT;
+    ALTER TABLE operator_tasks ADD COLUMN archive_note TEXT;
+    """,
+    13: """
+    CREATE TABLE IF NOT EXISTS operator_workspaces (
+        workspace_id TEXT PRIMARY KEY,
+        label TEXT NOT NULL,
+        path TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        status TEXT NOT NULL,
+        owner_agent_id TEXT,
+        linked_run_id TEXT,
+        linked_iteration_id TEXT,
+        task_ids_json TEXT NOT NULL,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (linked_run_id) REFERENCES runs(run_id) ON DELETE SET NULL,
+        FOREIGN KEY (linked_iteration_id) REFERENCES iterations(iteration_id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_operator_workspaces_status_updated
+        ON operator_workspaces (status, updated_at DESC, workspace_id DESC);
+    CREATE INDEX IF NOT EXISTS idx_operator_workspaces_owner_updated
+        ON operator_workspaces (owner_agent_id, updated_at DESC, workspace_id DESC);
+    CREATE INDEX IF NOT EXISTS idx_operator_workspaces_run_updated
+        ON operator_workspaces (linked_run_id, updated_at DESC, workspace_id DESC);
+    """,
+    14: """
+    ALTER TABLE operator_workspaces ADD COLUMN archived_at TEXT;
+    ALTER TABLE operator_workspaces ADD COLUMN archived_by TEXT;
+    ALTER TABLE operator_workspaces ADD COLUMN archive_note TEXT;
+    """,
 }
 
 
@@ -431,6 +545,39 @@ class LoopStateRepository:
                         connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN stop_reason TEXT")
                     if "loop_cost_metrics_json" not in columns:
                         connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN loop_cost_metrics_json TEXT NOT NULL DEFAULT '{}'")
+                elif target_version == 11:
+                    columns = {
+                        row["name"]
+                        for row in connection.execute("PRAGMA table_info(operator_tasks)").fetchall()
+                    }
+                    if "archived_at" not in columns:
+                        connection.execute("ALTER TABLE operator_tasks ADD COLUMN archived_at TEXT")
+                    connection.execute(
+                        """
+                        CREATE INDEX IF NOT EXISTS idx_operator_tasks_archived_updated
+                            ON operator_tasks (archived_at, updated_at DESC, task_id DESC)
+                        """
+                    )
+                elif target_version == 12:
+                    columns = {
+                        row["name"]
+                        for row in connection.execute("PRAGMA table_info(operator_tasks)").fetchall()
+                    }
+                    if "archived_by" not in columns:
+                        connection.execute("ALTER TABLE operator_tasks ADD COLUMN archived_by TEXT")
+                    if "archive_note" not in columns:
+                        connection.execute("ALTER TABLE operator_tasks ADD COLUMN archive_note TEXT")
+                elif target_version == 14:
+                    columns = {
+                        row["name"]
+                        for row in connection.execute("PRAGMA table_info(operator_workspaces)").fetchall()
+                    }
+                    if "archived_at" not in columns:
+                        connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archived_at TEXT")
+                    if "archived_by" not in columns:
+                        connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archived_by TEXT")
+                    if "archive_note" not in columns:
+                        connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archive_note TEXT")
                 else:
                     connection.executescript(script)
                 connection.execute(f"PRAGMA user_version = {target_version}")
@@ -821,6 +968,458 @@ class LoopStateRepository:
             return None
         return self._decode_task_plan(dict(row))
 
+    def create_operator_task(
+        self,
+        *,
+        task_id: str,
+        title: str,
+        objective: str,
+        status: str,
+        priority: str,
+        owner_agent_id: str | None = None,
+        linked_run_id: str | None = None,
+        linked_iteration_id: str | None = None,
+        linked_room_ids: list[str] | None = None,
+        blocked_reason: str | None = None,
+        acceptance: list[str] | None = None,
+        workspace_ref: str | None = None,
+        created_at: str | None = None,
+        updated_at: str | None = None,
+    ) -> dict[str, Any]:
+        linked_run_id, linked_iteration_id = self._normalize_run_iteration_refs(linked_run_id, linked_iteration_id)
+        created = created_at or utc_iso()
+        updated = updated_at or created
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO operator_tasks (
+                    task_id, title, objective, status, priority, owner_agent_id,
+                    linked_run_id, linked_iteration_id, linked_room_ids_json,
+                    blocked_reason, acceptance_json, workspace_ref, archived_at,
+                    archived_by, archive_note, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    task_id,
+                    title,
+                    objective,
+                    status,
+                    priority,
+                    owner_agent_id,
+                    linked_run_id,
+                    linked_iteration_id,
+                    encode_json(linked_room_ids or []),
+                    blocked_reason,
+                    encode_json(acceptance or []),
+                    workspace_ref,
+                    None,
+                    None,
+                    None,
+                    created,
+                    updated,
+                ),
+            )
+            row = connection.execute(
+                "SELECT * FROM operator_tasks WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+        return self._decode_operator_task(dict(row))
+
+    def update_operator_task(
+        self,
+        *,
+        task_id: str,
+        title: str | None = None,
+        objective: str | None = None,
+        status: str | None = None,
+        priority: str | None = None,
+        owner_agent_id: str | None = None,
+        linked_run_id: str | None = None,
+        linked_iteration_id: str | None = None,
+        linked_room_ids: list[str] | None = None,
+        blocked_reason: str | None = None,
+        acceptance: list[str] | None = None,
+        workspace_ref: str | None = None,
+        updated_at: str | None = None,
+    ) -> dict[str, Any]:
+        current = self.get_operator_task(task_id)
+        if current is None:
+            raise ValueError(f"Operator task not found: {task_id}")
+
+        if status is not None:
+            validate_operator_task_transition(str(current["status"]), status)
+
+        next_run_id = linked_run_id if linked_run_id is not None else current["linked_run_id"]
+        next_iteration_id = linked_iteration_id if linked_iteration_id is not None else current["linked_iteration_id"]
+        next_run_id, next_iteration_id = self._normalize_run_iteration_refs(next_run_id, next_iteration_id)
+
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE operator_tasks
+                   SET title = ?,
+                       objective = ?,
+                       status = ?,
+                       priority = ?,
+                       owner_agent_id = ?,
+                       linked_run_id = ?,
+                       linked_iteration_id = ?,
+                       linked_room_ids_json = ?,
+                       blocked_reason = ?,
+                       acceptance_json = ?,
+                       workspace_ref = ?,
+                       updated_at = ?
+                 WHERE task_id = ?
+                """,
+                (
+                    title if title is not None else current["title"],
+                    objective if objective is not None else current["objective"],
+                    status if status is not None else current["status"],
+                    priority if priority is not None else current["priority"],
+                    owner_agent_id if owner_agent_id is not None else current["owner_agent_id"],
+                    next_run_id,
+                    next_iteration_id,
+                    encode_json(linked_room_ids if linked_room_ids is not None else current["linked_room_ids_json"]),
+                    blocked_reason if blocked_reason is not None else current["blocked_reason"],
+                    encode_json(acceptance if acceptance is not None else current["acceptance_json"]),
+                    workspace_ref if workspace_ref is not None else current["workspace_ref"],
+                    updated_at or utc_iso(),
+                    task_id,
+                ),
+            )
+            row = connection.execute(
+                "SELECT * FROM operator_tasks WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+        return self._decode_operator_task(dict(row))
+
+    def detach_operator_task_workspace(
+        self,
+        task_id: str,
+        *,
+        updated_at: str | None = None,
+    ) -> dict[str, Any]:
+        current = self.get_operator_task(task_id)
+        if current is None:
+            raise ValueError(f"Operator task not found: {task_id}")
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE operator_tasks
+                   SET workspace_ref = NULL,
+                       updated_at = ?
+                 WHERE task_id = ?
+                """,
+                (updated_at or utc_iso(), task_id),
+            )
+            row = connection.execute(
+                "SELECT * FROM operator_tasks WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+        return self._decode_operator_task(dict(row))
+
+    def delete_operator_task(self, task_id: str) -> dict[str, Any]:
+        current = self.get_operator_task(task_id)
+        if current is None:
+            raise ValueError(f"Operator task not found: {task_id}")
+        with self.connect() as connection:
+            connection.execute("DELETE FROM operator_tasks WHERE task_id = ?", (task_id,))
+        return current
+
+    def archive_operator_task(
+        self,
+        task_id: str,
+        *,
+        archived_by: str | None = None,
+        archive_note: str | None = None,
+        archived_at: str | None = None,
+        updated_at: str | None = None,
+    ) -> dict[str, Any]:
+        current = self.get_operator_task(task_id)
+        if current is None:
+            raise ValueError(f"Operator task not found: {task_id}")
+        if current.get("archived_at"):
+            return current
+        now = archived_at or utc_iso()
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE operator_tasks
+                   SET archived_at = ?,
+                       archived_by = ?,
+                       archive_note = ?,
+                       updated_at = ?
+                 WHERE task_id = ?
+                """,
+                (now, archived_by, archive_note, updated_at or now, task_id),
+            )
+            row = connection.execute(
+                "SELECT * FROM operator_tasks WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+        return self._decode_operator_task(dict(row))
+
+    def restore_operator_task(
+        self,
+        task_id: str,
+        *,
+        updated_at: str | None = None,
+    ) -> dict[str, Any]:
+        current = self.get_operator_task(task_id)
+        if current is None:
+            raise ValueError(f"Operator task not found: {task_id}")
+        if not current.get("archived_at"):
+            return current
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE operator_tasks
+                   SET archived_at = NULL,
+                       archived_by = NULL,
+                       archive_note = NULL,
+                       updated_at = ?
+                 WHERE task_id = ?
+                """,
+                (updated_at or utc_iso(), task_id),
+            )
+            row = connection.execute(
+                "SELECT * FROM operator_tasks WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+        return self._decode_operator_task(dict(row))
+
+    def create_operator_workspace(
+        self,
+        *,
+        workspace_id: str,
+        label: str,
+        path: str,
+        kind: str,
+        status: str,
+        owner_agent_id: str | None = None,
+        linked_run_id: str | None = None,
+        linked_iteration_id: str | None = None,
+        task_ids: list[str] | None = None,
+        notes: str | None = None,
+        archived_at: str | None = None,
+        archived_by: str | None = None,
+        archive_note: str | None = None,
+        created_at: str | None = None,
+        updated_at: str | None = None,
+    ) -> dict[str, Any]:
+        if kind not in OPERATOR_WORKSPACE_KINDS:
+            raise ValueError(f"Unsupported operator workspace kind: {kind}")
+        if status not in OPERATOR_WORKSPACE_STATUSES:
+            raise ValueError(f"Unsupported operator workspace status: {status}")
+        linked_run_id, linked_iteration_id = self._normalize_run_iteration_refs(linked_run_id, linked_iteration_id)
+        created = created_at or utc_iso()
+        updated = updated_at or created
+        with self.connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO operator_workspaces (
+                    workspace_id, label, path, kind, status, owner_agent_id,
+                    linked_run_id, linked_iteration_id, task_ids_json, notes,
+                    archived_at, archived_by, archive_note, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    workspace_id,
+                    label,
+                    path,
+                    kind,
+                    status,
+                    owner_agent_id,
+                    linked_run_id,
+                    linked_iteration_id,
+                    encode_json(task_ids or []),
+                    notes,
+                    archived_at,
+                    archived_by,
+                    archive_note,
+                    created,
+                    updated,
+                ),
+            )
+            row = connection.execute(
+                "SELECT * FROM operator_workspaces WHERE workspace_id = ?",
+                (workspace_id,),
+            ).fetchone()
+        return self._decode_operator_workspace(dict(row))
+
+    def update_operator_workspace(
+        self,
+        *,
+        workspace_id: str,
+        label: str | None = None,
+        path: str | None = None,
+        kind: str | None = None,
+        status: str | None = None,
+        owner_agent_id: str | None = None,
+        linked_run_id: str | None = None,
+        linked_iteration_id: str | None = None,
+        task_ids: list[str] | None = None,
+        notes: str | None = None,
+        archived_at: str | None = None,
+        archived_by: str | None = None,
+        archive_note: str | None = None,
+        updated_at: str | None = None,
+    ) -> dict[str, Any]:
+        current = self.get_operator_workspace(workspace_id)
+        if current is None:
+            raise ValueError(f"Operator workspace not found: {workspace_id}")
+        next_kind = kind if kind is not None else current["kind"]
+        next_status = status if status is not None else current["status"]
+        if status is not None:
+            validate_operator_workspace_transition(str(current["status"]), next_status)
+        if next_kind not in OPERATOR_WORKSPACE_KINDS:
+            raise ValueError(f"Unsupported operator workspace kind: {next_kind}")
+        if next_status not in OPERATOR_WORKSPACE_STATUSES:
+            raise ValueError(f"Unsupported operator workspace status: {next_status}")
+
+        next_run_id = linked_run_id if linked_run_id is not None else current["linked_run_id"]
+        next_iteration_id = linked_iteration_id if linked_iteration_id is not None else current["linked_iteration_id"]
+        next_run_id, next_iteration_id = self._normalize_run_iteration_refs(next_run_id, next_iteration_id)
+        next_archived_at = current.get("archived_at")
+        next_archived_by = current.get("archived_by")
+        next_archive_note = current.get("archive_note")
+        if current["status"] != "archived" and next_status == "archived":
+            next_archived_at = archived_at or utc_iso()
+            next_archived_by = archived_by
+            next_archive_note = archive_note
+        elif current["status"] == "archived" and next_status != "archived":
+            next_archived_at = None
+            next_archived_by = None
+            next_archive_note = None
+        else:
+            if archived_at is not None:
+                next_archived_at = archived_at
+            if archived_by is not None:
+                next_archived_by = archived_by
+            if archive_note is not None:
+                next_archive_note = archive_note
+
+        with self.connect() as connection:
+            connection.execute(
+                """
+                UPDATE operator_workspaces
+                   SET label = ?,
+                       path = ?,
+                       kind = ?,
+                       status = ?,
+                       owner_agent_id = ?,
+                       linked_run_id = ?,
+                       linked_iteration_id = ?,
+                       task_ids_json = ?,
+                       notes = ?,
+                       archived_at = ?,
+                       archived_by = ?,
+                       archive_note = ?,
+                       updated_at = ?
+                 WHERE workspace_id = ?
+                """,
+                (
+                    label if label is not None else current["label"],
+                    path if path is not None else current["path"],
+                    next_kind,
+                    next_status,
+                    owner_agent_id if owner_agent_id is not None else current["owner_agent_id"],
+                    next_run_id,
+                    next_iteration_id,
+                    encode_json(task_ids if task_ids is not None else current["task_ids_json"]),
+                    notes if notes is not None else current["notes"],
+                    next_archived_at,
+                    next_archived_by,
+                    next_archive_note,
+                    updated_at or utc_iso(),
+                    workspace_id,
+                ),
+            )
+            row = connection.execute(
+                "SELECT * FROM operator_workspaces WHERE workspace_id = ?",
+                (workspace_id,),
+            ).fetchone()
+        return self._decode_operator_workspace(dict(row))
+
+    def get_operator_workspace(self, workspace_id: str) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM operator_workspaces WHERE workspace_id = ?",
+                (workspace_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return self._decode_operator_workspace(dict(row))
+
+    def list_operator_workspaces(
+        self,
+        *,
+        status: str | None = None,
+        owner_agent_id: str | None = None,
+        linked_run_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        query = "SELECT * FROM operator_workspaces"
+        clauses = []
+        params: list[Any] = []
+        if status is not None:
+            clauses.append("status = ?")
+            params.append(status)
+        if owner_agent_id is not None:
+            clauses.append("owner_agent_id = ?")
+            params.append(owner_agent_id)
+        if linked_run_id is not None:
+            clauses.append("linked_run_id = ?")
+            params.append(linked_run_id)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY updated_at DESC, created_at DESC, workspace_id DESC"
+        with self.connect() as connection:
+            rows = connection.execute(query, tuple(params)).fetchall()
+        return [self._decode_operator_workspace(dict(row)) for row in rows]
+
+    def get_operator_task(self, task_id: str) -> dict[str, Any] | None:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT * FROM operator_tasks WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return self._decode_operator_task(dict(row))
+
+    def list_operator_tasks(
+        self,
+        *,
+        status: str | None = None,
+        owner_agent_id: str | None = None,
+        linked_run_id: str | None = None,
+        workspace_ref: str | None = None,
+        include_archived: bool = False,
+    ) -> list[dict[str, Any]]:
+        query = "SELECT * FROM operator_tasks"
+        clauses = []
+        params: list[Any] = []
+        if not include_archived:
+            clauses.append("archived_at IS NULL")
+        if status is not None:
+            clauses.append("status = ?")
+            params.append(status)
+        if owner_agent_id is not None:
+            clauses.append("owner_agent_id = ?")
+            params.append(owner_agent_id)
+        if linked_run_id is not None:
+            clauses.append("linked_run_id = ?")
+            params.append(linked_run_id)
+        if workspace_ref is not None:
+            clauses.append("workspace_ref = ?")
+            params.append(workspace_ref)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY updated_at DESC, created_at DESC, task_id DESC"
+        with self.connect() as connection:
+            rows = connection.execute(query, tuple(params)).fetchall()
+        return [self._decode_operator_task(dict(row)) for row in rows]
+
     def append_finding(
         self,
         *,
@@ -929,6 +1528,8 @@ class LoopStateRepository:
             "tool_events": self.list_tool_events(run_id=run_id),
             "insights": self.list_insights(run_id=run_id),
             "handoff_packets": self.list_handoff_packets(run_id=run_id),
+            "operator_tasks": self.list_operator_tasks(linked_run_id=run_id, include_archived=True),
+            "operator_workspaces": self.list_operator_workspaces(linked_run_id=run_id),
             "memory_records": self.list_memory_records(source_ref=run_id),
             "candidate_policy_patches": self.list_candidate_policy_patches(source_ref=run_id),
         }
@@ -1205,6 +1806,7 @@ class LoopStateRepository:
         request_id: str,
         run_id: str,
         iteration_id: str,
+        task_id: str | None = None,
         actor: str,
         action_type: str,
         action_payload: dict[str, Any],
@@ -1219,14 +1821,15 @@ class LoopStateRepository:
             connection.execute(
                 """
                 INSERT INTO approval_requests (
-                    request_id, run_id, iteration_id, actor, action_type, action_payload_json,
+                    request_id, run_id, iteration_id, task_id, actor, action_type, action_payload_json,
                     risk_level, status, reviewer, reviewer_note, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     request_id,
                     run_id,
                     iteration_id,
+                    task_id,
                     actor,
                     action_type,
                     encode_json(action_payload),
@@ -1298,6 +1901,7 @@ class LoopStateRepository:
         *,
         run_id: str | None = None,
         iteration_id: str | None = None,
+        task_id: str | None = None,
         status: str | None = None,
     ) -> list[dict[str, Any]]:
         query = "SELECT * FROM approval_requests"
@@ -1309,6 +1913,9 @@ class LoopStateRepository:
         if iteration_id is not None:
             clauses.append("iteration_id = ?")
             params.append(iteration_id)
+        if task_id is not None:
+            clauses.append("task_id = ?")
+            params.append(task_id)
         if status is not None:
             clauses.append("status = ?")
             params.append(status)
@@ -1691,6 +2298,21 @@ class LoopStateRepository:
         row["steps_json"] = decode_json(row["steps_json"], [])
         return row
 
+    def _decode_operator_task(self, row: dict[str, Any]) -> dict[str, Any]:
+        row["linked_room_ids_json"] = decode_json(row.get("linked_room_ids_json"), [])
+        row["acceptance_json"] = decode_json(row.get("acceptance_json"), [])
+        row["archived_at"] = row.get("archived_at")
+        row["archived_by"] = row.get("archived_by")
+        row["archive_note"] = row.get("archive_note")
+        return row
+
+    def _decode_operator_workspace(self, row: dict[str, Any]) -> dict[str, Any]:
+        row["task_ids_json"] = decode_json(row.get("task_ids_json"), [])
+        row["archived_at"] = row.get("archived_at")
+        row["archived_by"] = row.get("archived_by")
+        row["archive_note"] = row.get("archive_note")
+        return row
+
     def _decode_memory_record(self, row: dict[str, Any]) -> dict[str, Any]:
         row["tags_json"] = decode_json(row["tags_json"], [])
         row["evidence_refs_json"] = decode_json(row["evidence_refs_json"], [])
@@ -1759,6 +2381,10 @@ class LoopStateRepository:
 
 __all__ = [
     "ACTIVE_RUN_STATUSES",
+    "OPERATOR_TASK_ALLOWED_TRANSITIONS",
+    "OPERATOR_WORKSPACE_KINDS",
+    "OPERATOR_WORKSPACE_ALLOWED_TRANSITIONS",
+    "OPERATOR_WORKSPACE_STATUSES",
     "AUTHORITATIVE_STATE_OWNERS",
     "FINDING_CATEGORIES",
     "LoopStateRepository",
@@ -1766,4 +2392,6 @@ __all__ = [
     "decode_json",
     "encode_json",
     "utc_iso",
+    "validate_operator_task_transition",
+    "validate_operator_workspace_transition",
 ]

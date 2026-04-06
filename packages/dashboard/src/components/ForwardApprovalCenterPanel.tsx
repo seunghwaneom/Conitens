@@ -19,9 +19,13 @@ function toErrorMessage(error: unknown): string {
 export function ForwardApprovalCenterPanel({
   config,
   runId,
+  taskId,
+  heading = "Approval queue",
 }: {
   config: ForwardBridgeConfig;
-  runId: string;
+  runId?: string | null;
+  taskId?: string | null;
+  heading?: string;
 }) {
   const [approvals, setApprovals] = useState<ForwardApprovalRecord[]>([]);
   const [selectedApprovalId, setSelectedApprovalId] = useState<string | null>(null);
@@ -37,10 +41,10 @@ export function ForwardApprovalCenterPanel({
     setSelectedApproval(null);
     setReviewerNote("approved");
     setError(null);
-  }, [runId]);
+  }, [runId, taskId]);
 
   useEffect(() => {
-    if (!config.token.trim() || !runId) {
+    if (!config.token.trim() || (!runId && !taskId)) {
       setApprovals([]);
       setSelectedApprovalId(null);
       setSelectedApproval(null);
@@ -51,7 +55,7 @@ export function ForwardApprovalCenterPanel({
     let cancelled = false;
     setListState("loading");
     setError(null);
-    forwardListApprovals(config, { runId })
+    forwardListApprovals(config, { runId: runId ?? undefined, taskId: taskId ?? undefined })
       .then((payload) => {
         if (cancelled) {
           return;
@@ -72,15 +76,15 @@ export function ForwardApprovalCenterPanel({
     return () => {
       cancelled = true;
     };
-  }, [config, runId]);
+  }, [config, runId, taskId]);
 
   useEffect(() => {
-    if (!config.token.trim() || !runId) {
+    if (!config.token.trim() || (!runId && !taskId)) {
       return;
     }
     let cancelled = false;
     const intervalId = setInterval(() => {
-      forwardListApprovals(config, { runId })
+      forwardListApprovals(config, { runId: runId ?? undefined, taskId: taskId ?? undefined })
         .then((payload) => {
           if (cancelled) return;
           setApprovals(payload.approvals);
@@ -96,7 +100,7 @@ export function ForwardApprovalCenterPanel({
       cancelled = true;
       clearInterval(intervalId);
     };
-  }, [config, runId]);
+  }, [config, runId, taskId]);
 
   useEffect(() => {
     if (!selectedApprovalId) {
@@ -129,7 +133,7 @@ export function ForwardApprovalCenterPanel({
   }, [config, selectedApprovalId]);
 
   async function refreshAfterAction(targetId: string | null, nextDetail: ForwardApprovalDetailResponse | null = null) {
-    const payload = await forwardListApprovals(config, { runId });
+    const payload = await forwardListApprovals(config, { runId: runId ?? undefined, taskId: taskId ?? undefined });
     setApprovals(payload.approvals);
     const nextId = pickNextApprovalId(targetId, payload.approvals);
     setSelectedApprovalId(nextId);
@@ -187,7 +191,7 @@ export function ForwardApprovalCenterPanel({
         <div>
           <p className="forward-panel-label">Approvals</p>
           <h3>
-            Approval center
+            {heading}
             {pendingCount > 0 ? <span className="badge danger">{pendingCount}</span> : null}
           </h3>
         </div>
