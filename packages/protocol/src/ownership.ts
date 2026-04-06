@@ -13,7 +13,10 @@ export type ReducerName =
   | "CommandReducer" | "PipelineReducer"
   | "SchemaReducer"
   | "InteractionReducer"
-  | "FixtureReducer";
+  | "FixtureReducer"
+  // Persistent agent / communication ledger reducers (ADR-0002)
+  | "ThreadReducer" | "AgentRegistryReducer"
+  | "ImproverReducer" | "BackgroundReducer";
 
 export interface ReducerDescriptor {
   name: ReducerName;
@@ -226,6 +229,57 @@ export const REDUCERS: readonly ReducerDescriptor[] = [
       // consumed by FixtureReducer — listed here for audit completeness only.
       // FixtureStateSyncReducer must NOT subscribe to this event (infinite loop risk).
       "fixture.state_sync",
+    ],
+    readsFrom: [],
+  },
+  // =========================================================================
+  // Persistent Agent / Communication Ledger Reducers (ADR-0002)
+  // These project event streams to .notes/ Obsidian Vault paths.
+  // Single writer per path: only ensemble_obsidian.py writes to these paths.
+  // =========================================================================
+  {
+    name: "ThreadReducer",
+    // Projects thread lifecycle events to Obsidian-compatible communication notes.
+    // Owns the entire .notes/40_Comms/ subtree — the sole writer (I-7).
+    ownedFiles: [".notes/40_Comms/**/*.md"],
+    inputEvents: [
+      "thread.created", "thread.message_appended",
+      "thread.closed", "thread.summary_updated",
+      "thread.decision_recorded",
+    ],
+    readsFrom: [],
+  },
+  {
+    name: "AgentRegistryReducer",
+    // Projects persistent agent registry events to Obsidian agent cards.
+    // Registry lifecycle (create/archive/patch) — distinct from runtime lifecycle
+    // (spawned/terminated) tracked by StatusReducer.
+    ownedFiles: [".notes/10_Agents/**/*.md"],
+    inputEvents: [
+      "agent.created", "agent.patch_proposed",
+      "agent.patch_approved", "agent.patch_applied",
+      "agent.archived",
+    ],
+    readsFrom: [".agent/agents/*.yaml"],
+  },
+  {
+    name: "ImproverReducer",
+    // Projects self-improvement loop events to review notes.
+    // Candidate patches require approval before application (approval-gated).
+    ownedFiles: [".notes/70_Reviews/**/*.md"],
+    inputEvents: [
+      "improver.pattern_mined", "improver.patch_generated",
+      "improver.report_generated",
+    ],
+    readsFrom: [],
+  },
+  {
+    name: "BackgroundReducer",
+    // Projects background CLI session events to run notes.
+    ownedFiles: [".notes/30_Runs/**/bg-*.md"],
+    inputEvents: [
+      "background.session_started", "background.session_stopped",
+      "background.log_ingested",
     ],
     readsFrom: [],
   },
