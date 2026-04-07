@@ -1644,6 +1644,20 @@ def _build_handler(
                     from ensemble_weekly import generate_weekly_report
 
                     report = generate_weekly_report(str(workspace_root), dry_run=True)
+                    # Apply week offset to the period dates
+                    if offset_val > 0:
+                        from datetime import timedelta as _td
+                        period_raw = report.get("period", {})
+                        try:
+                            from datetime import datetime as _dt
+                            start = _dt.strptime(period_raw.get("start", ""), "%Y-%m-%d")
+                            end = _dt.strptime(period_raw.get("end", ""), "%Y-%m-%d")
+                            report["period"] = {
+                                "start": (start - _td(weeks=offset_val)).strftime("%Y-%m-%d"),
+                                "end": (end - _td(weeks=offset_val)).strftime("%Y-%m-%d"),
+                            }
+                        except (ValueError, TypeError):
+                            pass
                     period = report.get("period", {})
                     summary = report.get("summary", {})
                     by_state = summary.get("by_state", {})
@@ -1990,13 +2004,22 @@ def _build_handler(
             # --- Batch 3: Background CLI POST endpoints ---
             if path == "/api/bg/up":
                 try:
+                    import re as _re
+                    _BG_SAFE_CMD_RE = _re.compile(r"^[a-zA-Z0-9 _./:=\-]+$")
+
                     command = str(payload.get("command", "")).strip()
                     if not command:
                         _forward_json_response(self, {"error": "command is required"}, status=400)
                         return
+                    if not _BG_SAFE_CMD_RE.match(command):
+                        _forward_json_response(self, {"error": "Unsafe command rejected. Only alphanumeric, spaces, dots, dashes, slashes, underscores, and equals are allowed."}, status=400)
+                        return
+                    agent_name = payload.get("agent", f"worker-{int(time.time())}")
+                    if not _BG_SAFE_CMD_RE.match(str(agent_name)):
+                        agent_name = f"worker-{int(time.time())}"
                     from ensemble_background import bg_up
 
-                    result = bg_up(".", agent="worker", command=command)
+                    result = bg_up(".", agent=str(agent_name), command=command)
                     _forward_json_response(self, result)
                 except ValueError as exc:
                     _forward_json_response(self, {"error": str(exc)}, status=400)
