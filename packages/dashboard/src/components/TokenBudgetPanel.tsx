@@ -99,7 +99,7 @@ export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
     return () => {
       cancelled = true;
     };
-  }, [apiBase]);
+  }, [apiBase, token]);
 
   function handleRefresh() {
     setRefreshing(true);

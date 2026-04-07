@@ -45,7 +45,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
 
   useEffect(() => {
     fetchProcesses();
-  }, [apiBase]);
+  }, [apiBase, token]);
 
   function handleStart() {
     if (!newCmd.trim()) return;
@@ -61,13 +61,13 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
         setStarting(false);
         fetchProcesses();
       })
-      .catch(() => setStarting(false));
+      .catch((err) => { setError(err instanceof Error ? err.message : "Failed to start"); setStarting(false); });
   }
 
   function handleStop(id: string) {
     fetch(`${apiBase}/bg/stop/${id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
       .then(() => fetchProcesses())
-      .catch(() => {});
+      .catch((err) => { setError(err instanceof Error ? err.message : "Failed to stop process"); });
   }
 
   function handleToggleLogs(id: string) {

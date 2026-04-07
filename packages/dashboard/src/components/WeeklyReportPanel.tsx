@@ -61,7 +61,7 @@ export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => { setReport(data.report ?? data ?? null); setLoading(false); })
       .catch((err: unknown) => { setError(err instanceof Error ? err.message : "Failed to load report"); setLoading(false); });
-  }, [apiBase, weekOffset]);
+  }, [apiBase, token, weekOffset]);
 
   if (loading) return <div style={{ padding: 24, color: "#8b949e" }}>Loading weekly report...</div>;
   if (error) return <div style={{ padding: 24, color: "#f85149" }}>Error: {error}</div>;
