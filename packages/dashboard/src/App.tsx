@@ -95,6 +95,13 @@ import { AgentRelationshipGraph } from "./components/AgentRelationshipGraph.js";
 import { ProposalQueuePanel } from "./components/ProposalQueuePanel.js";
 import { demoFleet } from "./agent-fleet-model.js";
 import { demoProposals, demoEvolution, demoLearningMetrics } from "./evolution-model.js";
+import { ThreadBrowser } from "./components/ThreadBrowser.js";
+import { ThreadDetail } from "./components/ThreadDetail.js";
+import { AgentDetail } from "./components/AgentDetail.js";
+import { ApprovalCenter } from "./components/ApprovalCenter.js";
+import { BackgroundCLIPanel } from "./components/BackgroundCLIPanel.js";
+import { TokenBudgetPanel } from "./components/TokenBudgetPanel.js";
+import { WeeklyReportPanel } from "./components/WeeklyReportPanel.js";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 type DetailTab = "operations" | "intelligence" | "data";
@@ -237,11 +244,46 @@ export function App() {
         subtitle: "Room topology, crew focus, and handoff rhythm in one shared operator shell.",
       };
     }
-    if (route.screen === "agents") {
+    if (route.screen === "agents" || route.screen === "agent-detail") {
       return {
         eyebrow: "Agent fleet",
         title: "Conitens Control Plane",
         subtitle: "Lifecycle, memory growth, proposal flow, and relationship topology for the active fleet.",
+      };
+    }
+    if (route.screen === "threads" || route.screen === "thread-detail") {
+      return {
+        eyebrow: "Communication ledger",
+        title: "Conitens Control Plane",
+        subtitle: "Thread browser for agent-to-agent and user-to-agent communication with full message history.",
+      };
+    }
+    if (route.screen === "approvals") {
+      return {
+        eyebrow: "Approval center",
+        title: "Conitens Control Plane",
+        subtitle: "Pending and resolved approval requests across all active runs and workspaces.",
+      };
+    }
+    if (route.screen === "bg-cli") {
+      return {
+        eyebrow: "Background CLI",
+        title: "Conitens Control Plane",
+        subtitle: "Monitor and control background CLI processes — subprocess lifecycle, logs, and runtime health.",
+      };
+    }
+    if (route.screen === "tokens") {
+      return {
+        eyebrow: "Token budget",
+        title: "Conitens Control Plane",
+        subtitle: "L0/L1/L2 compression tiers, per-agent token usage, and budget utilization at a glance.",
+      };
+    }
+    if (route.screen === "weekly-report") {
+      return {
+        eyebrow: "Weekly report",
+        title: "Conitens Control Plane",
+        subtitle: "Failure mining, improvement proposals, and agent performance for the current reporting period.",
       };
     }
     if (route.screen === "run-detail") {
@@ -1521,7 +1563,12 @@ export function App() {
           <a className={`forward-chip forward-chip-link${route.screen === "workspaces" || route.screen === "workspace-detail" ? " active" : ""}`} href="#/workspaces">Workspaces</a>
           <a className={`forward-chip forward-chip-link${route.screen === "runs" || route.screen === "run-detail" ? " active" : ""}`} href="#/runs">Runs</a>
           <a className={`forward-chip forward-chip-link${isOfficePreview ? " active" : ""}`} href="#/office-preview">Spatial Lens</a>
-          <a className={`forward-chip forward-chip-link${route.screen === "agents" ? " active" : ""}`} href="#/agents">Agents</a>
+          <a className={`forward-chip forward-chip-link${route.screen === "agents" || route.screen === "agent-detail" ? " active" : ""}`} href="#/agents">Agents</a>
+          <a className={`forward-chip forward-chip-link${route.screen === "threads" || route.screen === "thread-detail" ? " active" : ""}`} href="#/threads">Threads</a>
+          <a className={`forward-chip forward-chip-link${route.screen === "approvals" ? " active" : ""}`} href="#/approvals">Approvals</a>
+          <a className={`forward-chip forward-chip-link${route.screen === "bg-cli" ? " active" : ""}`} href="#/bg-cli">BG CLI</a>
+          <a className={`forward-chip forward-chip-link${route.screen === "tokens" ? " active" : ""}`} href="#/tokens">Tokens</a>
+          <a className={`forward-chip forward-chip-link${route.screen === "weekly-report" ? " active" : ""}`} href="#/weekly-report">Weekly</a>
           {isOfficePreview ? (
             <span className="forward-chip">Preview data</span>
           ) : (
@@ -1582,6 +1629,34 @@ export function App() {
               <p>The roster is now live. Graph and proposal/evolution projections will follow in a later slice.</p>
             </div>
           ) : null}
+        </main>
+      ) : route.screen === "agent-detail" && route.agentId ? (
+        <main className="forward-main">
+          <AgentDetail apiBase={config.apiRoot} agentId={route.agentId} />
+        </main>
+      ) : route.screen === "threads" ? (
+        <main className="forward-main">
+          <ThreadBrowser apiBase={config.apiRoot} />
+        </main>
+      ) : route.screen === "thread-detail" && route.threadId ? (
+        <main className="forward-main">
+          <ThreadDetail apiBase={config.apiRoot} threadId={route.threadId} />
+        </main>
+      ) : route.screen === "approvals" ? (
+        <main className="forward-main">
+          <ApprovalCenter apiBase={config.apiRoot} />
+        </main>
+      ) : route.screen === "bg-cli" ? (
+        <main className="forward-main">
+          <BackgroundCLIPanel apiBase={config.apiRoot} />
+        </main>
+      ) : route.screen === "tokens" ? (
+        <main className="forward-main">
+          <TokenBudgetPanel apiBase={config.apiRoot} />
+        </main>
+      ) : route.screen === "weekly-report" ? (
+        <main className="forward-main">
+          <WeeklyReportPanel apiBase={config.apiRoot} />
         </main>
       ) : (
       <main className="forward-main">
