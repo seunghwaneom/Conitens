@@ -13,6 +13,7 @@ interface ThreadSummary {
 
 interface ThreadBrowserProps {
   apiBase: string;
+  token: string;
 }
 
 const KIND_LABELS: Record<string, string> = {
@@ -27,7 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "#6e7681",
 };
 
-export function ThreadBrowser({ apiBase }: ThreadBrowserProps) {
+export function ThreadBrowser({ apiBase, token }: ThreadBrowserProps) {
   const [threads, setThreads] = useState<ThreadSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +36,7 @@ export function ThreadBrowser({ apiBase }: ThreadBrowserProps) {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${apiBase}/api/threads`)
+    fetch(`${apiBase}/threads`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => {
         setThreads(data.threads ?? []);

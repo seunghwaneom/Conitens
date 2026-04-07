@@ -38,6 +38,7 @@ interface TokenBudgetData {
 
 export interface TokenBudgetPanelProps {
   apiBase: string;
+  token: string;
 }
 
 function utilizationColor(pct: number): string {
@@ -68,7 +69,7 @@ const tierDesc: Record<"L0" | "L1" | "L2", string> = {
   L2: "Semantic — distilled summary",
 };
 
-export function TokenBudgetPanel({ apiBase }: TokenBudgetPanelProps) {
+export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
   const [data, setData] = useState<TokenBudgetData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +79,7 @@ export function TokenBudgetPanel({ apiBase }: TokenBudgetPanelProps) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(`${apiBase}/api/tokens/budget`)
+    fetch(`${apiBase}/tokens/budget`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<TokenBudgetData>;
@@ -102,10 +103,10 @@ export function TokenBudgetPanel({ apiBase }: TokenBudgetPanelProps) {
 
   function handleRefresh() {
     setRefreshing(true);
-    fetch(`${apiBase}/api/tokens/refresh`, { method: "POST" })
+    fetch(`${apiBase}/tokens/refresh`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return fetch(`${apiBase}/api/tokens/budget`);
+        return fetch(`${apiBase}/tokens/budget`, { headers: { Authorization: `Bearer ${token}` } });
       })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

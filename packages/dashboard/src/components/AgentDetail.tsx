@@ -15,15 +15,16 @@ interface AgentData {
 interface AgentDetailProps {
   apiBase: string;
   agentId: string;
+  token: string;
 }
 
-export function AgentDetail({ apiBase, agentId }: AgentDetailProps) {
+export function AgentDetail({ apiBase, agentId, token }: AgentDetailProps) {
   const [agent, setAgent] = useState<AgentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${apiBase}/api/agents/${encodeURIComponent(agentId)}`)
+    fetch(`${apiBase}/agents/${encodeURIComponent(agentId)}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => { setAgent(data.agent ?? null); setLoading(false); })
       .catch((err: unknown) => { setError(err instanceof Error ? err.message : "Failed to load agent"); setLoading(false); });
