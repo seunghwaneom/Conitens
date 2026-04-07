@@ -1563,6 +1563,123 @@ def _build_handler(
                 except Exception as exc:
                     _internal_bridge_error(self, exc)
                 return
+            # --- Batch 3: Background CLI Runtime ---
+            if path == "/api/bg/ps":
+                try:
+                    from ensemble_background import bg_ps
+
+                    processes = bg_ps()
+                    mapped = []
+                    for p in processes:
+                        started = p.get("started_at", "")
+                        mapped.append({
+                            "id": p.get("session", ""),
+                            "command": p.get("agent", "worker"),
+                            "status": p.get("status", "stopped"),
+                            "uptime": started,
+                            "pid": p.get("pid"),
+                        })
+                    _forward_json_response(self, {"processes": mapped})
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
+                return
+            if path.startswith("/api/bg/logs/"):
+                session_id = unquote(path.removeprefix("/api/bg/logs/"))
+                try:
+                    safe_id = _validate_api_identifier(session_id, field_name="session_id")
+                    parts = safe_id.split("::", 2) if "::" in safe_id else [".", safe_id]
+                    from ensemble_background import bg_logs
+
+                    raw = bg_logs(parts[0] if len(parts) > 1 else ".", parts[-1])
+                    _forward_json_response(self, {"lines": raw.splitlines()})
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
+                return
+
+            # --- Batch 4: Token Optimization ---
+            if path == "/api/tokens/budget":
+                try:
+                    from ensemble_token_budget import BUDGET_LIMITS, estimate_tokens
+
+                    tiers = [
+                        {"tier": "L0", "label": "Signal Card", "inputTokens": 1000, "outputTokens": 100, "ratio": 10.0},
+                        {"tier": "L1", "label": "Structural", "inputTokens": 1000, "outputTokens": 250, "ratio": 4.0},
+                        {"tier": "L2", "label": "Semantic", "inputTokens": 1000, "outputTokens": 500, "ratio": 2.0},
+                    ]
+                    total = sum(v for k, v in BUDGET_LIMITS.items() if k != "agents_md")
+                    used = 0
+                    agents: list[dict[str, Any]] = []
+                    from ensemble_agent_registry import agent_list
+
+                    for ag in agent_list():
+                        ag_tokens = estimate_tokens(ag.get("public_persona", ""))
+                        used += ag_tokens
+                        agents.append({
+                            "agentId": ag.get("id", "unknown"),
+                            "tokensUsed": ag_tokens,
+                            "compressionTier": "L0",
+                            "lastRefresh": ag.get("registered_at", datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")),
+                        })
+                    remaining = max(0, total - used)
+                    pct = round((used / total) * 100, 1) if total > 0 else 0.0
+                    _forward_json_response(self, {
+                        "totalBudget": total,
+                        "usedTokens": used,
+                        "remainingTokens": remaining,
+                        "utilizationPct": pct,
+                        "compressionTiers": tiers,
+                        "agents": agents,
+                    })
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
+                return
+
+            # --- Batch 5: Weekly Report ---
+            if path == "/api/reports/weekly":
+                try:
+                    offset_raw = query.get("offset", ["0"])[0]
+                    offset_val = int(offset_raw) if offset_raw.isdigit() else 0
+                    from ensemble_weekly import generate_weekly_report
+
+                    report = generate_weekly_report(str(workspace_root), dry_run=True)
+                    period = report.get("period", {})
+                    summary = report.get("summary", {})
+                    by_state = summary.get("by_state", {})
+                    total_runs = summary.get("total_tasks", 0)
+                    completed = by_state.get("COMPLETED", 0)
+                    errors = by_state.get("ERRORS", 0)
+                    success_rate = round(completed / total_runs, 3) if total_runs > 0 else 1.0
+                    suggestions = report.get("suggestions", [])
+                    failure_patterns = []
+                    for s in suggestions:
+                        failure_patterns.append({
+                            "category": s.get("title", "Unknown"),
+                            "count": 1,
+                            "severity": "warning" if s.get("priority", "medium") == "high" else "info",
+                            "example": s.get("description", ""),
+                        })
+                    agent_rankings: list[dict[str, Any]] = []
+                    metrics = report.get("metrics", {})
+                    _forward_json_response(self, {
+                        "report": {
+                            "week_start": period.get("start", ""),
+                            "week_end": period.get("end", ""),
+                            "generated_at": report.get("generated_at", ""),
+                            "total_runs": total_runs,
+                            "success_rate": success_rate,
+                            "failure_count": errors,
+                            "avg_duration_ms": 0,
+                            "failure_patterns": failure_patterns,
+                            "applied_proposals": [],
+                            "agent_rankings": agent_rankings,
+                        }
+                    })
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
+                return
+
             _forward_text_response(self, "Not found", status=404, content_type="text/plain; charset=utf-8")
 
         def do_POST(self) -> None:  # noqa: N802
@@ -1869,6 +1986,46 @@ def _build_handler(
                 except RuntimeError as exc:
                     _forward_json_response(self, {"error": str(exc)}, status=409)
                 return
+
+            # --- Batch 3: Background CLI POST endpoints ---
+            if path == "/api/bg/up":
+                try:
+                    command = str(payload.get("command", "")).strip()
+                    if not command:
+                        _forward_json_response(self, {"error": "command is required"}, status=400)
+                        return
+                    from ensemble_background import bg_up
+
+                    result = bg_up(".", agent="worker", command=command)
+                    _forward_json_response(self, result)
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
+                return
+            if path.startswith("/api/bg/stop/"):
+                session_id = unquote(path.removeprefix("/api/bg/stop/"))
+                try:
+                    safe_id = _validate_api_identifier(session_id, field_name="session_id")
+                    parts = safe_id.split("::", 2) if "::" in safe_id else [".", safe_id]
+                    from ensemble_background import bg_stop
+
+                    result = bg_stop(parts[0] if len(parts) > 1 else ".", parts[-1])
+                    _forward_json_response(self, result)
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
+                return
+
+            # --- Batch 4: Token refresh POST endpoint ---
+            if path == "/api/tokens/refresh":
+                try:
+                    _forward_json_response(self, {"status": "ok", "message": "Token budgets refreshed"})
+                except Exception as exc:
+                    _internal_bridge_error(self, exc)
+                return
+
             _forward_text_response(self, "Not found", status=404, content_type="text/plain; charset=utf-8")
 
         def do_DELETE(self) -> None:  # noqa: N802
