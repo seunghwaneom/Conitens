@@ -20,16 +20,17 @@ interface ThreadData {
 interface ThreadDetailProps {
   apiBase: string;
   threadId: string;
+  token: string;
 }
 
-export function ThreadDetail({ apiBase, threadId }: ThreadDetailProps) {
+export function ThreadDetail({ apiBase, threadId, token }: ThreadDetailProps) {
   const [thread, setThread] = useState<ThreadData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${apiBase}/api/threads/${encodeURIComponent(threadId)}`)
+    fetch(`${apiBase}/threads/${encodeURIComponent(threadId)}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => {
         setThread(data.thread ?? null);

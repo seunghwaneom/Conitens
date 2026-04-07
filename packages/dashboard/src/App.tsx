@@ -1632,31 +1632,31 @@ export function App() {
         </main>
       ) : route.screen === "agent-detail" && route.agentId ? (
         <main className="forward-main">
-          <AgentDetail apiBase={config.apiRoot} agentId={route.agentId} />
+          <AgentDetail apiBase={config.apiRoot} agentId={route.agentId} token={config.token} />
         </main>
       ) : route.screen === "threads" ? (
         <main className="forward-main">
-          <ThreadBrowser apiBase={config.apiRoot} />
+          <ThreadBrowser apiBase={config.apiRoot} token={config.token} />
         </main>
       ) : route.screen === "thread-detail" && route.threadId ? (
         <main className="forward-main">
-          <ThreadDetail apiBase={config.apiRoot} threadId={route.threadId} />
+          <ThreadDetail apiBase={config.apiRoot} threadId={route.threadId} token={config.token} />
         </main>
       ) : route.screen === "approvals" ? (
         <main className="forward-main">
-          <ApprovalCenter apiBase={config.apiRoot} />
+          <ApprovalCenter apiBase={config.apiRoot} token={config.token} />
         </main>
       ) : route.screen === "bg-cli" ? (
         <main className="forward-main">
-          <BackgroundCLIPanel apiBase={config.apiRoot} />
+          <BackgroundCLIPanel apiBase={config.apiRoot} token={config.token} />
         </main>
       ) : route.screen === "tokens" ? (
         <main className="forward-main">
-          <TokenBudgetPanel apiBase={config.apiRoot} />
+          <TokenBudgetPanel apiBase={config.apiRoot} token={config.token} />
         </main>
       ) : route.screen === "weekly-report" ? (
         <main className="forward-main">
-          <WeeklyReportPanel apiBase={config.apiRoot} />
+          <WeeklyReportPanel apiBase={config.apiRoot} token={config.token} />
         </main>
       ) : (
       <main className="forward-main">
