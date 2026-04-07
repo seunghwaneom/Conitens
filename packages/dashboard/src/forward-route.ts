@@ -7,7 +7,8 @@ export interface ForwardRoute {
     | "office-preview"
     | "threads" | "thread-detail"
     | "agents" | "agent-detail"
-    | "approvals";
+    | "approvals"
+    | "bg-cli" | "tokens" | "weekly-report";
   runId: string | null;
   taskId: string | null;
   workspaceId?: string | null;
@@ -30,6 +31,9 @@ export function parseForwardRoute(hash: string): ForwardRoute {
   if (cleaned === "threads") return { screen: "threads", ...NULL_IDS };
   if (cleaned === "agents") return { screen: "agents", ...NULL_IDS };
   if (cleaned === "approvals") return { screen: "approvals", ...NULL_IDS };
+  if (cleaned === "bg-cli") return { screen: "bg-cli", ...NULL_IDS };
+  if (cleaned === "tokens") return { screen: "tokens", ...NULL_IDS };
+  if (cleaned === "weekly-report") return { screen: "weekly-report", ...NULL_IDS };
 
   const taskMatch = cleaned.match(/^tasks\/([^/]+)$/);
   if (taskMatch) {
@@ -75,6 +79,9 @@ export function buildForwardRoute(route: ForwardRoute): string {
     return `#/agents/${encodeURIComponent(route.agentId)}`;
   }
   if (route.screen === "approvals") return "#/approvals";
+  if (route.screen === "bg-cli") return "#/bg-cli";
+  if (route.screen === "tokens") return "#/tokens";
+  if (route.screen === "weekly-report") return "#/weekly-report";
   if (route.screen === "run-detail" && route.runId) {
     return `#/runs/${encodeURIComponent(route.runId)}`;
   }
