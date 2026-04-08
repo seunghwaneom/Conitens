@@ -11,15 +11,16 @@ interface Approval {
 
 interface ApprovalCenterProps {
   apiBase: string;
+  token: string;
 }
 
-export function ApprovalCenter({ apiBase }: ApprovalCenterProps) {
+export function ApprovalCenter({ apiBase, token }: ApprovalCenterProps) {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${apiBase}/api/approvals`)
+    fetch(`${apiBase}/approvals`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => {
         const items = Array.isArray(data) ? data : (data.approvals ?? []);

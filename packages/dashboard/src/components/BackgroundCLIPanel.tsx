@@ -10,6 +10,7 @@ interface BGProcess {
 
 interface BackgroundCLIPanelProps {
   apiBase: string;
+  token: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -18,7 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
   error: "#f85149",
 };
 
-export function BackgroundCLIPanel({ apiBase }: BackgroundCLIPanelProps) {
+export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) {
   const [processes, setProcesses] = useState<BGProcess[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export function BackgroundCLIPanel({ apiBase }: BackgroundCLIPanelProps) {
 
   function fetchProcesses() {
     setLoading(true);
-    fetch(`${apiBase}/api/bg/ps`)
+    fetch(`${apiBase}/bg/ps`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => {
         setProcesses(data.processes ?? []);
@@ -44,14 +45,14 @@ export function BackgroundCLIPanel({ apiBase }: BackgroundCLIPanelProps) {
 
   useEffect(() => {
     fetchProcesses();
-  }, [apiBase]);
+  }, [apiBase, token]);
 
   function handleStart() {
     if (!newCmd.trim()) return;
     setStarting(true);
-    fetch(`${apiBase}/api/bg/up`, {
+    fetch(`${apiBase}/bg/up`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ command: newCmd.trim() }),
     })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
@@ -60,13 +61,13 @@ export function BackgroundCLIPanel({ apiBase }: BackgroundCLIPanelProps) {
         setStarting(false);
         fetchProcesses();
       })
-      .catch(() => setStarting(false));
+      .catch((err) => { setError(err instanceof Error ? err.message : "Failed to start"); setStarting(false); });
   }
 
   function handleStop(id: string) {
-    fetch(`${apiBase}/api/bg/stop/${id}`, { method: "POST" })
+    fetch(`${apiBase}/bg/stop/${id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
       .then(() => fetchProcesses())
-      .catch(() => {});
+      .catch((err) => { setError(err instanceof Error ? err.message : "Failed to stop process"); });
   }
 
   function handleToggleLogs(id: string) {
@@ -75,7 +76,7 @@ export function BackgroundCLIPanel({ apiBase }: BackgroundCLIPanelProps) {
       return;
     }
     setLoadingLogs((prev) => ({ ...prev, [id]: true }));
-    fetch(`${apiBase}/api/bg/logs/${id}`)
+    fetch(`${apiBase}/bg/logs/${id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => {
         setExpandedLogs((prev) => ({ ...prev, [id]: data.lines ?? [] }));

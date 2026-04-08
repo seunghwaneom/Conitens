@@ -36,6 +36,7 @@ interface WeeklyReport {
 
 interface WeeklyReportPanelProps {
   apiBase: string;
+  token: string;
 }
 
 const SEVERITY_COLOR: Record<string, string> = {
@@ -44,7 +45,7 @@ const SEVERITY_COLOR: Record<string, string> = {
   info: "#58a6ff",
 };
 
-export function WeeklyReportPanel({ apiBase }: WeeklyReportPanelProps) {
+export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
   const [report, setReport] = useState<WeeklyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,13 +55,13 @@ export function WeeklyReportPanel({ apiBase }: WeeklyReportPanelProps) {
     setLoading(true);
     setError(null);
     const url = weekOffset === 0
-      ? `${apiBase}/api/reports/weekly`
-      : `${apiBase}/api/reports/weekly?offset=${weekOffset}`;
-    fetch(url)
+      ? `${apiBase}/reports/weekly`
+      : `${apiBase}/reports/weekly?offset=${weekOffset}`;
+    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => { setReport(data.report ?? data ?? null); setLoading(false); })
       .catch((err: unknown) => { setError(err instanceof Error ? err.message : "Failed to load report"); setLoading(false); });
-  }, [apiBase, weekOffset]);
+  }, [apiBase, token, weekOffset]);
 
   if (loading) return <div style={{ padding: 24, color: "#8b949e" }}>Loading weekly report...</div>;
   if (error) return <div style={{ padding: 24, color: "#f85149" }}>Error: {error}</div>;

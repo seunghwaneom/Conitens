@@ -95,13 +95,13 @@ import { AgentRelationshipGraph } from "./components/AgentRelationshipGraph.js";
 import { ProposalQueuePanel } from "./components/ProposalQueuePanel.js";
 import { demoFleet } from "./agent-fleet-model.js";
 import { demoProposals, demoEvolution, demoLearningMetrics } from "./evolution-model.js";
-import { ThreadBrowser } from "./components/ThreadBrowser.js";
-import { ThreadDetail } from "./components/ThreadDetail.js";
-import { AgentDetail } from "./components/AgentDetail.js";
-import { ApprovalCenter } from "./components/ApprovalCenter.js";
-import { BackgroundCLIPanel } from "./components/BackgroundCLIPanel.js";
-import { TokenBudgetPanel } from "./components/TokenBudgetPanel.js";
-import { WeeklyReportPanel } from "./components/WeeklyReportPanel.js";
+const ThreadBrowser = React.lazy(() => import("./components/ThreadBrowser.js").then(m => ({ default: m.ThreadBrowser })));
+const ThreadDetail = React.lazy(() => import("./components/ThreadDetail.js").then(m => ({ default: m.ThreadDetail })));
+const AgentDetail = React.lazy(() => import("./components/AgentDetail.js").then(m => ({ default: m.AgentDetail })));
+const ApprovalCenter = React.lazy(() => import("./components/ApprovalCenter.js").then(m => ({ default: m.ApprovalCenter })));
+const BackgroundCLIPanel = React.lazy(() => import("./components/BackgroundCLIPanel.js").then(m => ({ default: m.BackgroundCLIPanel })));
+const TokenBudgetPanel = React.lazy(() => import("./components/TokenBudgetPanel.js").then(m => ({ default: m.TokenBudgetPanel })));
+const WeeklyReportPanel = React.lazy(() => import("./components/WeeklyReportPanel.js").then(m => ({ default: m.WeeklyReportPanel })));
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 type DetailTab = "operations" | "intelligence" | "data";
@@ -1632,31 +1632,45 @@ export function App() {
         </main>
       ) : route.screen === "agent-detail" && route.agentId ? (
         <main className="forward-main">
-          <AgentDetail apiBase={config.apiRoot} agentId={route.agentId} />
+          <React.Suspense fallback={<p className="forward-empty">Loading...</p>}>
+            <AgentDetail apiBase={config.apiRoot} agentId={route.agentId} token={config.token} />
+          </React.Suspense>
         </main>
       ) : route.screen === "threads" ? (
         <main className="forward-main">
-          <ThreadBrowser apiBase={config.apiRoot} />
+          <React.Suspense fallback={<p className="forward-empty">Loading...</p>}>
+            <ThreadBrowser apiBase={config.apiRoot} token={config.token} />
+          </React.Suspense>
         </main>
       ) : route.screen === "thread-detail" && route.threadId ? (
         <main className="forward-main">
-          <ThreadDetail apiBase={config.apiRoot} threadId={route.threadId} />
+          <React.Suspense fallback={<p className="forward-empty">Loading...</p>}>
+            <ThreadDetail apiBase={config.apiRoot} threadId={route.threadId} token={config.token} />
+          </React.Suspense>
         </main>
       ) : route.screen === "approvals" ? (
         <main className="forward-main">
-          <ApprovalCenter apiBase={config.apiRoot} />
+          <React.Suspense fallback={<p className="forward-empty">Loading...</p>}>
+            <ApprovalCenter apiBase={config.apiRoot} token={config.token} />
+          </React.Suspense>
         </main>
       ) : route.screen === "bg-cli" ? (
         <main className="forward-main">
-          <BackgroundCLIPanel apiBase={config.apiRoot} />
+          <React.Suspense fallback={<p className="forward-empty">Loading...</p>}>
+            <BackgroundCLIPanel apiBase={config.apiRoot} token={config.token} />
+          </React.Suspense>
         </main>
       ) : route.screen === "tokens" ? (
         <main className="forward-main">
-          <TokenBudgetPanel apiBase={config.apiRoot} />
+          <React.Suspense fallback={<p className="forward-empty">Loading...</p>}>
+            <TokenBudgetPanel apiBase={config.apiRoot} token={config.token} />
+          </React.Suspense>
         </main>
       ) : route.screen === "weekly-report" ? (
         <main className="forward-main">
-          <WeeklyReportPanel apiBase={config.apiRoot} />
+          <React.Suspense fallback={<p className="forward-empty">Loading...</p>}>
+            <WeeklyReportPanel apiBase={config.apiRoot} token={config.token} />
+          </React.Suspense>
         </main>
       ) : (
       <main className="forward-main">
