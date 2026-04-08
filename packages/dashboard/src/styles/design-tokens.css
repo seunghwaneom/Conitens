@@ -1,0 +1,184 @@
+/* ==========================================================================
+   design-tokens.css — Conitens Dashboard Design System
+   Replaces: tokens.css (dark --shell-* vars) + dark-mode portion of shell.css
+   Sections:
+     1. Shared tokens (always active)
+     2. Dark theme — Terminal DNA (default)
+     3. Light theme — Mission Control
+     4. Compatibility aliases (--shell-* → --co-*)
+     5. Legacy light-theme aliases (from legacy.css :root)
+     6. Pixel Office tokens
+   ========================================================================== */
+
+/* ==========================================================================
+   1. SHARED TOKENS — always active, no theme selector
+   ========================================================================== */
+:root {
+  /* Typography */
+  --co-font-ui: "IBM Plex Sans", "Inter", "Segoe UI", sans-serif;
+  --co-font-mono: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", monospace;
+  --co-font-pixel: 'Press Start 2P', cursive;
+  --co-font-text: 'VT323', monospace;
+
+  /* Spacing (4px base) */
+  --co-space-1: 4px;
+  --co-space-2: 8px;
+  --co-space-3: 12px;
+  --co-space-4: 16px;
+  --co-space-5: 20px;
+  --co-space-6: 24px;
+  --co-space-7: 28px;
+  --co-space-8: 32px;
+  --co-space-9: 36px;
+  --co-space-10: 40px;
+  --co-space-11: 44px;
+  --co-space-12: 48px;
+
+  /* Radius */
+  --co-radius-none: 0;
+  --co-radius-sm: 2px;
+  --co-radius-md: 4px;
+  --co-radius-lg: 8px;
+
+  /* Shadows */
+  --co-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --co-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --co-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.2);
+
+  /* Transitions */
+  --co-transition-fast: 120ms ease;
+  --co-transition-normal: 200ms ease;
+}
+
+/* ==========================================================================
+   2. DARK THEME — Terminal DNA (DEFAULT)
+   Applied to :root and :root[data-theme="dark"]
+   ========================================================================== */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --co-color-bg-base: #0c1118;
+  --co-color-bg-raised: #121926;
+  --co-color-bg-soft: #162031;
+  --co-color-bg-panel: rgba(17, 24, 36, 0.84);
+  --co-color-bg-panel-strong: #151d2b;
+  --co-color-bg-panel-muted: rgba(255, 255, 255, 0.04);
+  --co-color-text-primary: #edf3fb;
+  --co-color-text-secondary: rgba(216, 228, 243, 0.68);
+  --co-color-text-muted: rgba(216, 228, 243, 0.58);
+  --co-color-text-inverse: #1e241f;
+  --co-color-line-default: rgba(196, 210, 228, 0.12);
+  --co-color-line-strong: rgba(196, 210, 228, 0.22);
+  --co-color-accent-default: #8bd2ff;
+  --co-color-accent-strong: #4db8ff;
+  --co-color-accent-muted: rgba(139, 210, 255, 0.15);
+  --co-color-status-success: #5dcc98;
+  --co-color-status-success-muted: rgba(93, 204, 152, 0.12);
+  --co-color-status-warning: #d8b36a;
+  --co-color-status-warning-muted: rgba(216, 179, 106, 0.12);
+  --co-color-status-danger: #e18f95;
+  --co-color-status-danger-muted: rgba(225, 143, 149, 0.12);
+  --co-color-status-info: #8bd2ff;
+  --co-color-status-info-muted: rgba(139, 210, 255, 0.12);
+  --co-shadow-lg: 0 24px 54px rgba(0, 0, 0, 0.28);
+}
+
+/* ==========================================================================
+   3. LIGHT THEME — Mission Control
+   ========================================================================== */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --co-color-bg-base: #f4f1e8;
+  --co-color-bg-raised: #ece7d8;
+  --co-color-bg-soft: #f8f4ea;
+  --co-color-bg-panel: rgba(255, 252, 245, 0.88);
+  --co-color-bg-panel-strong: #ffffff;
+  --co-color-bg-panel-muted: #f8f4ea;
+  --co-color-text-primary: #1e241f;
+  --co-color-text-secondary: #687166;
+  --co-color-text-muted: rgba(104, 113, 102, 0.7);
+  --co-color-text-inverse: #edf3fb;
+  --co-color-line-default: rgba(74, 84, 74, 0.14);
+  --co-color-line-strong: rgba(46, 57, 46, 0.24);
+  --co-color-accent-default: #28b463;
+  --co-color-accent-strong: #117a45;
+  --co-color-accent-muted: rgba(40, 180, 99, 0.12);
+  --co-color-status-success: #4fb062;
+  --co-color-status-success-muted: rgba(79, 176, 98, 0.12);
+  --co-color-status-warning: #c98b12;
+  --co-color-status-warning-muted: rgba(201, 139, 18, 0.12);
+  --co-color-status-danger: #c14949;
+  --co-color-status-danger-muted: rgba(193, 73, 73, 0.12);
+  --co-color-status-info: #1d8fd6;
+  --co-color-status-info-muted: rgba(29, 143, 214, 0.12);
+  --co-shadow-lg: 0 18px 40px rgba(38, 43, 34, 0.08);
+}
+
+/* ==========================================================================
+   4. COMPATIBILITY ALIASES — --shell-* → --co-*
+   Allows existing components using var(--shell-*) to keep working
+   ========================================================================== */
+:root {
+  --font-ui: var(--co-font-ui);
+  --font-mono-ui: var(--co-font-mono);
+  --shell-bg: var(--co-color-bg-base);
+  --shell-bg-raised: var(--co-color-bg-raised);
+  --shell-bg-soft: var(--co-color-bg-soft);
+  --shell-panel: var(--co-color-bg-panel);
+  --shell-panel-strong: var(--co-color-bg-panel-strong);
+  --shell-panel-muted: var(--co-color-bg-panel-muted);
+  --shell-line: var(--co-color-line-default);
+  --shell-line-strong: var(--co-color-line-strong);
+  --shell-text: var(--co-color-text-primary);
+  --shell-muted: var(--co-color-text-secondary);
+  --shell-accent: var(--co-color-accent-default);
+  --shell-accent-strong: var(--co-color-accent-strong);
+  --shell-success: var(--co-color-status-success);
+  --shell-warning: var(--co-color-status-warning);
+  --shell-danger: var(--co-color-status-danger);
+  --shell-shadow: var(--co-shadow-lg);
+}
+
+/* ==========================================================================
+   5. LEGACY LIGHT-THEME ALIASES — from legacy.css :root
+   Ensures legacy.css vars continue to resolve under the light theme
+   ========================================================================== */
+:root[data-theme="light"] {
+  --bg: var(--co-color-bg-base);
+  --bg-alt: var(--co-color-bg-raised);
+  --panel: var(--co-color-bg-panel);
+  --panel-strong: var(--co-color-bg-panel-strong);
+  --panel-muted: var(--co-color-bg-panel-muted);
+  --text: var(--co-color-text-primary);
+  --muted: var(--co-color-text-secondary);
+  --line: var(--co-color-line-default);
+  --line-strong: var(--co-color-line-strong);
+  --shadow: var(--co-shadow-lg);
+  --accent: var(--co-color-accent-default);
+  --accent-strong: var(--co-color-accent-strong);
+  --info: var(--co-color-status-info);
+  --amber: var(--co-color-status-warning);
+  --red: var(--co-color-status-danger);
+  --header: #141915;
+  --header-2: #1f2620;
+}
+
+/* ==========================================================================
+   6. PIXEL OFFICE TOKENS — preserved from legacy.css
+   ========================================================================== */
+:root {
+  --bg-cream: #f6f1e6;
+  --wall-sand: #c8b89a;
+  --floor-lobby: #efede0;
+  --floor-control: #edf4f8;
+  --floor-workspace: #f3ecdf;
+  --floor-lab: #edf3ea;
+  --accent-info: #508dd4;
+  --accent-warning: #c98b12;
+  --accent-danger: #c14949;
+  --accent-success: #4fb062;
+  --role-orch: #ff7043;
+  --role-impl: #66bb6a;
+  --role-rsch: #ab47bc;
+  --role-revw: #42a5f5;
+}
