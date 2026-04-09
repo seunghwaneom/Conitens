@@ -76,7 +76,7 @@ export function RunDetailScreen() {
   }
 
   if (detailState === "loading") {
-    return <LoadingState message="Loading run detail..." />;
+    return <LoadingState message="Loading run detail…" />;
   }
 
   if (detailState === "error") {

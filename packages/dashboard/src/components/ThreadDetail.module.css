@@ -12,6 +12,11 @@
   display: inline-block;
 }
 
+.backLink:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+}
+
 .heading {
   margin: var(--co-space-2) 0 var(--co-space-1);
   font-size: 1.125rem;

@@ -1,4 +1,5 @@
 export * from "./forward-bridge-types.ts";
+export { createForwardAuthHeaders } from "./forward-bridge-auth.ts";
 export {
   parseApprovalDetailResponse,
   parseApprovalResumeResponse,

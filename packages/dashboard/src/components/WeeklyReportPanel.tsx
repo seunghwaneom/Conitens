@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Badge, Button, EmptyState, ErrorDisplay, LoadingState } from "../ds/index";
+import { createForwardAuthHeaders } from "../forward-bridge.js";
 import styles from "./WeeklyReportPanel.module.css";
 
 interface FailurePattern {
@@ -59,13 +60,13 @@ export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
     const url = weekOffset === 0
       ? `${apiBase}/reports/weekly`
       : `${apiBase}/reports/weekly?offset=${weekOffset}`;
-    fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(url, { headers: createForwardAuthHeaders(token) })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => { setReport(data.report ?? data ?? null); setLoading(false); })
       .catch((err: unknown) => { setError(err instanceof Error ? err.message : "Failed to load report"); setLoading(false); });
   }, [apiBase, token, weekOffset]);
 
-  if (loading) return <LoadingState message="Loading weekly report..." />;
+  if (loading) return <LoadingState message="Loading weekly report…" />;
   if (error) return <ErrorDisplay message={`Error: ${error}`} />;
   if (!report) return <EmptyState message="No report available." />;
 

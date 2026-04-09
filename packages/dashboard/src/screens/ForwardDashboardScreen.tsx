@@ -1351,7 +1351,7 @@ export function ForwardDashboardScreen() {
           {route.screen === "tasks" || route.screen === "task-detail" ? (
             <>
               {!isDemo && tasksState === "idle" ? <p className="forward-empty">Connect to a live bridge to load operator tasks.</p> : null}
-              {!isDemo && tasksState === "loading" ? <p className="forward-empty">Loading operator tasks...</p> : null}
+              {!isDemo && tasksState === "loading" ? <p className="forward-empty">Loading operator tasks…</p> : null}
               {!isDemo && tasksState === "error" ? <p className="forward-error">{tasksError}</p> : null}
               {!isDemo ? (
                 <>
@@ -1592,7 +1592,7 @@ export function ForwardDashboardScreen() {
           ) : route.screen === "workspaces" || route.screen === "workspace-detail" ? (
             <>
               {!isDemo && workspacesState === "idle" ? <p className="forward-empty">Connect to a live bridge to load operator workspaces.</p> : null}
-              {!isDemo && workspacesState === "loading" ? <p className="forward-empty">Loading operator workspaces...</p> : null}
+              {!isDemo && workspacesState === "loading" ? <p className="forward-empty">Loading operator workspaces…</p> : null}
               {!isDemo && workspacesState === "error" ? <p className="forward-error">{workspacesError}</p> : null}
               {!isDemo && workspacesState === "ready" && workspaceItems.length === 0 ? (
                 <p className="forward-empty">No operator workspaces yet.</p>
@@ -1646,7 +1646,7 @@ export function ForwardDashboardScreen() {
               {runsState === "idle" ? (
                 <p className="forward-empty">Enter bridge connection details to load forward runs.</p>
               ) : null}
-              {runsState === "loading" ? <p className="forward-empty">Loading runs...</p> : null}
+              {runsState === "loading" ? <p className="forward-empty">Loading runs…</p> : null}
               {runsState === "error" ? <p className="forward-error">{runsError}</p> : null}
               {runsState === "ready" && runItems.length === 0 ? (
                 <p className="forward-empty">No forward runs yet.</p>

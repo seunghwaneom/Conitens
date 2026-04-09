@@ -99,7 +99,7 @@ class ApprovalInterruptAdapter:
         )
         append_event(
             self.workspace,
-            event_type="APPROVAL_REQUESTED",
+            event_type="approval.requested",
             actor={"type": "agent", "name": actor},
             scope={"run_id": run_id, "task_id": task_id or run_id, "correlation_id": run_id},
             payload={"request_id": request["request_id"], "action_type": action_type, "risk_level": request["risk_level"]},
@@ -138,16 +138,24 @@ class ApprovalInterruptAdapter:
             updated_at=utc_iso(),
         )
         event_type = {
-            "approved": "APPROVAL_APPROVED",
-            "edited": "APPROVAL_EDITED",
-            "rejected": "APPROVAL_REJECTED",
+            "approved": "approval.granted",
+            "edited": "approval.granted",
+            "rejected": "approval.denied",
         }[status]
         append_event(
             self.workspace,
             event_type=event_type,
             actor={"type": "agent", "name": reviewer},
-            scope={"run_id": request["run_id"], "task_id": request["run_id"], "correlation_id": request["run_id"]},
-            payload={"request_id": request_id, "reviewer_note": reviewer_note},
+            scope={
+                "run_id": request["run_id"],
+                "task_id": request.get("task_id") or request["run_id"],
+                "correlation_id": request["run_id"],
+            },
+            payload={
+                "request_id": request_id,
+                "reviewer_note": reviewer_note,
+                "approval_status": status,
+            },
             severity="error" if status == "rejected" else "info",
         )
         return request

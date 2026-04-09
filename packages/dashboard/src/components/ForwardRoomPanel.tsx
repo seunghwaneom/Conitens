@@ -43,7 +43,7 @@ export function ForwardRoomPanel({
               </button>
             ))}
           </div>
-          {state === "loading" ? <LoadingState message="Loading room timeline..." /> : null}
+          {state === "loading" ? <LoadingState message="Loading room timeline…" /> : null}
           {state === "error" && error ? <ErrorDisplay message={error} /> : null}
           {state === "ready" && roomTimeline ? (
             <ol className={styles.timeline}>

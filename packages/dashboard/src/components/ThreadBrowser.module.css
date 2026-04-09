@@ -4,17 +4,63 @@
   padding: var(--co-space-6);
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--co-space-3);
+  align-items: flex-start;
+  margin-bottom: var(--co-space-3);
+}
+
+.eyebrow {
+  margin: 0 0 var(--co-space-2);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+}
+
 .heading {
-  margin: 0 0 var(--co-space-4);
+  margin: 0;
   font-size: 1.25rem;
   color: var(--co-color-text-primary);
 }
 
+.stateBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--co-space-3);
+  border: 1px solid var(--co-color-line-default);
+  color: var(--co-color-text-secondary);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.helperText {
+  margin: 0 0 var(--co-space-4);
+  color: var(--co-color-text-secondary);
+  line-height: 1.55;
+}
+
+.filterField {
+  display: grid;
+  gap: var(--co-space-2);
+  max-width: 400px;
+  margin-bottom: var(--co-space-4);
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+}
+
 .filterInput {
   width: 100%;
-  max-width: 400px;
   padding: var(--co-space-2) var(--co-space-3);
-  margin-bottom: var(--co-space-4);
   background: var(--co-color-bg-panel);
   border: 1px solid var(--co-color-line-default);
   border-radius: var(--co-radius-sm);
@@ -38,6 +84,12 @@
   border-radius: var(--co-radius-md);
   text-decoration: none;
   color: var(--co-color-text-primary);
+}
+
+.threadLink:focus-visible,
+.filterInput:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
 }
 
 .statusDot {
