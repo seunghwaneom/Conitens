@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button, EmptyState, LoadingState, ErrorDisplay } from "../ds/index.js";
+import { createForwardAuthHeaders } from "../forward-bridge.js";
 import styles from "./TokenBudgetPanel.module.css";
 
 interface CompressionTier {
@@ -81,7 +82,7 @@ export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(`${apiBase}/tokens/budget`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiBase}/tokens/budget`, { headers: createForwardAuthHeaders(token) })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json() as Promise<TokenBudgetData>;
@@ -105,10 +106,10 @@ export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
 
   function handleRefresh() {
     setRefreshing(true);
-    fetch(`${apiBase}/tokens/refresh`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiBase}/tokens/refresh`, { method: "POST", headers: createForwardAuthHeaders(token) })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return fetch(`${apiBase}/tokens/budget`, { headers: { Authorization: `Bearer ${token}` } });
+        return fetch(`${apiBase}/tokens/budget`, { headers: createForwardAuthHeaders(token) });
       })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -127,7 +128,7 @@ export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
   if (loading) {
     return (
       <div className={styles.panel}>
-        <LoadingState message="Loading token budget..." />
+        <LoadingState message="Loading token budget…" />
       </div>
     );
   }
@@ -160,7 +161,7 @@ export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
           onClick={handleRefresh}
           disabled={refreshing}
         >
-          {refreshing ? "Refreshing..." : "Refresh Summary"}
+          {refreshing ? "Refreshing…" : "Refresh Summary"}
         </Button>
       </div>
 

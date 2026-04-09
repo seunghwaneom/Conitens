@@ -221,8 +221,8 @@ class ApprovalControlTests(unittest.TestCase):
 
         self.assertEqual(request["reviewer"], "owner")
         self.assertEqual(request["status"], "rejected")
-        self.assertIn("APPROVAL_REQUESTED", event_text)
-        self.assertIn("APPROVAL_REJECTED", event_text)
+        self.assertIn("approval.requested", event_text)
+        self.assertIn("approval.denied", event_text)
 
     def test_resume_uses_pending_request_id_not_latest_request(self) -> None:
         root, repo = self.prepare_workspace()

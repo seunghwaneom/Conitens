@@ -105,6 +105,22 @@ class ForwardBridgeTests(unittest.TestCase):
         self.assertEqual(payload["runs"][0]["run_id"], run_id)
         self.assertIn("counts", payload["runs"][0])
 
+    def test_runs_endpoint_accepts_forward_token_header(self) -> None:
+        root, _repo, run_id, _iteration_id = self.prepare_workspace()
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8894)
+        try:
+            request = Request(
+                "http://127.0.0.1:8894/api/runs",
+                headers={"X-Conitens-Forward-Token": str(launched["token"])},
+            )
+            with urlopen(request, timeout=10) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["runs"][0]["run_id"], run_id)
+
     def test_run_detail_and_replay_endpoints_return_forward_data(self) -> None:
         root, _repo, run_id, _iteration_id = self.prepare_workspace()
         launched = launch_forward_bridge(root, host="127.0.0.1", port=8883)

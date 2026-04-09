@@ -40,8 +40,8 @@ export function OnboardingOverlay() {
         <p>{steps[step].body}</p>
         {steps[step].code && <code className="onboarding-code">{steps[step].code}</code>}
         <div className="onboarding-actions">
-          <button className="onboarding-skip" onClick={dismiss}>Skip</button>
-          <button className="onboarding-next" onClick={next}>{steps[step].action}</button>
+          <button className="onboarding-skip" type="button" onClick={dismiss}>Skip</button>
+          <button className="onboarding-next" type="button" onClick={next}>{steps[step].action}</button>
         </div>
       </div>
     </div>

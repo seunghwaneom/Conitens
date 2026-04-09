@@ -20,7 +20,7 @@ export function ForwardReplayPanel({
         </div>
         <span className={styles.stateTag}>{state}</span>
       </div>
-      {state === "loading" ? <LoadingState message="Loading replay..." /> : null}
+      {state === "loading" ? <LoadingState message="Loading replay…" /> : null}
       {state === "error" && error ? <ErrorDisplay message={error} /> : null}
       {state === "ready" && replay && replay.timeline.length === 0 ? (
         <EmptyState message="No replay events recorded." />

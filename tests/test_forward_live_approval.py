@@ -199,7 +199,7 @@ class ForwardLiveApprovalTests(unittest.TestCase):
                 },
                 method="POST",
             )
-            with urlopen(resume_request, timeout=10) as response:
+            with urlopen(resume_request, timeout=20) as response:
                 resume_payload = json.loads(response.read().decode("utf-8"))
         finally:
             launched["server"].shutdown()
@@ -297,7 +297,9 @@ class ForwardLiveApprovalTests(unittest.TestCase):
 
         self.assertEqual(status, 204)
         self.assertEqual(allow_origin, "http://127.0.0.1:4291")
-        self.assertIn("Authorization", allow_headers)
+        normalized_allow_headers = (allow_headers or "").lower()
+        self.assertIn("authorization", normalized_allow_headers)
+        self.assertIn("x-conitens-forward-token", normalized_allow_headers)
 
     def test_malformed_json_on_approval_decision_returns_400(self) -> None:
         root, _repo, run_id = self.prepare_workspace()

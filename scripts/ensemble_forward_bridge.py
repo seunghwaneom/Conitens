@@ -133,9 +133,23 @@ def _forward_extra_headers(handler: BaseHTTPRequestHandler) -> dict[str, str]:
     origin = _loopback_origin(handler)
     if not origin:
         return {}
+    base_allow_headers = ["Authorization", "X-Conitens-Forward-Token", "Content-Type"]
+    requested_headers = [
+        value.strip()
+        for value in (handler.headers.get("Access-Control-Request-Headers", "") or "").split(",")
+        if value.strip()
+    ]
+    allow_headers: list[str] = []
+    seen_headers: set[str] = set()
+    for value in [*requested_headers, *base_allow_headers]:
+        normalized = value.lower()
+        if normalized in seen_headers:
+            continue
+        allow_headers.append(value)
+        seen_headers.add(normalized)
     return {
         "Access-Control-Allow-Origin": origin,
-        "Access-Control-Allow-Headers": "Authorization, Content-Type",
+        "Access-Control-Allow-Headers": ", ".join(allow_headers),
         "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
         "Access-Control-Max-Age": "300",
         "Vary": "Origin",
@@ -172,6 +186,20 @@ def _forward_text_response(
     handler.wfile.write(body)
 
 
+def _extract_bridge_token(handler: BaseHTTPRequestHandler) -> str | None:
+    authorization = handler.headers.get("Authorization")
+    if authorization:
+        scheme, _, raw_token = authorization.partition(" ")
+        if scheme.strip().lower() == "bearer" and raw_token.strip():
+            return raw_token.strip()
+        if authorization.lower().startswith("bearer") and authorization[6:].strip():
+            return authorization[6:].strip()
+    fallback_token = handler.headers.get("X-Conitens-Forward-Token")
+    if fallback_token and fallback_token.strip():
+        return fallback_token.strip()
+    return None
+
+
 def _require_bridge_read_access(
     handler: BaseHTTPRequestHandler,
     auth_token: str,
@@ -179,7 +207,7 @@ def _require_bridge_read_access(
     if not _request_is_loopback(handler):
         _forward_json_response(handler, {"error": "Forward bridge reads are only available from loopback clients."}, status=403)
         return False
-    if handler.headers.get("Authorization") == f"Bearer {auth_token}":
+    if _extract_bridge_token(handler) == auth_token:
         return True
     _forward_json_response(handler, {"error": "Missing or invalid forward bridge token."}, status=403)
     return False
@@ -189,7 +217,7 @@ def _require_bridge_write_access(handler: BaseHTTPRequestHandler, auth_token: st
     if not _request_is_loopback(handler):
         _forward_json_response(handler, {"error": "Forward bridge writes are only available from loopback clients."}, status=403)
         return False
-    if handler.headers.get("Authorization") == f"Bearer {auth_token}":
+    if _extract_bridge_token(handler) == auth_token:
         return True
     _forward_json_response(handler, {"error": "Missing or invalid forward bridge token."}, status=403)
     return False

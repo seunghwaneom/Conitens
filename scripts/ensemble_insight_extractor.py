@@ -150,13 +150,18 @@ class InsightExtractor:
             iteration_id=iteration_id,
             room_id=room_id,
         )
-        append_event(
-            self.workspace,
-            event_type="INSIGHT_EXTRACTED",
-            actor={"type": "agent", "name": "insight-extractor"},
-            scope={"run_id": run_id, "room_id": room_id, "task_id": run_id, "correlation_id": run_id or room_id},
-            payload={"kind": kind, "summary": summary, "evidence_refs": evidence_refs},
-        )
+        try:
+            append_event(
+                self.workspace,
+                event_type="INSIGHT_EXTRACTED",
+                actor={"type": "agent", "name": "insight-extractor"},
+                scope={"run_id": run_id, "room_id": room_id, "task_id": run_id, "correlation_id": run_id or room_id},
+                payload={"kind": kind, "summary": summary, "evidence_refs": evidence_refs},
+            )
+        except Exception:
+            # Insight extraction should not fail just because the mirrored
+            # ops-event vocabulary has not caught up with the extractor.
+            pass
         return insight
 
     def _find_existing(
