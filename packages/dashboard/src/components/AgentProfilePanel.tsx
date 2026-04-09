@@ -1,6 +1,7 @@
-import React from "react";
 import type { AgentProfile, AgentLifecycleStatus } from "../agent-fleet-model.js";
 import type { EvolutionEntry, LearningMetric } from "../evolution-model.js";
+import { Badge } from "../ds/index.js";
+import styles from "./AgentProfilePanel.module.css";
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -15,42 +16,31 @@ function timeAgo(iso: string): string {
 
 function statusColor(status: AgentLifecycleStatus): string {
   switch (status) {
-    case "running": return "#4fb062";
+    case "running": return "var(--co-color-status-success, #4fb062)";
     case "assigned":
-    case "idle": return "#4fb062";
-    case "paused": return "#c98b12";
-    case "dormant": return "rgba(177, 205, 255, 0.3)";
-    case "retired": return "rgba(177, 205, 255, 0.3)";
+    case "idle": return "var(--co-color-status-success, #4fb062)";
+    case "paused": return "var(--co-color-status-warning, #c98b12)";
+    case "dormant": return "var(--co-color-text-muted)";
+    case "retired": return "var(--co-color-text-muted)";
   }
 }
 
-function roleToneClass(role: AgentProfile["role"]): string {
+function roleBadgeClass(role: AgentProfile["role"]): string {
   switch (role) {
-    case "orchestrator": return "badge badge-orch";
-    case "implementer": return "badge badge-impl";
-    case "researcher": return "badge badge-rsch";
-    case "reviewer": return "badge badge-revw";
-    case "validator": return "badge badge-vald";
+    case "orchestrator": return styles.badgeOrch;
+    case "implementer": return styles.badgeImpl;
+    case "researcher": return styles.badgeRsch;
+    case "reviewer": return styles.badgeRevw;
+    case "validator": return styles.badgeVald;
   }
 }
 
-function outcomeClass(outcome: EvolutionEntry["outcome"]): string {
+function outcomeVariant(outcome: EvolutionEntry["outcome"]): "success" | "neutral" | "danger" {
   switch (outcome) {
-    case "improved": return "badge badge-success";
-    case "neutral": return "badge badge-neutral";
-    case "regressed": return "badge badge-danger";
+    case "improved": return "success";
+    case "neutral": return "neutral";
+    case "regressed": return "danger";
   }
-}
-
-function timeAgoFrom(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
-  const diffD = Math.floor(diffH / 24);
-  return `${diffD}d ago`;
 }
 
 interface AgentProfilePanelProps {
@@ -62,8 +52,8 @@ interface AgentProfilePanelProps {
 export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePanelProps) {
   if (!agent) {
     return (
-      <div className="agent-profile agent-profile-empty">
-        <div className="forward-placeholder">
+      <div className={styles.profileEmpty}>
+        <div className={styles.placeholder}>
           <h3>No agent selected</h3>
           <p>Select an agent to view profile</p>
         </div>
@@ -76,110 +66,110 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
   const errorPct = agent.errorRate * 100;
 
   return (
-    <div className="agent-profile">
-      <div className="agent-profile-section">
-        <p className="forward-panel-label">Identity</p>
-        <h3 className="agent-profile-name">{agent.name}</h3>
-        <div className="agent-profile-meta">
-          <span className={roleToneClass(agent.role)}>{agent.role}</span>
-          <span className="agent-archetype-label">{agent.archetype}</span>
+    <div className={styles.profile}>
+      <div className={styles.section}>
+        <p className={styles.panelLabel}>Identity</p>
+        <h3 className={styles.profileName}>{agent.name}</h3>
+        <div className={styles.meta}>
+          <Badge variant="neutral" className={roleBadgeClass(agent.role)}>{agent.role}</Badge>
+          <span className={styles.archetypeLabel}>{agent.archetype}</span>
         </div>
       </div>
 
-      <div className="agent-profile-section">
-        <p className="forward-panel-label">Health</p>
-        <div className="agent-health-row">
+      <div className={styles.section}>
+        <p className={styles.panelLabel}>Health</p>
+        <div className={styles.healthRow}>
           <span
-            className="agent-status-dot"
-            style={{ backgroundColor: statusColor(agent.status) }}
+            className={styles.statusDot}
+            ref={(el) => { if (el) el.style.setProperty('--status-color', statusColor(agent.status)); }}
           />
-          <span className="agent-health-status">{agent.status}</span>
+          <span className={styles.healthStatus}>{agent.status}</span>
         </div>
-        <p className="agent-health-active">Last active: {timeAgo(agent.lastActive)}</p>
-        <div className="agent-error-bar-wrap">
-          <div className="agent-error-bar-label">
+        <p className={styles.healthActive}>Last active: {timeAgo(agent.lastActive)}</p>
+        <div className={styles.errorBarWrap}>
+          <div className={styles.errorBarLabel}>
             <span>Error rate</span>
             <span>{errorPct.toFixed(1)}%</span>
           </div>
-          <div className="agent-error-bar-track">
+          <div className={styles.errorBarTrack}>
             <div
-              className="agent-error-bar-fill"
-              style={{ width: `${Math.min(errorPct * 5, 100)}%` }}
+              className={styles.errorBarFill}
+              ref={(el) => { if (el) el.style.setProperty('--bar-width', `${Math.min(errorPct * 5, 100)}%`); }}
             />
           </div>
         </div>
       </div>
 
-      <div className="agent-profile-section">
-        <p className="forward-panel-label">Stats</p>
-        <div className="agent-stats-grid">
-          <div className="agent-stat-item">
+      <div className={styles.section}>
+        <p className={styles.panelLabel}>Stats</p>
+        <div className={styles.statsGrid}>
+          <div className={styles.statItem}>
             <span>Tasks</span>
             <strong>{agent.taskCount}</strong>
           </div>
-          <div className="agent-stat-item">
+          <div className={styles.statItem}>
             <span>Memories</span>
             <strong>{agent.memoryCount}</strong>
           </div>
-          <div className="agent-stat-item">
+          <div className={styles.statItem}>
             <span>Room</span>
-            <strong className="agent-stat-room">{agent.roomId}</strong>
+            <strong className={styles.statRoom}>{agent.roomId}</strong>
           </div>
           {agent.latestRunId ? (
-            <div className="agent-stat-item">
+            <div className={styles.statItem}>
               <span>Latest run</span>
-              <strong className="agent-stat-room">{agent.latestRunId}</strong>
+              <strong className={styles.statRoom}>{agent.latestRunId}</strong>
             </div>
           ) : null}
           {typeof agent.pendingApprovals === "number" ? (
-            <div className="agent-stat-item">
+            <div className={styles.statItem}>
               <span>Approvals</span>
               <strong>{agent.pendingApprovals}</strong>
             </div>
           ) : null}
         </div>
         {agent.latestRunStatus ? (
-          <p className="agent-health-active">Latest run status: {agent.latestRunStatus}</p>
+          <p className={styles.healthActive}>Latest run status: {agent.latestRunStatus}</p>
         ) : null}
         {agent.latestBlocker ? (
-          <p className="agent-health-active">Latest blocker: {agent.latestBlocker}</p>
+          <p className={styles.healthActive}>Latest blocker: {agent.latestBlocker}</p>
         ) : null}
         {agent.workspaceRef ? (
-          <p className="agent-health-active">Workspace: {agent.workspaceRef}</p>
+          <p className={styles.healthActive}>Workspace: {agent.workspaceRef}</p>
         ) : null}
       </div>
 
-      <div className="agent-profile-section">
-        <p className="forward-panel-label">Actions</p>
-        <div className="agent-action-bar">
+      <div className={styles.section}>
+        <p className={styles.panelLabel}>Actions</p>
+        <div className={styles.actionBar}>
           {canPause && (
-            <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
+            <button className={styles.chip} disabled title="Lifecycle control — coming soon">
               Pause
             </button>
           )}
           {canResume && (
-            <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
+            <button className={styles.chip} disabled title="Lifecycle control — coming soon">
               Resume
             </button>
           )}
-          <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
+          <button className={styles.chip} disabled title="Lifecycle control — coming soon">
             Retire
           </button>
         </div>
       </div>
 
       {evolution.length > 0 && (
-        <div className="agent-profile-section">
-          <p className="forward-panel-label">Evolution Timeline</p>
-          <div className="agent-evolution-list">
+        <div className={styles.section}>
+          <p className={styles.panelLabel}>Evolution Timeline</p>
+          <div className={styles.evolutionList}>
             {evolution.map(entry => (
-              <div key={entry.id} className="agent-evolution-entry">
-                <div className="agent-evolution-header">
-                  <span className={outcomeClass(entry.outcome)}>{entry.outcome}</span>
-                  <span className="agent-evolution-date">{timeAgoFrom(entry.appliedAt)}</span>
+              <div key={entry.id} className={styles.evolutionEntry}>
+                <div className={styles.evolutionHeader}>
+                  <Badge variant={outcomeVariant(entry.outcome)}>{entry.outcome}</Badge>
+                  <span className={styles.evolutionDate}>{timeAgo(entry.appliedAt)}</span>
                 </div>
-                <p className="agent-evolution-title">{entry.title}</p>
-                <span className="agent-evolution-delta">{entry.deltaMetric}</span>
+                <p className={styles.evolutionTitle}>{entry.title}</p>
+                <span className={styles.evolutionDelta}>{entry.deltaMetric}</span>
               </div>
             ))}
           </div>
@@ -187,45 +177,45 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
       )}
 
       {metrics && (
-        <div className="agent-profile-section">
-          <p className="forward-panel-label">Learning Metrics</p>
-          <div className="agent-memory-grid">
+        <div className={styles.section}>
+          <p className={styles.panelLabel}>Learning Metrics</p>
+          <div className={styles.memoryGrid}>
             {(["identity", "procedural", "episodic", "reflection"] as const).map(key => (
-              <div key={key} className="agent-memory-stat">
-                <span className="agent-memory-label">{key}</span>
-                <strong className="agent-memory-count">{metrics.memoryCounts[key]}</strong>
+              <div key={key} className={styles.memoryStat}>
+                <span className={styles.memoryLabel}>{key}</span>
+                <strong className={styles.memoryCount}>{metrics.memoryCounts[key]}</strong>
               </div>
             ))}
           </div>
-          <div className="agent-proposal-bar-wrap">
-            <p className="agent-proposal-bar-label">Proposals</p>
-            <div className="agent-proposal-bar">
+          <div className={styles.proposalBarWrap}>
+            <p className={styles.proposalBarLabel}>Proposals</p>
+            <div className={styles.proposalBar}>
               {metrics.proposalStats.approved > 0 && (
                 <div
-                  className="agent-proposal-bar-seg agent-proposal-seg-approved"
-                  style={{ flex: metrics.proposalStats.approved }}
+                  className={styles.proposalSegApproved}
+                  ref={(el) => { if (el) el.style.setProperty('--seg-flex', String(metrics.proposalStats.approved)); }}
                   title={`Approved: ${metrics.proposalStats.approved}`}
                 />
               )}
               {metrics.proposalStats.rejected > 0 && (
                 <div
-                  className="agent-proposal-bar-seg agent-proposal-seg-rejected"
-                  style={{ flex: metrics.proposalStats.rejected }}
+                  className={styles.proposalSegRejected}
+                  ref={(el) => { if (el) el.style.setProperty('--seg-flex', String(metrics.proposalStats.rejected)); }}
                   title={`Rejected: ${metrics.proposalStats.rejected}`}
                 />
               )}
               {metrics.proposalStats.pending > 0 && (
                 <div
-                  className="agent-proposal-bar-seg agent-proposal-seg-pending"
-                  style={{ flex: metrics.proposalStats.pending }}
+                  className={styles.proposalSegPending}
+                  ref={(el) => { if (el) el.style.setProperty('--seg-flex', String(metrics.proposalStats.pending)); }}
                   title={`Pending: ${metrics.proposalStats.pending}`}
                 />
               )}
             </div>
-            <div className="agent-proposal-bar-legend">
-              <span className="agent-proposal-legend-approved">{metrics.proposalStats.approved} approved</span>
-              <span className="agent-proposal-legend-rejected">{metrics.proposalStats.rejected} rejected</span>
-              <span className="agent-proposal-legend-pending">{metrics.proposalStats.pending} pending</span>
+            <div className={styles.proposalBarLegend}>
+              <span className={styles.legendApproved}>{metrics.proposalStats.approved} approved</span>
+              <span className={styles.legendRejected}>{metrics.proposalStats.rejected} rejected</span>
+              <span className={styles.legendPending}>{metrics.proposalStats.pending} pending</span>
             </div>
           </div>
         </div>

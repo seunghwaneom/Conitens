@@ -1,0 +1,13 @@
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.loadingState {
+  font-family: var(--co-font-ui);
+  font-size: 0.875rem;
+  color: var(--co-color-text-muted);
+  padding: var(--co-space-6) var(--co-space-4);
+  text-align: center;
+  animation: pulse 1.5s ease infinite;
+}

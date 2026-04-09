@@ -1,4 +1,6 @@
 import type { InsightCardViewModel } from "../forward-view-model.js";
+import { EmptyState } from "../ds/index.js";
+import styles from "./ForwardInsightsPanel.module.css";
 
 export function ForwardInsightsPanel({
   insights,
@@ -13,26 +15,26 @@ export function ForwardInsightsPanel({
   const hasCorrelations = validatorCorrelations.length > 0;
 
   return (
-    <section className="forward-section">
-      <div className="forward-section-header">
-        <div>
-          <p className="forward-panel-label">Insights</p>
-          <h3>Evidence & insight view</h3>
+    <section className={styles.section}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <p className={styles.label}>Insights</p>
+          <h3 className={styles.title}>Evidence & insight view</h3>
         </div>
       </div>
       {insights.length === 0 && !hasFindings && !hasCorrelations ? (
-        <p className="forward-empty">No insight records or finding summaries available yet.</p>
+        <EmptyState message="No insight records or finding summaries available yet." />
       ) : null}
       {insights.length > 0 ? (
-        <div className="forward-insight-grid">
+        <div className={styles.insightGrid}>
           {insights.map((item) => (
-            <article key={item.id} className="forward-insight-card">
-              <div className="forward-insight-header">
+            <article key={item.id} className={styles.insightCard}>
+              <div className={styles.insightHeader}>
                 <strong>{item.kind}</strong>
                 <span>{item.scope}</span>
               </div>
-              <p className="forward-insight-summary">{item.summary}</p>
-              <div className="forward-approval-meta">
+              <p className={styles.insightSummary}>{item.summary}</p>
+              <div className={styles.insightMeta}>
                 <span>{item.timestamp}</span>
                 <span>{item.evidenceCount} evidence ref(s)</span>
               </div>
@@ -45,8 +47,8 @@ export function ForwardInsightsPanel({
         </div>
       ) : null}
       {hasFindings ? (
-        <article className="forward-doc-card">
-          <div className="forward-doc-header">
+        <article className={styles.docCard}>
+          <div className={styles.docHeader}>
             <strong>findings summary</strong>
             <span>state-docs.findings</span>
           </div>
@@ -54,12 +56,12 @@ export function ForwardInsightsPanel({
         </article>
       ) : null}
       {hasCorrelations ? (
-        <article className="forward-doc-card">
-          <div className="forward-doc-header">
+        <article className={styles.docCard}>
+          <div className={styles.docHeader}>
             <strong>validator correlation</strong>
             <span>recent validator feedback</span>
           </div>
-          <ul className="forward-graph-summary">
+          <ul className={styles.correlationList}>
             {validatorCorrelations.map((item) => (
               <li key={item}>{item}</li>
             ))}

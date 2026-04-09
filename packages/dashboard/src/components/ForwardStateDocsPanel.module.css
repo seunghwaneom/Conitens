@@ -1,0 +1,95 @@
+/* ForwardStateDocsPanel — CSS Module using --co-* design tokens */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-4);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--co-space-3);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+  margin: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+  margin: 0;
+}
+
+.stateTag {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  padding: 2px var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  border: 1px solid var(--co-color-line-default);
+  color: var(--co-color-text-muted);
+  background: var(--co-color-bg-panel-muted);
+  white-space: nowrap;
+}
+
+.docGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-3);
+}
+
+.docCard {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  overflow: hidden;
+}
+
+.docHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+  padding: var(--co-space-2) var(--co-space-3);
+  border-bottom: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel-muted);
+}
+
+.docHeader strong {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-primary);
+}
+
+.docHeader span {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docCard pre {
+  padding: var(--co-space-3);
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-secondary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

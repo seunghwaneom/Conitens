@@ -1,0 +1,33 @@
+.bar {
+  display: flex;
+  flex-direction: row;
+  gap: var(--co-space-1);
+  border-bottom: 1px solid var(--co-color-line-default);
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--co-space-2) var(--co-space-4);
+  font-family: var(--co-font-ui);
+  font-size: 0.8125rem;
+  color: var(--co-color-text-secondary);
+  cursor: pointer;
+  transition: color var(--co-transition-fast);
+  margin-bottom: -1px;
+}
+
+.tab:hover:not(.active) {
+  color: var(--co-color-text-primary);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+}
+
+.active {
+  border-bottom: 2px solid var(--co-color-accent-default);
+  color: var(--co-color-text-primary);
+}

@@ -1,0 +1,277 @@
+/* ForwardApprovalCenterPanel — CSS Module using --co-* design tokens */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-4);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--co-space-3);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+  margin: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-2);
+}
+
+.stateTag {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  padding: 2px var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  border: 1px solid var(--co-color-line-default);
+  color: var(--co-color-text-muted);
+  background: var(--co-color-bg-panel-muted);
+  white-space: nowrap;
+}
+
+.approvalLayout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--co-space-4);
+  align-items: start;
+}
+
+@media (max-width: 680px) {
+  .approvalLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.approvalList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+}
+
+.approvalItem {
+  width: 100%;
+  padding: var(--co-space-3);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--co-font-ui);
+}
+
+.approvalItem:hover {
+  border-color: var(--co-color-line-strong);
+}
+
+.approvalItem:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+}
+
+.approvalItemActive {
+  border-color: var(--co-color-accent-default);
+  background: var(--co-color-accent-muted);
+}
+
+.runTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+  margin-bottom: var(--co-space-1);
+}
+
+.runTopline strong {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-primary);
+}
+
+.runTopline span {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-muted);
+}
+
+.approvalItem p {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin: 0;
+}
+
+.approvalDetail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-3);
+}
+
+.docHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+  padding-bottom: var(--co-space-2);
+  border-bottom: 1px solid var(--co-color-line-default);
+}
+
+.docHeader strong {
+  font-size: 0.9375rem;
+  color: var(--co-color-text-primary);
+}
+
+.docHeader span {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-muted);
+}
+
+.approvalMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--co-space-3);
+}
+
+.approvalMeta span {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+}
+
+.approvalDetail pre {
+  padding: var(--co-space-3);
+  background: var(--co-color-bg-panel-muted);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  font-size: 0.75rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-secondary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+}
+
+.approvalNote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.approvalNote span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--co-color-text-secondary);
+}
+
+.approvalNote input {
+  padding: var(--co-space-2) var(--co-space-3);
+  background: var(--co-color-bg-panel-muted);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  color: var(--co-color-text-primary);
+  font-family: var(--co-font-ui);
+  font-size: 0.875rem;
+}
+
+.approvalNote input:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 0;
+  border-color: var(--co-color-accent-default);
+}
+
+.helpText {
+  font-size: 0.6875rem;
+  color: var(--co-color-text-muted);
+  margin: 0;
+}
+
+.approvalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--co-space-2);
+}
+
+.approveButton {
+  padding: var(--co-space-2) var(--co-space-4);
+  font-size: 0.875rem;
+  font-family: var(--co-font-ui);
+  background: transparent;
+  border: 1px solid var(--co-color-status-success);
+  border-radius: var(--co-radius-sm);
+  color: var(--co-color-status-success);
+  cursor: pointer;
+}
+
+.approveButton:hover {
+  background: var(--co-color-status-success-muted);
+}
+
+.approveButton:focus-visible {
+  outline: 2px solid var(--co-color-status-success);
+  outline-offset: 2px;
+}
+
+.denyButton {
+  padding: var(--co-space-2) var(--co-space-4);
+  font-size: 0.875rem;
+  font-family: var(--co-font-ui);
+  background: transparent;
+  border: 1px solid var(--co-color-status-danger);
+  border-radius: var(--co-radius-sm);
+  color: var(--co-color-status-danger);
+  cursor: pointer;
+}
+
+.denyButton:hover {
+  background: var(--co-color-status-danger-muted);
+}
+
+.denyButton:focus-visible {
+  outline: 2px solid var(--co-color-status-danger);
+  outline-offset: 2px;
+}
+
+.chipButton {
+  padding: var(--co-space-1) var(--co-space-3);
+  font-size: 0.8125rem;
+  font-family: var(--co-font-ui);
+  background: transparent;
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  color: var(--co-color-text-secondary);
+  cursor: pointer;
+}
+
+.chipButton:hover {
+  border-color: var(--co-color-line-strong);
+  color: var(--co-color-text-primary);
+}
+
+.chipButton:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+}
+
+.chipButtonActive {
+  background: var(--co-color-accent-muted);
+  border-color: var(--co-color-accent-default);
+  color: var(--co-color-accent-default);
+}

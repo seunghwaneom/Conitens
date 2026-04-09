@@ -39,36 +39,52 @@ export const useEventStore = create<EventStoreState>((set) => ({
       const events = [...state.events, event].slice(-200); // Keep last 200
 
       // Update tasks from task events
-      const tasks = [...state.tasks];
+      let tasks = state.tasks;
       if (event.type.startsWith("task.")) {
         const taskId = event.task_id ?? (event.payload.task_id as string);
         if (taskId) {
-          const existing = tasks.find((t) => t.taskId === taskId);
           if (event.type === "task.created") {
-            if (!existing) tasks.push({ taskId, state: "draft" });
-          } else if (event.type === "task.assigned" && existing) {
-            existing.assignee = event.payload.assignee as string;
-            existing.state = "assigned";
-          } else if (event.type === "task.status_changed" && existing) {
-            existing.state = event.payload.to as string;
-          } else if (event.type === "task.completed" && existing) {
-            existing.state = "done";
+            if (!state.tasks.some((t) => t.taskId === taskId)) {
+              tasks = [...state.tasks, { taskId, state: "draft" }];
+            }
+          } else {
+            tasks = state.tasks.map((t) => {
+              if (t.taskId !== taskId) return t;
+              if (event.type === "task.assigned") {
+                return { ...t, assignee: event.payload.assignee as string, state: "assigned" };
+              }
+              if (event.type === "task.status_changed") {
+                return { ...t, state: event.payload.to as string };
+              }
+              if (event.type === "task.completed") {
+                return { ...t, state: "done" };
+              }
+              return t;
+            });
           }
         }
       }
 
       // Update agents from agent events
-      const agents = [...state.agents];
+      let agents = state.agents;
       if (event.type.startsWith("agent.")) {
         const agentId = event.actor.id;
-        const existing = agents.find((a) => a.agentId === agentId);
         if (event.type === "agent.spawned") {
-          if (!existing) agents.push({ agentId, status: "running" });
-          else existing.status = "running";
-        } else if (event.type === "agent.terminated" && existing) {
-          existing.status = "terminated";
-        } else if (event.type === "agent.error" && existing) {
-          existing.status = "error";
+          if (!state.agents.some((a) => a.agentId === agentId)) {
+            agents = [...state.agents, { agentId, status: "running" }];
+          } else {
+            agents = state.agents.map((a) =>
+              a.agentId === agentId ? { ...a, status: "running" as const } : a
+            );
+          }
+        } else if (event.type === "agent.terminated") {
+          agents = state.agents.map((a) =>
+            a.agentId === agentId ? { ...a, status: "terminated" as const } : a
+          );
+        } else if (event.type === "agent.error") {
+          agents = state.agents.map((a) =>
+            a.agentId === agentId ? { ...a, status: "error" as const } : a
+          );
         }
       }
 

@@ -34,7 +34,7 @@
   border: none;
   border-bottom: 1px solid rgba(46, 57, 46, 0.08);
   text-align: left;
-  color: var(--text);
+  color: var(--co-color-text-primary);
   transition: background 120ms ease, box-shadow 120ms ease;
 }
 
@@ -66,7 +66,7 @@
 .office-staff-row strong,
 .office-task-main strong,
 .office-data-row strong {
-  color: var(--text);
+  color: var(--co-color-text-primary);
   letter-spacing: 0.02em;
   font-family: inherit;
   font-size: 11px;
@@ -100,7 +100,7 @@
   height: 8px;
   flex: 0 0 auto;
   border-radius: 999px;
-  background: var(--muted);
+  background: var(--co-color-text-secondary);
 }
 
 .office-status-dot.status-orchestrator { background: var(--role-orch); }
@@ -203,7 +203,7 @@
   flex-wrap: wrap;
   gap: 8px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--co-color-text-secondary);
 }
 
 .office-overflow-chip {
@@ -226,6 +226,6 @@
     padding-left: 0;
     padding-top: 18px;
     border-left: none;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--co-color-line-default);
   }
 }

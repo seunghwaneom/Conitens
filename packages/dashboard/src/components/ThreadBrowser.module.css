@@ -1,0 +1,86 @@
+/* ThreadBrowser — CSS Module using --co-* design tokens */
+
+.panel {
+  padding: var(--co-space-6);
+}
+
+.heading {
+  margin: 0 0 var(--co-space-4);
+  font-size: 1.25rem;
+  color: var(--co-color-text-primary);
+}
+
+.filterInput {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--co-space-2) var(--co-space-3);
+  margin-bottom: var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  color: var(--co-color-text-primary);
+  font-size: 0.875rem;
+}
+
+.threadList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+}
+
+.threadLink {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-3);
+  padding: var(--co-space-3) var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  text-decoration: none;
+  color: var(--co-color-text-primary);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusOpen {
+  background: var(--co-color-status-success);
+}
+
+.statusClosed {
+  background: var(--co-color-text-muted);
+}
+
+.statusArchived {
+  background: var(--co-color-text-muted);
+  opacity: 0.6;
+}
+
+.threadInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.threadId {
+  font-size: 0.875rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.threadMeta {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin-top: 2px;
+}
+
+.threadDate {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  flex-shrink: 0;
+}

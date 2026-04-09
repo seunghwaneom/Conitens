@@ -1,0 +1,25 @@
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--co-space-1) var(--co-space-3);
+  border-radius: var(--co-radius-sm);
+  border: 1px solid var(--co-color-line-strong);
+  background: transparent;
+  font-family: var(--co-font-mono);
+  font-size: 0.75rem;
+  color: var(--co-color-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--co-transition-fast),
+              color var(--co-transition-fast);
+}
+
+.toggle:hover {
+  background: var(--co-color-bg-panel-muted);
+  color: var(--co-color-text-primary);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+}

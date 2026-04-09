@@ -14,9 +14,9 @@
 .agent-card,
 .proposal-card,
 .agent-graph-container {
-  border: 1px solid var(--shell-line);
-  background: var(--shell-panel);
-  box-shadow: var(--shell-shadow);
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  box-shadow: var(--co-shadow-lg);
   backdrop-filter: none;
 }
 
@@ -34,7 +34,7 @@
 .forward-panel-header h2,
 .forward-section-header h3,
 .forward-detail-hero h3 {
-  color: var(--shell-text);
+  color: var(--co-color-text-primary);
   line-height: 1.08;
 }
 
@@ -60,7 +60,7 @@
 .forward-insight-card,
 .forward-approval-detail,
 .forward-stats div {
-  border: 1px solid var(--shell-line);
+  border: 1px solid var(--co-color-line-default);
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -73,9 +73,9 @@
   place-items: center;
   min-width: 58px;
   padding: 10px 8px;
-  border: 1px solid var(--shell-line);
+  border: 1px solid var(--co-color-line-default);
   background: rgba(255, 255, 255, 0.02);
-  color: var(--shell-muted);
+  color: var(--co-color-text-secondary);
   font-size: 11px;
   gap: 6px;
   border-radius: 14px;
@@ -110,7 +110,7 @@
 
 .forward-run-topline strong {
   font-size: 15px;
-  color: var(--shell-text);
+  color: var(--co-color-text-primary);
 }
 
 .forward-run-item p,
@@ -121,7 +121,7 @@
 .forward-metric-row span,
 .forward-stats span,
 .forward-timeline li p {
-  color: var(--shell-muted);
+  color: var(--co-color-text-secondary);
 }
 
 .forward-placeholder {
@@ -131,7 +131,7 @@
 .forward-section {
   gap: 12px;
   padding-top: 18px;
-  border-top: 1px solid var(--shell-line);
+  border-top: 1px solid var(--co-color-line-default);
 }
 
 .forward-section-header {
@@ -151,7 +151,7 @@
 .forward-timeline-topline strong,
 .forward-doc-header strong,
 .forward-insight-header strong {
-  color: var(--shell-text);
+  color: var(--co-color-text-primary);
 }
 
 .forward-doc-card pre {
@@ -160,7 +160,7 @@
 }
 
 .forward-doc-header {
-  border-bottom-color: var(--shell-line);
+  border-bottom-color: var(--co-color-line-default);
 }
 
 .forward-approval-layout {
@@ -190,16 +190,16 @@
 
 .forward-graph-node {
   fill: rgba(255, 255, 255, 0.03);
-  stroke: var(--shell-line);
+  stroke: var(--co-color-line-default);
 }
 
 .forward-graph-label {
-  fill: var(--shell-text);
+  fill: var(--co-color-text-primary);
 }
 
 .forward-detail-hero {
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--shell-line);
+  border-bottom: 1px solid var(--co-color-line-default);
 }
 
 .forward-stats {
@@ -211,28 +211,28 @@
 }
 
 .forward-stats strong {
-  color: var(--shell-text);
+  color: var(--co-color-text-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .forward-error {
-  color: var(--shell-danger);
+  color: var(--co-color-status-danger);
 }
 
 .state-idle {
-  color: var(--shell-muted);
+  color: var(--co-color-text-secondary);
 }
 
 .state-loading {
-  color: var(--shell-warning);
+  color: var(--co-color-status-warning);
 }
 
 .state-ready {
-  color: var(--shell-success);
+  color: var(--co-color-status-success);
 }
 
 .state-error {
-  color: var(--shell-danger);
+  color: var(--co-color-status-danger);
 }
 
 @media (max-width: 1220px) {

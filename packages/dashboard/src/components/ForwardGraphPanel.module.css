@@ -1,0 +1,114 @@
+/* ForwardGraphPanel — CSS Module using --co-* design tokens */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-4);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--co-space-3);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+  margin: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+  margin: 0;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--co-space-8) var(--co-space-4);
+}
+
+.graphShell {
+  overflow-x: auto;
+  background: var(--co-color-bg-panel-muted);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  padding: var(--co-space-2);
+}
+
+.graphShell svg {
+  display: block;
+  max-width: 100%;
+}
+
+.graphEdge {
+  stroke: var(--co-color-line-strong);
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.graphNode {
+  fill: var(--co-color-bg-panel);
+  stroke: var(--co-color-line-default);
+  stroke-width: 1;
+}
+
+.graphNodeTask {
+  stroke: var(--co-color-accent-default);
+}
+
+.graphNodeAgent {
+  stroke: var(--co-color-status-info);
+}
+
+.graphNodeEvent {
+  stroke: var(--co-color-status-warning);
+}
+
+.graphNodeDecision {
+  stroke: var(--co-color-status-danger);
+}
+
+.graphKind {
+  font-family: var(--co-font-mono);
+  font-size: 8px;
+  fill: var(--co-color-text-muted);
+}
+
+.graphLabel {
+  font-family: var(--co-font-ui);
+  font-size: 9px;
+  fill: var(--co-color-text-primary);
+}
+
+.graphSummary {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--co-space-2);
+}
+
+.graphSummary li {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  padding: var(--co-space-1) var(--co-space-2);
+  background: var(--co-color-bg-panel-muted);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+}

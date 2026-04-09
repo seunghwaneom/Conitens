@@ -15,7 +15,7 @@ export function TaskNode({
   return (
     <span
       className={[stageStyles["office-task-node"], stageStyles[`tone-${tone}`]].join(" ")}
-      style={{ left: `${left}%`, top: `${top}%` }}
+      style={{ "--node-left": `${left}%`, "--node-top": `${top}%` } as React.CSSProperties}
       title={`${taskId} / ${tone}`}
     >
       <span className={stageStyles["office-task-node-dot"]} aria-hidden="true" />

@@ -1,4 +1,3 @@
-import React from "react";
 import {
   getOverviewActions,
   getRuntimeLedger,
@@ -6,6 +5,36 @@ import {
 } from "../dashboard-model.js";
 import type { AgentState, EventRecord, TaskState } from "../store/event-store.js";
 import { getEventFamily, getTaskTone } from "../utils.js";
+import styles from "./OverviewDashboard.module.css";
+
+const TONE_MAP: Record<string, string> = {
+  live: styles.toneLive,
+  demo: styles.toneDemo,
+  info: styles.toneInfo,
+  warning: styles.toneWarning,
+  danger: styles.toneDanger,
+  success: styles.toneSuccess,
+  neutral: styles.toneNeutral,
+  agent: styles.toneAgent,
+  handoff: styles.toneHandoff,
+  system: styles.toneSystem,
+  workflow: styles.toneWorkflow,
+  artifact: styles.toneArtifact,
+  approval: styles.toneApproval,
+  task: styles.toneTask,
+};
+
+const ACTION_ROW_MAP: Record<string, string> = {
+  danger: styles.actionRowDanger,
+  warning: styles.actionRowWarning,
+  info: styles.actionRowInfo,
+};
+
+const AGENT_DOT_MAP: Record<string, string> = {
+  running: styles.agentDotRunning,
+  idle: styles.agentDotIdle,
+  error: styles.agentDotError,
+};
 
 function EventSparkline({ events }: { events: EventRecord[] }) {
   if (events.length < 2) return null;
@@ -32,14 +61,14 @@ function EventSparkline({ events }: { events: EventRecord[] }) {
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
-      className="event-sparkline"
+      className={styles.sparkline}
       preserveAspectRatio="none"
       aria-hidden="true"
     >
       <polyline
         points={points}
         fill="none"
-        stroke="var(--accent-strong)"
+        stroke="var(--co-color-accent-strong)"
         strokeWidth="2"
         vectorEffect="non-scaling-stroke"
       />
@@ -81,29 +110,29 @@ export function OverviewDashboard({
   });
 
   return (
-    <div className="overview-layout">
-      <aside className="panel command-rail">
-        <div className="rail-section">
-          <p className="panel-kicker">QUEUE_FOCUS</p>
-          <div className="stack focus-list">
-            <div className="focus-item">
-              <span className="focus-label">Task</span>
-              <strong className="focus-value">{focusTask?.taskId ?? "No queued task"}</strong>
-              <div className="muted">{focusTask?.state ?? "Awaiting activity"}</div>
+    <div className={styles.layout}>
+      <aside className={styles.commandRail}>
+        <div className={styles.railSection}>
+          <p className={styles.kicker}>QUEUE_FOCUS</p>
+          <div className={`${styles.stack} ${styles.focusList}`}>
+            <div className={styles.focusItem}>
+              <span className={styles.focusLabel}>Task</span>
+              <strong className={styles.focusValue}>{focusTask?.taskId ?? "No queued task"}</strong>
+              <div className={styles.muted}>{focusTask?.state ?? "Awaiting activity"}</div>
             </div>
-            <div className="focus-item">
-              <span className="focus-label">Latest signal</span>
-              <strong className="focus-value">{latestEvent?.type ?? "No events"}</strong>
-              <div className="muted">
+            <div className={styles.focusItem}>
+              <span className={styles.focusLabel}>Latest signal</span>
+              <strong className={styles.focusValue}>{latestEvent?.type ?? "No events"}</strong>
+              <div className={styles.muted}>
                 {latestEvent
                   ? `${latestEvent.actor.id}${latestEvent.task_id ? ` / ${latestEvent.task_id}` : ""}`
                   : "Connect live data to inspect activity"}
               </div>
             </div>
-            <div className="focus-item">
-              <span className="focus-label">Open gates</span>
-              <strong className="focus-value">{metrics.approvalSignals}</strong>
-              <div className="muted">
+            <div className={styles.focusItem}>
+              <span className={styles.focusLabel}>Open gates</span>
+              <strong className={styles.focusValue}>{metrics.approvalSignals}</strong>
+              <div className={styles.muted}>
                 {metrics.approvalSignals > 0
                   ? "Approval or question review required"
                   : "No approval pressure"}
@@ -112,34 +141,34 @@ export function OverviewDashboard({
           </div>
         </div>
 
-        <div className="rail-section">
-          <div className="rail-actions">
-          <button className="primary-button" type="button" onClick={onOpenBoard}>
-            Open Board
-          </button>
-          <button className="secondary-button" type="button" onClick={onOpenTimeline}>
-            Open Timeline
-          </button>
+        <div className={styles.railSection}>
+          <div className={styles.railActions}>
+            <button className={styles.primaryButton} type="button" onClick={onOpenBoard}>
+              Open Board
+            </button>
+            <button className={styles.secondaryButton} type="button" onClick={onOpenTimeline}>
+              Open Timeline
+            </button>
           </div>
         </div>
       </aside>
 
-      <main className="overview-main">
-        <section className="panel overview-command-center">
-          <div className="panel-body">
-            <div className="overview-command-header">
+      <main className={styles.main}>
+        <section className={styles.commandCenter}>
+          <div className={styles.panelBody}>
+            <div className={styles.commandHeader}>
               <div>
-                <p className="panel-kicker">CONTROL_SUMMARY</p>
-                <h1 className="panel-title">Status-first operator view</h1>
-                <p className="panel-subtitle">
+                <p className={styles.kicker}>CONTROL_SUMMARY</p>
+                <h1 className={styles.title}>Status-first operator view</h1>
+                <p className={styles.subtitle}>
                   Track task flow, approvals, worker load, and recent signals without
                   leaving the control surface.
                 </p>
               </div>
-              <div className="event-cadence-card">
-                <span className="sidecard-label">event cadence</span>
+              <div className={styles.cadenceCard}>
+                <span className={styles.cadenceLabel}>event cadence</span>
                 <EventSparkline events={recentEvents} />
-                <span className="muted">{recentEvents.length} recent signals in view</span>
+                <span className={styles.muted}>{recentEvents.length} recent signals in view</span>
               </div>
             </div>
 
@@ -150,27 +179,27 @@ export function OverviewDashboard({
               approvals={metrics.approvalSignals}
             />
 
-            <div className="overview-action-ledger">
-              <div className="section-head">
-                <p className="panel-kicker">IMMEDIATE_ACTIONS</p>
-                <span className="section-meta">{overviewActions.length} surfaced lanes</span>
+            <div className={styles.actionLedger}>
+              <div className={styles.sectionHead}>
+                <p className={styles.kicker}>IMMEDIATE_ACTIONS</p>
+                <span className={styles.sectionMeta}>{overviewActions.length} surfaced lanes</span>
               </div>
-              <div className="stack">
+              <div className={styles.stack}>
                 {overviewActions.length === 0 ? (
-                  <div className="empty-state compact">
+                  <div className={styles.emptyCompact}>
                     No active actions surfaced from tasks or recent signals
                   </div>
                 ) : (
                   overviewActions.map((action) => (
-                    <div key={action.id} className={`action-ledger-row ${action.tone}`}>
-                      <div className="action-ledger-main">
-                        <span className={`badge ${action.tone}`}>{action.lane}</span>
+                    <div key={action.id} className={ACTION_ROW_MAP[action.tone] ?? styles.actionRow}>
+                      <div className={styles.actionMain}>
+                        <span className={`${styles.badge} ${TONE_MAP[action.tone] ?? ""}`}>{action.lane}</span>
                         <div>
                           <strong>{action.target}</strong>
-                          <div className="muted">{action.summary}</div>
+                          <div className={styles.muted}>{action.summary}</div>
                         </div>
                       </div>
-                      <span className="action-ledger-meta">{action.meta}</span>
+                      <span className={styles.actionMeta}>{action.meta}</span>
                     </div>
                   ))
                 )}
@@ -180,24 +209,24 @@ export function OverviewDashboard({
           </div>
         </section>
 
-        <section className="overview-grid">
-          <div className="panel">
-            <div className="panel-body">
-              <div className="section-head">
-                <p className="panel-kicker">TASK_QUEUE</p>
-                <span className="section-meta">{queuedTasks.length} surfaced tasks</span>
+        <section className={styles.overviewGrid}>
+          <div className={styles.panel}>
+            <div className={styles.panelBody}>
+              <div className={styles.sectionHead}>
+                <p className={styles.kicker}>TASK_QUEUE</p>
+                <span className={styles.sectionMeta}>{queuedTasks.length} surfaced tasks</span>
               </div>
-              <div className="stack">
+              <div className={styles.stack}>
                 {queuedTasks.length === 0 ? (
-                  <div className="empty-state compact">No queued tasks in view</div>
+                  <div className={styles.emptyCompact}>No queued tasks in view</div>
                 ) : (
                   queuedTasks.map((task) => (
-                    <div key={task.taskId} className="rich-list-row">
+                    <div key={task.taskId} className={styles.richListRow}>
                       <div>
                         <strong>{task.taskId}</strong>
-                        <div className="muted">{task.assignee ?? "unassigned"}</div>
+                        <div className={styles.muted}>{task.assignee ?? "unassigned"}</div>
                       </div>
-                      <span className={`badge state ${getTaskTone(task.state)}`}>{task.state}</span>
+                      <span className={`${styles.badge} ${TONE_MAP[getTaskTone(task.state)] ?? ""}`}>{task.state}</span>
                     </div>
                   ))
                 )}
@@ -205,29 +234,29 @@ export function OverviewDashboard({
             </div>
           </div>
 
-          <div className="panel">
-            <div className="panel-body">
-              <div className="section-head">
-                <p className="panel-kicker">RECENT_SIGNALS</p>
-                <span className="section-meta">latest {recentEvents.length} signals</span>
+          <div className={styles.panel}>
+            <div className={styles.panelBody}>
+              <div className={styles.sectionHead}>
+                <p className={styles.kicker}>RECENT_SIGNALS</p>
+                <span className={styles.sectionMeta}>latest {recentEvents.length} signals</span>
               </div>
-              <div className="stack">
+              <div className={styles.stack}>
                 {recentEvents.length === 0 ? (
-                  <div className="empty-state compact">Connect live data to inspect event flow</div>
+                  <div className={styles.emptyCompact}>Connect live data to inspect event flow</div>
                 ) : (
                   recentEvents.map((event) => (
-                    <div key={event.event_id} className="event-stream-row">
-                      <div className="event-stream-main">
-                        <span className={`chip event ${getEventFamily(event.type)}`}>
+                    <div key={event.event_id} className={styles.eventRow}>
+                      <div className={styles.eventMain}>
+                        <span className={`${styles.chip} ${TONE_MAP[getEventFamily(event.type)] ?? ""}`}>
                           {getEventFamily(event.type)}
                         </span>
                         <strong>{event.type}</strong>
                       </div>
-                      <div className="muted">
+                      <div className={styles.muted}>
                         {event.actor.id}
                         {event.task_id ? ` / ${event.task_id}` : ""}
                       </div>
-                      <span className="event-time">{event.ts.slice(11, 19)}</span>
+                      <span className={styles.eventTime}>{event.ts.slice(11, 19)}</span>
                     </div>
                   ))
                 )}
@@ -237,22 +266,22 @@ export function OverviewDashboard({
         </section>
       </main>
 
-      <aside className="overview-side">
-        <section className="panel">
-          <div className="panel-body">
-            <div className="section-head">
-              <p className="panel-kicker">RUNTIME_LEDGER</p>
-              <span className={`chip ${isDemo ? "demo" : "live"}`}>
+      <aside className={styles.side}>
+        <section className={styles.panel}>
+          <div className={styles.panelBody}>
+            <div className={styles.sectionHead}>
+              <p className={styles.kicker}>RUNTIME_LEDGER</p>
+              <span className={`${styles.chip} ${isDemo ? styles.toneDemo : styles.toneLive}`}>
                 {isDemo ? "demo" : "live"}
               </span>
             </div>
-            <div className="runtime-ledger">
+            <div className={styles.runtimeLedger}>
               {runtimeLedger.map((row) => (
-                <div key={row.label} className="runtime-row">
-                  <span className="runtime-row-label">{row.label}</span>
-                  <div className="runtime-row-value">
+                <div key={row.label} className={styles.runtimeRow}>
+                  <span className={styles.runtimeRowLabel}>{row.label}</span>
+                  <div className={styles.runtimeRowValue}>
                     {row.tone ? (
-                      <span className={`chip ${row.tone}`}>{row.value}</span>
+                      <span className={`${styles.chip} ${TONE_MAP[row.tone] ?? ""}`}>{row.value}</span>
                     ) : (
                       <strong>{row.value}</strong>
                     )}
@@ -260,7 +289,7 @@ export function OverviewDashboard({
                 </div>
               ))}
             </div>
-            <p className="runtime-summary-line">
+            <p className={styles.runtimeSummary}>
               {attentionTotal > 0 ? (
                 <>
                   <strong>{attentionTotal}</strong> operator signals remain open across blocked,
@@ -273,25 +302,25 @@ export function OverviewDashboard({
           </div>
         </section>
 
-        <section className="panel">
-          <div className="panel-body">
-            <div className="section-head">
-              <p className="panel-kicker">AGENT_ROSTER</p>
-              <span className="section-meta">{agents.length} connected</span>
+        <section className={styles.panel}>
+          <div className={styles.panelBody}>
+            <div className={styles.sectionHead}>
+              <p className={styles.kicker}>AGENT_ROSTER</p>
+              <span className={styles.sectionMeta}>{agents.length} connected</span>
             </div>
-            <div className="stack">
+            <div className={styles.stack}>
               {agents.map((agent) => {
                 const assignedCount = tasks.filter((task) => task.assignee === agent.agentId).length;
                 return (
-                  <div key={agent.agentId} className="agent-row">
-                    <div className="agent-row-main">
-                      <span className={`agent-dot ${agent.status}`}></span>
+                  <div key={agent.agentId} className={styles.agentRow}>
+                    <div className={styles.agentRowMain}>
+                      <span className={AGENT_DOT_MAP[agent.status] ?? styles.agentDot}></span>
                       <div>
                         <strong>{agent.agentId}</strong>
-                        <div className="muted">{assignedCount} assigned</div>
+                        <div className={styles.muted}>{assignedCount} assigned</div>
                       </div>
                     </div>
-                    <span className={`badge state ${getTaskTone(agent.status)}`}>{agent.status}</span>
+                    <span className={`${styles.badge} ${TONE_MAP[getTaskTone(agent.status)] ?? ""}`}>{agent.status}</span>
                   </div>
                 );
               })}
@@ -316,22 +345,22 @@ function AttentionStrip({
   const total = blocked + review + approvals;
 
   return (
-    <div className={`attention-strip${hasAlert ? " has-alert" : ""}`}>
+    <div className={hasAlert ? styles.attentionStripAlert : styles.attentionStrip}>
       {hasAlert ? (
         <>
-          <span className="attention-label">{total} needs attention</span>
+          <span className={styles.attentionLabel}>{total} needs attention</span>
           {blocked > 0 && (
-            <span className="attention-item danger">{blocked} blocked</span>
+            <span className={styles.attentionDanger}>{blocked} blocked</span>
           )}
           {review > 0 && (
-            <span className="attention-item info">{review} in review</span>
+            <span className={styles.attentionInfo}>{review} in review</span>
           )}
           {approvals > 0 && (
-            <span className="attention-item warning">{approvals} approvals</span>
+            <span className={styles.attentionWarning}>{approvals} approvals</span>
           )}
         </>
       ) : (
-        <span className="attention-item clear">All clear — no action required</span>
+        <span className={styles.attentionClear}>All clear — no action required</span>
       )}
     </div>
   );

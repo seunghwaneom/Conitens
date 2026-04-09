@@ -14,6 +14,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useEventStore } from "../store/event-store.js";
 import { isValidTransition } from "../utils.js";
 import type { TaskState as TaskStateType } from "../store/event-store.js";
+import styles from "./KanbanBoard.module.css";
 
 const COLUMNS: { id: string; label: string; color: string }[] = [
   { id: "draft", label: "Draft", color: "#6b7280" },
@@ -71,7 +72,7 @@ export function KanbanBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="kanban-board">
+      <div className={styles.board}>
         {COLUMNS.map((column) => (
           <KanbanColumn
             key={column.id}
@@ -91,10 +92,10 @@ export function KanbanBoard({
 
       <DragOverlay>
         {activeTask ? (
-          <div className="task-card is-dragging">
-            <div className="task-card-title">{activeTask.taskId}</div>
+          <div className={`${styles.card} ${styles.cardDragging}`}>
+            <div className={styles.cardTitle}>{activeTask.taskId}</div>
             {activeTask.assignee ? (
-              <div className="task-card-meta">{activeTask.assignee}</div>
+              <div className={styles.cardMeta}>{activeTask.assignee}</div>
             ) : null}
           </div>
         ) : null}
@@ -119,13 +120,13 @@ function KanbanColumn({
   const { isOver, setNodeRef } = useDroppable({ id });
 
   return (
-    <section ref={setNodeRef} className={`kanban-column${isOver ? " is-over" : ""}`} role="region" aria-label={label}>
-      <div className="kanban-column-header" style={{ borderTop: `2px solid ${color}` }}>
+    <section ref={setNodeRef} className={[styles.column, isOver && styles.columnOver].filter(Boolean).join(' ')} role="region" aria-label={label}>
+      <div className={styles.columnHeader} style={{ '--column-color': color } as React.CSSProperties}>
         <span>{label}</span>
-        <span className="kanban-column-count">{count}</span>
+        <span className={styles.columnCount}>{count}</span>
       </div>
-      <div className="kanban-list">
-        {count === 0 ? <div className="kanban-empty animated">No tasks yet...</div> : children}
+      <div className={styles.list}>
+        {count === 0 ? <div className={styles.empty}>No tasks yet...</div> : children}
       </div>
     </section>
   );
@@ -142,17 +143,17 @@ function TaskCard({ task, onSelect }: { task: TaskStateType; onSelect?: (id: str
     <div
       ref={setNodeRef}
       style={style}
-      className={`task-card${isDragging ? " is-dragging" : ""}`}
+      className={[styles.card, isDragging && styles.cardDragging].filter(Boolean).join(' ')}
       {...listeners}
       {...attributes}
     >
       <div
-        className="task-card-title task-card-link"
+        className={`${styles.cardTitle} ${styles.cardLink}`}
         onClick={(e) => { e.stopPropagation(); onSelect?.(task.taskId); }}
       >
         {task.taskId}
       </div>
-      <div className="task-card-meta">{task.assignee ?? "unassigned"}</div>
+      <div className={styles.cardMeta}>{task.assignee ?? "unassigned"}</div>
     </div>
   );
 }

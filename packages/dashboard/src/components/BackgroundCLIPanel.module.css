@@ -1,0 +1,141 @@
+/* BackgroundCLIPanel — CSS Module using --co-* design tokens */
+
+.panel {
+  padding: var(--co-space-6);
+}
+
+.heading {
+  margin: 0 0 var(--co-space-4);
+  font-size: 1.25rem;
+  color: var(--co-color-text-primary);
+}
+
+.toolbar {
+  display: flex;
+  gap: var(--co-space-2);
+  margin-bottom: var(--co-space-4);
+}
+
+.input {
+  flex: 1;
+  max-width: 360px;
+  padding: var(--co-space-2) var(--co-space-3);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  color: var(--co-color-text-primary);
+  font-size: 0.875rem;
+}
+
+.filterInput {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--co-space-2) var(--co-space-3);
+  margin-bottom: var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  color: var(--co-color-text-primary);
+  font-size: 0.875rem;
+}
+
+.processList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+}
+
+.processCard {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  overflow: hidden;
+}
+
+.processRow {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-3);
+  padding: var(--co-space-3) var(--co-space-4);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusRunning {
+  background: var(--co-color-status-success);
+}
+
+.statusStopped {
+  background: var(--co-color-text-muted);
+}
+
+.statusError {
+  background: var(--co-color-status-danger);
+}
+
+.processInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.processCmd {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--co-color-text-primary);
+}
+
+.processMeta {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin-top: 2px;
+}
+
+.statusBadge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 2px var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.statusBadgeRunning {
+  background: var(--co-color-status-success-muted);
+  color: var(--co-color-status-success);
+}
+
+.statusBadgeStopped {
+  background: var(--co-color-bg-soft);
+  color: var(--co-color-text-muted);
+}
+
+.statusBadgeError {
+  background: var(--co-color-status-danger-muted);
+  color: var(--co-color-status-danger);
+}
+
+.stopButton {
+  border-color: var(--co-color-status-danger-muted);
+  color: var(--co-color-status-danger);
+}
+
+.logPanel {
+  border-top: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-base);
+  padding: var(--co-space-3) var(--co-space-4);
+  font-family: var(--co-font-mono);
+  font-size: 0.75rem;
+  color: var(--co-color-text-secondary);
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

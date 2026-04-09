@@ -1,4 +1,6 @@
+import { Button, ErrorDisplay } from '../ds/index.js';
 import type { OperatorWorkspaceDraft } from "../operator-workspace-actions.js";
+import styles from './OperatorWorkspaceEditorPanel.module.css';
 
 type PanelState = "idle" | "loading" | "ready" | "error";
 
@@ -20,15 +22,15 @@ export function OperatorWorkspaceEditorPanel({
   onSubmit,
 }: OperatorWorkspaceEditorPanelProps) {
   return (
-    <section className="forward-section">
-      <div className="forward-section-header">
+    <section className={styles.section}>
+      <div className={styles.sectionHeader}>
         <div>
-          <p className="forward-panel-label">Workspace editor</p>
+          <p className={styles.panelLabel}>Workspace editor</p>
           <h3>{mode === "create" ? "Create operator workspace" : "Edit operator workspace"}</h3>
         </div>
-        <span className={`forward-state state-${state}`}>{state}</span>
+        <span className={styles.state} data-state={state}>{state}</span>
       </div>
-      <div className="forward-form">
+      <div className={styles.form}>
         <label>
           <span>Label</span>
           <input value={draft.label} onChange={(event) => onChange({ ...draft, label: event.target.value })} />
@@ -57,7 +59,7 @@ export function OperatorWorkspaceEditorPanel({
           <span>Archive rationale</span>
           <input value={draft.archiveNote} onChange={(event) => onChange({ ...draft, archiveNote: event.target.value })} />
         </label>
-        <p className="forward-help">Required when archiving, including the quick-archive action on workspace detail.</p>
+        <p className={styles.helpText}>Required when archiving, including the quick-archive action on workspace detail.</p>
         <label>
           <span>Owner agent</span>
           <input value={draft.ownerAgentId} onChange={(event) => onChange({ ...draft, ownerAgentId: event.target.value })} />
@@ -72,26 +74,26 @@ export function OperatorWorkspaceEditorPanel({
         </label>
       </div>
       {draft.taskIds.trim() ? (
-        <section className="forward-section">
-          <div className="forward-section-header">
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
             <div>
-              <p className="forward-panel-label">Derived membership</p>
+              <p className={styles.panelLabel}>Derived membership</p>
               <h3>Linked task refs</h3>
             </div>
           </div>
-          <p className="forward-help">{draft.taskIds}</p>
-          <p className="forward-help">Task refs are derived from task records and are not edited directly here.</p>
+          <p className={styles.helpText}>{draft.taskIds}</p>
+          <p className={styles.helpText}>Task refs are derived from task records and are not edited directly here.</p>
         </section>
       ) : null}
-      <label className="forward-approval-note">
+      <label className={styles.noteLabel}>
         <span>Notes</span>
         <textarea value={draft.notes} onChange={(event) => onChange({ ...draft, notes: event.target.value })} rows={3} />
       </label>
-      {error ? <p className="forward-error">{error}</p> : null}
-      <div className="forward-approval-actions">
-        <button className="approve-button" type="button" onClick={onSubmit}>
+      {error ? <ErrorDisplay message={error} /> : null}
+      <div className={styles.actions}>
+        <Button variant="primary" type="button" onClick={onSubmit}>
           {mode === "create" ? "Create workspace" : "Save workspace"}
-        </button>
+        </Button>
       </div>
     </section>
   );

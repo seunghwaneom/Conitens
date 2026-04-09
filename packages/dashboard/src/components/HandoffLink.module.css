@@ -1,0 +1,11 @@
+/* HandoffLink — CSS Module using --co-* design tokens
+   Base segment/node classes live in office-stage.module.css.
+   This module provides the constant dimension variants. */
+
+.segmentHorizontal {
+  height: 2px;
+}
+
+.segmentVertical {
+  width: 2px;
+}

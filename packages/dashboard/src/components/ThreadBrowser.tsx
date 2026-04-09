@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { buildForwardRoute } from "../forward-route.js";
+import { LoadingState, ErrorDisplay, EmptyState } from "../ds/index.js";
+import styles from "./ThreadBrowser.module.css";
 
 interface ThreadSummary {
   id: string;
@@ -22,10 +24,10 @@ const KIND_LABELS: Record<string, string> = {
   agent_agent_user: "Agent \u2194 Agent \u2194 User",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  open: "#3fb950",
-  closed: "#8b949e",
-  archived: "#6e7681",
+const STATUS_DOT_CLASS: Record<string, string> = {
+  open: styles.statusOpen,
+  closed: styles.statusClosed,
+  archived: styles.statusArchived,
 };
 
 export function ThreadBrowser({ apiBase, token }: ThreadBrowserProps) {
@@ -57,12 +59,12 @@ export function ThreadBrowser({ apiBase, token }: ThreadBrowserProps) {
       )
     : threads;
 
-  if (loading) return <div style={{ padding: 24, color: "#8b949e" }}>Loading threads...</div>;
-  if (error) return <div style={{ padding: 24, color: "#f85149" }}>Error: {error}</div>;
+  if (loading) return <LoadingState message="Loading threads..." />;
+  if (error) return <ErrorDisplay message={`Error: ${error}`} />;
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ margin: "0 0 16px", fontSize: 20, color: "#e6edf3" }}>
+    <div className={styles.panel}>
+      <h2 className={styles.heading}>
         Threads ({threads.length})
       </h2>
       <input
@@ -70,56 +72,30 @@ export function ThreadBrowser({ apiBase, token }: ThreadBrowserProps) {
         placeholder="Filter by id, workspace, kind..."
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          padding: "8px 12px",
-          marginBottom: 16,
-          background: "#161b22",
-          border: "1px solid #30363d",
-          borderRadius: 6,
-          color: "#e6edf3",
-          fontSize: 14,
-        }}
+        className={styles.filterInput}
       />
       {filtered.length === 0 ? (
-        <div style={{ color: "#8b949e", padding: 16 }}>No threads found</div>
+        <EmptyState message="No threads found" />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={styles.threadList}>
           {filtered.map((t) => (
             <a
               key={t.id}
               href={buildForwardRoute({ screen: "thread-detail", threadId: t.id, runId: null, taskId: null, workspaceId: null, agentId: null })}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "12px 16px",
-                background: "#161b22",
-                border: "1px solid #30363d",
-                borderRadius: 8,
-                textDecoration: "none",
-                color: "#e6edf3",
-              }}
+              className={styles.threadLink}
             >
               <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: STATUS_COLORS[t.status] ?? "#8b949e",
-                  flexShrink: 0,
-                }}
+                className={`${styles.statusDot} ${STATUS_DOT_CLASS[t.status] ?? styles.statusClosed}`}
               />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <div className={styles.threadInfo}>
+                <div className={styles.threadId}>
                   {t.id}
                 </div>
-                <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>
+                <div className={styles.threadMeta}>
                   {KIND_LABELS[t.kind] ?? t.kind} &middot; {t.workspace}
                 </div>
               </div>
-              <span style={{ fontSize: 12, color: "#8b949e", flexShrink: 0 }}>
+              <span className={styles.threadDate}>
                 {t.created_at?.slice(0, 10)}
               </span>
             </a>

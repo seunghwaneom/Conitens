@@ -1,0 +1,8 @@
+.errorDisplay {
+  font-family: var(--co-font-mono);
+  font-size: 0.8125rem;
+  color: var(--co-color-status-danger);
+  padding: var(--co-space-3) var(--co-space-4);
+  border-left: 2px solid var(--co-color-status-danger);
+  background: var(--co-color-status-danger-muted);
+}

@@ -1,4 +1,6 @@
 import type { ForwardGraphModel } from "../forward-graph.js";
+import { EmptyState } from "../ds/index.js";
+import styles from "./ForwardGraphPanel.module.css";
 
 const CELL_WIDTH = 180;
 const CELL_HEIGHT = 96;
@@ -16,15 +18,15 @@ function nodeY(row: number) {
 export function ForwardGraphPanel({ model }: { model: ForwardGraphModel | null }) {
   if (!model || model.nodes.length <= 1 || model.edges.length === 0) {
     return (
-      <section className="forward-section">
-        <div className="forward-section-header">
-          <div>
-            <p className="forward-panel-label">Graph</p>
-            <h3>State inspector</h3>
+      <section className={styles.section}>
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <p className={styles.label}>Graph</p>
+            <h3 className={styles.title}>State inspector</h3>
           </div>
         </div>
-        <div className="forward-placeholder">
-          <p className="forward-empty">Graph builds after the first multi-step iteration completes.</p>
+        <div className={styles.placeholder}>
+          <EmptyState message="Graph builds after the first multi-step iteration completes." />
         </div>
       </section>
     );
@@ -35,14 +37,14 @@ export function ForwardGraphPanel({ model }: { model: ForwardGraphModel | null }
   const nodeMap = new Map(model.nodes.map((node) => [node.id, node]));
 
   return (
-    <section className="forward-section">
-      <div className="forward-section-header">
-        <div>
-          <p className="forward-panel-label">Graph</p>
-          <h3>State inspector</h3>
+    <section className={styles.section}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <p className={styles.label}>Graph</p>
+          <h3 className={styles.title}>State inspector</h3>
         </div>
       </div>
-      <div className="forward-graph-shell">
+      <div className={styles.graphShell}>
         <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Forward graph inspector">
           {model.edges.map((edge) => {
             const from = nodeMap.get(edge.from);
@@ -57,24 +59,29 @@ export function ForwardGraphPanel({ model }: { model: ForwardGraphModel | null }
                 y1={nodeY(from.row) + 26}
                 x2={nodeX(to.column)}
                 y2={nodeY(to.row) + 26}
-                className="forward-graph-edge"
+                className={styles.graphEdge}
               />
             );
           })}
           {model.nodes.map((node) => (
             <g key={node.id} transform={`translate(${nodeX(node.column)}, ${nodeY(node.row)})`}>
-              <rect width="112" height="52" rx="10" className={`forward-graph-node graph-${node.kind}`} />
-              <text x="12" y="18" className="forward-graph-kind">
+              <rect
+                width="112"
+                height="52"
+                rx="2"
+                className={`${styles.graphNode} ${styles[`graphNode${node.kind.charAt(0).toUpperCase()}${node.kind.slice(1)}`] ?? ""}`}
+              />
+              <text x="12" y="18" className={styles.graphKind}>
                 {node.kind.toUpperCase()}
               </text>
-              <text x="12" y="36" className="forward-graph-label">
+              <text x="12" y="36" className={styles.graphLabel}>
                 {node.label.slice(0, 20)}
               </text>
             </g>
           ))}
         </svg>
       </div>
-      <ul className="forward-graph-summary">
+      <ul className={styles.graphSummary}>
         {model.summary.map((item) => (
           <li key={item}>{item}</li>
         ))}

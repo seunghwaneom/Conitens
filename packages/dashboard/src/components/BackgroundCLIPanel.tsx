@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Button, LoadingState, ErrorDisplay, EmptyState } from "../ds/index.js";
+import styles from "./BackgroundCLIPanel.module.css";
 
 interface BGProcess {
   id: string;
@@ -13,10 +15,16 @@ interface BackgroundCLIPanelProps {
   token: string;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  running: "#3fb950",
-  stopped: "#8b949e",
-  error: "#f85149",
+const STATUS_DOT_CLASS: Record<string, string> = {
+  running: styles.statusRunning,
+  stopped: styles.statusStopped,
+  error: styles.statusError,
+};
+
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  running: styles.statusBadgeRunning,
+  stopped: styles.statusBadgeStopped,
+  error: styles.statusBadgeError,
 };
 
 export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) {
@@ -97,62 +105,37 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
       )
     : processes;
 
-  if (loading) return <div style={{ padding: 24, color: "#8b949e" }}>Loading processes...</div>;
-  if (error) return <div style={{ padding: 24, color: "#f85149" }}>Error: {error}</div>;
+  if (loading) return <LoadingState message="Loading processes..." />;
+  if (error) return <ErrorDisplay message={error} />;
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2 style={{ margin: "0 0 16px", fontSize: 20, color: "#e6edf3" }}>
+    <div className={styles.panel}>
+      <h2 className={styles.heading}>
         Background CLI ({processes.length})
       </h2>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      <div className={styles.toolbar}>
         <input
           type="text"
           placeholder="Command to start..."
           value={newCmd}
           onChange={(e) => setNewCmd(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleStart(); }}
-          style={{
-            flex: 1,
-            maxWidth: 360,
-            padding: "8px 12px",
-            background: "#161b22",
-            border: "1px solid #30363d",
-            borderRadius: 6,
-            color: "#e6edf3",
-            fontSize: 14,
-          }}
+          className={styles.input}
         />
-        <button
+        <Button
+          variant="primary"
           onClick={handleStart}
           disabled={starting || !newCmd.trim()}
-          style={{
-            padding: "8px 16px",
-            background: starting ? "#21262d" : "#238636",
-            border: "1px solid #30363d",
-            borderRadius: 6,
-            color: "#e6edf3",
-            fontSize: 14,
-            cursor: starting ? "not-allowed" : "pointer",
-          }}
         >
           {starting ? "Starting..." : "Start"}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
           onClick={fetchProcesses}
-          style={{
-            padding: "8px 12px",
-            background: "#21262d",
-            border: "1px solid #30363d",
-            borderRadius: 6,
-            color: "#8b949e",
-            fontSize: 14,
-            cursor: "pointer",
-          }}
         >
           Refresh
-        </button>
+        </Button>
       </div>
 
       <input
@@ -160,114 +143,53 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
         placeholder="Filter by id, command, status..."
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        style={{
-          width: "100%",
-          maxWidth: 400,
-          padding: "8px 12px",
-          marginBottom: 16,
-          background: "#161b22",
-          border: "1px solid #30363d",
-          borderRadius: 6,
-          color: "#e6edf3",
-          fontSize: 14,
-        }}
+        className={styles.filterInput}
       />
 
       {filtered.length === 0 ? (
-        <div style={{ color: "#8b949e", padding: 16 }}>No processes found</div>
+        <EmptyState message="No processes found" />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={styles.processList}>
           {filtered.map((p) => (
-            <div
-              key={p.id}
-              style={{
-                background: "#161b22",
-                border: "1px solid #30363d",
-                borderRadius: 8,
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px" }}>
+            <div key={p.id} className={styles.processCard}>
+              <div className={styles.processRow}>
                 <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: STATUS_COLORS[p.status] ?? "#8b949e",
-                    flexShrink: 0,
-                  }}
+                  className={`${styles.statusDot} ${STATUS_DOT_CLASS[p.status] ?? styles.statusStopped}`}
                 />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#e6edf3" }}>
+                <div className={styles.processInfo}>
+                  <div className={styles.processCmd}>
                     {p.command}
                   </div>
-                  <div style={{ fontSize: 12, color: "#8b949e", marginTop: 2 }}>
+                  <div className={styles.processMeta}>
                     {p.id}
                     {p.pid != null ? ` · pid ${p.pid}` : ""}
                     {p.uptime ? ` · ${p.uptime}` : ""}
                   </div>
                 </div>
                 <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: "2px 8px",
-                    borderRadius: 12,
-                    background: `${STATUS_COLORS[p.status] ?? "#8b949e"}22`,
-                    color: STATUS_COLORS[p.status] ?? "#8b949e",
-                    flexShrink: 0,
-                    textTransform: "uppercase",
-                  }}
+                  className={`${styles.statusBadge} ${STATUS_BADGE_CLASS[p.status] ?? styles.statusBadgeStopped}`}
                 >
                   {p.status}
                 </span>
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => handleToggleLogs(p.id)}
                   disabled={loadingLogs[p.id]}
-                  style={{
-                    padding: "4px 10px",
-                    background: "#21262d",
-                    border: "1px solid #30363d",
-                    borderRadius: 5,
-                    color: "#8b949e",
-                    fontSize: 12,
-                    cursor: "pointer",
-                  }}
                 >
                   {loadingLogs[p.id] ? "..." : expandedLogs[p.id] !== undefined ? "Hide" : "Logs"}
-                </button>
+                </Button>
                 {p.status === "running" && (
-                  <button
+                  <Button
+                    variant="secondary"
+                    className={styles.stopButton}
                     onClick={() => handleStop(p.id)}
-                    style={{
-                      padding: "4px 10px",
-                      background: "#21262d",
-                      border: "1px solid #f8514944",
-                      borderRadius: 5,
-                      color: "#f85149",
-                      fontSize: 12,
-                      cursor: "pointer",
-                    }}
                   >
                     Stop
-                  </button>
+                  </Button>
                 )}
               </div>
               {expandedLogs[p.id] !== undefined && (
-                <div
-                  style={{
-                    borderTop: "1px solid #30363d",
-                    background: "#0d1117",
-                    padding: "10px 16px",
-                    fontFamily: "monospace",
-                    fontSize: 12,
-                    color: "#8b949e",
-                    maxHeight: 200,
-                    overflowY: "auto",
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-all",
-                  }}
-                >
+                <div className={styles.logPanel}>
                   {expandedLogs[p.id].length === 0
                     ? "(no output)"
                     : expandedLogs[p.id].join("\n")}

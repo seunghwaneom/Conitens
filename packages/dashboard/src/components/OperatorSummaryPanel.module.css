@@ -1,0 +1,128 @@
+.empty {
+  color: var(--co-color-text-muted);
+}
+
+.error {
+  color: var(--co-color-status-danger);
+}
+
+.placeholder {
+  display: grid;
+  gap: var(--co-space-5);
+  place-content: center;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.placeholder h3 {
+  margin: 0;
+}
+
+.detailBody {
+  display: grid;
+  gap: var(--co-space-5);
+}
+
+.detailHero {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--co-space-4);
+  align-items: start;
+  padding-bottom: var(--co-space-5);
+  border-bottom: 1px solid var(--co-color-line-default);
+}
+
+.detailHero h3 {
+  margin: 0;
+}
+
+.detailLabel {
+  margin: 0 0 var(--co-space-3);
+  color: var(--co-color-text-muted);
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--co-space-2) var(--co-space-3);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: 2px;
+  background: var(--co-color-bg-soft);
+  color: var(--co-color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--co-space-3);
+}
+
+.stats > div {
+  padding: var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+}
+
+.stats span {
+  display: block;
+  margin-bottom: var(--co-space-2);
+  color: var(--co-color-text-muted);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stats strong {
+  font-size: 1.75rem;
+}
+
+.section {
+  display: grid;
+  gap: var(--co-space-3);
+  padding-top: var(--co-space-5);
+  border-top: 1px solid var(--co-color-line-default);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--co-space-4);
+  align-items: start;
+}
+
+.panelLabel {
+  margin: 0 0 var(--co-space-3);
+  color: var(--co-color-text-muted);
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+}
+
+.timeline {
+  display: grid;
+  gap: var(--co-space-2);
+  margin: 0;
+  padding-left: var(--co-space-5);
+}
+
+.timeline li {
+  padding: var(--co-space-3) var(--co-space-4);
+  border: 1px solid var(--co-color-line-subtle);
+  background: var(--co-color-bg-soft);
+}
+
+.timeline li p {
+  margin: var(--co-space-2) 0 0;
+}
+
+.timelineTopline {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+}

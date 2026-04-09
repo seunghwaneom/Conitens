@@ -1,0 +1,37 @@
+.panel {
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  padding: var(--co-space-4);
+}
+
+.default {
+  /* base styles above */
+}
+
+.raised {
+  background: var(--co-color-bg-raised);
+  box-shadow: var(--co-shadow-sm);
+}
+
+.muted {
+  background: var(--co-color-bg-panel-muted);
+  border-color: transparent;
+}
+
+.header {
+  margin-bottom: var(--co-space-3);
+  padding-bottom: var(--co-space-3);
+  border-bottom: 1px solid var(--co-color-line-default);
+  font-family: var(--co-font-ui);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+  letter-spacing: 0.02em;
+}
+
+.body {
+  color: var(--co-color-text-primary);
+  font-family: var(--co-font-ui);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
