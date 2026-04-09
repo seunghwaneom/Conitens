@@ -36,8 +36,17 @@ const WeeklyReportPanel = React.lazy(() =>
 const AgentsScreen = React.lazy(() =>
   import("./AgentsScreen.js").then((m) => ({ default: m.AgentsScreen })),
 );
+const OverviewScreen = React.lazy(() =>
+  import("./OverviewScreen.js").then((m) => ({ default: m.OverviewScreen })),
+);
+const InboxScreen = React.lazy(() =>
+  import("./InboxScreen.js").then((m) => ({ default: m.InboxScreen })),
+);
 const TasksScreen = React.lazy(() =>
   import("./TasksScreen.js").then((m) => ({ default: m.TasksScreen })),
+);
+const RunsScreen = React.lazy(() =>
+  import("./RunsScreen.js").then((m) => ({ default: m.RunsScreen })),
 );
 const WorkspacesScreen = React.lazy(() =>
   import("./WorkspacesScreen.js").then((m) => ({ default: m.WorkspacesScreen })),
@@ -59,7 +68,7 @@ const OfficeScreen = React.lazy(() =>
 );
 
 const SUSPENSE_FALLBACK = (
-  <p className="forward-empty">Loading...</p>
+  <p className="forward-empty">Loading…</p>
 );
 
 export function AppRouter() {
@@ -150,6 +159,30 @@ export function AppRouter() {
     return (
       <React.Suspense fallback={SUSPENSE_FALLBACK}>
         <AgentsScreen />
+      </React.Suspense>
+    );
+  }
+
+  if (route.screen === "overview") {
+    return (
+      <React.Suspense fallback={SUSPENSE_FALLBACK}>
+        <OverviewScreen />
+      </React.Suspense>
+    );
+  }
+
+  if (route.screen === "inbox") {
+    return (
+      <React.Suspense fallback={SUSPENSE_FALLBACK}>
+        <InboxScreen />
+      </React.Suspense>
+    );
+  }
+
+  if (route.screen === "runs") {
+    return (
+      <React.Suspense fallback={SUSPENSE_FALLBACK}>
+        <RunsScreen />
       </React.Suspense>
     );
   }

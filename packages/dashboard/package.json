@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run --passWithNoTests",
+    "test": "node ./scripts/run-vitest.cjs --passWithNoTests",
     "test:legacy": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {

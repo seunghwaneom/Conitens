@@ -3,169 +3,176 @@ import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { AppRouter } from "./screens/AppRouter.js";
 import { useUiStore } from "./store/ui-store.js";
 import { useDashboardStore } from "./store/dashboard-store.js";
-import { buildForwardRoute } from "./forward-route.js";
+import { pickText } from "./i18n.js";
 
-/* ────────────────────────────────────────────────────────────────────────
-   Shell copy — derived from current route + demo state.
-   Stays here because it's part of the global header, not any single screen.
-   ──────────────────────────────────────────────────────────────────────── */
-
-const SHELL_COPY: Record<string, { eyebrow: string; subtitle: string } | undefined> = {
-  "office-preview": {
-    eyebrow: "Spatial lens",
-    subtitle: "Room topology, crew focus, and handoff rhythm in one shared operator shell.",
-  },
-  agents: {
-    eyebrow: "Agent fleet",
-    subtitle: "Lifecycle, memory growth, proposal flow, and relationship topology for the active fleet.",
-  },
-  "agent-detail": {
-    eyebrow: "Agent fleet",
-    subtitle: "Lifecycle, memory growth, proposal flow, and relationship topology for the active fleet.",
-  },
-  threads: {
-    eyebrow: "Communication ledger",
-    subtitle: "Thread browser for agent-to-agent and user-to-agent communication with full message history.",
-  },
-  "thread-detail": {
-    eyebrow: "Communication ledger",
-    subtitle: "Thread browser for agent-to-agent and user-to-agent communication with full message history.",
-  },
-  approvals: {
-    eyebrow: "Approval center",
-    subtitle: "Pending and resolved approval requests across all active runs and workspaces.",
-  },
-  "bg-cli": {
-    eyebrow: "Background CLI",
-    subtitle: "Monitor and control background CLI processes — subprocess lifecycle, logs, and runtime health.",
-  },
-  tokens: {
-    eyebrow: "Token budget",
-    subtitle: "L0/L1/L2 compression tiers, per-agent token usage, and budget utilization at a glance.",
-  },
-  "weekly-report": {
-    eyebrow: "Weekly report",
-    subtitle: "Failure mining, improvement proposals, and agent performance for the current reporting period.",
-  },
-  "run-detail": {
-    eyebrow: "Run detail",
-    subtitle: "Replay, approvals, room state, and runtime documents in a single operational surface.",
-  },
-  inbox: {
-    eyebrow: "Operator inbox",
-    subtitle: undefined as unknown as string,
-  },
+const SHELL_COPY: Record<string, { eyebrow: { ko: string; en: string } } | undefined> = {
+  "office-preview": { eyebrow: { ko: "공간 렌즈", en: "Spatial lens" } },
+  agents: { eyebrow: { ko: "에이전트 플릿", en: "Agent fleet" } },
+  "agent-detail": { eyebrow: { ko: "에이전트 플릿", en: "Agent fleet" } },
+  threads: { eyebrow: { ko: "커뮤니케이션 레저", en: "Communication ledger" } },
+  "thread-detail": { eyebrow: { ko: "커뮤니케이션 레저", en: "Communication ledger" } },
+  approvals: { eyebrow: { ko: "승인 센터", en: "Approval center" } },
+  "bg-cli": { eyebrow: { ko: "백그라운드 CLI", en: "Background CLI" } },
+  tokens: { eyebrow: { ko: "토큰 예산", en: "Token budget" } },
+  "weekly-report": { eyebrow: { ko: "주간 리포트", en: "Weekly report" } },
+  "run-detail": { eyebrow: { ko: "런 상세", en: "Run detail" } },
+  inbox: { eyebrow: { ko: "운영자 인박스", en: "Operator inbox" } },
 };
 
-/* Demo-aware subtitle overrides */
-function resolveSubtitle(screen: string, isDemo: boolean): string {
+function resolveEyebrow(screen: string, locale: "ko" | "en"): string {
   if (screen === "tasks" || screen === "task-detail") {
-    return isDemo
-      ? "Use the demo shell or connect a live bridge to inspect canonical operator tasks."
-      : "Operator tasks are the first owned API slice. Use them to inspect durable work objects without starting from raw runs.";
+    return pickText(locale, { ko: "운영자 작업", en: "Operator tasks" });
   }
   if (screen === "workspaces" || screen === "workspace-detail") {
-    return isDemo
-      ? "Use the demo shell or connect a live bridge to inspect canonical operator workspaces."
-      : "Operator workspaces are the next owned object layer. Use them to turn workspace refs into durable records.";
+    return pickText(locale, { ko: "운영자 워크스페이스", en: "Operator workspaces" });
   }
-  if (screen === "runs") {
-    return isDemo
-      ? "Use the demo shell or connect a live bridge to inspect runs, approvals, and room timelines."
-      : "Execution traces remain evidence-first. Use overview for posture, then drill into run detail when needed.";
-  }
-  if (screen === "inbox") {
-    return isDemo
-      ? "Use the demo shell or connect a live bridge to inspect actionable operator attention items."
-      : "Operator inbox stays projection-first. Clear approvals, validator failures, blocked handoffs, and stale runs before drilling into traces.";
-  }
+  if (screen === "runs") return pickText(locale, { ko: "실행 트레이스", en: "Execution traces" });
   const entry = SHELL_COPY[screen];
-  if (entry?.subtitle) return entry.subtitle;
-  return isDemo
-    ? "Use the demo shell or connect a live bridge to inspect the current operator posture and execution traces."
-    : "Operator summary stays projection-first. Use overview for posture and runs for evidence-rich drill-down.";
+  return entry ? pickText(locale, entry.eyebrow) : pickText(locale, { ko: "운영 개요", en: "Operator overview" });
 }
-
-function resolveEyebrow(screen: string): string {
-  if (screen === "tasks" || screen === "task-detail") return "Operator tasks";
-  if (screen === "workspaces" || screen === "workspace-detail") return "Operator workspaces";
-  if (screen === "runs") return "Execution traces";
-  const entry = SHELL_COPY[screen];
-  return entry?.eyebrow ?? "Operator overview";
-}
-
-/* ────────────────────────────────────────────────────────────────────────
-   Nav items — order matches the original chip row.
-   ──────────────────────────────────────────────────────────────────────── */
 
 interface NavItem {
   href: string;
-  label: string;
+  label: { ko: string; en: string };
   screens: string[];
+  group: "primary" | "secondary" | "utility";
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "#/overview", label: "Overview", screens: ["overview"] },
-  { href: "#/inbox", label: "Inbox", screens: ["inbox"] },
-  { href: "#/tasks", label: "Tasks", screens: ["tasks", "task-detail"] },
-  { href: "#/workspaces", label: "Workspaces", screens: ["workspaces", "workspace-detail"] },
-  { href: "#/runs", label: "Runs", screens: ["runs", "run-detail"] },
-  { href: "#/office-preview", label: "Spatial Lens", screens: ["office-preview"] },
-  { href: "#/agents", label: "Agents", screens: ["agents", "agent-detail"] },
-  { href: "#/threads", label: "Threads", screens: ["threads", "thread-detail"] },
-  { href: "#/approvals", label: "Approvals", screens: ["approvals"] },
-  { href: "#/bg-cli", label: "BG CLI", screens: ["bg-cli"] },
-  { href: "#/tokens", label: "Tokens", screens: ["tokens"] },
-  { href: "#/weekly-report", label: "Weekly", screens: ["weekly-report"] },
+  { href: "#/overview", label: { ko: "개요", en: "Overview" }, screens: ["overview"], group: "primary" },
+  { href: "#/inbox", label: { ko: "인박스", en: "Inbox" }, screens: ["inbox"], group: "primary" },
+  { href: "#/tasks", label: { ko: "작업", en: "Tasks" }, screens: ["tasks", "task-detail"], group: "primary" },
+  { href: "#/runs", label: { ko: "런", en: "Runs" }, screens: ["runs", "run-detail"], group: "primary" },
+  { href: "#/workspaces", label: { ko: "워크스페이스", en: "Workspaces" }, screens: ["workspaces", "workspace-detail"], group: "secondary" },
+  { href: "#/office-preview", label: { ko: "공간 렌즈", en: "Spatial Lens" }, screens: ["office-preview"], group: "secondary" },
+  { href: "#/agents", label: { ko: "에이전트", en: "Agents" }, screens: ["agents", "agent-detail"], group: "secondary" },
+  { href: "#/threads", label: { ko: "스레드", en: "Threads" }, screens: ["threads", "thread-detail"], group: "secondary" },
+  { href: "#/approvals", label: { ko: "승인", en: "Approvals" }, screens: ["approvals"], group: "secondary" },
+  { href: "#/bg-cli", label: { ko: "백그라운드 CLI", en: "BG CLI" }, screens: ["bg-cli"], group: "utility" },
+  { href: "#/tokens", label: { ko: "토큰", en: "Tokens" }, screens: ["tokens"], group: "utility" },
+  { href: "#/weekly-report", label: { ko: "주간", en: "Weekly" }, screens: ["weekly-report"], group: "utility" },
 ];
-
-/* ────────────────────────────────────────────────────────────────────────
-   App — thin shell.  State lives in Zustand stores + per-screen components.
-   ──────────────────────────────────────────────────────────────────────── */
 
 export function App() {
   const route = useUiStore((s) => s.route);
+  const locale = useUiStore((s) => s.locale);
+  const toggleLocale = useUiStore((s) => s.toggleLocale);
   const config = useDashboardStore((s) => s.config);
   const isOfficePreview = route.screen === "office-preview";
-  const isDemo = !config.token.trim() && !isOfficePreview;
 
-  const shellCopy = useMemo(
-    () => ({
-      eyebrow: resolveEyebrow(route.screen),
-      title: "Conitens Control Plane",
-      subtitle: resolveSubtitle(route.screen, isDemo),
-    }),
-    [route.screen, isDemo],
+  const primaryNavItems = useMemo(
+    () => NAV_ITEMS.filter((item) => item.group === "primary"),
+    [],
   );
+  const secondaryNavItems = useMemo(
+    () => NAV_ITEMS.filter((item) => item.group === "secondary"),
+    [],
+  );
+  const utilityNavItems = useMemo(
+    () => NAV_ITEMS.filter((item) => item.group === "utility"),
+    [],
+  );
+
+  const activeSecondaryItem = useMemo(
+    () => secondaryNavItems.find((item) => item.screens.includes(route.screen)) ?? null,
+    [route.screen, secondaryNavItems],
+  );
+  const activeUtilityItem = useMemo(
+    () => utilityNavItems.find((item) => item.screens.includes(route.screen)) ?? null,
+    [route.screen, utilityNavItems],
+  );
+
+  const currentSectionLabel =
+    (activeSecondaryItem ? pickText(locale, activeSecondaryItem.label) : null) ??
+    (activeUtilityItem ? pickText(locale, activeUtilityItem.label) : null) ??
+    resolveEyebrow(route.screen, locale);
+
+  const connectionLabel = isOfficePreview
+    ? pickText(locale, { ko: "프리뷰 데이터", en: "Preview data" })
+    : config.token
+      ? pickText(locale, { ko: "라이브 브리지", en: "Live bridge" })
+      : pickText(locale, { ko: "데모 모드", en: "Demo mode" });
 
   return (
     <div className={`forward-shell${isOfficePreview ? " forward-shell-preview" : ""}`}>
-      <header className="forward-header">
-        <div>
-          <p className="forward-eyebrow">{shellCopy.eyebrow}</p>
-          <h1>{shellCopy.title}</h1>
-          <p className="forward-subtitle">{shellCopy.subtitle}</p>
+      <header className="forward-header forward-header-compact">
+        <div className="forward-brand-block">
+          <p className="forward-shell-caption">{currentSectionLabel}</p>
+          <a className="forward-brand-link" href="#/overview">
+            Conitens
+          </a>
         </div>
-        <div className="forward-chip-row">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.href}
-              className={`forward-chip forward-chip-link${item.screens.includes(route.screen) ? " active" : ""}`}
-              href={item.href}
-            >
-              {item.label}
-            </a>
-          ))}
-          {isOfficePreview ? (
-            <span className="forward-chip">Preview data</span>
-          ) : (
-            <>
-              <span className="forward-chip">API {config.apiRoot}</span>
-              <span className="forward-chip">
-                {config.token ? "Token loaded" : "Token required"}
-              </span>
-            </>
-          )}
+
+        <nav className="forward-primary-nav" aria-label="Primary dashboard sections">
+          <div className="forward-chip-group">
+            {primaryNavItems.map((item) => {
+              const isActive = item.screens.includes(route.screen);
+              return (
+                <a
+                  key={item.href}
+                  className={`forward-chip forward-chip-link${isActive ? " active" : ""}`}
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  {pickText(locale, item.label)}
+                </a>
+              );
+            })}
+          </div>
+        </nav>
+
+        <div className="forward-shell-controls">
+          <button type="button" className="forward-chip forward-chip-link" onClick={toggleLocale}>
+            {locale === "ko" ? "EN" : "KO"}
+          </button>
+          <details className="forward-menu">
+            <summary className="forward-chip forward-chip-link">
+              {(activeSecondaryItem ? pickText(locale, activeSecondaryItem.label) : null) ??
+                (activeUtilityItem ? pickText(locale, activeUtilityItem.label) : null) ??
+                pickText(locale, { ko: "더보기", en: "More" })}
+            </summary>
+            <div className="forward-menu-panel">
+              <div className="forward-menu-group">
+                <p className="forward-menu-label">{pickText(locale, { ko: "보조", en: "Secondary" })}</p>
+                {secondaryNavItems.map((item) => {
+                  const isActive = item.screens.includes(route.screen);
+                  return (
+                    <a
+                      key={item.href}
+                      className={`forward-menu-link${isActive ? " active" : ""}`}
+                      href={item.href}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      {pickText(locale, item.label)}
+                    </a>
+                  );
+                })}
+              </div>
+              <div className="forward-menu-group">
+                <p className="forward-menu-label">{pickText(locale, { ko: "유틸리티", en: "Utilities" })}</p>
+                {utilityNavItems.map((item) => {
+                  const isActive = item.screens.includes(route.screen);
+                  return (
+                    <a
+                      key={item.href}
+                      className={`forward-menu-link${isActive ? " active" : ""}`}
+                      href={item.href}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      {pickText(locale, item.label)}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          </details>
+
+          <div className="forward-shell-meta">
+            <span className="forward-chip">{connectionLabel}</span>
+            {!isOfficePreview ? (
+              <span className="forward-shell-endpoint">{config.apiRoot}</span>
+            ) : null}
+          </div>
         </div>
       </header>
 
