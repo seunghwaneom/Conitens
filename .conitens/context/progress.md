@@ -1,5 +1,47 @@
 # progress.md
 
+## Dashboard Frontend Shell Rebaseline Status
+
+- [x] Dashboard shell/style dependencies re-inspected before edits
+- [x] Replacement shell foundation styles added before old shell deletions were accepted
+- [x] `Threads` no-token and token-refresh behavior fixed
+- [x] Thread accessibility/copy cleanup applied
+- [x] Targeted frontend regression tests added and passing
+- [x] Dashboard typecheck and production build re-run successfully
+- [x] Playwright screenshot evidence captured for overview, threads, and office-preview
+- [x] Browser live bridge auth/CORS path repaired with fallback auth header support
+- [x] Playwright live bridge verification succeeded for overview, runs, and threads
+- [x] Forward bridge/live approval Python baselines restored to green
+- [x] Package-level dashboard Vitest now runs green with repo config only
+
+## Dashboard Frontend Shell Rebaseline Commands Run
+
+- `npx tsc --noEmit -p packages/dashboard/tsconfig.json`
+- `npx vitest run packages/dashboard/src/components/ThreadBrowser.test.tsx packages/dashboard/src/components/ThreadDetail.test.tsx`
+- `npx vitest run --passWithNoTests` from `packages/dashboard`
+- `npx tsc -b packages/dashboard/tsconfig.json`
+- `npx vite build`
+- `npx vite preview --host 127.0.0.1 --port 4173` plus Playwright CLI screenshots for `#/overview`, `#/threads`, and `#/office-preview`
+- ad hoc Python bridge check for `X-Conitens-Forward-Token` read access on `/api/runs`
+- `python3 -m http.server 4291` from `packages/dashboard/dist` for real-browser live verification
+- `python3 scripts/ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8799 --reviewer local/codex-live-fresh`
+- Playwright live verification on `#/overview`, `#/runs`, and `#/threads`
+- `python3 -m unittest -v tests.test_forward_bridge tests.test_forward_live_approval`
+- `python3 -m unittest -v tests.test_approval_controls.ApprovalControlTests.test_audit_trail_is_persisted`
+
+## Dashboard Frontend Shell Rebaseline Outcome
+
+This batch is complete as a targeted dashboard rebaseline. The control-plane
+shell has replacement global layout rules again, the header now separates
+primary operator routes from utility routes, and `Threads` now presents an
+explicit live-bridge empty state instead of failing by default when no token is
+loaded. The browser-side live bridge path is also working again: overview,
+runs, and threads all load successfully from a real loopback bridge using the
+new shared auth header strategy. The forward bridge/live approval Python
+baseline is green again after canonical approval event emission, legacy
+execution-loop event alias coverage, best-effort insight mirroring, and a
+slightly larger timeout for the long-path approval resume round-trip test.
+
 ## Batch 0 Status
 
 - [x] Repo inspected before edits
@@ -1032,3 +1074,196 @@ The candidate patch surface is now harder to bypass. Raw files on disk no
 longer become pending/applicable patches unless they are backed by a recorded
 proposal event and contain an actual reviewable delta, and the improver path no
 longer emits placeholder candidate patch artifacts.
+
+## Codex Frontend Design Review 2026-04-09 Status
+
+- [x] repo context and prior frontend review docs re-read
+- [x] official OpenAI Codex frontend design reference confirmed
+- [x] OMX team runtime attempted for parallel analysis
+- [x] local dashboard shell served and reached successfully
+- [x] fresh Playwright screenshots captured for core routes
+- [x] findings and next-step design direction synthesized
+- [x] `.conitens/context/*` refreshed
+
+## Codex Frontend Design Review 2026-04-09 Commands Run
+
+- `sed -n '1,220p' .conitens/context/LATEST_CONTEXT.md`
+- `sed -n '1,220p' .vibe/context/LATEST_CONTEXT.md`
+- `curl -I --max-time 5 http://127.0.0.1:4291`
+- `python3 -m http.server 4291 -d packages/dashboard/dist`
+- `omx_run_team_start(...)`
+- `omx_run_team_status(...)`
+- `npx --yes --package @playwright/cli playwright-cli open http://127.0.0.1:4291/#/overview`
+- `npx --yes --package @playwright/cli playwright-cli resize 1440 1100`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-overview-20260409-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli goto http://127.0.0.1:4291/#/inbox`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-inbox-20260409-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli goto http://127.0.0.1:4291/#/tasks`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-tasks-20260409-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli goto http://127.0.0.1:4291/#/runs`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-runs-20260409-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli goto http://127.0.0.1:4291/#/office-preview`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-office-preview-20260409-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli resize 820 1180`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-overview-20260409-820.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-office-preview-20260409-820.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli console error`
+
+## Current Outcome
+
+The review pass is complete. The current dashboard shell remains visually
+coherent, but fresh browser evidence confirms three main design debts: the
+global header is still over-dense, the repeated left-list/right-detail layout
+steals too much width from route-specific content, and the spatial lens still
+works better as a secondary drill-down than as a peer to the primary operator
+routes. The attempted OMX team launch failed again in this environment with
+`spawn EFTYPE`, so the review completed through direct inspection instead of
+tmux workers.
+
+## Core Operator Routes Refactor 2026-04-09 Status
+
+- [x] compact global shell implemented for 4 primary routes
+- [x] `Overview`, `Inbox`, `Tasks`, and `Runs` split into dedicated screens
+- [x] bridge connect UX moved into compact route scaffolds
+- [x] `Tasks` queue rail + toolbar + detail layout implemented
+- [x] `Runs` browser + summary workspace implemented
+- [x] mobile `office-preview` room-strip fallback implemented
+- [x] fresh Playwright screenshots captured for refactor surfaces
+- [x] Claude review artifact captured
+- [x] immediate Claude fixes applied
+- [x] `.conitens/context/*` refreshed
+
+## Core Operator Routes Refactor 2026-04-09 Commands Run
+
+- `./node_modules/.bin/tsc --noEmit -p packages/dashboard/tsconfig.json`
+- `../../node_modules/.bin/tsc -b tsconfig.json && ../../node_modules/.bin/vite build --config vite.config.ts`
+- `../../node_modules/.bin/vitest run --passWithNoTests`
+- `python3 -m http.server 4291 -d packages/dashboard/dist`
+- `npx --yes --package @playwright/cli playwright-cli open http://127.0.0.1:4291/#/overview`
+- `npx --yes --package @playwright/cli playwright-cli resize 1440 1100`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-overview-20260409-refactor-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli goto http://127.0.0.1:4291/#/inbox`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-inbox-20260409-refactor-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli goto http://127.0.0.1:4291/#/tasks`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-tasks-20260409-refactor-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli goto http://127.0.0.1:4291/#/runs`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-runs-20260409-refactor-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli goto http://127.0.0.1:4291/#/office-preview`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-office-preview-20260409-refactor-1440.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli resize 820 1180`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-overview-20260409-refactor-820.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-tasks-20260409-refactor-820.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-office-preview-20260409-refactor-820.png --full-page`
+- `npx --yes --package @playwright/cli playwright-cli console error`
+- `python3 scripts/ensemble_claude_review.py --workspace . --timeout-seconds 180 --effort medium --slug frontend-core-routes-refactor "..."`
+
+## Current Outcome
+
+The planned core-route refactor is implemented. The shell now prioritizes four
+operator routes, the bridge form no longer dominates the top fold, and the
+primary surfaces now have route-specific layouts instead of sharing the same
+run-browser skeleton. `office-preview` also now degrades to a selected-room
+mobile drill-down rather than a six-room poster stack.
+
+Static verification is green through typecheck and production build. Fresh
+Playwright captures for overview, inbox, tasks, runs, and office-preview show
+the new IA and `0` console errors/warnings. Package tests remain unresolved in
+this environment because Vitest exits with code `1` while printing only the
+runner banner.
+
+## Core Route Risk Follow-up 2026-04-09 Status
+
+- [x] `Runs` selection now commits into the URL hash
+- [x] shell-level Korean/English toggle implemented
+- [x] core route scaffold and core panels localized for static UI copy
+- [x] bridge form now requires API root and bearer token
+- [x] mobile room strip changed from 2-column stack to horizontal strip
+- [x] Playwright verified run hash persistence and locale switching
+- [x] `.conitens/context/*` refreshed
+
+## Core Route Risk Follow-up 2026-04-09 Commands Run
+
+- `./node_modules/.bin/tsc --noEmit -p packages/dashboard/tsconfig.json`
+- `../../node_modules/.bin/tsc -b tsconfig.json && ../../node_modules/.bin/vite build --config vite.config.ts`
+- `python3 -m http.server 4291 -d packages/dashboard/dist`
+- `npx --yes --package @playwright/cli playwright-cli open http://127.0.0.1:4291/#/runs`
+- `npx --yes --package @playwright/cli playwright-cli snapshot`
+- `npx --yes --package @playwright/cli playwright-cli eval 'window.location.hash'`
+- `npx --yes --package @playwright/cli playwright-cli click <run-row>`
+- `npx --yes --package @playwright/cli playwright-cli click <locale-toggle>`
+- `npx --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/dashboard-runs-20260409-riskfix-en-1440.png --full-page`
+
+## Current Outcome
+
+The main post-refactor risks are reduced. The `Runs` screen now preserves its
+selected run in the route hash, and the shell/core routes can switch between
+Korean and English without reloading the app. The mobile spatial strip is also
+less vertically wasteful.
+
+Typecheck and production build remain green after the follow-up changes.
+Playwright now confirms `#/runs?selected=demo-run-001` in the browser and shows
+an English-mode capture at `output/playwright/dashboard-runs-20260409-riskfix-en-1440.png`.
+The largest unresolved risk is still structural rather than behavioral:
+`useOperatorTasksData` remains oversized and should be decomposed in a later
+cleanup slice.
+
+## Residual Risk Cleanup 2026-04-09 Status
+
+- [x] `useOperatorTasksData` split into derived/action helper modules
+- [x] route accessibility audit completed for top-level `<main>` ownership
+- [x] dashboard test runner failure reduced to a reproducible environment path issue
+- [x] full dashboard Vitest suite passes when invoked with the real Node binary
+- [x] `.conitens/context/*` refreshed
+
+## Residual Risk Cleanup 2026-04-09 Commands Run
+
+- `./node_modules/.bin/tsc --noEmit -p packages/dashboard/tsconfig.json`
+- `../../node_modules/.bin/tsc -b tsconfig.json && ../../node_modules/.bin/vite build --config vite.config.ts`
+- `cd packages/dashboard && CI=1 ./node_modules/.bin/vitest run src/ds/Badge.test.tsx --reporter=verbose`
+- `cd packages/dashboard && CI=1 '/mnt/c/Program Files/nodejs/node.exe' ./node_modules/vitest/vitest.mjs run src/ds/Badge.test.tsx --reporter=verbose`
+- `cd packages/dashboard && CI=1 '/mnt/c/Program Files/nodejs/node.exe' ./node_modules/vitest/vitest.mjs run src/components/ThreadBrowser.test.tsx --reporter=verbose`
+- `cd packages/dashboard && CI=1 '/mnt/c/Program Files/nodejs/node.exe' ./node_modules/vitest/vitest.mjs run --passWithNoTests`
+
+## Current Outcome
+
+The remaining high-signal risks are reduced again. The task route no longer
+depends on one oversized all-in-one hook for every concern; fetch orchestration
+still lives in `useOperatorTasksData`, but derived computations and mutation
+handlers are now split into dedicated helpers, which lowers structural risk.
+
+Dashboard verification is stronger too. Typecheck and production build remain
+green, and the full dashboard Vitest suite now passes when run with the real
+Windows Node binary. The default local Vitest path is still broken in this
+environment because worker forks resolve through
+`C:\\Users\\eomsh\\.codex\\omx-host-shims\\node`, so the remaining test risk is
+environment-specific rather than a failing repo suite.
+
+## Secondary Locale + Test Script Stabilization 2026-04-09 Status
+
+- [x] `Agents`, `Approvals`, and `Threads` now use the locale toggle for static copy
+- [x] thread component tests updated for Korean-default UI
+- [x] repo-local Vitest wrapper added
+- [x] dashboard package `test` script now uses the wrapper
+- [x] full dashboard suite passes through the package script path
+- [x] `.conitens/context/*` refreshed
+
+## Secondary Locale + Test Script Stabilization 2026-04-09 Commands Run
+
+- `./node_modules/.bin/tsc --noEmit -p packages/dashboard/tsconfig.json`
+- `../../node_modules/.bin/tsc -b tsconfig.json && ../../node_modules/.bin/vite build --config vite.config.ts`
+- `cd packages/dashboard && node ./scripts/run-vitest.cjs --passWithNoTests`
+- `cd packages/dashboard && CI=1 '/mnt/c/Program Files/nodejs/node.exe' ./node_modules/vitest/vitest.mjs run src/ds/Badge.test.tsx --reporter=verbose`
+- `cd packages/dashboard && CI=1 '/mnt/c/Program Files/nodejs/node.exe' ./node_modules/vitest/vitest.mjs run src/components/ThreadBrowser.test.tsx --reporter=verbose`
+
+## Current Outcome
+
+The remaining practical risks are reduced again. The shell-level locale toggle
+now covers the most important secondary operator routes instead of only the
+core routes, and the dashboard package no longer depends on the broken default
+Vitest shell path for normal test execution because `packages/dashboard/test`
+now goes through a repo-local real-Node wrapper.
+
+Typecheck, production build, and the full dashboard test suite are all green
+through that wrapper path. The largest unresolved locale risk is scope rather
+than breakage: utility-only panels still remain mostly English, but the main
+operator-facing flows are now switchable.

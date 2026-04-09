@@ -2,16 +2,18 @@ import type { AgentProfile, AgentLifecycleStatus } from "../agent-fleet-model.js
 import type { EvolutionEntry, LearningMetric } from "../evolution-model.js";
 import { Badge } from "../ds/index.js";
 import styles from "./AgentProfilePanel.module.css";
+import { pickText, localizeLabel, localizeStatus } from "../i18n.js";
+import { useUiStore } from "../store/ui-store.js";
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, locale: "ko" | "en"): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return "just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 1) return pickText(locale, { ko: "방금 전", en: "just now" });
+  if (diffMin < 60) return pickText(locale, { ko: `${diffMin}분 전`, en: `${diffMin}m ago` });
   const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
+  if (diffH < 24) return pickText(locale, { ko: `${diffH}시간 전`, en: `${diffH}h ago` });
   const diffD = Math.floor(diffH / 24);
-  return `${diffD}d ago`;
+  return pickText(locale, { ko: `${diffD}일 전`, en: `${diffD}d ago` });
 }
 
 function statusColor(status: AgentLifecycleStatus): string {
@@ -50,12 +52,13 @@ interface AgentProfilePanelProps {
 }
 
 export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePanelProps) {
+  const locale = useUiStore((state) => state.locale);
   if (!agent) {
     return (
       <div className={styles.profileEmpty}>
         <div className={styles.placeholder}>
-          <h3>No agent selected</h3>
-          <p>Select an agent to view profile</p>
+          <h3>{pickText(locale, { ko: "에이전트가 선택되지 않았습니다", en: "No agent selected" })}</h3>
+          <p>{pickText(locale, { ko: "프로필을 보려면 에이전트를 선택하세요", en: "Select an agent to view profile" })}</p>
         </div>
       </div>
     );
@@ -68,27 +71,27 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
   return (
     <div className={styles.profile}>
       <div className={styles.section}>
-        <p className={styles.panelLabel}>Identity</p>
+        <p className={styles.panelLabel}>{pickText(locale, { ko: "정체성", en: "Identity" })}</p>
         <h3 className={styles.profileName}>{agent.name}</h3>
         <div className={styles.meta}>
-          <Badge variant="neutral" className={roleBadgeClass(agent.role)}>{agent.role}</Badge>
+          <Badge variant="neutral" className={roleBadgeClass(agent.role)}>{localizeStatus(locale, agent.role)}</Badge>
           <span className={styles.archetypeLabel}>{agent.archetype}</span>
         </div>
       </div>
 
       <div className={styles.section}>
-        <p className={styles.panelLabel}>Health</p>
+        <p className={styles.panelLabel}>{pickText(locale, { ko: "상태", en: "Health" })}</p>
         <div className={styles.healthRow}>
           <span
             className={styles.statusDot}
             ref={(el) => { if (el) el.style.setProperty('--status-color', statusColor(agent.status)); }}
           />
-          <span className={styles.healthStatus}>{agent.status}</span>
+          <span className={styles.healthStatus}>{localizeStatus(locale, agent.status)}</span>
         </div>
-        <p className={styles.healthActive}>Last active: {timeAgo(agent.lastActive)}</p>
+        <p className={styles.healthActive}>{pickText(locale, { ko: "마지막 활동", en: "Last active" })}: {timeAgo(agent.lastActive, locale)}</p>
         <div className={styles.errorBarWrap}>
           <div className={styles.errorBarLabel}>
-            <span>Error rate</span>
+            <span>{pickText(locale, { ko: "오류율", en: "Error rate" })}</span>
             <span>{errorPct.toFixed(1)}%</span>
           </div>
           <div className={styles.errorBarTrack}>
@@ -101,72 +104,72 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
       </div>
 
       <div className={styles.section}>
-        <p className={styles.panelLabel}>Stats</p>
+        <p className={styles.panelLabel}>{pickText(locale, { ko: "통계", en: "Stats" })}</p>
         <div className={styles.statsGrid}>
           <div className={styles.statItem}>
-            <span>Tasks</span>
+            <span>{pickText(locale, { ko: "작업", en: "Tasks" })}</span>
             <strong>{agent.taskCount}</strong>
           </div>
           <div className={styles.statItem}>
-            <span>Memories</span>
+            <span>{pickText(locale, { ko: "메모리", en: "Memories" })}</span>
             <strong>{agent.memoryCount}</strong>
           </div>
           <div className={styles.statItem}>
-            <span>Room</span>
+            <span>{pickText(locale, { ko: "룸", en: "Room" })}</span>
             <strong className={styles.statRoom}>{agent.roomId}</strong>
           </div>
           {agent.latestRunId ? (
             <div className={styles.statItem}>
-              <span>Latest run</span>
+              <span>{pickText(locale, { ko: "최신 런", en: "Latest run" })}</span>
               <strong className={styles.statRoom}>{agent.latestRunId}</strong>
             </div>
           ) : null}
           {typeof agent.pendingApprovals === "number" ? (
             <div className={styles.statItem}>
-              <span>Approvals</span>
+              <span>{pickText(locale, { ko: "승인", en: "Approvals" })}</span>
               <strong>{agent.pendingApprovals}</strong>
             </div>
           ) : null}
         </div>
         {agent.latestRunStatus ? (
-          <p className={styles.healthActive}>Latest run status: {agent.latestRunStatus}</p>
+          <p className={styles.healthActive}>{pickText(locale, { ko: "최신 런 상태", en: "Latest run status" })}: {localizeStatus(locale, agent.latestRunStatus)}</p>
         ) : null}
         {agent.latestBlocker ? (
-          <p className={styles.healthActive}>Latest blocker: {agent.latestBlocker}</p>
+          <p className={styles.healthActive}>{pickText(locale, { ko: "최신 blocker", en: "Latest blocker" })}: {agent.latestBlocker}</p>
         ) : null}
         {agent.workspaceRef ? (
-          <p className={styles.healthActive}>Workspace: {agent.workspaceRef}</p>
+          <p className={styles.healthActive}>{pickText(locale, { ko: "워크스페이스", en: "Workspace" })}: {agent.workspaceRef}</p>
         ) : null}
       </div>
 
       <div className={styles.section}>
-        <p className={styles.panelLabel}>Actions</p>
+        <p className={styles.panelLabel}>{pickText(locale, { ko: "액션", en: "Actions" })}</p>
         <div className={styles.actionBar}>
           {canPause && (
-            <button className={styles.chip} disabled title="Lifecycle control — coming soon">
-              Pause
+            <button className={styles.chip} disabled title={pickText(locale, { ko: "라이프사이클 제어 — 추후 제공", en: "Lifecycle control — coming soon" })}>
+              {pickText(locale, { ko: "일시정지", en: "Pause" })}
             </button>
           )}
           {canResume && (
-            <button className={styles.chip} disabled title="Lifecycle control — coming soon">
-              Resume
+            <button className={styles.chip} disabled title={pickText(locale, { ko: "라이프사이클 제어 — 추후 제공", en: "Lifecycle control — coming soon" })}>
+              {pickText(locale, { ko: "재개", en: "Resume" })}
             </button>
           )}
-          <button className={styles.chip} disabled title="Lifecycle control — coming soon">
-            Retire
+          <button className={styles.chip} disabled title={pickText(locale, { ko: "라이프사이클 제어 — 추후 제공", en: "Lifecycle control — coming soon" })}>
+            {pickText(locale, { ko: "퇴역", en: "Retire" })}
           </button>
         </div>
       </div>
 
       {evolution.length > 0 && (
         <div className={styles.section}>
-          <p className={styles.panelLabel}>Evolution Timeline</p>
+          <p className={styles.panelLabel}>{pickText(locale, { ko: "진화 타임라인", en: "Evolution Timeline" })}</p>
           <div className={styles.evolutionList}>
             {evolution.map(entry => (
               <div key={entry.id} className={styles.evolutionEntry}>
                 <div className={styles.evolutionHeader}>
-                  <Badge variant={outcomeVariant(entry.outcome)}>{entry.outcome}</Badge>
-                  <span className={styles.evolutionDate}>{timeAgo(entry.appliedAt)}</span>
+                  <Badge variant={outcomeVariant(entry.outcome)}>{localizeStatus(locale, entry.outcome)}</Badge>
+                  <span className={styles.evolutionDate}>{timeAgo(entry.appliedAt, locale)}</span>
                 </div>
                 <p className={styles.evolutionTitle}>{entry.title}</p>
                 <span className={styles.evolutionDelta}>{entry.deltaMetric}</span>
@@ -178,17 +181,17 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
 
       {metrics && (
         <div className={styles.section}>
-          <p className={styles.panelLabel}>Learning Metrics</p>
+          <p className={styles.panelLabel}>{pickText(locale, { ko: "학습 지표", en: "Learning Metrics" })}</p>
           <div className={styles.memoryGrid}>
             {(["identity", "procedural", "episodic", "reflection"] as const).map(key => (
               <div key={key} className={styles.memoryStat}>
-                <span className={styles.memoryLabel}>{key}</span>
+                <span className={styles.memoryLabel}>{localizeLabel(locale, key)}</span>
                 <strong className={styles.memoryCount}>{metrics.memoryCounts[key]}</strong>
               </div>
             ))}
           </div>
           <div className={styles.proposalBarWrap}>
-            <p className={styles.proposalBarLabel}>Proposals</p>
+            <p className={styles.proposalBarLabel}>{pickText(locale, { ko: "제안", en: "Proposals" })}</p>
             <div className={styles.proposalBar}>
               {metrics.proposalStats.approved > 0 && (
                 <div
@@ -213,9 +216,9 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
               )}
             </div>
             <div className={styles.proposalBarLegend}>
-              <span className={styles.legendApproved}>{metrics.proposalStats.approved} approved</span>
-              <span className={styles.legendRejected}>{metrics.proposalStats.rejected} rejected</span>
-              <span className={styles.legendPending}>{metrics.proposalStats.pending} pending</span>
+              <span className={styles.legendApproved}>{pickText(locale, { ko: `${metrics.proposalStats.approved} 승인`, en: `${metrics.proposalStats.approved} approved` })}</span>
+              <span className={styles.legendRejected}>{pickText(locale, { ko: `${metrics.proposalStats.rejected} 거부`, en: `${metrics.proposalStats.rejected} rejected` })}</span>
+              <span className={styles.legendPending}>{pickText(locale, { ko: `${metrics.proposalStats.pending} 대기`, en: `${metrics.proposalStats.pending} pending` })}</span>
             </div>
           </div>
         </div>

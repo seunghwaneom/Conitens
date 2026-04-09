@@ -117,6 +117,22 @@ export function PixelOffice({
           </div>
         </div>
       </section>
+      <nav className={layoutStyles["office-room-strip"]} aria-label="Room focus">
+        {office.rooms.map((room) => {
+          const isActive = room.roomId === selectedRoomId;
+          return (
+            <button
+              key={room.roomId}
+              type="button"
+              className={`${layoutStyles["office-room-chip"]}${isActive ? ` ${layoutStyles["office-room-chip-active"]}` : ""}`}
+              onClick={() => handleSelectRoom(room.roomId)}
+            >
+              <span>{room.label}</span>
+              <strong>{room.snapshot.taskCount}</strong>
+            </button>
+          );
+        })}
+      </nav>
       <div className={layoutStyles["office-layout"]}>
         {agents.length === 0 ? (
           <div className="empty-state animated">No agents online. Waiting for heartbeats...</div>

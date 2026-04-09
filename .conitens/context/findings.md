@@ -7,6 +7,275 @@
 - Generated/runtime-scoped `AGENTS.md` files exist under `.notes/` and `.omx/`,
   but the root `AGENTS.md` governs the repository itself.
 
+## Dashboard Frontend Rebaseline Facts
+
+- `packages/dashboard/src/styles.css` had been reduced to token/panel imports
+  while live routes still referenced missing global shell classes from the
+  removed `styles/shell.css` and `styles/legacy.css`.
+- New replacement foundation files now exist at:
+  - `packages/dashboard/src/styles/forward-shell.css`
+  - `packages/dashboard/src/styles/agent-layout.css`
+- The dashboard shell now groups utility routes (`BG CLI`, `Tokens`, `Weekly`)
+  separately from the primary operator workbench navigation in
+  `packages/dashboard/src/App.tsx`.
+- `packages/dashboard/src/components/ThreadBrowser.tsx` now treats no-token
+  state as an explicit live-bridge empty state instead of attempting a failing
+  fetch.
+- `packages/dashboard/src/components/ThreadBrowser.tsx` and
+  `packages/dashboard/src/components/ThreadDetail.tsx` now refetch when the
+  bearer token changes and guard against stale async updates with cancellation
+  flags.
+- The thread filter now has a visible label plus `aria-label="Filter threads"`
+  and uses `type="search"`, `spellCheck={false}`, and ellipsis-normalized
+  placeholder copy.
+- Loading copy across touched dashboard surfaces was normalized from `...` to
+  `…`.
+- `packages/dashboard/vite.config.ts` now declares `test.environment = "jsdom"`
+  and `test.setupFiles = "./src/test-setup.ts"`, so dashboard tests no longer
+  require per-file jsdom bootstrapping.
+- Targeted tests now exist at:
+  - `packages/dashboard/src/components/ThreadBrowser.test.tsx`
+  - `packages/dashboard/src/components/ThreadDetail.test.tsx`
+- Verified commands for this batch:
+  - `npx tsc --noEmit -p packages/dashboard/tsconfig.json`
+  - `npx vitest run packages/dashboard/src/components/ThreadBrowser.test.tsx packages/dashboard/src/components/ThreadDetail.test.tsx`
+  - `npx vitest run --passWithNoTests` from `packages/dashboard`
+  - `npx tsc -b packages/dashboard/tsconfig.json`
+  - `npx vite build` from `packages/dashboard`
+- Fresh Playwright screenshot evidence now exists under:
+  - `output/playwright/frontend-rebaseline/.playwright-cli/page-2026-04-09T05-42-58-160Z.png`
+  - `output/playwright/frontend-rebaseline/.playwright-cli/page-2026-04-09T05-43-15-610Z.png`
+  - `output/playwright/frontend-rebaseline/.playwright-cli/page-2026-04-09T05-43-30-269Z.png`
+
+## Codex Frontend Design Review 2026-04-09
+
+- The current official OpenAI Codex frontend design use case is
+  `Build responsive front-end designs` on the Codex use-cases page, and the
+  associated OpenAI frontend guide reinforces strong references, explicit
+  design-system constraints, and tool-assisted verification rather than
+  underspecified prompting.
+- Fresh local Playwright evidence now exists for the current dashboard shell:
+  - `output/playwright/dashboard-overview-20260409-1440.png`
+  - `output/playwright/dashboard-inbox-20260409-1440.png`
+  - `output/playwright/dashboard-tasks-20260409-1440.png`
+  - `output/playwright/dashboard-runs-20260409-1440.png`
+  - `output/playwright/dashboard-office-preview-20260409-1440.png`
+  - `output/playwright/dashboard-overview-20260409-820.png`
+  - `output/playwright/dashboard-office-preview-20260409-820.png`
+- Browser console inspection during that run showed `0` errors / `0` warnings.
+- The top shell still overloads the header with 9 primary tabs, 3 utility tabs,
+  and API/token meta in the same chip cluster via `packages/dashboard/src/App.tsx`
+  and `packages/dashboard/src/styles/forward-shell.css`; the resulting narrow
+  uppercase chip rows remain scan-heavy, especially in the `820px` capture.
+- `packages/dashboard/src/screens/ForwardDashboardScreen.tsx` still forces a
+  persistent left list + right detail split for overview, inbox, tasks, and
+  runs, while `packages/dashboard/src/styles/live-panels.css` hard-codes the
+  sidebar width to `344px`; fresh screenshots show that this steals meaningful
+  space from the actual operator detail surfaces on every route.
+- The demo onboarding / connect-to-bridge chrome still occupies the top fold on
+  overview and runs (`OnboardingOverlay.tsx` plus `ForwardDashboardScreen.tsx`)
+  before the user reaches actionable operator state.
+- The spatial lens remains visually distinctive on desktop, but the `820px`
+  capture shows that stacking six room scenes vertically turns it into a long
+  poster-scroll instead of an operational drill-down; the current mobile
+  fallback is driven by `office.module.css` and `office-stage.module.css`.
+- Existing repo strategy already aligns with this review: `docs/adr-0002-product-surface-persistent-agents.md`
+  demotes office-preview to secondary navigation, and
+  `.conitens/reviews/paperclip_conitens_integration_plan_2026-04-04.md`
+  recommends a persistent operator-object rail plus an attention-led top strip.
+
+## Core Operator Routes Refactor 2026-04-09
+
+- `packages/dashboard/src/App.tsx` now reduces the shell to four primary
+  routes (`Overview`, `Inbox`, `Tasks`, `Runs`) and moves the rest into a
+  secondary `More` surface plus a compact bridge-status cluster.
+- `packages/dashboard/src/screens/AppRouter.tsx` now routes `overview`,
+  `inbox`, `tasks`/`task-detail`, and `runs` through dedicated screens instead
+  of falling back to `ForwardDashboardScreen`.
+- New route screens now exist for the primary operator surfaces:
+  - `packages/dashboard/src/screens/OverviewScreen.tsx`
+  - `packages/dashboard/src/screens/InboxScreen.tsx`
+  - `packages/dashboard/src/screens/TasksScreen.tsx`
+  - `packages/dashboard/src/screens/RunsScreen.tsx`
+- New shared route scaffolding now exists at:
+  - `packages/dashboard/src/components/CoreRouteScaffold.tsx`
+  - `packages/dashboard/src/components/CoreRouteScaffold.module.css`
+- New hook boundaries now exist for the refactored routes:
+  - `packages/dashboard/src/hooks/useBridgeStatus.ts`
+  - `packages/dashboard/src/hooks/useOperatorSummaryData.ts`
+  - `packages/dashboard/src/hooks/useOperatorInboxData.ts`
+  - `packages/dashboard/src/hooks/useOperatorTasksData.ts`
+  - `packages/dashboard/src/hooks/useRunsData.ts`
+- `packages/dashboard/src/components/OperatorInboxPanel.tsx` plus
+  `OperatorInboxPanel.module.css` now render the inbox as a denser list-first
+  queue rather than a stack of card-like rows.
+- `packages/dashboard/src/office.module.css` and
+  `packages/dashboard/src/office-stage.module.css` now support a room-focus
+  mobile fallback: a room strip selects the currently surfaced room, and the
+  stage only renders the selected room at `<= 820px`.
+- `packages/dashboard/src/forward-route.ts` now falls back to `overview` rather
+  than `runs` for unrecognized hashes.
+- Fresh Playwright evidence for the implemented refactor now exists at:
+  - `output/playwright/dashboard-overview-20260409-refactor-1440.png`
+  - `output/playwright/dashboard-inbox-20260409-refactor-1440.png`
+  - `output/playwright/dashboard-tasks-20260409-refactor-1440.png`
+  - `output/playwright/dashboard-runs-20260409-refactor-1440.png`
+  - `output/playwright/dashboard-office-preview-20260409-refactor-1440.png`
+  - `output/playwright/dashboard-overview-20260409-refactor-820.png`
+  - `output/playwright/dashboard-tasks-20260409-refactor-820.png`
+  - `output/playwright/dashboard-office-preview-20260409-refactor-820.png`
+- Browser console inspection during the refactor verification again showed
+  `0` errors / `0` warnings.
+- Local verification now passes for:
+  - `./node_modules/.bin/tsc --noEmit -p packages/dashboard/tsconfig.json`
+  - `../../node_modules/.bin/tsc -b tsconfig.json && ../../node_modules/.bin/vite build --config vite.config.ts`
+- `vitest run --passWithNoTests` still exits with code `1` in this environment
+  while printing only the runner banner, so package tests remain unverified for
+  this slice.
+- Claude review artifact now exists at:
+  - `.omx/artifacts/claude-frontend-core-routes-refactor-2026-04-09T10-01-05-586313Z.md`
+- The Claude review's immediately actionable findings were applied:
+  - `useRunsData` detail refresh now includes `liveRevision`
+  - overview run rail now distinguishes loading from empty state
+  - inbox rows no longer force an always-active class
+  - hash fallback now returns `overview`
+- Claude still flags two notable follow-ups:
+  - `Runs` selection is still ephemeral in-page state rather than URL-committed
+  - `useOperatorTasksData` remains a large all-in-one hook and should be split
+    further in a later cleanup slice
+
+## Core Route Risk Follow-up 2026-04-09
+
+- `packages/dashboard/src/store/ui-store.ts` now persists a `locale` setting
+  (`ko` / `en`) in local storage and applies it to `document.documentElement.lang`.
+- `packages/dashboard/src/i18n.ts` now provides shared locale helpers for
+  shell/core-route strings and common workflow/status labels.
+- `packages/dashboard/src/App.tsx` now exposes a shell-level language toggle and
+  localizes the compact primary nav, `More` menu, and bridge status labels.
+- `packages/dashboard/src/components/CoreRouteScaffold.tsx` now localizes bridge
+  tray copy and marks `apiRoot` / `token` as required form inputs.
+- `packages/dashboard/src/screens/OverviewScreen.tsx`,
+  `InboxScreen.tsx`, `TasksScreen.tsx`, and `RunsScreen.tsx` now localize their
+  route headers and core static copy through the shared locale helpers.
+- `packages/dashboard/src/components/OperatorSummaryPanel.tsx`,
+  `OperatorInboxPanel.tsx`, `OperatorTaskDetailPanel.tsx`, and
+  `OperatorTaskEditorPanel.tsx` now localize their static panel chrome and key
+  labels, while live runtime payload text remains pass-through.
+- `packages/dashboard/src/forward-route.ts` now supports `#/runs?selected=<id>`
+  so the currently selected run in the `Runs` screen is URL-committed without
+  colliding with `#/runs/<id>` for the full detail route.
+- `packages/dashboard/src/hooks/useRunsData.ts` now accepts route-selected run
+  state and keeps detail refresh synchronized with `liveRevision`.
+- `packages/dashboard/src/screens/RunsScreen.tsx` now writes the selected run
+  back into the `runs` route hash, including demo mode, which makes refresh and
+  back/forward behavior consistent with the browser summary pane.
+- `packages/dashboard/src/office.module.css` now changes the mobile room strip
+  from a cramped two-column grid into a horizontal scrolling strip, reducing
+  pre-stage vertical growth on narrow widths.
+- Fresh Playwright verification now confirms:
+  - `#/runs?selected=demo-run-001` is written after selecting the run in the
+    refactored `Runs` screen
+  - the shell can toggle between Korean and English
+  - the risk-fix English capture now exists at
+    `output/playwright/dashboard-runs-20260409-riskfix-en-1440.png`
+- Remaining known frontend risks after this follow-up:
+  - some live runtime strings from payload/view-model layers remain English and
+    are not yet fully localized
+  - the default local `vitest` invocation still exits through the broken
+    `omx-host-shims/node` path in this environment unless the real Node binary
+    is invoked directly
+
+## Residual Risk Cleanup 2026-04-09
+
+- `packages/dashboard/src/hooks/useOperatorTasksData.ts` no longer carries all
+  task-route logic inline; derived state now lives in
+  `packages/dashboard/src/hooks/useOperatorTaskDerived.ts` and mutation/action
+  logic now lives in
+  `packages/dashboard/src/hooks/createOperatorTaskActions.ts`.
+- That split reduces the main hook's responsibility to store wiring,
+  fetch/sync effects, and composition, lowering the likelihood of future
+  cross-cutting regressions in the task route.
+- The lingering `vitest` ambiguity is now resolved to an environment issue, not
+  a repo code issue:
+  - `cd packages/dashboard && CI=1 ./node_modules/.bin/vitest run ...` still
+    fails because worker forks try to spawn
+    `C:\\Users\\eomsh\\.codex\\omx-host-shims\\node` and hit `ENOENT`
+  - `cd packages/dashboard && CI=1 '/mnt/c/Program Files/nodejs/node.exe' ./node_modules/vitest/vitest.mjs run --passWithNoTests`
+    now passes the full dashboard suite (`8` files / `46` tests)
+- Verified targeted examples for the same workaround:
+  - `src/ds/Badge.test.tsx` passes
+  - `src/components/ThreadBrowser.test.tsx` passes
+- Remaining meaningful frontend risks after this cleanup:
+  - full bilingual support is not complete yet because live payload-derived text
+    and utility surfaces like `Background CLI`, `Token Budget`, and
+    `Weekly Report` still remain mostly English
+  - route-level accessibility looks consistent after the `<main>` audit, but no
+    automated a11y check has been added
+
+## Secondary Locale + Test Script Stabilization 2026-04-09
+
+- `packages/dashboard/src/components/AgentFleetOverview.tsx`,
+  `AgentProfilePanel.tsx`, and `ProposalQueuePanel.tsx` now respect the shared
+  `ko` / `en` locale toggle for their static/operator-facing copy.
+- `packages/dashboard/src/components/ApprovalCenter.tsx`,
+  `ThreadBrowser.tsx`, and `ThreadDetail.tsx` now also respect the shared
+  locale toggle for their primary UI copy and empty/loading states.
+- The thread component tests were updated to match the new Korean default UI:
+  - `packages/dashboard/src/components/ThreadBrowser.test.tsx`
+  - `packages/dashboard/src/components/ThreadDetail.test.tsx`
+- A repo-local Vitest launcher now exists at
+  `packages/dashboard/scripts/run-vitest.cjs`. It resolves a real Node
+  executable first and then launches `vitest.mjs`, avoiding the broken
+  `omx-host-shims/node` worker path in this environment.
+- `packages/dashboard/package.json` now points its `test` script at that
+  wrapper, so the package can be tested through the normal package script path.
+- Verified commands for the stabilized test path:
+  - `cd packages/dashboard && node ./scripts/run-vitest.cjs --passWithNoTests`
+  - result: `8` files / `46` tests passed
+- The direct `vitest` binary path still reproduces the environment bug:
+  - `spawn C:\\Users\\eomsh\\.codex\\omx-host-shims\\node ENOENT`
+  - this is now explicitly an environment/runtime shim issue, not a failing
+    dashboard code path
+
+## Forward Bridge Browser Auth Facts
+
+- Browser-based live bridge fetches were failing even with a valid bearer token.
+- Shell-level `curl` to the same bridge/token returned `200`, while browser
+  fetches returned `403` and then `CORS` failures, proving the issue sat in the
+  browser auth/preflight path rather than repository state or token issuance.
+- `packages/dashboard/src/forward-bridge-auth.ts` now sends both:
+  - `Authorization: Bearer <token>`
+  - `X-Conitens-Forward-Token: <token>`
+- `scripts/ensemble_forward_bridge.py` now:
+  - accepts either bearer auth or `X-Conitens-Forward-Token`
+  - echoes requested auth headers back through `Access-Control-Allow-Headers`
+    for loopback preflight responses
+- `scripts/ensemble_approval.py` now emits canonical approval event types
+  directly instead of relying on unsupported legacy uppercase names.
+- `scripts/ensemble_allowed_events.py` now resolves the legacy approval and
+  execution-loop names still emitted by older Conitens paths, including
+  `APPROVAL_*`, `APPROVED`, `APPROVE_DENIED`, `WORKER_EXECUTED`,
+  `VALIDATOR_*`, `REFLECTION_RECORDED`, and `INSIGHT_EXTRACTED`.
+- `scripts/ensemble_insight_extractor.py` now treats mirrored ops-event writes
+  as best-effort so unsupported telemetry cannot abort insight extraction.
+- Raw-fetch dashboard surfaces that were still hand-rolling auth headers now
+  use the shared auth helper, including threads, agent detail/list, approvals,
+  background CLI, token budget, weekly report, and stream helpers.
+- Ad hoc Python verification now confirms the fallback header path:
+  `GET /api/runs` with `X-Conitens-Forward-Token` returns `200`.
+- Fresh Playwright live evidence now exists showing successful live operator
+  loads against a real bridge on port `8799`:
+  - `output/playwright/live-bridge-verify-2026-04-09/.playwright-cli/page-2026-04-09T06-21-58-171Z.png`
+  - `output/playwright/live-bridge-verify-2026-04-09/.playwright-cli/page-2026-04-09T06-22-29-890Z.png`
+  - `output/playwright/live-bridge-verify-2026-04-09/.playwright-cli/page-2026-04-09T06-22-46-423Z.png`
+- Python verification now passes for:
+  - `tests.test_forward_bridge`
+  - `tests.test_forward_live_approval`
+  - targeted `tests.test_approval_controls.ApprovalControlTests.test_audit_trail_is_persisted`
+- `test_approval_decision_and_resume_round_trip` now uses a `20s` timeout for
+  the resume call because the real approved-resume path completes correctly but
+  crossed the original `10s` threshold in this environment.
+
 ## Verified Repo Facts
 
 - Root package manager is `pnpm@9.15.0`.

@@ -1,0 +1,93 @@
+.toolbar {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  padding: 16px;
+}
+
+.filterRow,
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+.filterRow label,
+.presetForm label,
+.rationaleLabel {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.filterRow label span,
+.presetForm label span,
+.rationaleLabel span,
+.metaLabel {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+}
+
+.filterRow input,
+.filterRow select,
+.presetForm input,
+.rationaleLabel textarea {
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--co-color-text-primary);
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.rationaleLabel textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.presetForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+.chipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chipButton {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--co-color-text-primary);
+  font: inherit;
+}
+
+.railRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.railRow input {
+  margin-top: 18px;
+}
+
+.message {
+  margin: 0;
+  color: var(--co-color-text-secondary);
+}
+
+.danger {
+  color: var(--co-color-status-danger);
+}

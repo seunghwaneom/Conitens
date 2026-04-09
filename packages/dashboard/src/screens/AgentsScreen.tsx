@@ -15,10 +15,13 @@ import {
   demoEvolution,
   demoLearningMetrics,
 } from "../evolution-model.js";
+import { pickText } from "../i18n.js";
+import { useUiStore } from "../store/ui-store.js";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 
 export function AgentsScreen() {
+  const locale = useUiStore((state) => state.locale);
   const config = useDashboardStore((s) => s.config);
   const liveRevision = useDashboardStore((s) => s.liveRevision);
   const isDemo = !config.token.trim();
@@ -85,28 +88,30 @@ export function AgentsScreen() {
           className={`forward-tab${agentView === "fleet" ? " active" : ""}`}
           onClick={() => setAgentView("fleet")}
         >
-          Fleet
+          {pickText(locale, { ko: "플릿", en: "Fleet" })}
         </button>
         <button
           className={`forward-tab${agentView === "graph" ? " active" : ""}`}
           onClick={() => setAgentView("graph")}
           disabled={!isDemo}
         >
-          Relationships
+          {pickText(locale, { ko: "관계", en: "Relationships" })}
         </button>
       </div>
       {!isDemo && agentsState === "loading" ? (
-        <p className="forward-empty">Loading agent roster...</p>
+        <p className="forward-empty">{pickText(locale, { ko: "에이전트 roster 로딩 중…", en: "Loading agent roster…" })}</p>
       ) : null}
       {!isDemo && agentsState === "error" ? (
         <p className="forward-error">{agentsError}</p>
       ) : null}
       {!isDemo && agentsState === "ready" && agentProfiles.length === 0 ? (
         <div className="forward-placeholder">
-          <h3>No operator agents projected</h3>
+          <h3>{pickText(locale, { ko: "프로젝션된 운영자 에이전트가 없습니다", en: "No operator agents projected" })}</h3>
           <p>
-            No agent identifiers have been derived from the current forward
-            state yet.
+            {pickText(locale, {
+              ko: "현재 forward state에서 아직 에이전트 식별자가 도출되지 않았습니다.",
+              en: "No agent identifiers have been derived from the current forward state yet.",
+            })}
           </p>
         </div>
       ) : null}
@@ -143,11 +148,13 @@ export function AgentsScreen() {
       ) : agentsState === "ready" && agentProfiles.length > 0 ? (
         <div className="forward-placeholder">
           <h3>
-            Live relationship graph and proposal queue are still deferred
+            {pickText(locale, { ko: "라이브 관계 그래프와 proposal queue는 아직 보류 상태입니다", en: "Live relationship graph and proposal queue are still deferred" })}
           </h3>
           <p>
-            The roster is now live. Graph and proposal/evolution projections
-            will follow in a later slice.
+            {pickText(locale, {
+              ko: "현재 roster는 live 상태입니다. 그래프와 proposal/evolution projection은 후속 slice에서 추가됩니다.",
+              en: "The roster is now live. Graph and proposal/evolution projections will follow in a later slice.",
+            })}
           </p>
         </div>
       ) : null}
