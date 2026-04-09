@@ -1,0 +1,92 @@
+.panel {
+  padding: var(--co-space-6);
+}
+
+.heading {
+  margin: 0 0 var(--co-space-4);
+  font-size: 1.25rem;
+  color: var(--co-color-text-primary);
+}
+
+.agentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+}
+
+.agentLink {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-3);
+  padding: var(--co-space-3) var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  text-decoration: none;
+  color: var(--co-color-text-primary);
+}
+
+.roleBadge {
+  padding: var(--co-space-1) var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: var(--co-color-bg-base);
+}
+
+.roleSupervisor {
+  color: var(--co-color-accent-default);
+  border: 1px solid var(--co-color-accent-muted);
+}
+
+.roleRecorder {
+  color: var(--co-color-status-info);
+  border: 1px solid currentColor;
+}
+
+.roleImprover {
+  color: var(--co-color-status-success);
+  border: 1px solid currentColor;
+}
+
+.roleWorker {
+  color: var(--co-color-text-primary);
+  border: 1px solid var(--co-color-line-default);
+}
+
+.agentInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.agentId {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.agentPersona {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin-top: 2px;
+}
+
+.skillsCount {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+}
+
+.statusBadge {
+  padding: var(--co-space-1) var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.6875rem;
+}
+
+.statusActive {
+  background: var(--co-color-status-success-muted);
+  color: var(--co-color-status-success);
+}
+
+.statusInactive {
+  background: var(--co-color-bg-soft);
+  color: var(--co-color-text-muted);
+}

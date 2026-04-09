@@ -1,0 +1,72 @@
+/* ThreadDetail — CSS Module using --co-* design tokens */
+
+.panel {
+  padding: var(--co-space-6);
+}
+
+.backLink {
+  color: var(--co-color-accent-default);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  margin-bottom: var(--co-space-3);
+  display: inline-block;
+}
+
+.heading {
+  margin: var(--co-space-2) 0 var(--co-space-1);
+  font-size: 1.125rem;
+  color: var(--co-color-text-primary);
+}
+
+.badgeRow {
+  display: flex;
+  gap: var(--co-space-2);
+  margin-bottom: var(--co-space-4);
+  flex-wrap: wrap;
+}
+
+.metaSection {
+  margin-bottom: var(--co-space-2);
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+}
+
+.participantsLabel {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin-bottom: var(--co-space-1);
+}
+
+.participantRow {
+  display: flex;
+  gap: var(--co-space-2);
+  flex-wrap: wrap;
+}
+
+.messagesHeading {
+  margin: var(--co-space-5) 0 var(--co-space-2);
+  font-size: 0.9375rem;
+  color: var(--co-color-text-primary);
+}
+
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+}
+
+.messageItem {
+  padding: var(--co-space-2) var(--co-space-3);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.8125rem;
+  color: var(--co-color-text-primary);
+  line-height: 1.5;
+}
+
+.timestamps {
+  margin-bottom: var(--co-space-2);
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+}

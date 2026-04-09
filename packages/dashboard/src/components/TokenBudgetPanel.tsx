@@ -1,16 +1,6 @@
 import { useState, useEffect } from "react";
-
-const C = {
-  bg: "#0d1117",
-  card: "#161b22",
-  border: "#30363d",
-  text: "#e6edf3",
-  muted: "#8b949e",
-  green: "#3fb950",
-  yellow: "#d29922",
-  red: "#f85149",
-  accent: "#58a6ff",
-} as const;
+import { Button, EmptyState, LoadingState, ErrorDisplay } from "../ds/index.js";
+import styles from "./TokenBudgetPanel.module.css";
 
 interface CompressionTier {
   tier: "L0" | "L1" | "L2";
@@ -41,10 +31,22 @@ export interface TokenBudgetPanelProps {
   token: string;
 }
 
-function utilizationColor(pct: number): string {
-  if (pct < 50) return C.green;
-  if (pct <= 80) return C.yellow;
-  return C.red;
+function utilizationLevel(pct: number): "low" | "mid" | "high" {
+  if (pct < 50) return "low";
+  if (pct <= 80) return "mid";
+  return "high";
+}
+
+function utilizationValueClass(pct: number): string {
+  if (pct < 50) return styles.cardValueSuccess;
+  if (pct <= 80) return styles.cardValueWarning;
+  return styles.cardValueDanger;
+}
+
+function utilizationPctClass(pct: number): string {
+  if (pct < 50) return styles.utilPctLow;
+  if (pct <= 80) return styles.utilPctMid;
+  return styles.utilPctHigh;
 }
 
 function fmt(n: number): string {
@@ -122,132 +124,93 @@ export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
       });
   }
 
-  const panelStyle: React.CSSProperties = {
-    background: C.bg,
-    color: C.text,
-    fontFamily: "inherit",
-    padding: "20px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  };
-
-  const cardStyle: React.CSSProperties = {
-    background: C.card,
-    border: `1px solid ${C.border}`,
-    borderRadius: "8px",
-    padding: "16px",
-  };
-
   if (loading) {
     return (
-      <div style={panelStyle}>
-        <p style={{ color: C.muted }}>Loading token budget...</p>
+      <div className={styles.panel}>
+        <LoadingState message="Loading token budget..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={panelStyle}>
-        <p style={{ color: C.red }}>Error: {error}</p>
+      <div className={styles.panel}>
+        <ErrorDisplay message={`Error: ${error}`} />
       </div>
     );
   }
 
-  if (!data) return null;
+  if (!data) return <EmptyState message="No budget data available." />;
 
-  const utilColor = utilizationColor(data.utilizationPct);
+  const level = utilizationLevel(data.utilizationPct);
+  const utilValClass = utilizationValueClass(data.utilizationPct);
 
   return (
-    <div style={panelStyle}>
+    <div className={styles.panel}>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div className={styles.header}>
         <div>
-          <p style={{ color: C.muted, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0 }}>
+          <p className={styles.sectionLabel}>
             Batch 4 — Token Optimization
           </p>
-          <h3 style={{ margin: "4px 0 0", fontSize: "16px", fontWeight: 600 }}>Token Budget</h3>
+          <h3 className={styles.sectionTitle}>Token Budget</h3>
         </div>
-        <button
+        <Button
+          variant="secondary"
           onClick={handleRefresh}
           disabled={refreshing}
-          style={{
-            background: refreshing ? C.border : C.card,
-            border: `1px solid ${C.border}`,
-            borderRadius: "6px",
-            color: refreshing ? C.muted : C.accent,
-            cursor: refreshing ? "not-allowed" : "pointer",
-            fontSize: "12px",
-            padding: "6px 12px",
-          }}
         >
           {refreshing ? "Refreshing..." : "Refresh Summary"}
-        </button>
+        </Button>
       </div>
 
       {/* Budget summary cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+      <div className={styles.summaryGrid}>
         {[
-          { label: "Total Budget", value: fmt(data.totalBudget) },
-          { label: "Used", value: fmt(data.usedTokens), color: utilColor },
-          { label: "Remaining", value: fmt(data.remainingTokens) },
-          { label: "Utilization", value: `${data.utilizationPct.toFixed(1)}%`, color: utilColor },
-        ].map(({ label, value, color }) => (
-          <div key={label} style={cardStyle}>
-            <p style={{ color: C.muted, fontSize: "11px", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              {label}
-            </p>
-            <strong style={{ fontSize: "20px", color: color ?? C.text }}>{value}</strong>
+          { label: "Total Budget", value: fmt(data.totalBudget), valueClass: styles.cardValue },
+          { label: "Used", value: fmt(data.usedTokens), valueClass: `${styles.cardValue} ${utilValClass}` },
+          { label: "Remaining", value: fmt(data.remainingTokens), valueClass: styles.cardValue },
+          { label: "Utilization", value: `${data.utilizationPct.toFixed(1)}%`, valueClass: `${styles.cardValue} ${utilValClass}` },
+        ].map(({ label, value, valueClass }) => (
+          <div key={label} className={styles.card}>
+            <p className={styles.cardLabel}>{label}</p>
+            <strong className={valueClass}>{value}</strong>
           </div>
         ))}
       </div>
 
       {/* Utilization bar */}
-      <div style={cardStyle}>
-        <p style={{ color: C.muted, fontSize: "12px", margin: "0 0 8px" }}>Budget utilization</p>
-        <div style={{ background: C.border, borderRadius: "4px", height: "8px", overflow: "hidden" }}>
+      <div className={styles.card}>
+        <p className={styles.utilLabel}>Budget utilization</p>
+        <div className={styles.utilBar}>
           <div
-            style={{
-              width: `${Math.min(data.utilizationPct, 100)}%`,
-              height: "100%",
-              background: utilColor,
-              borderRadius: "4px",
-              transition: "width 0.4s ease",
-            }}
+            className={styles.utilFill}
+            data-level={level}
+            ref={(el) => { if (el) el.style.setProperty('--util-pct', `${Math.min(data.utilizationPct, 100)}%`); }}
           />
         </div>
-        <p style={{ color: utilColor, fontSize: "11px", margin: "6px 0 0", textAlign: "right" }}>
+        <p className={`${styles.utilPct} ${utilizationPctClass(data.utilizationPct)}`}>
           {data.utilizationPct.toFixed(1)}% used
         </p>
       </div>
 
       {/* Compression tiers */}
-      <div style={cardStyle}>
-        <p style={{ color: C.muted, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 12px" }}>
+      <div className={styles.card}>
+        <p className={styles.tierSectionLabel}>
           Compression Tiers
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div className={styles.tierList}>
           {data.compressionTiers.map((tier) => (
-            <div key={tier.tier} style={{ display: "grid", gridTemplateColumns: "60px 1fr 80px 80px 60px", alignItems: "center", gap: "12px" }}>
+            <div key={tier.tier} className={styles.tierGrid}>
               <span
-                style={{
-                  background: tier.tier === "L0" ? "#2d333b" : tier.tier === "L1" ? "#1f2d3d" : "#1a2d1a",
-                  border: `1px solid ${C.border}`,
-                  borderRadius: "4px",
-                  color: tier.tier === "L2" ? C.green : C.accent,
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  padding: "2px 6px",
-                  textAlign: "center",
-                }}
+                className={`${styles.tierBadge} ${tier.tier === "L2" ? styles.tierBadgeSuccess : styles.tierBadgeDefault}`}
               >
                 {tier.tier}
               </span>
-              <span style={{ color: C.muted, fontSize: "12px" }}>{tierDesc[tier.tier]}</span>
-              <span style={{ color: C.text, fontSize: "12px", textAlign: "right" }}>in: {fmt(tier.inputTokens)}</span>
-              <span style={{ color: C.text, fontSize: "12px", textAlign: "right" }}>out: {fmt(tier.outputTokens)}</span>
-              <span style={{ color: tier.ratio >= 2 ? C.green : C.muted, fontSize: "12px", textAlign: "right", fontWeight: 600 }}>
+              <span className={styles.tierDesc}>{tierDesc[tier.tier]}</span>
+              <span className={styles.tierValue}>in: {fmt(tier.inputTokens)}</span>
+              <span className={styles.tierValue}>out: {fmt(tier.outputTokens)}</span>
+              <span className={`${styles.tierRatio} ${tier.ratio >= 2 ? styles.tierRatioHigh : styles.tierRatioLow}`}>
                 {tier.ratio.toFixed(1)}x
               </span>
             </div>
@@ -256,17 +219,17 @@ export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
       </div>
 
       {/* Per-agent breakdown */}
-      <div style={cardStyle}>
-        <p style={{ color: C.muted, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 12px" }}>
+      <div className={styles.card}>
+        <p className={styles.tierSectionLabel}>
           Per-Agent Breakdown
         </p>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+        <table className={styles.agentTable}>
           <thead>
-            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            <tr>
               {["Agent", "Tokens Used", "Tier", "Last Refresh"].map((h) => (
                 <th
                   key={h}
-                  style={{ color: C.muted, fontWeight: 500, padding: "4px 8px", textAlign: h === "Agent" ? "left" : "right" }}
+                  className={`${styles.th} ${h === "Agent" ? styles.thLeft : styles.thRight}`}
                 >
                   {h}
                 </th>
@@ -275,25 +238,17 @@ export function TokenBudgetPanel({ apiBase, token }: TokenBudgetPanelProps) {
           </thead>
           <tbody>
             {data.agents.map((row) => (
-              <tr key={row.agentId} style={{ borderBottom: `1px solid ${C.border}` }}>
-                <td style={{ color: C.text, padding: "8px 8px", fontFamily: "monospace" }}>{row.agentId}</td>
-                <td style={{ color: C.text, padding: "8px 8px", textAlign: "right" }}>{fmt(row.tokensUsed)}</td>
-                <td style={{ padding: "8px 8px", textAlign: "right" }}>
+              <tr key={row.agentId} className={styles.tr}>
+                <td className={`${styles.td} ${styles.agentId}`}>{row.agentId}</td>
+                <td className={`${styles.td} ${styles.tdRight}`}>{fmt(row.tokensUsed)}</td>
+                <td className={`${styles.td} ${styles.tdRight}`}>
                   <span
-                    style={{
-                      background: row.compressionTier === "L2" ? "#1a2d1a" : "#1f2d3d",
-                      border: `1px solid ${C.border}`,
-                      borderRadius: "4px",
-                      color: row.compressionTier === "L2" ? C.green : C.accent,
-                      fontSize: "10px",
-                      fontWeight: 600,
-                      padding: "1px 5px",
-                    }}
+                    className={`${styles.inlineBadge} ${row.compressionTier === "L2" ? styles.inlineBadgeSuccess : styles.inlineBadgeDefault}`}
                   >
                     {row.compressionTier}
                   </span>
                 </td>
-                <td style={{ color: C.muted, padding: "8px 8px", textAlign: "right" }}>{timeAgo(row.lastRefresh)}</td>
+                <td className={`${styles.td} ${styles.tdRight} ${styles.tdMuted}`}>{timeAgo(row.lastRefresh)}</td>
               </tr>
             ))}
           </tbody>

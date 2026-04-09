@@ -1,0 +1,86 @@
+.board {
+  display: flex;
+  gap: var(--co-space-3);
+  overflow-x: auto;
+  padding: var(--co-space-4);
+  min-height: 400px;
+}
+
+.column {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+  border-radius: var(--co-radius-md);
+  background: var(--co-color-bg-raised);
+  padding: var(--co-space-3);
+}
+
+.columnOver {
+  background: var(--co-color-accent-muted);
+}
+
+.columnHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--co-space-2) var(--co-space-3);
+  border-top: 2px solid var(--column-color, var(--co-color-line-default));
+  font-family: var(--co-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.columnCount {
+  font-family: var(--co-font-mono);
+  font-size: 11px;
+  color: var(--co-color-text-muted);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+  flex: 1;
+}
+
+.empty {
+  color: var(--co-color-text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: var(--co-space-4);
+}
+
+.card {
+  padding: var(--co-space-3);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  cursor: grab;
+  font-family: var(--co-font-ui);
+}
+
+.cardDragging {
+  opacity: 0.5;
+}
+
+.cardTitle {
+  font-family: var(--co-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cardLink {
+  cursor: pointer;
+}
+
+.cardLink:hover {
+  color: var(--co-color-accent-default);
+}
+
+.cardMeta {
+  font-size: 11px;
+  color: var(--co-color-text-muted);
+  margin-top: var(--co-space-1);
+}

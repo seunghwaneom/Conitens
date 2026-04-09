@@ -9,6 +9,8 @@ import {
   type ForwardBridgeConfig,
 } from "../forward-bridge.js";
 import { pickNextApprovalId } from "../forward-view-model.js";
+import { Badge, EmptyState, ErrorDisplay, LoadingState } from "../ds/index.js";
+import styles from "./ForwardApprovalCenterPanel.module.css";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 
@@ -64,14 +66,14 @@ export function ForwardApprovalCenterPanel({
         setSelectedApprovalId((current) => pickNextApprovalId(current, payload.approvals));
         setListState("ready");
       })
-      .catch((err: Error) => {
+      .catch((err: unknown) => {
         if (cancelled) {
           return;
         }
         setApprovals([]);
         setSelectedApprovalId(null);
         setListState("error");
-        setError(err.message);
+        setError(toErrorMessage(err));
       });
     return () => {
       cancelled = true;
@@ -91,7 +93,7 @@ export function ForwardApprovalCenterPanel({
           setSelectedApprovalId((current) => pickNextApprovalId(current, payload.approvals));
           setListState("ready");
         })
-        .catch((err: Error) => {
+        .catch((err: unknown) => {
           if (cancelled) return;
           setListState("error");
         });
@@ -119,13 +121,13 @@ export function ForwardApprovalCenterPanel({
         setSelectedApproval(payload);
         setDetailState("ready");
       })
-      .catch((err: Error) => {
+      .catch((err: unknown) => {
         if (cancelled) {
           return;
         }
         setSelectedApproval(null);
         setDetailState("error");
-        setError(err.message);
+        setError(toErrorMessage(err));
       });
     return () => {
       cancelled = true;
@@ -186,33 +188,33 @@ export function ForwardApprovalCenterPanel({
   const pendingCount = approvals.filter((a) => a.status === "pending").length;
 
   return (
-    <section className="forward-section">
-      <div className="forward-section-header">
-        <div>
-          <p className="forward-panel-label">Approvals</p>
-          <h3>
+    <section className={styles.section}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <p className={styles.label}>Approvals</p>
+          <h3 className={styles.title}>
             {heading}
-            {pendingCount > 0 ? <span className="badge danger">{pendingCount}</span> : null}
+            {pendingCount > 0 ? <Badge variant="danger">{pendingCount}</Badge> : null}
           </h3>
         </div>
-        <span className={`forward-state state-${listState}`}>{listState}</span>
+        <span className={styles.stateTag}>{listState}</span>
       </div>
-      {listState === "loading" ? <p className="forward-empty">Loading approvals...</p> : null}
-      {listState === "error" ? <p className="forward-error">{error}</p> : null}
+      {listState === "loading" ? <LoadingState message="Loading approvals..." /> : null}
+      {listState === "error" && error ? <ErrorDisplay message={error} /> : null}
       {listState === "ready" && approvals.length === 0 ? (
-        <p className="forward-empty">No approval records for this run.</p>
+        <EmptyState message="No approval records for this run." />
       ) : null}
       {approvals.length > 0 ? (
-        <div className="forward-approval-layout">
-          <div className="forward-approval-list">
+        <div className={styles.approvalLayout}>
+          <div className={styles.approvalList}>
             {approvals.map((approval) => (
               <button
                 key={approval.request_id}
-                className={`forward-approval-item${selectedApprovalId === approval.request_id ? " active" : ""}`}
+                className={`${styles.approvalItem}${selectedApprovalId === approval.request_id ? ` ${styles.approvalItemActive}` : ""}`}
                 onClick={() => setSelectedApprovalId(approval.request_id)}
                 type="button"
               >
-                <div className="forward-run-topline">
+                <div className={styles.runTopline}>
                   <strong>{approval.action_type}</strong>
                   <span>{approval.status}</span>
                 </div>
@@ -220,41 +222,41 @@ export function ForwardApprovalCenterPanel({
               </button>
             ))}
           </div>
-          <div className="forward-approval-detail">
-            {detailState === "loading" ? <p className="forward-empty">Loading approval detail...</p> : null}
-            {detailState === "error" ? <p className="forward-error">{error}</p> : null}
+          <div className={styles.approvalDetail}>
+            {detailState === "loading" ? <LoadingState message="Loading approval detail..." /> : null}
+            {detailState === "error" && error ? <ErrorDisplay message={error} /> : null}
             {selectedApproval ? (
               <>
-                <div className="forward-doc-header">
+                <div className={styles.docHeader}>
                   <strong>{selectedApproval.approval.action_type}</strong>
                   <span>{selectedApproval.approval.request_id}</span>
                 </div>
-                <div className="forward-approval-meta">
+                <div className={styles.approvalMeta}>
                   <span>Status: {selectedApproval.approval.status}</span>
                   <span>Reviewer: {selectedApproval.approval.reviewer || "n/a"}</span>
                   <span>Updated: {selectedApproval.approval.updated_at}</span>
                 </div>
                 <pre>{JSON.stringify(selectedApproval.approval.action_payload, null, 2)}</pre>
-                <label className="forward-approval-note">
+                <label className={styles.approvalNote}>
                   <span>Reviewer note</span>
                   <input value={reviewerNote} onChange={(event) => setReviewerNote(event.target.value)} />
                 </label>
-                <p className="forward-help">Reviewer identity is stamped by the local forward bridge, not by the browser.</p>
-                <div className="forward-approval-actions">
-                  <button className="approve-button" type="button" onClick={() => handleDecision("approved")}>
+                <p className={styles.helpText}>Reviewer identity is stamped by the local forward bridge, not by the browser.</p>
+                <div className={styles.approvalActions}>
+                  <button className={styles.approveButton} type="button" onClick={() => handleDecision("approved")}>
                     Approve
                   </button>
-                  <button className="deny-button" type="button" onClick={() => handleDecision("rejected")}>
+                  <button className={styles.denyButton} type="button" onClick={() => handleDecision("rejected")}>
                     Reject
                   </button>
                   {(selectedApproval.approval.status === "approved" || selectedApproval.approval.status === "edited") ? (
-                    <button className="forward-chip-button active" type="button" onClick={handleResume}>
+                    <button className={`${styles.chipButton} ${styles.chipButtonActive}`} type="button" onClick={handleResume}>
                       Resume
                     </button>
                   ) : null}
                 </div>
-                {actionState === "loading" ? <p className="forward-empty">Applying approval action...</p> : null}
-                {actionState === "error" ? <p className="forward-error">{error}</p> : null}
+                {actionState === "loading" ? <LoadingState message="Applying approval action..." /> : null}
+                {actionState === "error" && error ? <ErrorDisplay message={error} /> : null}
               </>
             ) : null}
           </div>

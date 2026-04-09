@@ -1,0 +1,45 @@
+.container {
+  padding: var(--co-space-4);
+  border: 1px solid var(--co-color-status-danger);
+  background: var(--co-color-bg-panel);
+}
+
+.kicker {
+  font-family: var(--co-font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--co-color-status-danger);
+  margin-bottom: var(--co-space-2);
+}
+
+.message {
+  font-family: var(--co-font-ui);
+  font-size: 0.875rem;
+  color: var(--co-color-text-primary);
+  font-weight: 600;
+}
+
+.retryButton {
+  margin-top: var(--co-space-3);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--co-space-2) var(--co-space-4);
+  border-radius: var(--co-radius-sm);
+  font-family: var(--co-font-ui);
+  font-size: 0.8125rem;
+  background: transparent;
+  color: var(--co-color-text-primary);
+  border: 1px solid var(--co-color-line-strong);
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: var(--co-color-bg-panel-muted);
+  border-color: var(--co-color-accent-default);
+}
+
+.retryButton:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+}

@@ -5,9 +5,7 @@
      1. Shared tokens (always active)
      2. Dark theme — Terminal DNA (default)
      3. Light theme — Mission Control
-     4. Compatibility aliases (--shell-* → --co-*)
-     5. Legacy light-theme aliases (from legacy.css :root)
-     6. Pixel Office tokens
+     4. Pixel Office tokens
    ========================================================================== */
 
 /* ==========================================================================
@@ -114,57 +112,10 @@
   --co-shadow-lg: 0 18px 40px rgba(38, 43, 34, 0.08);
 }
 
-/* ==========================================================================
-   4. COMPATIBILITY ALIASES — --shell-* → --co-*
-   Allows existing components using var(--shell-*) to keep working
-   ========================================================================== */
-:root {
-  --font-ui: var(--co-font-ui);
-  --font-mono-ui: var(--co-font-mono);
-  --shell-bg: var(--co-color-bg-base);
-  --shell-bg-raised: var(--co-color-bg-raised);
-  --shell-bg-soft: var(--co-color-bg-soft);
-  --shell-panel: var(--co-color-bg-panel);
-  --shell-panel-strong: var(--co-color-bg-panel-strong);
-  --shell-panel-muted: var(--co-color-bg-panel-muted);
-  --shell-line: var(--co-color-line-default);
-  --shell-line-strong: var(--co-color-line-strong);
-  --shell-text: var(--co-color-text-primary);
-  --shell-muted: var(--co-color-text-secondary);
-  --shell-accent: var(--co-color-accent-default);
-  --shell-accent-strong: var(--co-color-accent-strong);
-  --shell-success: var(--co-color-status-success);
-  --shell-warning: var(--co-color-status-warning);
-  --shell-danger: var(--co-color-status-danger);
-  --shell-shadow: var(--co-shadow-lg);
-}
+/* Compatibility aliases removed in Batch 8 — all consumers migrated to --co-* tokens */
 
 /* ==========================================================================
-   5. LEGACY LIGHT-THEME ALIASES — from legacy.css :root
-   Ensures legacy.css vars continue to resolve under the light theme
-   ========================================================================== */
-:root[data-theme="light"] {
-  --bg: var(--co-color-bg-base);
-  --bg-alt: var(--co-color-bg-raised);
-  --panel: var(--co-color-bg-panel);
-  --panel-strong: var(--co-color-bg-panel-strong);
-  --panel-muted: var(--co-color-bg-panel-muted);
-  --text: var(--co-color-text-primary);
-  --muted: var(--co-color-text-secondary);
-  --line: var(--co-color-line-default);
-  --line-strong: var(--co-color-line-strong);
-  --shadow: var(--co-shadow-lg);
-  --accent: var(--co-color-accent-default);
-  --accent-strong: var(--co-color-accent-strong);
-  --info: var(--co-color-status-info);
-  --amber: var(--co-color-status-warning);
-  --red: var(--co-color-status-danger);
-  --header: #141915;
-  --header-2: #1f2620;
-}
-
-/* ==========================================================================
-   6. PIXEL OFFICE TOKENS — preserved from legacy.css
+   4. PIXEL OFFICE TOKENS
    ========================================================================== */
 :root {
   --bg-cream: #f6f1e6;

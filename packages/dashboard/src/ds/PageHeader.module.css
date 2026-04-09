@@ -1,0 +1,38 @@
+.header {
+  margin-bottom: var(--co-space-6);
+}
+
+.eyebrow {
+  font-family: var(--co-font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--co-color-text-muted);
+  margin-bottom: var(--co-space-1);
+  margin-top: 0;
+}
+
+.title {
+  font-family: var(--co-font-ui);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.subtitle {
+  font-family: var(--co-font-ui);
+  font-size: 0.875rem;
+  color: var(--co-color-text-secondary);
+  margin-top: var(--co-space-1);
+  margin-bottom: 0;
+  line-height: 1.5;
+  max-width: 48ch;
+}
+
+.actions {
+  margin-top: var(--co-space-3);
+  display: flex;
+  gap: var(--co-space-2);
+}

@@ -1,0 +1,198 @@
+/* WeeklyReportPanel — CSS Module using --co-* design tokens */
+
+.panel {
+  padding: var(--co-space-6);
+  color: var(--co-color-text-primary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--co-space-5);
+}
+
+.headerLabel {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin-bottom: var(--co-space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.headerDate {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin-top: var(--co-space-1);
+}
+
+.navGroup {
+  display: flex;
+  gap: var(--co-space-2);
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--co-space-3);
+  margin-bottom: var(--co-space-6);
+}
+
+.statCard {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  padding: var(--co-space-3) var(--co-space-4);
+  text-align: center;
+}
+
+.statValue {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--co-color-text-primary);
+}
+
+.statValueDanger {
+  color: var(--co-color-status-danger);
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin-top: var(--co-space-1);
+}
+
+.section {
+  margin-bottom: var(--co-space-6);
+}
+
+.sectionTitle {
+  font-size: 0.9375rem;
+  color: var(--co-color-text-primary);
+  margin: 0 0 var(--co-space-3);
+  font-weight: 600;
+}
+
+.emptyText {
+  color: var(--co-color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.patternCard {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  padding: var(--co-space-3);
+  margin-bottom: var(--co-space-2);
+}
+
+.patternRow {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-3);
+  margin-bottom: var(--co-space-1);
+}
+
+.patternName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.patternCount {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-muted);
+}
+
+.patternExample {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  font-family: var(--co-font-mono);
+  word-break: break-all;
+}
+
+.proposalCard {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  padding: var(--co-space-3);
+  margin-bottom: var(--co-space-2);
+}
+
+.proposalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+}
+
+.proposalBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.proposalId {
+  font-size: 0.75rem;
+  color: var(--co-color-accent-default);
+  font-family: var(--co-font-mono);
+}
+
+.proposalDesc {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-primary);
+  margin-top: var(--co-space-1);
+}
+
+.proposalDate {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  white-space: nowrap;
+}
+
+.proposalImpact {
+  font-size: 0.75rem;
+  color: var(--co-color-status-success);
+  margin-top: var(--co-space-1);
+}
+
+.rankTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.th {
+  text-align: left;
+  padding: var(--co-space-1) var(--co-space-3);
+  color: var(--co-color-text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--co-color-line-default);
+}
+
+.td {
+  padding: var(--co-space-2) var(--co-space-3);
+  color: var(--co-color-text-primary);
+  border-bottom: 1px solid var(--co-color-bg-soft);
+}
+
+.agentId {
+  color: var(--co-color-accent-default);
+  font-family: var(--co-font-mono);
+}
+
+.rateHigh {
+  color: var(--co-color-status-success);
+}
+
+.rateMid {
+  color: var(--co-color-status-warning);
+}
+
+.rateLow {
+  color: var(--co-color-status-danger);
+}

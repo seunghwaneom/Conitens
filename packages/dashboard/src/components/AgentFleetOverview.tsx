@@ -1,5 +1,5 @@
-import React from "react";
 import type { AgentProfile, AgentLifecycleStatus } from "../agent-fleet-model.js";
+import styles from "./AgentFleetOverview.module.css";
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -14,22 +14,22 @@ function timeAgo(iso: string): string {
 
 function statusDotClass(status: AgentLifecycleStatus): string {
   switch (status) {
-    case "running": return "agent-status-dot dot-running";
+    case "running": return `${styles.statusDot} ${styles.dotRunning}`;
     case "assigned":
-    case "idle": return "agent-status-dot dot-idle";
-    case "paused": return "agent-status-dot dot-paused";
-    case "dormant": return "agent-status-dot dot-dormant";
-    case "retired": return "agent-status-dot dot-retired";
+    case "idle": return `${styles.statusDot} ${styles.dotIdle}`;
+    case "paused": return `${styles.statusDot} ${styles.dotPaused}`;
+    case "dormant": return `${styles.statusDot} ${styles.dotDormant}`;
+    case "retired": return `${styles.statusDot} ${styles.dotRetired}`;
   }
 }
 
-function roleToneClass(role: AgentProfile["role"]): string {
+function roleBadgeClass(role: AgentProfile["role"]): string {
   switch (role) {
-    case "orchestrator": return "badge badge-orch";
-    case "implementer": return "badge badge-impl";
-    case "researcher": return "badge badge-rsch";
-    case "reviewer": return "badge badge-revw";
-    case "validator": return "badge badge-vald";
+    case "orchestrator": return `${styles.badge} ${styles.badgeOrch}`;
+    case "implementer": return `${styles.badge} ${styles.badgeImpl}`;
+    case "researcher": return `${styles.badge} ${styles.badgeRsch}`;
+    case "reviewer": return `${styles.badge} ${styles.badgeRevw}`;
+    case "validator": return `${styles.badge} ${styles.badgeVald}`;
   }
 }
 
@@ -46,48 +46,48 @@ export function AgentFleetOverview({ agents, selectedAgentId, onSelectAgent }: A
   const retiredCount = agents.filter(a => a.status === "retired").length;
 
   return (
-    <div className="agent-fleet-overview">
-      <div className="agent-fleet-metrics">
-        <div className="agent-metric-item">
-          <span className="agent-metric-label">Total</span>
-          <strong className="agent-metric-value">{totalCount}</strong>
+    <div className={styles.fleetOverview}>
+      <div className={styles.metrics}>
+        <div className={styles.metricItem}>
+          <span className={styles.metricLabel}>Total</span>
+          <strong className={styles.metricValue}>{totalCount}</strong>
         </div>
-        <div className="agent-metric-item">
-          <span className="agent-metric-label">Active</span>
-          <strong className="agent-metric-value agent-metric-active">{activeCount}</strong>
+        <div className={styles.metricItem}>
+          <span className={styles.metricLabel}>Active</span>
+          <strong className={`${styles.metricValue} ${styles.metricActive}`}>{activeCount}</strong>
         </div>
-        <div className="agent-metric-item">
-          <span className="agent-metric-label">Paused</span>
-          <strong className="agent-metric-value agent-metric-paused">{pausedCount}</strong>
+        <div className={styles.metricItem}>
+          <span className={styles.metricLabel}>Paused</span>
+          <strong className={`${styles.metricValue} ${styles.metricPaused}`}>{pausedCount}</strong>
         </div>
-        <div className="agent-metric-item">
-          <span className="agent-metric-label">Retired</span>
-          <strong className="agent-metric-value agent-metric-retired">{retiredCount}</strong>
+        <div className={styles.metricItem}>
+          <span className={styles.metricLabel}>Retired</span>
+          <strong className={`${styles.metricValue} ${styles.metricRetired}`}>{retiredCount}</strong>
         </div>
       </div>
 
-      <div className="agent-fleet-grid">
+      <div className={styles.grid}>
         {agents.map(agent => (
           <button
             key={agent.id}
-            className={`agent-card${selectedAgentId === agent.id ? " active" : ""}`}
+            className={`${styles.agentCard}${selectedAgentId === agent.id ? ` ${styles.agentCardActive}` : ""}`}
             onClick={() => onSelectAgent(agent.id)}
           >
-            <div className="agent-card-header">
-              <div className="agent-card-identity">
+            <div className={styles.cardHeader}>
+              <div className={styles.cardIdentity}>
                 <span className={statusDotClass(agent.status)} />
-                <strong className="agent-card-name">{agent.name}</strong>
+                <strong className={styles.cardName}>{agent.name}</strong>
               </div>
-              <span className={roleToneClass(agent.role)}>{agent.role}</span>
+              <span className={roleBadgeClass(agent.role)}>{agent.role}</span>
             </div>
-            <p className="agent-card-archetype">{agent.archetype}</p>
-            <div className="agent-card-stats">
+            <p className={styles.cardArchetype}>{agent.archetype}</p>
+            <div className={styles.cardStats}>
               <span>{agent.taskCount} tasks</span>
               <span>{agent.memoryCount} mem</span>
               <span>{(agent.errorRate * 100).toFixed(0)}% err</span>
               {typeof agent.pendingApprovals === "number" ? <span>{agent.pendingApprovals} approvals</span> : null}
             </div>
-            <p className="agent-card-last-active">{timeAgo(agent.lastActive)}</p>
+            <p className={styles.cardLastActive}>{timeAgo(agent.lastActive)}</p>
           </button>
         ))}
       </div>

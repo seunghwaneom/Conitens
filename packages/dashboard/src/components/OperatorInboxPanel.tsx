@@ -1,4 +1,6 @@
 import type { OperatorInboxItemViewModel } from "../operator-inbox-model.js";
+import { EmptyState, ErrorDisplay, LoadingState, Badge } from "../ds/index.js";
+import styles from "./OperatorInboxPanel.module.css";
 
 type PanelState = "idle" | "loading" | "ready" | "error";
 
@@ -8,16 +10,23 @@ interface OperatorInboxPanelProps {
   error: string | null;
 }
 
+const TONE_STYLE: Record<string, string> = {
+  warning: styles.toneWarning,
+  danger: styles.toneDanger,
+  info: styles.toneInfo,
+  neutral: styles.toneNeutral,
+};
+
 export function OperatorInboxPanel({ items, state, error }: OperatorInboxPanelProps) {
   if (state === "loading") {
-    return <p className="forward-empty">Loading operator inbox...</p>;
+    return <LoadingState message="Loading operator inbox..." />;
   }
   if (state === "error") {
-    return <p className="forward-error">{error}</p>;
+    return <ErrorDisplay message={error ?? "Unknown error"} />;
   }
   if (state === "idle") {
     return (
-      <div className="forward-placeholder">
+      <div className={styles.placeholder}>
         <h3>Operator inbox placeholder</h3>
         <p>Connect to a live bridge to load actionable operator attention items.</p>
       </div>
@@ -25,7 +34,7 @@ export function OperatorInboxPanel({ items, state, error }: OperatorInboxPanelPr
   }
   if (items.length === 0) {
     return (
-      <div className="forward-placeholder">
+      <div className={styles.placeholder}>
         <h3>Inbox is clear</h3>
         <p>No approvals, validator failures, blocked handoffs, or stale runs are currently projected.</p>
       </div>
@@ -33,36 +42,39 @@ export function OperatorInboxPanel({ items, state, error }: OperatorInboxPanelPr
   }
 
   return (
-    <div className="forward-detail-body">
-      <div className="forward-detail-hero">
+    <div className={styles.detailBody}>
+      <div className={styles.detailHero}>
         <div>
-          <p className="forward-detail-label">Operator inbox</p>
+          <p className={styles.detailLabel}>Operator inbox</p>
           <h3>Action queue</h3>
           <p>{items.length} projected attention item{items.length === 1 ? "" : "s"}</p>
         </div>
-        <span className="forward-status-pill">attention</span>
+        <Badge variant="warning">attention</Badge>
       </div>
-      <div className="forward-run-list">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`forward-run-item active tone-${item.tone}`}
-            onClick={() => {
-              window.location.hash = item.targetHash;
-            }}
-          >
-            <div className="forward-run-topline">
-              <strong>{item.title}</strong>
-              <span>{item.tone}</span>
-            </div>
-            <p>{item.detail}</p>
-            <div className="forward-metric-row">
-              <span>{item.meta}</span>
-              <span>{item.actionLabel}</span>
-            </div>
-          </button>
-        ))}
+      <div className={styles.runList}>
+        {items.map((item) => {
+          const toneClass = TONE_STYLE[item.tone] ?? styles.toneNeutral;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`${styles.runItem} ${styles.runItemActive} ${toneClass}`}
+              onClick={() => {
+                window.location.hash = item.targetHash;
+              }}
+            >
+              <div className={styles.runTopline}>
+                <strong>{item.title}</strong>
+                <span>{item.tone}</span>
+              </div>
+              <p>{item.detail}</p>
+              <div className={styles.metricRow}>
+                <span>{item.meta}</span>
+                <span>{item.actionLabel}</span>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

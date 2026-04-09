@@ -1,5 +1,7 @@
 import type { ForwardRoomTimelineResponse } from "../forward-bridge.js";
 import type { RoomOptionViewModel } from "../forward-view-model.js";
+import { EmptyState, ErrorDisplay, LoadingState } from "../ds/index.js";
+import styles from "./ForwardRoomPanel.module.css";
 
 export function ForwardRoomPanel({
   roomOptions,
@@ -17,23 +19,23 @@ export function ForwardRoomPanel({
   error: string | null;
 }) {
   return (
-    <section className="forward-section">
-      <div className="forward-section-header">
-        <div>
-          <p className="forward-panel-label">Spatial Lens</p>
-          <h3>Room timeline</h3>
+    <section className={styles.section}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <p className={styles.label}>Spatial Lens</p>
+          <h3 className={styles.title}>Room timeline</h3>
         </div>
-        <span className={`forward-state state-${state}`}>{state}</span>
+        <span className={styles.stateTag}>{state}</span>
       </div>
       {roomOptions.length === 0 ? (
-        <p className="forward-empty">No room timeline available for this run.</p>
+        <EmptyState message="No room timeline available for this run." />
       ) : (
         <>
-          <div className="forward-room-selector">
+          <div className={styles.roomSelector}>
             {roomOptions.map((room) => (
               <button
                 key={room.roomId}
-                className={`forward-chip-button${selectedRoomId === room.roomId ? " active" : ""}`}
+                className={`${styles.chipButton}${selectedRoomId === room.roomId ? ` ${styles.chipButtonActive}` : ""}`}
                 onClick={() => onSelectRoom(room.roomId)}
                 type="button"
               >
@@ -41,17 +43,17 @@ export function ForwardRoomPanel({
               </button>
             ))}
           </div>
-          {state === "loading" ? <p className="forward-empty">Loading room timeline...</p> : null}
-          {state === "error" ? <p className="forward-error">{error}</p> : null}
+          {state === "loading" ? <LoadingState message="Loading room timeline..." /> : null}
+          {state === "error" && error ? <ErrorDisplay message={error} /> : null}
           {state === "ready" && roomTimeline ? (
-            <ol className="forward-timeline">
+            <ol className={styles.timeline}>
               {roomTimeline.timeline.map((item, index) => (
-                <li key={`${item.timestamp}-${item.kind}-${index}`}>
-                  <div className="forward-timeline-topline">
+                <li key={`${item.timestamp}-${item.kind}-${index}`} className={styles.timelineItem}>
+                  <div className={styles.timelineTopline}>
                     <strong>{item.kind}</strong>
                     <span>{item.timestamp}</span>
                   </div>
-                  <p>{item.summary}</p>
+                  <p className={styles.timelineSummary}>{item.summary}</p>
                 </li>
               ))}
             </ol>

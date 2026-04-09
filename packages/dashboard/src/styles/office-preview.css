@@ -1,5 +1,5 @@
 .forward-shell-preview .forward-header {
-  border-bottom-color: var(--shell-line);
+  border-bottom-color: var(--co-color-line-default);
   background: none;
 }
 
@@ -7,13 +7,13 @@
 .forward-shell-preview .forward-eyebrow,
 .forward-shell-preview .forward-panel-label,
 .forward-shell-preview .forward-detail-label {
-  color: var(--shell-muted);
+  color: var(--co-color-text-secondary);
 }
 
 .forward-shell-preview .forward-chip,
 .forward-shell-preview .forward-state,
 .forward-shell-preview .forward-status-pill {
-  border-color: var(--shell-line);
+  border-color: var(--co-color-line-default);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(237, 243, 251, 0.76);
 }

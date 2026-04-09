@@ -1,0 +1,246 @@
+/* TokenBudgetPanel — CSS Module using --co-* design tokens */
+
+.panel {
+  color: var(--co-color-text-primary);
+  padding: var(--co-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-5);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sectionLabel {
+  color: var(--co-color-text-muted);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.sectionTitle {
+  margin: var(--co-space-1) 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--co-space-3);
+}
+
+.card {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  padding: var(--co-space-4);
+}
+
+.cardLabel {
+  color: var(--co-color-text-muted);
+  font-size: 0.6875rem;
+  margin: 0 0 var(--co-space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cardValue {
+  font-size: 1.25rem;
+  color: var(--co-color-text-primary);
+}
+
+.cardValueSuccess {
+  color: var(--co-color-status-success);
+}
+
+.cardValueWarning {
+  color: var(--co-color-status-warning);
+}
+
+.cardValueDanger {
+  color: var(--co-color-status-danger);
+}
+
+/* Utilization bar */
+.utilLabel {
+  color: var(--co-color-text-muted);
+  font-size: 0.75rem;
+  margin: 0 0 var(--co-space-2);
+}
+
+.utilBar {
+  background: var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  height: 8px;
+  overflow: hidden;
+}
+
+.utilFill {
+  height: 100%;
+  border-radius: var(--co-radius-sm);
+  width: var(--util-pct, 0%);
+  transition: width 0.4s ease;
+}
+
+.utilFill[data-level="low"] {
+  background: var(--co-color-status-success);
+}
+
+.utilFill[data-level="mid"] {
+  background: var(--co-color-status-warning);
+}
+
+.utilFill[data-level="high"] {
+  background: var(--co-color-status-danger);
+}
+
+.utilPct {
+  font-size: 0.6875rem;
+  margin: var(--co-space-1) 0 0;
+  text-align: right;
+}
+
+.utilPctLow {
+  color: var(--co-color-status-success);
+}
+
+.utilPctMid {
+  color: var(--co-color-status-warning);
+}
+
+.utilPctHigh {
+  color: var(--co-color-status-danger);
+}
+
+/* Compression tiers */
+.tierList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-3);
+}
+
+.tierSectionLabel {
+  color: var(--co-color-text-muted);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 var(--co-space-3);
+}
+
+.tierGrid {
+  display: grid;
+  grid-template-columns: 60px 1fr 80px 80px 60px;
+  align-items: center;
+  gap: var(--co-space-3);
+}
+
+.tierBadge {
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: var(--co-space-1) var(--co-space-2);
+  text-align: center;
+}
+
+.tierBadgeDefault {
+  background: var(--co-color-bg-soft);
+  color: var(--co-color-accent-default);
+}
+
+.tierBadgeSuccess {
+  background: var(--co-color-status-success-muted);
+  color: var(--co-color-status-success);
+}
+
+.tierDesc {
+  color: var(--co-color-text-muted);
+  font-size: 0.75rem;
+}
+
+.tierValue {
+  color: var(--co-color-text-primary);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.tierRatio {
+  font-size: 0.75rem;
+  text-align: right;
+  font-weight: 600;
+}
+
+.tierRatioHigh {
+  color: var(--co-color-status-success);
+}
+
+.tierRatioLow {
+  color: var(--co-color-text-muted);
+}
+
+/* Agent table */
+.agentTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.th {
+  color: var(--co-color-text-muted);
+  font-weight: 500;
+  padding: var(--co-space-1) var(--co-space-2);
+  border-bottom: 1px solid var(--co-color-line-default);
+}
+
+.thLeft {
+  text-align: left;
+}
+
+.thRight {
+  text-align: right;
+}
+
+.tr {
+  border-bottom: 1px solid var(--co-color-line-default);
+}
+
+.td {
+  color: var(--co-color-text-primary);
+  padding: var(--co-space-2);
+}
+
+.tdRight {
+  text-align: right;
+}
+
+.tdMuted {
+  color: var(--co-color-text-muted);
+}
+
+.agentId {
+  font-family: var(--co-font-mono);
+}
+
+.inlineBadge {
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.625rem;
+  font-weight: 600;
+  padding: var(--co-space-1) var(--co-space-2);
+  display: inline-block;
+}
+
+.inlineBadgeDefault {
+  background: var(--co-color-bg-soft);
+  color: var(--co-color-accent-default);
+}
+
+.inlineBadgeSuccess {
+  background: var(--co-color-status-success-muted);
+  color: var(--co-color-status-success);
+}

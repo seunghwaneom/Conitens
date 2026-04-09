@@ -1,0 +1,15 @@
+.container {
+  padding: var(--co-space-5);
+}
+
+.container text {
+  fill: var(--co-color-text-primary);
+}
+
+.container line {
+  stroke: var(--co-color-line-strong);
+}
+
+.container circle {
+  stroke: var(--co-color-line-strong);
+}

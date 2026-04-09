@@ -1,5 +1,7 @@
 import type { OperatorWorkspaceDetailViewModel } from "../operator-workspaces-model.js";
 import type { OperatorWorkspaceQuickStatusAction } from "../operator-workspace-actions.js";
+import { Badge, Button, EmptyState, ErrorDisplay, LoadingState } from "../ds/index.js";
+import styles from "./OperatorWorkspaceDetailPanel.module.css";
 
 type PanelState = "idle" | "loading" | "ready" | "error";
 
@@ -47,14 +49,14 @@ export function OperatorWorkspaceDetailPanel({
   onArchiveTask,
 }: OperatorWorkspaceDetailPanelProps) {
   if (state === "loading") {
-    return <p className="forward-empty">Loading operator workspace...</p>;
+    return <LoadingState message="Loading operator workspace..." />;
   }
   if (state === "error") {
-    return <p className="forward-error">{error}</p>;
+    return <ErrorDisplay message={error ?? "Unknown error"} />;
   }
   if (state === "idle" || !workspace) {
     return (
-      <div className="forward-placeholder">
+      <div className={styles.placeholder}>
         <h3>Select an operator workspace</h3>
         <p>Choose a workspace from the left rail to inspect its canonical record.</p>
       </div>
@@ -63,16 +65,16 @@ export function OperatorWorkspaceDetailPanel({
   const disabledQuickStatusReason = quickStatusActions.find((action) => action.disabled && action.reason)?.reason;
 
   return (
-    <div className="forward-detail-body">
-      <div className="forward-detail-hero">
+    <div className={styles.detailBody}>
+      <div className={styles.detailHero}>
         <div>
-          <p className="forward-detail-label">{workspace.workspaceId}</p>
+          <p className={styles.detailLabel}>{workspace.workspaceId}</p>
           <h3>{workspace.label}</h3>
           <p>{workspace.path}</p>
         </div>
-        <span className="forward-status-pill">{workspace.status}</span>
+        <Badge>{workspace.status}</Badge>
       </div>
-      <div className="forward-stats">
+      <div className={styles.stats}>
         {workspace.stats.map((item) => (
           <div key={item.label}>
             <span>{item.label}</span>
@@ -81,95 +83,94 @@ export function OperatorWorkspaceDetailPanel({
         ))}
       </div>
       {onQuickStatus ? (
-        <section className="forward-section">
-          <div className="forward-section-header">
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
             <div>
-              <p className="forward-panel-label">Quick status</p>
+              <p className={styles.panelLabel}>Quick status</p>
               <h3>Move the workspace forward</h3>
             </div>
-            <span className={`forward-state state-${mutationState}`}>{mutationState}</span>
+            <span className={styles.state} data-state={mutationState}>{mutationState}</span>
           </div>
-          <div className="forward-approval-actions">
+          <div className={styles.actions}>
             {quickStatusActions.map((action) => (
-              <button
+              <Button
                 key={action.status}
-                className="forward-chip-button"
-                type="button"
+                variant="secondary"
                 disabled={action.disabled}
                 title={action.reason ?? undefined}
                 onClick={() => onQuickStatus(action.status)}
               >
                 {action.status}
-              </button>
+              </Button>
             ))}
           </div>
-          {disabledQuickStatusReason ? <p className="forward-help">{disabledQuickStatusReason}</p> : null}
-          {mutationError ? <p className="forward-error">{mutationError}</p> : null}
+          {disabledQuickStatusReason ? <p className={styles.helpText}>{disabledQuickStatusReason}</p> : null}
+          {mutationError ? <ErrorDisplay message={mutationError} /> : null}
         </section>
       ) : null}
-      <section className="forward-section">
-        <div className="forward-section-header">
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
           <div>
-            <p className="forward-panel-label">Linked tasks</p>
+            <p className={styles.panelLabel}>Linked tasks</p>
             <h3>Tasks currently attached to this workspace</h3>
           </div>
-          <span className={`forward-state state-${taskActionState}`}>{taskActionState}</span>
+          <span className={styles.state} data-state={taskActionState}>{taskActionState}</span>
         </div>
-        {linkedTasksState === "loading" ? <p className="forward-empty">Loading linked tasks...</p> : null}
-        {linkedTasksError ? <p className="forward-error">{linkedTasksError}</p> : null}
+        {linkedTasksState === "loading" ? <LoadingState message="Loading linked tasks..." /> : null}
+        {linkedTasksError ? <ErrorDisplay message={linkedTasksError} /> : null}
         {linkedTasksState === "ready" && linkedTasks.length === 0 ? (
-          <p className="forward-empty">No linked tasks are currently attached.</p>
+          <EmptyState message="No linked tasks are currently attached." />
         ) : null}
         {linkedTasks.length > 0 ? (
-          <ul className="forward-timeline">
+          <ul className={styles.timeline}>
             {linkedTasks.map((task) => (
               <li key={task.taskId}>
-                <div className="forward-timeline-topline">
+                <div className={styles.timelineTopline}>
                   <strong>{task.title}</strong>
                   <span>{task.status}</span>
                 </div>
                 <p>{task.taskId} | owner {task.owner}</p>
-                <div className="forward-approval-actions">
+                <div className={styles.actions}>
                   {onOpenTask ? (
-                    <button className="forward-chip-button" type="button" onClick={() => onOpenTask(task.taskId)}>
+                    <Button variant="secondary" onClick={() => onOpenTask(task.taskId)}>
                       Open task
-                    </button>
+                    </Button>
                   ) : null}
                   {onDetachTask ? (
-                    <button className="forward-chip-button" type="button" onClick={() => onDetachTask(task.taskId)}>
+                    <Button variant="secondary" onClick={() => onDetachTask(task.taskId)}>
                       Detach
-                    </button>
+                    </Button>
                   ) : null}
                   {!task.archived && onArchiveTask ? (
-                    <button className="forward-chip-button" type="button" onClick={() => onArchiveTask(task.taskId)}>
+                    <Button variant="secondary" onClick={() => onArchiveTask(task.taskId)}>
                       Archive task
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </li>
             ))}
           </ul>
         ) : null}
-        {taskActionMessage ? <p className="forward-help">{taskActionMessage}</p> : null}
-        {taskActionError ? <p className="forward-error">{taskActionError}</p> : null}
+        {taskActionMessage ? <p className={styles.helpText}>{taskActionMessage}</p> : null}
+        {taskActionError ? <ErrorDisplay message={taskActionError} /> : null}
       </section>
-      <section className="forward-section">
-        <div className="forward-section-header">
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
           <div>
-            <p className="forward-panel-label">Ownership</p>
+            <p className={styles.panelLabel}>Ownership</p>
             <h3>Workspace record</h3>
           </div>
         </div>
-        <ul className="forward-timeline">
+        <ul className={styles.timeline}>
           <li>
-            <div className="forward-timeline-topline">
+            <div className={styles.timelineTopline}>
               <strong>Owner</strong>
             </div>
             <p>{workspace.owner}</p>
           </li>
           {workspace.archivedAt ? (
             <li>
-              <div className="forward-timeline-topline">
+              <div className={styles.timelineTopline}>
                 <strong>Archived by</strong>
               </div>
               <p>{workspace.archivedBy ?? "unknown"}</p>
@@ -177,21 +178,21 @@ export function OperatorWorkspaceDetailPanel({
           ) : null}
           {workspace.archiveNote ? (
             <li>
-              <div className="forward-timeline-topline">
+              <div className={styles.timelineTopline}>
                 <strong>Archive rationale</strong>
               </div>
               <p>{workspace.archiveNote}</p>
             </li>
           ) : null}
           <li>
-            <div className="forward-timeline-topline">
+            <div className={styles.timelineTopline}>
               <strong>Linked task refs</strong>
             </div>
             <p>{workspace.taskIds.length > 0 ? workspace.taskIds.join(" | ") : "No linked task refs."}</p>
           </li>
           {workspace.notes ? (
             <li>
-              <div className="forward-timeline-topline">
+              <div className={styles.timelineTopline}>
                 <strong>Notes</strong>
               </div>
               <p>{workspace.notes}</p>

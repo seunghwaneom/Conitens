@@ -1,16 +1,26 @@
-import React from "react";
 import type { AgentProfile } from "../agent-fleet-model.js";
+import styles from "./AgentRelationshipGraph.module.css";
 
 interface AgentRelationshipGraphProps {
   agents: AgentProfile[];
 }
 
+/**
+ * Role color map for SVG fill attributes.
+ * SVG fill/stroke props cannot use CSS var() directly, so we reference
+ * the Pixel Office token values from design-tokens.css §6:
+ *   orchestrator → --role-orch  (#ff7043)
+ *   implementer  → --role-impl  (#66bb6a)
+ *   researcher   → --role-rsch  (#ab47bc)
+ *   reviewer     → --role-revw  (#42a5f5)
+ *   validator    → --co-color-status-danger dark value (#e18f95)
+ */
 const ROLE_COLORS: Record<AgentProfile["role"], string> = {
   orchestrator: "#ff7043",
   implementer: "#66bb6a",
   researcher: "#ab47bc",
   reviewer: "#42a5f5",
-  validator: "#ef5350",
+  validator: "#e18f95",
 };
 
 const DEMO_EDGES: Array<{ from: string; to: string }> = [
@@ -66,7 +76,7 @@ export function AgentRelationshipGraph({ agents }: AgentRelationshipGraphProps) 
   });
 
   return (
-    <div className="agent-graph-container">
+    <div className={styles.container}>
       <svg
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
         width="100%"

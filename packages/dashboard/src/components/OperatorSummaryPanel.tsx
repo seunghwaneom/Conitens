@@ -1,4 +1,6 @@
 import type { OperatorSummaryViewModel } from "../operator-summary-model.js";
+import { LoadingState, ErrorDisplay } from "../ds/index.js";
+import styles from "./OperatorSummaryPanel.module.css";
 
 type PanelState = "idle" | "loading" | "ready" | "error";
 
@@ -10,14 +12,14 @@ interface OperatorSummaryPanelProps {
 
 export function OperatorSummaryPanel({ summary, state, error }: OperatorSummaryPanelProps) {
   if (state === "loading") {
-    return <p className="forward-empty">Loading operator summary...</p>;
+    return <LoadingState message="Loading operator summary..." className={styles.empty} />;
   }
   if (state === "error") {
-    return <p className="forward-error">{error}</p>;
+    return <ErrorDisplay message={error ?? "Unknown error"} className={styles.error} />;
   }
   if (state === "idle" || !summary) {
     return (
-      <div className="forward-placeholder">
+      <div className={styles.placeholder}>
         <h3>Operator overview placeholder</h3>
         <p>Connect to a live bridge to load the current operator posture.</p>
       </div>
@@ -25,16 +27,16 @@ export function OperatorSummaryPanel({ summary, state, error }: OperatorSummaryP
   }
 
   return (
-    <div className="forward-detail-body">
-      <div className="forward-detail-hero">
+    <div className={styles.detailBody}>
+      <div className={styles.detailHero}>
         <div>
-          <p className="forward-detail-label">Operator posture</p>
+          <p className={styles.detailLabel}>Operator posture</p>
           <h3>Forward operator overview</h3>
           <p>{summary.latestRunLabel}</p>
         </div>
-        <span className="forward-status-pill">{summary.postureLabel}</span>
+        <span className={styles.statusPill}>{summary.postureLabel}</span>
       </div>
-      <div className="forward-stats">
+      <div className={styles.stats}>
         {summary.metrics.map((item) => (
           <div key={item.id}>
             <span>{item.label}</span>
@@ -43,17 +45,17 @@ export function OperatorSummaryPanel({ summary, state, error }: OperatorSummaryP
           </div>
         ))}
       </div>
-      <section className="forward-section">
-        <div className="forward-section-header">
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
           <div>
-            <p className="forward-panel-label">Attention</p>
+            <p className={styles.panelLabel}>Attention</p>
             <h3>What needs action now</h3>
           </div>
         </div>
-        <ul className="forward-timeline">
+        <ul className={styles.timeline}>
           {summary.attention.map((item) => (
             <li key={item.id}>
-              <div className="forward-timeline-topline">
+              <div className={styles.timelineTopline}>
                 <strong>{item.title}</strong>
                 <span>{item.tone}</span>
               </div>

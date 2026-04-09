@@ -1,0 +1,63 @@
+/* ApprovalCenter — CSS Module using --co-* design tokens */
+
+.panel {
+  padding: var(--co-space-6);
+}
+
+.heading {
+  margin: 0 0 var(--co-space-4);
+  font-size: 1.25rem;
+  color: var(--co-color-text-primary);
+}
+
+.sectionHeading {
+  font-size: 0.9375rem;
+  margin: 0 0 var(--co-space-2);
+}
+
+.sectionPending {
+  color: var(--co-color-status-warning);
+}
+
+.sectionResolved {
+  color: var(--co-color-text-muted);
+  margin: var(--co-space-4) 0 var(--co-space-2);
+}
+
+.approvalCard {
+  padding: var(--co-space-3) var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border-radius: var(--co-radius-md);
+  margin-bottom: var(--co-space-2);
+}
+
+.approvalCardPending {
+  border: 1px solid var(--co-color-status-warning);
+}
+
+.approvalCardResolved {
+  border: 1px solid var(--co-color-line-default);
+}
+
+.approvalTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--co-color-text-primary);
+}
+
+.approvalMeta {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  margin-top: var(--co-space-1);
+}
+
+.approvalTimestamp {
+  font-size: 0.6875rem;
+  color: var(--co-color-text-muted);
+  margin-top: var(--co-space-1);
+}
+
+.resolvedText {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-muted);
+}

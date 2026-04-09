@@ -1,5 +1,6 @@
 import React from "react";
 import stageStyles from "../office-stage.module.css";
+import styles from "./HandoffLink.module.css";
 
 function toPercent(value: number) {
   return `${value}%`;
@@ -29,30 +30,27 @@ export function HandoffLink({
   return (
     <>
       <span
-        className={[stageStyles["office-handoff-segment"], stageStyles[`tone-${tone}`]].join(" ")}
+        className={[stageStyles["office-handoff-segment"], stageStyles[`tone-${tone}`], styles.segmentHorizontal].join(" ")}
         style={{
           left: toPercent(horizontalStart),
           top: toPercent(fromTop),
           width: toPercent(horizontalWidth),
-          height: "2px",
         }}
       />
       <span
-        className={[stageStyles["office-handoff-segment"], stageStyles[`tone-${tone}`]].join(" ")}
+        className={[stageStyles["office-handoff-segment"], stageStyles[`tone-${tone}`], styles.segmentVertical].join(" ")}
         style={{
           left: toPercent(elbowLeft),
           top: toPercent(verticalTop),
-          width: "2px",
           height: toPercent(verticalHeight),
         }}
       />
       <span
-        className={[stageStyles["office-handoff-segment"], stageStyles[`tone-${tone}`]].join(" ")}
+        className={[stageStyles["office-handoff-segment"], stageStyles[`tone-${tone}`], styles.segmentHorizontal].join(" ")}
         style={{
           left: toPercent(horizontalEndStart),
           top: toPercent(toTop),
           width: toPercent(horizontalEndWidth),
-          height: "2px",
         }}
       />
       <span

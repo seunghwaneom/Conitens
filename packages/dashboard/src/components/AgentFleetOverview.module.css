@@ -1,0 +1,185 @@
+.fleetOverview {
+  display: grid;
+  gap: var(--co-space-5);
+}
+
+.metrics {
+  display: flex;
+  gap: var(--co-space-6);
+  padding: var(--co-space-4) var(--co-space-5);
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  backdrop-filter: blur(12px);
+}
+
+.metricItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.metricLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--co-color-text-muted);
+}
+
+.metricValue {
+  font-size: 28px;
+  line-height: 1;
+  color: var(--co-color-text-primary);
+}
+
+.metricActive {
+  color: var(--co-color-status-success);
+}
+
+.metricPaused {
+  color: var(--co-color-status-warning);
+}
+
+.metricRetired {
+  color: var(--co-color-text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--co-space-3);
+}
+
+.agentCard {
+  display: grid;
+  gap: var(--co-space-2);
+  padding: var(--co-space-4);
+  text-align: left;
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  backdrop-filter: blur(12px);
+  color: var(--co-color-text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.agentCard:hover {
+  border-color: var(--co-color-accent-default);
+  background: var(--co-color-accent-muted);
+}
+
+.agentCardActive {
+  border-color: var(--co-color-accent-strong);
+  background: var(--co-color-accent-muted);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--co-space-3);
+}
+
+.cardIdentity {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-2);
+}
+
+.cardName {
+  font-size: 15px;
+  color: var(--co-color-text-primary);
+}
+
+.cardArchetype {
+  margin: 0;
+  font-size: 12px;
+  color: var(--co-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cardStats {
+  display: flex;
+  gap: var(--co-space-3);
+  font-size: 12px;
+  color: var(--co-color-text-secondary);
+}
+
+.cardLastActive {
+  margin: 0;
+  font-size: 11px;
+  color: var(--co-color-text-muted);
+}
+
+/* Status dots */
+.statusDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotRunning {
+  background: var(--co-color-status-success);
+  box-shadow: 0 0 6px rgba(79, 176, 98, 0.8);
+  animation: pulseLive 2s ease-in-out infinite;
+}
+
+.dotIdle {
+  background: var(--co-color-status-success);
+}
+
+.dotPaused {
+  background: var(--co-color-status-warning);
+}
+
+.dotDormant {
+  background: var(--co-color-text-muted);
+}
+
+.dotRetired {
+  background: var(--co-color-text-muted);
+}
+
+@keyframes pulseLive {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Role badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px var(--co-space-2);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--co-color-line-default);
+  color: var(--co-color-text-primary);
+}
+
+.badgeOrch {
+  border-color: rgba(255, 112, 67, 0.5);
+  color: var(--role-orch);
+}
+
+.badgeImpl {
+  border-color: rgba(102, 187, 106, 0.5);
+  color: var(--role-impl);
+}
+
+.badgeRsch {
+  border-color: rgba(171, 71, 188, 0.5);
+  color: var(--role-rsch);
+}
+
+.badgeRevw {
+  border-color: rgba(66, 165, 245, 0.5);
+  color: var(--role-revw);
+}
+
+.badgeVald {
+  border-color: rgba(239, 83, 80, 0.5);
+  color: var(--co-color-status-danger);
+}

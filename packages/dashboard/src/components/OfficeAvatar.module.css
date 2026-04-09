@@ -1,0 +1,5 @@
+.avatarCanvas {
+  width: 24px;
+  height: 32px;
+  image-rendering: pixelated;
+}
