@@ -1,0 +1,121 @@
+/* ForwardRoomPanel — CSS Module using --co-* design tokens */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-4);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--co-space-3);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+  margin: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+  margin: 0;
+}
+
+.stateTag {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  padding: 2px var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  border: 1px solid var(--co-color-line-default);
+  color: var(--co-color-text-muted);
+  background: var(--co-color-bg-panel-muted);
+  white-space: nowrap;
+}
+
+.roomSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--co-space-2);
+}
+
+.chipButton {
+  padding: var(--co-space-1) var(--co-space-3);
+  font-size: 0.8125rem;
+  font-family: var(--co-font-ui);
+  background: transparent;
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  color: var(--co-color-text-secondary);
+  cursor: pointer;
+}
+
+.chipButton:hover {
+  border-color: var(--co-color-line-strong);
+  color: var(--co-color-text-primary);
+}
+
+.chipButton:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+}
+
+.chipButtonActive {
+  background: var(--co-color-accent-muted);
+  border-color: var(--co-color-accent-default);
+  color: var(--co-color-accent-default);
+}
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+}
+
+.timelineItem {
+  padding: var(--co-space-3) var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+}
+
+.timelineTopline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+  margin-bottom: var(--co-space-1);
+}
+
+.timelineTopline strong {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-primary);
+}
+
+.timelineTopline span {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-muted);
+}
+
+.timelineSummary {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-secondary);
+  margin: 0;
+}

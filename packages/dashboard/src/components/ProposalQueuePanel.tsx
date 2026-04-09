@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { ImprovementProposal } from "../evolution-model.js";
 import type { AgentProfile } from "../agent-fleet-model.js";
+import styles from "./ProposalQueuePanel.module.css";
 
 interface ProposalQueuePanelProps {
   proposals: ImprovementProposal[];
@@ -25,70 +26,75 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
   }
 
   return (
-    <div className="proposal-queue">
-      <div className="proposal-queue-header">
-        <div className="proposal-queue-title">
-          <p className="forward-panel-label">Evolution</p>
-          <h3>Proposal Queue</h3>
+    <div className={styles.panel}>
+      <div className={styles.header}>
+        <div className={styles.titleGroup}>
+          <p className={styles.panelLabel}>Evolution</p>
+          <h3 className={styles.heading}>Proposal Queue</h3>
         </div>
         {pendingCount > 0 && (
-          <span className="proposal-pending-badge">{pendingCount} pending</span>
+          <span className={styles.pendingBadge}>{pendingCount} pending</span>
         )}
       </div>
 
-      <div className="proposal-queue-list">
+      <div className={styles.list}>
         {localProposals.map(proposal => {
           const isPending = proposal.status === "pending";
           const confidencePct = Math.round(proposal.confidence * 100);
+          const cardStatusClass = proposal.status === "approved"
+            ? styles.cardApproved
+            : proposal.status === "rejected"
+            ? styles.cardRejected
+            : styles.cardPending;
 
           return (
             <div
               key={proposal.id}
-              className={`proposal-card proposal-card-${proposal.status}`}
+              className={[styles.card, cardStatusClass].join(" ")}
             >
-              <div className="proposal-card-header">
-                <strong className="proposal-card-title">{proposal.title}</strong>
-                <div className="proposal-card-meta">
-                  <span className={`badge proposal-kind-badge proposal-kind-${proposal.kind}`}>
+              <div className={styles.cardHeader}>
+                <strong className={styles.cardTitle}>{proposal.title}</strong>
+                <div className={styles.cardMeta}>
+                  <span className={styles.kindBadge}>
                     {proposal.kind}
                   </span>
-                  <span className="proposal-agent-name">{agentName(proposal.agentId)}</span>
+                  <span className={styles.agentName}>{agentName(proposal.agentId)}</span>
                 </div>
               </div>
 
-              <div className="proposal-confidence-wrap">
-                <div className="proposal-confidence-label">
+              <div className={styles.confidenceWrap}>
+                <div className={styles.confidenceLabel}>
                   <span>Confidence</span>
                   <span>{confidencePct}%</span>
                 </div>
-                <div className="proposal-confidence-track">
+                <div className={styles.confidenceTrack}>
                   <div
-                    className="proposal-confidence-bar"
+                    className={styles.confidenceBar}
                     style={{ width: `${confidencePct}%` }}
                   />
                 </div>
               </div>
 
-              <p className="proposal-rationale">
+              <p className={styles.rationale}>
                 {proposal.rationale.length > 120
                   ? proposal.rationale.slice(0, 120) + "…"
                   : proposal.rationale}
               </p>
 
-              <div className="proposal-card-footer">
-                <span className="proposal-evidence-count">
+              <div className={styles.cardFooter}>
+                <span className={styles.evidenceCount}>
                   {proposal.evidenceRefs.length} evidence ref{proposal.evidenceRefs.length !== 1 ? "s" : ""}
                 </span>
                 {isPending && (
-                  <div className="proposal-action-bar">
+                  <div className={styles.actionBar}>
                     <button
-                      className="forward-chip proposal-btn proposal-btn-approve"
+                      className={[styles.btn, styles.btnApprove].join(" ")}
                       onClick={() => approve(proposal.id)}
                     >
                       Approve
                     </button>
                     <button
-                      className="forward-chip proposal-btn proposal-btn-reject"
+                      className={[styles.btn, styles.btnReject].join(" ")}
                       onClick={() => reject(proposal.id)}
                     >
                       Reject
@@ -96,7 +102,12 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
                   </div>
                 )}
                 {!isPending && (
-                  <span className={`badge badge-${proposal.status === "approved" ? "success" : proposal.status === "rejected" ? "danger" : "neutral"}`}>
+                  <span className={[
+                    styles.statusBadge,
+                    proposal.status === "approved" ? styles.statusBadgeSuccess
+                      : proposal.status === "rejected" ? styles.statusBadgeDanger
+                      : styles.statusBadgeNeutral,
+                  ].join(" ")}>
                     {proposal.status}
                   </span>
                 )}

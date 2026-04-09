@@ -1,0 +1,170 @@
+/* ForwardInsightsPanel — CSS Module using --co-* design tokens */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-4);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--co-space-3);
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+  margin: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+  margin: 0;
+}
+
+.insightGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-3);
+}
+
+.insightCard {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  overflow: hidden;
+}
+
+.insightHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+  padding: var(--co-space-2) var(--co-space-3);
+  border-bottom: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel-muted);
+}
+
+.insightHeader strong {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-primary);
+}
+
+.insightHeader span {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-muted);
+}
+
+.insightSummary {
+  font-size: 0.875rem;
+  color: var(--co-color-text-secondary);
+  padding: var(--co-space-3);
+  margin: 0;
+}
+
+.insightMeta {
+  display: flex;
+  gap: var(--co-space-4);
+  padding: 0 var(--co-space-3) var(--co-space-2);
+}
+
+.insightMeta span {
+  font-size: 0.6875rem;
+  color: var(--co-color-text-muted);
+}
+
+.insightCard details {
+  padding: 0 var(--co-space-3) var(--co-space-3);
+}
+
+.insightCard summary {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.insightCard summary:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+  border-radius: var(--co-radius-sm);
+}
+
+.insightCard pre {
+  margin: var(--co-space-2) 0 0;
+  font-size: 0.75rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-secondary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.docCard {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+  overflow: hidden;
+}
+
+.docHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+  padding: var(--co-space-2) var(--co-space-3);
+  border-bottom: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel-muted);
+}
+
+.docHeader strong {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-primary);
+}
+
+.docHeader span {
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-muted);
+}
+
+.docCard pre {
+  padding: var(--co-space-3);
+  margin: 0;
+  font-size: 0.75rem;
+  font-family: var(--co-font-mono);
+  color: var(--co-color-text-secondary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.correlationList {
+  list-style: none;
+  padding: var(--co-space-3);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+}
+
+.correlationList li {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-secondary);
+  padding-left: var(--co-space-3);
+  border-left: 2px solid var(--co-color-line-default);
+}

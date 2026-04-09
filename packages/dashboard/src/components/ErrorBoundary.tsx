@@ -1,4 +1,5 @@
 import React from "react";
+import styles from "./ErrorBoundary.module.css";
 
 interface Props {
   children: React.ReactNode;
@@ -21,14 +22,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
 
       return (
-        <div className="error-boundary">
-          <p className="panel-kicker">RENDER_ERROR</p>
-          <strong>{this.state.error.message}</strong>
+        <div className={styles.container}>
+          <p className={styles.kicker}>RENDER_ERROR</p>
+          <strong className={styles.message}>{this.state.error.message}</strong>
           <button
-            className="secondary-button"
+            className={styles.retryButton}
             type="button"
             onClick={() => this.setState({ error: null })}
-            style={{ marginTop: 12 }}
           >
             Retry
           </button>

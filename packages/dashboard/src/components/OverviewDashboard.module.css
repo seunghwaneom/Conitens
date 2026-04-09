@@ -1,0 +1,654 @@
+/* ── Layout ── */
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 260px;
+  gap: var(--co-space-5);
+  min-height: 0;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-5);
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-5);
+}
+
+/* ── Command Rail (left sidebar) ── */
+.commandRail {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 var(--co-space-4) var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+}
+
+.railSection {
+  padding: var(--co-space-4) 0;
+  border-top: 1px solid var(--co-color-line-default);
+}
+
+.railSection:first-child {
+  padding-top: var(--co-space-5);
+  border-top: none;
+}
+
+.railActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-3);
+}
+
+/* ── Panel (generic card) ── */
+.panel {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+}
+
+.panelBody {
+  padding: var(--co-space-5);
+}
+
+/* ── Kicker / Title / Subtitle ── */
+.kicker {
+  margin: 0 0 var(--co-space-3);
+  color: var(--co-color-accent-strong);
+  font-family: var(--co-font-pixel, "Press Start 2P", cursive);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.875rem;
+  line-height: 1.12;
+}
+
+.subtitle {
+  margin: var(--co-space-3) 0 0;
+  max-width: 56ch;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--co-color-text-muted);
+}
+
+/* ── Section Head ── */
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--co-space-3);
+  align-items: baseline;
+  margin-bottom: var(--co-space-4);
+}
+
+.sectionHead .kicker {
+  margin-bottom: 0;
+  color: var(--co-color-text-primary);
+  font-family: var(--co-font-ui);
+  font-size: 1.125rem;
+  letter-spacing: 0.12em;
+}
+
+.sectionMeta {
+  font-family: var(--co-font-ui);
+  font-size: 1.125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--co-color-text-muted);
+}
+
+/* ── Stack ── */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-3);
+}
+
+/* ── Focus list (command rail) ── */
+.focusList {
+  gap: 0;
+}
+
+.focusItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+  border: none;
+  border-top: 1px solid var(--co-color-line-default);
+  border-radius: 0;
+  padding: var(--co-space-3) 0;
+}
+
+.focusList > .focusItem:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.focusList > .focusItem:last-child {
+  padding-bottom: 0;
+}
+
+.focusLabel {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--co-color-text-muted);
+}
+
+.focusValue {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* ── Muted text ── */
+.muted {
+  color: var(--co-color-text-muted);
+}
+
+/* ── Buttons ── */
+.primaryButton {
+  border-radius: 0;
+  padding: var(--co-space-3) var(--co-space-4);
+  cursor: pointer;
+  border: 1px solid var(--co-color-accent-strong);
+  background: linear-gradient(135deg, var(--co-color-status-success) 0%, var(--co-color-accent-strong) 100%);
+  color: var(--co-color-text-inverse);
+  font-weight: 700;
+}
+
+.secondaryButton {
+  border-radius: 0;
+  padding: var(--co-space-3) var(--co-space-4);
+  cursor: pointer;
+  border: 1px dashed var(--co-color-line-strong);
+  background: transparent;
+  color: var(--co-color-text-muted);
+}
+
+/* ── Command Center (hero section) ── */
+.commandCenter {
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-md);
+}
+
+.commandCenter > .panelBody {
+  padding: var(--co-space-6);
+}
+
+.commandHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--co-space-5);
+  align-items: flex-start;
+  margin-bottom: var(--co-space-4);
+}
+
+/* ── Event Cadence Card ── */
+.cadenceCard {
+  min-width: 220px;
+  border-radius: 0;
+  padding: var(--co-space-4);
+  background: var(--co-color-bg-raised);
+  color: var(--co-color-text-primary);
+}
+
+.cadenceLabel {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--co-color-text-muted);
+}
+
+.cadenceCard .cadenceLabel,
+.cadenceCard .muted {
+  color: var(--co-color-text-secondary);
+}
+
+/* ── Event Sparkline ── */
+.sparkline {
+  width: 100%;
+  height: 50px;
+  margin-bottom: var(--co-space-1);
+}
+
+/* ── Attention Strip ── */
+.attentionStrip {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-4);
+  padding: var(--co-space-3) var(--co-space-4);
+  border-left: 3px solid var(--co-color-line-default);
+}
+
+.attentionStripAlert {
+  composes: attentionStrip;
+  border-left-color: var(--co-color-status-danger);
+  background: var(--co-color-status-danger-muted);
+}
+
+.attentionLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--co-color-text-primary);
+}
+
+.attentionItem {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: var(--co-space-1) var(--co-space-3);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+}
+
+.attentionDanger {
+  composes: attentionItem;
+  color: var(--co-color-status-danger);
+  background: var(--co-color-status-danger-muted);
+  border-color: var(--co-color-status-danger);
+}
+
+.attentionWarning {
+  composes: attentionItem;
+  color: var(--co-color-status-warning);
+  background: var(--co-color-status-warning-muted);
+  border-color: var(--co-color-status-warning);
+}
+
+.attentionInfo {
+  composes: attentionItem;
+  color: var(--co-color-accent-default);
+  background: var(--co-color-accent-muted);
+  border-color: var(--co-color-accent-default);
+}
+
+.attentionClear {
+  composes: attentionItem;
+  color: var(--co-color-status-success);
+  background: var(--co-color-status-success-muted);
+  border-color: var(--co-color-status-success);
+}
+
+/* ── Action Ledger ── */
+.actionLedger {
+  padding-top: var(--co-space-3);
+}
+
+.actionRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--co-space-3);
+  align-items: center;
+  padding: var(--co-space-3) 0;
+  border-top: 1px solid var(--co-color-line-default);
+}
+
+.actionRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.actionRow:last-child {
+  padding-bottom: 0;
+}
+
+.actionRowDanger {
+  composes: actionRow;
+  border-color: var(--co-color-status-danger-muted);
+}
+
+.actionRowWarning {
+  composes: actionRow;
+  border-color: var(--co-color-status-warning-muted);
+}
+
+.actionRowInfo {
+  composes: actionRow;
+  border-color: var(--co-color-accent-muted);
+}
+
+.actionMain {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-3);
+  min-width: 0;
+}
+
+.actionMeta {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--co-color-text-muted);
+}
+
+/* ── Badge / Chip ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--co-space-1) var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  font-family: var(--co-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  background: var(--co-color-bg-panel-muted);
+  color: var(--co-color-text-secondary);
+  border: 1px solid var(--co-color-line-default);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--co-space-2);
+  padding: var(--co-space-1) var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  font-family: var(--co-font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  background: var(--co-color-bg-panel-muted);
+  color: var(--co-color-text-secondary);
+  border: 1px solid var(--co-color-line-default);
+}
+
+/* Tone variants for badges and chips */
+.toneLive {
+  color: var(--co-color-status-success);
+  background: var(--co-color-status-success-muted);
+}
+
+.toneDemo {
+  color: var(--co-color-accent-default);
+  background: var(--co-color-accent-muted);
+}
+
+.toneInfo {
+  color: var(--co-color-accent-default);
+  background: var(--co-color-accent-muted);
+}
+
+.toneWarning {
+  color: var(--co-color-status-warning);
+  background: var(--co-color-status-warning-muted);
+}
+
+.toneDanger {
+  color: var(--co-color-status-danger);
+  background: var(--co-color-status-danger-muted);
+}
+
+.toneSuccess {
+  color: var(--co-color-status-success);
+  background: var(--co-color-status-success-muted);
+  border-color: var(--co-color-status-success);
+}
+
+.toneNeutral {
+  color: var(--co-color-text-muted);
+}
+
+/* Event family tones for chips */
+.toneAgent,
+.toneHandoff,
+.toneSystem {
+  color: var(--co-color-accent-default);
+  background: var(--co-color-accent-muted);
+}
+
+.toneWorkflow,
+.toneArtifact {
+  color: var(--co-color-status-success);
+  background: var(--co-color-status-success-muted);
+}
+
+.toneApproval,
+.toneTask {
+  color: var(--co-color-status-warning);
+  background: var(--co-color-status-warning-muted);
+}
+
+/* ── Overview Grid (task queue + recent signals) ── */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--co-space-5);
+}
+
+.overviewGrid .panel {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  border-top: 1px solid var(--co-color-line-default);
+  border-radius: 0;
+}
+
+.overviewGrid .panel:first-child {
+  border-top: none;
+}
+
+.overviewGrid .panelBody {
+  padding: var(--co-space-4) 0;
+}
+
+.overviewGrid .stack {
+  gap: 0;
+}
+
+/* ── Empty State ── */
+.emptyCompact {
+  padding: var(--co-space-3) 0 0;
+  border-radius: 0;
+  background: transparent;
+  border-top: 1px solid var(--co-color-line-default);
+  color: var(--co-color-text-muted);
+  font-size: 0.75rem;
+}
+
+/* ── Rich List Row (task queue) ── */
+.richListRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--co-space-3);
+  border: none;
+  border-top: 1px solid var(--co-color-line-default);
+  border-radius: 0;
+  background: transparent;
+  padding: var(--co-space-3) 0;
+}
+
+.richListRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.richListRow:last-child {
+  padding-bottom: 0;
+}
+
+/* ── Event Stream Row ── */
+.eventRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--co-space-3);
+  border: none;
+  border-top: 1px solid var(--co-color-line-default);
+  border-radius: 0;
+  background: transparent;
+  padding: var(--co-space-3) 0;
+}
+
+.eventRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.eventRow:last-child {
+  padding-bottom: 0;
+}
+
+.eventMain {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eventTime {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--co-color-text-muted);
+}
+
+/* ── Side panels ── */
+.side .panel {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  border-top: 1px solid var(--co-color-line-default);
+  border-radius: 0;
+}
+
+.side .panel:first-child {
+  border-top: none;
+}
+
+.side .panelBody {
+  padding: var(--co-space-4) 0;
+}
+
+/* ── Runtime Ledger ── */
+.runtimeLedger {
+  display: flex;
+  flex-direction: column;
+}
+
+.runtimeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--co-space-3);
+  align-items: center;
+  padding: var(--co-space-3) 0;
+  border-top: 1px solid var(--co-color-line-default);
+}
+
+.runtimeRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.runtimeRow:last-child {
+  padding-bottom: 0;
+}
+
+.runtimeRowLabel {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--co-color-text-muted);
+}
+
+.runtimeRowValue {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.runtimeRowValue strong {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--co-color-text-primary);
+}
+
+.runtimeSummary {
+  margin: var(--co-space-4) 0 0;
+  padding-top: var(--co-space-4);
+  border-top: 1px dashed var(--co-color-line-default);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--co-color-text-muted);
+}
+
+.runtimeSummary strong {
+  color: var(--co-color-text-primary);
+}
+
+/* ── Agent Roster ── */
+.agentRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--co-space-3);
+  border: none;
+  border-top: 1px solid var(--co-color-line-default);
+  border-radius: 0;
+  background: transparent;
+  padding: var(--co-space-3) 0;
+}
+
+.agentRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.agentRow:last-child {
+  padding-bottom: 0;
+}
+
+.agentRowMain {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-3);
+  min-width: 0;
+}
+
+.agentDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.agentDotRunning {
+  composes: agentDot;
+  background: var(--co-color-status-success);
+}
+
+.agentDotIdle {
+  composes: agentDot;
+  background: var(--co-color-status-warning);
+}
+
+.agentDotError {
+  composes: agentDot;
+  background: var(--co-color-status-danger);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1220px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .commandRail {
+    order: 2;
+  }
+
+  .overviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .eventRow {
+    grid-template-columns: 1fr;
+  }
+}

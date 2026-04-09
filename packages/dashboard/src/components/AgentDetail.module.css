@@ -1,0 +1,57 @@
+.panel {
+  padding: var(--co-space-6);
+}
+
+.backLink {
+  color: var(--co-color-accent-default);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  margin-bottom: var(--co-space-3);
+  display: inline-block;
+}
+
+.heading {
+  margin: var(--co-space-2) 0 var(--co-space-1);
+  font-size: 1.125rem;
+  color: var(--co-color-text-primary);
+}
+
+.badgeRow {
+  display: flex;
+  gap: var(--co-space-2);
+  margin-bottom: var(--co-space-4);
+  flex-wrap: wrap;
+}
+
+.persona {
+  color: var(--co-color-text-muted);
+  font-size: 0.875rem;
+  margin: 0 0 var(--co-space-4);
+}
+
+.sectionHeading {
+  font-size: 0.9375rem;
+  color: var(--co-color-text-primary);
+  margin: var(--co-space-4) 0 var(--co-space-2);
+}
+
+.skillRow {
+  display: flex;
+  gap: var(--co-space-2);
+  flex-wrap: wrap;
+}
+
+.configSection {
+  font-size: 0.8125rem;
+  color: var(--co-color-text-muted);
+}
+
+.patchItem {
+  padding: var(--co-space-2) var(--co-space-3);
+  background: var(--co-color-bg-panel);
+  border: 1px solid var(--co-color-line-default);
+  border-radius: var(--co-radius-sm);
+  margin-bottom: var(--co-space-2);
+  font-size: 0.8125rem;
+  color: var(--co-color-text-primary);
+}

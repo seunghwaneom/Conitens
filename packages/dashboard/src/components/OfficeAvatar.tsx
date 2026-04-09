@@ -3,6 +3,7 @@ import type { AgentOfficeProfile } from "../agent-profiles.js";
 import { drawPixelAvatar } from "../pixel-canvas-avatar.js";
 import type { OfficeAvatarFacing, OfficeAvatarPose } from "../office-avatar-sprites.js";
 import stageStyles from "../office-stage.module.css";
+import styles from "./OfficeAvatar.module.css";
 
 const AVATAR_SCALE = 4;
 const AVATAR_W = 24;
@@ -46,11 +47,7 @@ export function OfficeAvatar({
         ref={canvasRef}
         width={AVATAR_W * AVATAR_SCALE}
         height={AVATAR_H * AVATAR_SCALE}
-        style={{
-          width: `${AVATAR_W}px`,
-          height: `${AVATAR_H}px`,
-          imageRendering: "pixelated",
-        }}
+        className={styles.avatarCanvas}
         aria-hidden="true"
       />
       <span className={stageStyles["office-pixel-mark"]}>{profile.mark}</span>

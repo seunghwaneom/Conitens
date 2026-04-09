@@ -1,4 +1,6 @@
 import type { ForwardStateDocsResponse } from "../forward-bridge.js";
+import { EmptyState, ErrorDisplay, LoadingState } from "../ds/index.js";
+import styles from "./ForwardStateDocsPanel.module.css";
 
 export function ForwardStateDocsPanel({
   stateDocs,
@@ -10,21 +12,21 @@ export function ForwardStateDocsPanel({
   error: string | null;
 }) {
   return (
-    <section className="forward-section">
-      <div className="forward-section-header">
-        <div>
-          <p className="forward-panel-label">Runtime Docs</p>
-          <h3>Projected state documents</h3>
+    <section className={styles.section}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <p className={styles.label}>Runtime Docs</p>
+          <h3 className={styles.title}>Projected state documents</h3>
         </div>
-        <span className={`forward-state state-${state}`}>{state}</span>
+        <span className={styles.stateTag}>{state}</span>
       </div>
-      {state === "loading" ? <p className="forward-empty">Loading state docs...</p> : null}
-      {state === "error" ? <p className="forward-error">{error}</p> : null}
+      {state === "loading" ? <LoadingState message="Loading state docs..." /> : null}
+      {state === "error" && error ? <ErrorDisplay message={error} /> : null}
       {state === "ready" && stateDocs ? (
-        <div className="forward-doc-grid">
+        <div className={styles.docGrid}>
           {Object.entries(stateDocs.documents).map(([key, doc]) => (
-            <article key={key} className="forward-doc-card">
-              <div className="forward-doc-header">
+            <article key={key} className={styles.docCard}>
+              <div className={styles.docHeader}>
                 <strong>{key}</strong>
                 <span>{doc.path}</span>
               </div>

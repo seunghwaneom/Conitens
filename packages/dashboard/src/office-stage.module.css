@@ -190,7 +190,7 @@
 .office-room-meta .badge.quiet {
   background: rgba(132, 146, 159, 0.1);
   border-color: rgba(132, 146, 159, 0.2);
-  color: var(--muted);
+  color: var(--co-color-text-secondary);
 }
 
 @keyframes badge-pulse {
@@ -336,6 +336,8 @@
 
 .office-task-node {
   position: absolute;
+  left: var(--node-left);
+  top: var(--node-top);
   width: 10px;
   height: 8px;
   transform: translate(-50%, -50%);
@@ -357,6 +359,20 @@
 .tone-info { background-color: rgba(80, 141, 212, 0.92); }
 .tone-warning { background-color: rgba(201, 139, 18, 0.92); }
 .tone-danger { background-color: rgba(193, 73, 73, 0.92); }
+
+.office-handoff-segment {
+  position: absolute;
+  pointer-events: none;
+}
+
+.office-handoff-node {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
 
 .office-room-avatar-slot {
   position: absolute;
@@ -430,7 +446,7 @@
   padding: 4px 8px;
   border: 1px dashed rgba(46, 57, 46, 0.18);
   background: rgba(255, 255, 255, 0.74);
-  color: var(--muted);
+  color: var(--co-color-text-secondary);
   font-size: 10px;
   letter-spacing: 0.03em;
   text-transform: uppercase;

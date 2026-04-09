@@ -1,4 +1,6 @@
 import type { ForwardReplayResponse } from "../forward-bridge.js";
+import { EmptyState, ErrorDisplay, LoadingState } from "../ds/index.js";
+import styles from "./ForwardReplayPanel.module.css";
 
 export function ForwardReplayPanel({
   replay,
@@ -10,28 +12,28 @@ export function ForwardReplayPanel({
   error: string | null;
 }) {
   return (
-    <section className="forward-section">
-      <div className="forward-section-header">
-        <div>
-          <p className="forward-panel-label">Replay</p>
-          <h3>Replay ledger</h3>
+    <section className={styles.section}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <p className={styles.label}>Replay</p>
+          <h3 className={styles.title}>Replay ledger</h3>
         </div>
-        <span className={`forward-state state-${state}`}>{state}</span>
+        <span className={styles.stateTag}>{state}</span>
       </div>
-      {state === "loading" ? <p className="forward-empty">Loading replay...</p> : null}
-      {state === "error" ? <p className="forward-error">{error}</p> : null}
+      {state === "loading" ? <LoadingState message="Loading replay..." /> : null}
+      {state === "error" && error ? <ErrorDisplay message={error} /> : null}
       {state === "ready" && replay && replay.timeline.length === 0 ? (
-        <p className="forward-empty">No replay events recorded.</p>
+        <EmptyState message="No replay events recorded." />
       ) : null}
       {state === "ready" && replay && replay.timeline.length > 0 ? (
-        <ol className="forward-timeline">
+        <ol className={styles.timeline}>
           {replay.timeline.map((item, index) => (
-            <li key={`${item.timestamp}-${item.kind}-${index}`} className={`timeline-${item.kind}`}>
-              <div className="forward-timeline-topline">
+            <li key={`${item.timestamp}-${item.kind}-${index}`} className={styles.timelineItem}>
+              <div className={styles.timelineTopline}>
                 <strong>{item.kind}</strong>
                 <span>{item.timestamp}</span>
               </div>
-              <p>{item.summary}</p>
+              <p className={styles.timelineSummary}>{item.summary}</p>
             </li>
           ))}
         </ol>

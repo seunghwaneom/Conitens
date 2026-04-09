@@ -1,0 +1,359 @@
+/* AgentProfilePanel — CSS Module using --co-* design tokens */
+
+/* ── Layout ──────────────────────────────────────────────── */
+
+.profile {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  backdrop-filter: blur(12px);
+}
+
+.profileEmpty {
+  composes: profile;
+  min-height: 320px;
+}
+
+.placeholder {
+  display: grid;
+  gap: var(--co-space-5);
+  place-content: center;
+  text-align: center;
+  min-height: 320px;
+  opacity: 0.7;
+}
+
+.placeholder h3 {
+  margin: 0;
+  color: var(--co-color-text-primary);
+}
+
+.placeholder p {
+  margin: 0;
+  color: var(--co-color-text-muted);
+}
+
+/* ── Sections ────────────────────────────────────────────── */
+
+.section {
+  display: grid;
+  gap: var(--co-space-3);
+  padding: var(--co-space-5) var(--co-space-5);
+  border-bottom: 1px solid var(--co-color-line-default);
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.panelLabel {
+  margin: 0 0 var(--co-space-3);
+  color: var(--co-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+}
+
+/* ── Identity ────────────────────────────────────────────── */
+
+.profileName {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--co-color-text-primary);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-3);
+}
+
+.archetypeLabel {
+  font-size: 12px;
+  color: var(--co-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Role badges (extend ds Badge base) ──────────────────── */
+
+.badgeOrch {
+  border-color: rgba(255, 112, 67, 0.5);
+  color: var(--role-orch, #ff7043);
+}
+
+.badgeImpl {
+  border-color: rgba(102, 187, 106, 0.5);
+  color: var(--role-impl, #66bb6a);
+}
+
+.badgeRsch {
+  border-color: rgba(171, 71, 188, 0.5);
+  color: var(--role-rsch, #ab47bc);
+}
+
+.badgeRevw {
+  border-color: rgba(66, 165, 245, 0.5);
+  color: var(--role-revw, #42a5f5);
+}
+
+.badgeVald {
+  border-color: rgba(239, 83, 80, 0.5);
+  color: #ef5350;
+}
+
+/* ── Health ───────────────────────────────────────────────── */
+
+.healthRow {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-2);
+}
+
+/* Status dot — color set via --status-color CSS custom property */
+.statusDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-color, var(--co-color-text-muted));
+  flex-shrink: 0;
+}
+
+.healthStatus {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--co-color-text-primary);
+}
+
+.healthActive {
+  margin: 0;
+  font-size: 12px;
+  color: var(--co-color-text-muted);
+}
+
+/* ── Error bar ───────────────────────────────────────────── */
+
+.errorBarWrap {
+  display: grid;
+  gap: var(--co-space-1);
+}
+
+.errorBarLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--co-color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.errorBarTrack {
+  height: 4px;
+  background: var(--co-color-bg-panel-muted);
+}
+
+/* Error bar fill — width set via --bar-width CSS custom property */
+.errorBarFill {
+  height: 100%;
+  background: var(--co-color-status-danger);
+  border-radius: var(--co-radius-sm);
+  width: var(--bar-width, 0%);
+  transition: width 300ms ease;
+  min-width: 2px;
+}
+
+/* ── Stats grid ──────────────────────────────────────────── */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--co-space-3);
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.statItem span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--co-color-text-muted);
+}
+
+.statItem strong {
+  font-size: 20px;
+  color: var(--co-color-text-primary);
+}
+
+.statRoom {
+  font-size: 13px !important;
+  word-break: break-all;
+}
+
+/* ── Action bar ──────────────────────────────────────────── */
+
+.actionBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--co-space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--co-space-2) var(--co-space-3);
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  color: var(--co-color-text-primary);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: default;
+}
+
+.chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Evolution Timeline ──────────────────────────────────── */
+
+.evolutionList {
+  display: grid;
+  gap: var(--co-space-3);
+}
+
+.evolutionEntry {
+  display: grid;
+  gap: var(--co-space-1);
+  padding: var(--co-space-3) var(--co-space-3);
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel-muted);
+}
+
+.evolutionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--co-space-2);
+}
+
+.evolutionDate {
+  font-size: 11px;
+  color: var(--co-color-text-muted);
+}
+
+.evolutionTitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--co-color-text-primary);
+}
+
+.evolutionDelta {
+  font-size: 11px;
+  color: var(--co-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Learning Metrics ────────────────────────────────────── */
+
+.memoryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--co-space-2);
+  margin-bottom: var(--co-space-4);
+}
+
+.memoryStat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+  padding: var(--co-space-2) var(--co-space-3);
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel-muted);
+}
+
+.memoryLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--co-color-text-muted);
+}
+
+.memoryCount {
+  font-size: 20px;
+  color: var(--co-color-text-primary);
+}
+
+/* ── Proposal bar ────────────────────────────────────────── */
+
+.proposalBarWrap {
+  display: grid;
+  gap: var(--co-space-2);
+}
+
+.proposalBarLabel {
+  margin: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--co-color-text-muted);
+}
+
+.proposalBar {
+  display: flex;
+  height: 6px;
+  overflow: hidden;
+  background: var(--co-color-bg-panel-muted);
+  gap: 2px;
+}
+
+.proposalBarSeg {
+  height: 100%;
+  min-width: 4px;
+}
+
+/* Proposal bar segments — flex set via --seg-flex CSS custom property */
+.proposalSegApproved {
+  composes: proposalBarSeg;
+  background: var(--co-color-status-success);
+  flex: var(--seg-flex, 1);
+}
+
+.proposalSegRejected {
+  composes: proposalBarSeg;
+  background: var(--co-color-status-danger);
+  flex: var(--seg-flex, 1);
+}
+
+.proposalSegPending {
+  composes: proposalBarSeg;
+  background: var(--co-color-status-warning);
+  flex: var(--seg-flex, 1);
+}
+
+.proposalBarLegend {
+  display: flex;
+  gap: var(--co-space-3);
+  font-size: 11px;
+}
+
+.legendApproved {
+  color: var(--co-color-status-success);
+}
+
+.legendRejected {
+  color: var(--co-color-status-danger);
+}
+
+.legendPending {
+  color: var(--co-color-status-warning);
+}

@@ -1,0 +1,237 @@
+/* ProposalQueuePanel — CSS Module using --co-* design tokens */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-4);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--co-space-3);
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.panelLabel {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--co-color-text-muted);
+}
+
+.heading {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+}
+
+.pendingBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--co-space-1) var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  font-weight: 600;
+  background: var(--co-color-status-warning-muted);
+  color: var(--co-color-status-warning);
+  border: 1px solid var(--co-color-status-warning);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-3);
+}
+
+/* Proposal cards */
+.card {
+  padding: var(--co-space-3) var(--co-space-4);
+  background: var(--co-color-bg-panel);
+  border-radius: var(--co-radius-md);
+  border: 1px solid var(--co-color-line-default);
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-2);
+}
+
+.cardPending {
+  border-color: var(--co-color-status-warning);
+}
+
+.cardApproved {
+  border-color: var(--co-color-status-success);
+  opacity: 0.8;
+}
+
+.cardRejected {
+  border-color: var(--co-color-line-default);
+  opacity: 0.6;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+}
+
+.cardTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--co-color-text-primary);
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--co-space-2);
+  flex-shrink: 0;
+}
+
+.kindBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--co-color-bg-soft);
+  color: var(--co-color-text-secondary);
+  border: 1px solid var(--co-color-line-default);
+}
+
+.agentName {
+  font-size: 0.75rem;
+  color: var(--co-color-text-muted);
+}
+
+/* Confidence bar */
+.confidenceWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--co-space-1);
+}
+
+.confidenceLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6875rem;
+  color: var(--co-color-text-muted);
+}
+
+.confidenceTrack {
+  height: 4px;
+  background: var(--co-color-bg-soft);
+  border-radius: var(--co-radius-sm);
+  overflow: hidden;
+}
+
+.confidenceBar {
+  height: 100%;
+  background: var(--co-color-accent-default);
+  border-radius: var(--co-radius-sm);
+  transition: width var(--co-transition-normal);
+}
+
+/* Rationale */
+.rationale {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--co-color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Footer */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--co-space-2);
+}
+
+.evidenceCount {
+  font-size: 0.6875rem;
+  color: var(--co-color-text-muted);
+}
+
+.actionBar {
+  display: flex;
+  gap: var(--co-space-2);
+}
+
+.btn {
+  padding: var(--co-space-1) var(--co-space-3);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.75rem;
+  font-family: var(--co-font-mono);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--co-transition-fast), color var(--co-transition-fast);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--co-color-accent-default);
+  outline-offset: 2px;
+}
+
+.btnApprove {
+  background: var(--co-color-status-success-muted);
+  color: var(--co-color-status-success);
+  border-color: var(--co-color-status-success);
+}
+
+.btnApprove:hover {
+  background: var(--co-color-status-success);
+  color: var(--co-color-text-inverse);
+}
+
+.btnReject {
+  background: var(--co-color-status-danger-muted);
+  color: var(--co-color-status-danger);
+  border-color: var(--co-color-status-danger);
+}
+
+.btnReject:hover {
+  background: var(--co-color-status-danger);
+  color: var(--co-color-text-inverse);
+}
+
+/* Status badge (post-action) */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--co-space-2);
+  border-radius: var(--co-radius-sm);
+  font-size: 0.6875rem;
+  font-family: var(--co-font-mono);
+  font-weight: 500;
+}
+
+.statusBadgeSuccess {
+  background: var(--co-color-status-success-muted);
+  color: var(--co-color-status-success);
+}
+
+.statusBadgeDanger {
+  background: var(--co-color-status-danger-muted);
+  color: var(--co-color-status-danger);
+}
+
+.statusBadgeNeutral {
+  background: var(--co-color-bg-soft);
+  color: var(--co-color-text-muted);
+}

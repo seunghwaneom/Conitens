@@ -1,3 +1,5 @@
+import styles from './OperatorTaskDetailPanel.module.css';
+import { Badge, Button, EmptyState, ErrorDisplay, LoadingState } from '../ds/index.js';
 import type { OperatorTaskDetailViewModel } from "../operator-tasks-model.js";
 
 type PanelState = "idle" | "loading" | "ready" | "error";
@@ -35,6 +37,15 @@ interface OperatorTaskDetailPanelProps {
   approvalRequestedChanges?: string[];
 }
 
+function stateClass(panelState: PanelState): string {
+  const map: Partial<Record<PanelState, string>> = {
+    loading: styles.stateLoading,
+    ready: styles.stateReady,
+    error: styles.stateError,
+  };
+  return [styles.state, map[panelState]].filter(Boolean).join(' ');
+}
+
 export function OperatorTaskDetailPanel({
   task,
   state,
@@ -59,16 +70,16 @@ export function OperatorTaskDetailPanel({
   approvalRequestedChanges = [],
 }: OperatorTaskDetailPanelProps) {
   if (state === "loading") {
-    return <p className="forward-empty">Loading operator task...</p>;
+    return <LoadingState message="Loading operator task..." />;
   }
   if (state === "error") {
-    return <p className="forward-error">{error}</p>;
+    return <ErrorDisplay message={error ?? "Unknown error"} />;
   }
   if (state === "idle" || !task) {
     return (
-      <div className="forward-placeholder">
+      <div className={styles.placeholder}>
         <h3>Select an operator task</h3>
-        <p>Choose a task from the left rail to inspect its owned operator record.</p>
+        <EmptyState message="Choose a task from the left rail to inspect its owned operator record." />
       </div>
     );
   }
@@ -77,16 +88,16 @@ export function OperatorTaskDetailPanel({
     : archiveState;
 
   return (
-    <div className="forward-detail-body">
-      <div className="forward-detail-hero">
+    <div className={styles.detailBody}>
+      <div className={styles.detailHero}>
         <div>
-          <p className="forward-detail-label">{task.taskId}</p>
+          <p className={styles.detailLabel}>{task.taskId}</p>
           <h3>{task.title}</h3>
           <p>{task.objective}</p>
         </div>
-        <span className="forward-status-pill">{task.status}</span>
+        <Badge>{task.status}</Badge>
       </div>
-      <div className="forward-stats">
+      <div className={styles.stats}>
         {task.stats.map((item) => (
           <div key={item.label}>
             <span>{item.label}</span>
@@ -95,39 +106,39 @@ export function OperatorTaskDetailPanel({
         ))}
       </div>
       {onQuickStatus ? (
-        <section className="forward-section">
-          <div className="forward-section-header">
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
             <div>
-              <p className="forward-panel-label">Quick status</p>
+              <p className={styles.panelLabel}>Quick status</p>
               <h3>Move the task forward</h3>
             </div>
-            <span className={`forward-state state-${mutationState}`}>{mutationState}</span>
+            <span className={stateClass(mutationState)}>{mutationState}</span>
           </div>
-          <div className="forward-approval-actions">
+          <div className={styles.actions}>
             {(QUICK_STATUS_TRANSITIONS[task.status] ?? []).map((status) => (
-              <button
+              <Button
                 key={status}
-                className="forward-chip-button"
+                variant="secondary"
                 type="button"
                 onClick={() => onQuickStatus(status)}
               >
                 {status}
-              </button>
+              </Button>
             ))}
           </div>
-          {mutationError ? <p className="forward-error">{mutationError}</p> : null}
+          {mutationError ? <p className={styles.error}>{mutationError}</p> : null}
         </section>
       ) : null}
       {onRequestApproval ? (
-        <section className="forward-section">
-          <div className="forward-section-header">
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
             <div>
-              <p className="forward-panel-label">Approval workflow</p>
+              <p className={styles.panelLabel}>Approval workflow</p>
               <h3>Request review for this task</h3>
             </div>
-            <span className={`forward-state state-${approvalRequestState}`}>{approvalRequestState}</span>
+            <span className={stateClass(approvalRequestState)}>{approvalRequestState}</span>
           </div>
-          <label className="forward-approval-note">
+          <label className={styles.noteLabel}>
             <span>Rationale</span>
             <textarea
               value={approvalRationale}
@@ -137,41 +148,41 @@ export function OperatorTaskDetailPanel({
             />
           </label>
           {approvalRequestedChanges.length > 0 ? (
-            <ul className="forward-timeline">
+            <ul className={styles.timeline}>
               <li>
-                <div className="forward-timeline-topline">
+                <div className={styles.timelineTopline}>
                   <strong>Requested changes</strong>
                 </div>
                 <p>{approvalRequestedChanges.join(" | ")}</p>
               </li>
             </ul>
           ) : null}
-          <div className="forward-approval-actions">
-            <button className="forward-chip-button" type="button" onClick={onRequestApproval}>
+          <div className={styles.actions}>
+            <Button variant="secondary" type="button" onClick={onRequestApproval}>
               Request approval
-            </button>
+            </Button>
           </div>
-          {approvalRequestError ? <p className="forward-error">{approvalRequestError}</p> : null}
+          {approvalRequestError ? <p className={styles.error}>{approvalRequestError}</p> : null}
         </section>
       ) : null}
       {onArchive || onRestore || (onDelete && task.archivedAt) ? (
-        <section className="forward-section">
-          <div className="forward-section-header">
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
             <div>
-              <p className="forward-panel-label">Lifecycle</p>
+              <p className={styles.panelLabel}>Lifecycle</p>
               <h3>{task.archivedAt ? "Archived task controls" : "Archive this task"}</h3>
             </div>
-            <span className={`forward-state state-${lifecycleState}`}>
+            <span className={stateClass(lifecycleState)}>
               {lifecycleState}
             </span>
           </div>
-          <p className="forward-help">
+          <p className={styles.helpText}>
             {task.archivedAt
               ? "Archived tasks are removed from the default task queue. You can restore them to active visibility or permanently delete them after review context is clear."
               : "Archive removes the task from the default queue without deleting linked run, replay, or approval evidence. Archive is blocked while this task or its linked run has pending approvals."}
           </p>
           {!task.archivedAt ? (
-            <label className="forward-approval-note">
+            <label className={styles.noteLabel}>
               <span>Archive rationale</span>
               <textarea
                 value={archiveRationale}
@@ -182,16 +193,16 @@ export function OperatorTaskDetailPanel({
             </label>
           ) : null}
           {task.archivedAt ? (
-            <ul className="forward-timeline">
+            <ul className={styles.timeline}>
               <li>
-                <div className="forward-timeline-topline">
+                <div className={styles.timelineTopline}>
                   <strong>Archived by</strong>
                 </div>
                 <p>{task.archivedBy ?? "unknown"}</p>
               </li>
               {task.archiveNote ? (
                 <li>
-                  <div className="forward-timeline-topline">
+                  <div className={styles.timelineTopline}>
                     <strong>Archive rationale</strong>
                   </div>
                   <p>{task.archiveNote}</p>
@@ -199,51 +210,51 @@ export function OperatorTaskDetailPanel({
               ) : null}
             </ul>
           ) : null}
-          <div className="forward-approval-actions">
+          <div className={styles.actions}>
             {!task.archivedAt && onArchive ? (
-              <button className="forward-chip-button" type="button" onClick={onArchive}>
+              <Button variant="secondary" type="button" onClick={onArchive}>
                 Archive task
-              </button>
+              </Button>
             ) : null}
             {task.archivedAt && onRestore ? (
-              <button className="forward-chip-button" type="button" onClick={onRestore}>
+              <Button variant="secondary" type="button" onClick={onRestore}>
                 Restore task
-              </button>
+              </Button>
             ) : null}
             {task.archivedAt && onDelete ? (
-              <button className="forward-chip-button" type="button" onClick={onDelete}>
+              <Button variant="secondary" type="button" onClick={onDelete}>
                 Delete task
-              </button>
+              </Button>
             ) : null}
           </div>
-          {archiveError ? <p className="forward-error">{archiveError}</p> : null}
-          {deleteError ? <p className="forward-error">{deleteError}</p> : null}
+          {archiveError ? <p className={styles.error}>{archiveError}</p> : null}
+          {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
         </section>
       ) : null}
-      <section className="forward-section">
-        <div className="forward-section-header">
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
           <div>
-            <p className="forward-panel-label">Ownership</p>
+            <p className={styles.panelLabel}>Ownership</p>
             <h3>Operator task record</h3>
           </div>
         </div>
-        <ul className="forward-timeline">
+        <ul className={styles.timeline}>
           <li>
-            <div className="forward-timeline-topline">
+            <div className={styles.timelineTopline}>
               <strong>Owner</strong>
             </div>
             <p>{task.owner}</p>
           </li>
           {task.blockedReason ? (
             <li>
-              <div className="forward-timeline-topline">
+              <div className={styles.timelineTopline}>
                 <strong>Blocked reason</strong>
               </div>
               <p>{task.blockedReason}</p>
             </li>
           ) : null}
           <li>
-            <div className="forward-timeline-topline">
+            <div className={styles.timelineTopline}>
               <strong>Acceptance</strong>
             </div>
             {task.acceptance.length > 0 ? (

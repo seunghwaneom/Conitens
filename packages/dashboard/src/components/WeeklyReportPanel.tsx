@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { Badge, Button, EmptyState, ErrorDisplay, LoadingState } from "../ds/index";
+import styles from "./WeeklyReportPanel.module.css";
 
 interface FailurePattern {
   category: string;
@@ -39,10 +41,10 @@ interface WeeklyReportPanelProps {
   token: string;
 }
 
-const SEVERITY_COLOR: Record<string, string> = {
-  critical: "#f85149",
-  warning: "#d29922",
-  info: "#58a6ff",
+const SEVERITY_VARIANT: Record<string, "danger" | "warning" | "info"> = {
+  critical: "danger",
+  warning: "warning",
+  info: "info",
 };
 
 export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
@@ -63,9 +65,9 @@ export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
       .catch((err: unknown) => { setError(err instanceof Error ? err.message : "Failed to load report"); setLoading(false); });
   }, [apiBase, token, weekOffset]);
 
-  if (loading) return <div style={{ padding: 24, color: "#8b949e" }}>Loading weekly report...</div>;
-  if (error) return <div style={{ padding: 24, color: "#f85149" }}>Error: {error}</div>;
-  if (!report) return <div style={{ padding: 24, color: "#8b949e" }}>No report available.</div>;
+  if (loading) return <LoadingState message="Loading weekly report..." />;
+  if (error) return <ErrorDisplay message={`Error: ${error}`} />;
+  if (!report) return <EmptyState message="No report available." />;
 
   const successPct = typeof report.success_rate === "number"
     ? (report.success_rate * 100).toFixed(1)
@@ -75,60 +77,55 @@ export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
     : "—";
 
   return (
-    <div style={{ padding: 24, color: "#e6edf3" }}>
+    <div className={styles.panel}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+      <div className={styles.header}>
         <div>
-          <div style={{ fontSize: 12, color: "#8b949e", marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
-            Weekly Report
-          </div>
-          <h2 style={{ margin: 0, fontSize: 20 }}>
+          <div className={styles.headerLabel}>Weekly Report</div>
+          <h2 className={styles.headerTitle}>
             {report.week_start} ~ {report.week_end}
           </h2>
-          <div style={{ fontSize: 12, color: "#8b949e", marginTop: 4 }}>
+          <div className={styles.headerDate}>
             Generated: {report.generated_at}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={() => setWeekOffset((o) => o + 1)}
-            style={navBtnStyle}
-          >
-            ← Prev
-          </button>
-          <button
+        <div className={styles.navGroup}>
+          <Button variant="secondary" onClick={() => setWeekOffset((o) => o + 1)}>
+            &larr; Prev
+          </Button>
+          <Button
+            variant="secondary"
             onClick={() => setWeekOffset((o) => Math.max(0, o - 1))}
             disabled={weekOffset === 0}
-            style={{ ...navBtnStyle, opacity: weekOffset === 0 ? 0.4 : 1 }}
           >
-            Next →
-          </button>
+            Next &rarr;
+          </Button>
         </div>
       </div>
 
       {/* Key metrics */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+      <div className={styles.metricsGrid}>
         <StatCard label="Total Runs" value={String(report.total_runs)} />
         <StatCard label="Success Rate" value={`${successPct}%`} />
-        <StatCard label="Failures" value={String(report.failure_count)} valueColor="#f85149" />
+        <StatCard label="Failures" value={String(report.failure_count)} danger />
         <StatCard label="Avg Duration" value={`${avgDurSec}s`} />
       </div>
 
       {/* Failure patterns */}
       <Section title="Top Failure Patterns">
         {report.failure_patterns.length === 0 ? (
-          <div style={{ color: "#8b949e", fontSize: 13 }}>No failure patterns recorded.</div>
+          <div className={styles.emptyText}>No failure patterns recorded.</div>
         ) : (
           report.failure_patterns.map((p) => (
-            <div key={p.category} style={cardStyle}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 14, fontWeight: 500, flex: 1 }}>{p.category}</span>
-                <span style={badgeStyle(SEVERITY_COLOR[p.severity] ?? "#8b949e")}>
+            <div key={p.category} className={styles.patternCard}>
+              <div className={styles.patternRow}>
+                <span className={styles.patternName}>{p.category}</span>
+                <Badge variant={SEVERITY_VARIANT[p.severity] ?? "neutral"}>
                   {p.severity}
-                </span>
-                <span style={{ fontSize: 13, color: "#8b949e" }}>{p.count}x</span>
+                </Badge>
+                <span className={styles.patternCount}>{p.count}x</span>
               </div>
-              <div style={{ fontSize: 12, color: "#8b949e", fontFamily: "monospace", wordBreak: "break-all" }}>
+              <div className={styles.patternExample}>
                 {p.example}
               </div>
             </div>
@@ -139,18 +136,18 @@ export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
       {/* Applied proposals */}
       <Section title="Improvement Proposals Applied">
         {report.applied_proposals.length === 0 ? (
-          <div style={{ color: "#8b949e", fontSize: 13 }}>No proposals applied this week.</div>
+          <div className={styles.emptyText}>No proposals applied this week.</div>
         ) : (
           report.applied_proposals.map((p) => (
-            <div key={p.id} style={cardStyle}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 12, color: "#58a6ff", fontFamily: "monospace" }}>{p.id}</span>
-                  <div style={{ fontSize: 13, color: "#e6edf3", marginTop: 4 }}>{p.description}</div>
+            <div key={p.id} className={styles.proposalCard}>
+              <div className={styles.proposalHeader}>
+                <div className={styles.proposalBody}>
+                  <span className={styles.proposalId}>{p.id}</span>
+                  <div className={styles.proposalDesc}>{p.description}</div>
                 </div>
-                <div style={{ fontSize: 12, color: "#8b949e", whiteSpace: "nowrap" }}>{p.applied_date}</div>
+                <div className={styles.proposalDate}>{p.applied_date}</div>
               </div>
-              <div style={{ fontSize: 12, color: "#7ee787", marginTop: 6 }}>Impact: {p.impact}</div>
+              <div className={styles.proposalImpact}>Impact: {p.impact}</div>
             </div>
           ))
         )}
@@ -159,26 +156,26 @@ export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
       {/* Agent performance ranking */}
       <Section title="Agent Performance Ranking">
         {report.agent_rankings.length === 0 ? (
-          <div style={{ color: "#8b949e", fontSize: 13 }}>No agent data available.</div>
+          <div className={styles.emptyText}>No agent data available.</div>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table className={styles.rankTable}>
             <thead>
               <tr>
                 {["#", "Agent", "Runs", "Success %", "Avg Tokens"].map((h) => (
-                  <th key={h} style={thStyle}>{h}</th>
+                  <th key={h} className={styles.th}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {report.agent_rankings.map((a, i) => (
-                <tr key={a.agent_id} style={{ borderBottom: "1px solid #21262d" }}>
-                  <td style={tdStyle}>{i + 1}</td>
-                  <td style={{ ...tdStyle, color: "#79c0ff", fontFamily: "monospace" }}>{a.agent_id}</td>
-                  <td style={tdStyle}>{a.runs_completed}</td>
-                  <td style={{ ...tdStyle, color: a.success_rate >= 0.9 ? "#7ee787" : a.success_rate >= 0.7 ? "#d29922" : "#f85149" }}>
+                <tr key={a.agent_id}>
+                  <td className={styles.td}>{i + 1}</td>
+                  <td className={`${styles.td} ${styles.agentId}`}>{a.agent_id}</td>
+                  <td className={styles.td}>{a.runs_completed}</td>
+                  <td className={`${styles.td} ${rateClass(a.success_rate)}`}>
                     {(a.success_rate * 100).toFixed(1)}%
                   </td>
-                  <td style={tdStyle}>{a.avg_tokens_per_run.toLocaleString()}</td>
+                  <td className={styles.td}>{a.avg_tokens_per_run.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -189,66 +186,28 @@ export function WeeklyReportPanel({ apiBase, token }: WeeklyReportPanelProps) {
   );
 }
 
-function StatCard({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+function rateClass(rate: number): string {
+  if (rate >= 0.9) return styles.rateHigh;
+  if (rate >= 0.7) return styles.rateMid;
+  return styles.rateLow;
+}
+
+function StatCard({ label, value, danger }: { label: string; value: string; danger?: boolean }) {
   return (
-    <div style={{
-      background: "#161b22", border: "1px solid #30363d", borderRadius: 8,
-      padding: "14px 16px", textAlign: "center",
-    }}>
-      <div style={{ fontSize: 22, fontWeight: 700, color: valueColor ?? "#e6edf3" }}>{value}</div>
-      <div style={{ fontSize: 12, color: "#8b949e", marginTop: 4 }}>{label}</div>
+    <div className={styles.statCard}>
+      <div className={danger ? `${styles.statValue} ${styles.statValueDanger}` : styles.statValue}>
+        {value}
+      </div>
+      <div className={styles.statLabel}>{label}</div>
     </div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 24 }}>
-      <h3 style={{ fontSize: 15, color: "#e6edf3", margin: "0 0 10px", fontWeight: 600 }}>{title}</h3>
+    <div className={styles.section}>
+      <h3 className={styles.sectionTitle}>{title}</h3>
       {children}
     </div>
   );
 }
-
-const cardStyle: React.CSSProperties = {
-  background: "#161b22",
-  border: "1px solid #30363d",
-  borderRadius: 8,
-  padding: "12px 14px",
-  marginBottom: 8,
-};
-
-const navBtnStyle: React.CSSProperties = {
-  background: "#161b22",
-  border: "1px solid #30363d",
-  borderRadius: 6,
-  color: "#e6edf3",
-  padding: "6px 14px",
-  fontSize: 13,
-  cursor: "pointer",
-};
-
-function badgeStyle(color: string): React.CSSProperties {
-  return {
-    padding: "2px 8px",
-    borderRadius: 12,
-    fontSize: 11,
-    fontWeight: 600,
-    background: `${color}22`,
-    color,
-    border: `1px solid ${color}44`,
-  };
-}
-
-const thStyle: React.CSSProperties = {
-  textAlign: "left",
-  padding: "6px 10px",
-  color: "#8b949e",
-  fontWeight: 500,
-  borderBottom: "1px solid #30363d",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "8px 10px",
-  color: "#e6edf3",
-};

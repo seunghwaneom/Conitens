@@ -1,0 +1,119 @@
+.placeholder {
+  display: grid;
+  gap: var(--co-space-5);
+  place-content: center;
+  text-align: center;
+  min-height: 320px;
+  opacity: 0.7;
+}
+
+.placeholder h3 {
+  margin: 0;
+}
+
+.placeholder p {
+  color: var(--co-text-muted);
+}
+
+.detailBody {
+  display: grid;
+  gap: var(--co-space-5);
+}
+
+.detailHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--co-space-4);
+  padding-bottom: var(--co-space-5);
+  border-bottom: 1px solid var(--co-border);
+}
+
+.detailHero h3 {
+  margin: 0;
+}
+
+.detailLabel {
+  margin: 0 0 var(--co-space-3);
+  color: var(--co-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-family: var(--co-font-ui);
+}
+
+.runList {
+  display: grid;
+  gap: var(--co-space-3);
+}
+
+.runItem {
+  width: 100%;
+  padding: var(--co-space-4);
+  text-align: left;
+  border: 1px solid var(--co-border);
+  border-radius: var(--co-radius-md);
+  background: var(--co-surface-subtle);
+  color: inherit;
+  cursor: pointer;
+  font-family: var(--co-font-ui);
+  display: grid;
+  gap: var(--co-space-2);
+}
+
+.runItem p {
+  margin: 0;
+  color: var(--co-text-muted);
+}
+
+.runItem:hover {
+  background: var(--co-surface-hover);
+}
+
+.runItemActive {
+  border-color: var(--co-accent-border);
+  background: var(--co-accent-subtle);
+}
+
+.toneWarning {
+  border-color: var(--co-warning-border, rgba(255, 200, 80, 0.4));
+  background: var(--co-warning-subtle, rgba(255, 200, 80, 0.06));
+}
+
+.toneDanger {
+  border-color: var(--co-danger-border, rgba(255, 100, 100, 0.4));
+  background: var(--co-danger-subtle, rgba(255, 100, 100, 0.06));
+}
+
+.toneInfo {
+  border-color: var(--co-info-border, rgba(123, 200, 255, 0.4));
+  background: var(--co-info-subtle, rgba(123, 200, 255, 0.06));
+}
+
+.toneNeutral {
+  border-color: var(--co-border);
+  background: var(--co-surface-subtle);
+}
+
+.runTopline {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--co-space-4);
+}
+
+.runTopline strong {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.metricRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--co-space-2);
+}
+
+.metricRow span {
+  color: var(--co-text-accent, rgba(177, 205, 255, 0.88));
+  font-size: 12px;
+  font-family: var(--co-font-mono);
+}
