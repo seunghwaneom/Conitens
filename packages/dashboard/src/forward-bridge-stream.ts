@@ -4,6 +4,7 @@ import type {
   ForwardEventStreamHandle,
   ForwardStreamEventMessage,
 } from "./forward-bridge-types.ts";
+import { createForwardAuthHeaders } from "./forward-bridge-auth.ts";
 
 function normalizeApiRoot(apiRoot: string): string {
   return apiRoot.replace(/\/+$/, "");
@@ -24,10 +25,9 @@ export async function openForwardEventStream(
   if (filters.roomId) search.set("room_id", filters.roomId);
   const controller = new AbortController();
   const response = await fetch(`${normalizeApiRoot(config.apiRoot)}/events/stream?${search.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${config.token}`,
+    headers: createForwardAuthHeaders(config.token, {
       Accept: "text/event-stream",
-    },
+    }),
     signal: controller.signal,
   });
   if (!response.ok || !response.body) {

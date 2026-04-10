@@ -49,7 +49,7 @@ export function OperatorWorkspaceDetailPanel({
   onArchiveTask,
 }: OperatorWorkspaceDetailPanelProps) {
   if (state === "loading") {
-    return <LoadingState message="Loading operator workspace..." />;
+    return <LoadingState message="Loading operator workspace…" />;
   }
   if (state === "error") {
     return <ErrorDisplay message={error ?? "Unknown error"} />;
@@ -116,7 +116,7 @@ export function OperatorWorkspaceDetailPanel({
           </div>
           <span className={styles.state} data-state={taskActionState}>{taskActionState}</span>
         </div>
-        {linkedTasksState === "loading" ? <LoadingState message="Loading linked tasks..." /> : null}
+        {linkedTasksState === "loading" ? <LoadingState message="Loading linked tasks…" /> : null}
         {linkedTasksError ? <ErrorDisplay message={linkedTasksError} /> : null}
         {linkedTasksState === "ready" && linkedTasks.length === 0 ? (
           <EmptyState message="No linked tasks are currently attached." />

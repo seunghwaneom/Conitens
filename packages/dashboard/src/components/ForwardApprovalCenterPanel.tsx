@@ -199,7 +199,7 @@ export function ForwardApprovalCenterPanel({
         </div>
         <span className={styles.stateTag}>{listState}</span>
       </div>
-      {listState === "loading" ? <LoadingState message="Loading approvals..." /> : null}
+      {listState === "loading" ? <LoadingState message="Loading approvals…" /> : null}
       {listState === "error" && error ? <ErrorDisplay message={error} /> : null}
       {listState === "ready" && approvals.length === 0 ? (
         <EmptyState message="No approval records for this run." />
@@ -223,7 +223,7 @@ export function ForwardApprovalCenterPanel({
             ))}
           </div>
           <div className={styles.approvalDetail}>
-            {detailState === "loading" ? <LoadingState message="Loading approval detail..." /> : null}
+            {detailState === "loading" ? <LoadingState message="Loading approval detail…" /> : null}
             {detailState === "error" && error ? <ErrorDisplay message={error} /> : null}
             {selectedApproval ? (
               <>
@@ -255,7 +255,7 @@ export function ForwardApprovalCenterPanel({
                     </button>
                   ) : null}
                 </div>
-                {actionState === "loading" ? <LoadingState message="Applying approval action..." /> : null}
+                {actionState === "loading" ? <LoadingState message="Applying approval action…" /> : null}
                 {actionState === "error" && error ? <ErrorDisplay message={error} /> : null}
               </>
             ) : null}

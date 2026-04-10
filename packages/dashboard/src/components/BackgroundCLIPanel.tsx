@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, LoadingState, ErrorDisplay, EmptyState } from "../ds/index.js";
+import { createForwardAuthHeaders } from "../forward-bridge.js";
 import styles from "./BackgroundCLIPanel.module.css";
 
 interface BGProcess {
@@ -39,7 +40,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
 
   function fetchProcesses() {
     setLoading(true);
-    fetch(`${apiBase}/bg/ps`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiBase}/bg/ps`, { headers: createForwardAuthHeaders(token) })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => {
         setProcesses(data.processes ?? []);
@@ -60,7 +61,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
     setStarting(true);
     fetch(`${apiBase}/bg/up`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      headers: createForwardAuthHeaders(token, { "Content-Type": "application/json" }),
       body: JSON.stringify({ command: newCmd.trim() }),
     })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
@@ -73,7 +74,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
   }
 
   function handleStop(id: string) {
-    fetch(`${apiBase}/bg/stop/${id}`, { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiBase}/bg/stop/${id}`, { method: "POST", headers: createForwardAuthHeaders(token) })
       .then(() => fetchProcesses())
       .catch((err) => { setError(err instanceof Error ? err.message : "Failed to stop process"); });
   }
@@ -84,7 +85,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
       return;
     }
     setLoadingLogs((prev) => ({ ...prev, [id]: true }));
-    fetch(`${apiBase}/bg/logs/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiBase}/bg/logs/${id}`, { headers: createForwardAuthHeaders(token) })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => {
         setExpandedLogs((prev) => ({ ...prev, [id]: data.lines ?? [] }));
@@ -105,7 +106,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
       )
     : processes;
 
-  if (loading) return <LoadingState message="Loading processes..." />;
+  if (loading) return <LoadingState message="Loading processes…" />;
   if (error) return <ErrorDisplay message={error} />;
 
   return (
@@ -117,7 +118,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
       <div className={styles.toolbar}>
         <input
           type="text"
-          placeholder="Command to start..."
+          placeholder="Command to start…"
           value={newCmd}
           onChange={(e) => setNewCmd(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") handleStart(); }}
@@ -128,7 +129,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
           onClick={handleStart}
           disabled={starting || !newCmd.trim()}
         >
-          {starting ? "Starting..." : "Start"}
+          {starting ? "Starting…" : "Start"}
         </Button>
         <Button
           variant="secondary"
@@ -140,7 +141,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
 
       <input
         type="text"
-        placeholder="Filter by id, command, status..."
+        placeholder="Filter by ID, command, or status…"
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         className={styles.filterInput}
@@ -176,7 +177,7 @@ export function BackgroundCLIPanel({ apiBase, token }: BackgroundCLIPanelProps) 
                   onClick={() => handleToggleLogs(p.id)}
                   disabled={loadingLogs[p.id]}
                 >
-                  {loadingLogs[p.id] ? "..." : expandedLogs[p.id] !== undefined ? "Hide" : "Logs"}
+                  {loadingLogs[p.id] ? "…" : expandedLogs[p.id] !== undefined ? "Hide" : "Logs"}
                 </Button>
                 {p.status === "running" && (
                   <Button

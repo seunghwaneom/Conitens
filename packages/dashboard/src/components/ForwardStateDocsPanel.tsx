@@ -20,7 +20,7 @@ export function ForwardStateDocsPanel({
         </div>
         <span className={styles.stateTag}>{state}</span>
       </div>
-      {state === "loading" ? <LoadingState message="Loading state docs..." /> : null}
+      {state === "loading" ? <LoadingState message="Loading state docs…" /> : null}
       {state === "error" && error ? <ErrorDisplay message={error} /> : null}
       {state === "ready" && stateDocs ? (
         <div className={styles.docGrid}>

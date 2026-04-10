@@ -1,0 +1,139 @@
+.shell {
+  display: grid;
+  gap: 20px;
+}
+
+.header {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--co-color-line-default);
+}
+
+.headerCopy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--co-color-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 30px);
+  line-height: 1.05;
+}
+
+.description {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--co-color-text-secondary);
+  line-height: 1.5;
+}
+
+.bridgeTray {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.bridgeSummary {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bridgeState {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 8px;
+  border: 1px solid var(--co-color-line-default);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bridgeStateDemo {
+  color: rgba(248, 231, 190, 0.92);
+  border-color: rgba(216, 179, 106, 0.24);
+  background: rgba(216, 179, 106, 0.08);
+}
+
+.bridgeStateLive {
+  color: rgba(168, 241, 201, 0.92);
+  border-color: rgba(93, 204, 152, 0.24);
+  background: rgba(93, 204, 152, 0.1);
+}
+
+.bridgeCopy {
+  margin: 0;
+  color: var(--co-color-text-secondary);
+  line-height: 1.45;
+}
+
+.bridgeButton,
+.bridgeForm button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--co-color-text-primary);
+  font: inherit;
+}
+
+.bridgeForm {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.bridgeForm label {
+  display: grid;
+  gap: 6px;
+}
+
+.bridgeForm label span {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--co-color-text-muted);
+}
+
+.bridgeForm input {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--co-color-text-primary);
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.content {
+  display: grid;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .bridgeTray {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .bridgeForm {
+    grid-template-columns: 1fr;
+  }
+}

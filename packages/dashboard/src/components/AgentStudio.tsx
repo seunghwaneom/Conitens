@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { buildForwardRoute } from "../forward-route.js";
 import { LoadingState, ErrorDisplay } from "../ds/index.js";
+import { createForwardAuthHeaders } from "../forward-bridge.js";
 import styles from "./AgentStudio.module.css";
 
 interface AgentSummary {
@@ -29,13 +30,13 @@ export function AgentStudio({ apiBase, token }: AgentStudioProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${apiBase}/agents`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiBase}/agents`, { headers: createForwardAuthHeaders(token) })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => { setAgents(data.agents ?? []); setLoading(false); })
       .catch((err: unknown) => { setError(err instanceof Error ? err.message : "Failed to load agents"); setLoading(false); });
   }, [apiBase, token]);
 
-  if (loading) return <LoadingState message="Loading agents..." />;
+  if (loading) return <LoadingState message="Loading agents…" />;
   if (error) return <ErrorDisplay message={`Error: ${error}`} />;
 
   return (

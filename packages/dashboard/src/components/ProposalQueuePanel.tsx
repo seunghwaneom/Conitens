@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import type { ImprovementProposal } from "../evolution-model.js";
 import type { AgentProfile } from "../agent-fleet-model.js";
 import styles from "./ProposalQueuePanel.module.css";
+import { pickText, localizeStatus } from "../i18n.js";
+import { useUiStore } from "../store/ui-store.js";
 
 interface ProposalQueuePanelProps {
   proposals: ImprovementProposal[];
@@ -9,6 +11,7 @@ interface ProposalQueuePanelProps {
 }
 
 export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProps) {
+  const locale = useUiStore((state) => state.locale);
   const [localProposals, setLocalProposals] = useState<ImprovementProposal[]>(proposals);
 
   const pendingCount = localProposals.filter(p => p.status === "pending").length;
@@ -29,11 +32,11 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
     <div className={styles.panel}>
       <div className={styles.header}>
         <div className={styles.titleGroup}>
-          <p className={styles.panelLabel}>Evolution</p>
-          <h3 className={styles.heading}>Proposal Queue</h3>
+          <p className={styles.panelLabel}>{pickText(locale, { ko: "진화", en: "Evolution" })}</p>
+          <h3 className={styles.heading}>{pickText(locale, { ko: "제안 큐", en: "Proposal Queue" })}</h3>
         </div>
         {pendingCount > 0 && (
-          <span className={styles.pendingBadge}>{pendingCount} pending</span>
+          <span className={styles.pendingBadge}>{pickText(locale, { ko: `${pendingCount}개 대기`, en: `${pendingCount} pending` })}</span>
         )}
       </div>
 
@@ -64,7 +67,7 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
 
               <div className={styles.confidenceWrap}>
                 <div className={styles.confidenceLabel}>
-                  <span>Confidence</span>
+                  <span>{pickText(locale, { ko: "신뢰도", en: "Confidence" })}</span>
                   <span>{confidencePct}%</span>
                 </div>
                 <div className={styles.confidenceTrack}>
@@ -83,7 +86,7 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
 
               <div className={styles.cardFooter}>
                 <span className={styles.evidenceCount}>
-                  {proposal.evidenceRefs.length} evidence ref{proposal.evidenceRefs.length !== 1 ? "s" : ""}
+                  {pickText(locale, { ko: `${proposal.evidenceRefs.length}개 evidence ref`, en: `${proposal.evidenceRefs.length} evidence ref${proposal.evidenceRefs.length !== 1 ? "s" : ""}` })}
                 </span>
                 {isPending && (
                   <div className={styles.actionBar}>
@@ -91,13 +94,13 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
                       className={[styles.btn, styles.btnApprove].join(" ")}
                       onClick={() => approve(proposal.id)}
                     >
-                      Approve
+                      {pickText(locale, { ko: "승인", en: "Approve" })}
                     </button>
                     <button
                       className={[styles.btn, styles.btnReject].join(" ")}
                       onClick={() => reject(proposal.id)}
                     >
-                      Reject
+                      {pickText(locale, { ko: "거부", en: "Reject" })}
                     </button>
                   </div>
                 )}
@@ -108,7 +111,7 @@ export function ProposalQueuePanel({ proposals, agents }: ProposalQueuePanelProp
                       : proposal.status === "rejected" ? styles.statusBadgeDanger
                       : styles.statusBadgeNeutral,
                   ].join(" ")}>
-                    {proposal.status}
+                    {localizeStatus(locale, proposal.status)}
                   </span>
                 )}
               </div>

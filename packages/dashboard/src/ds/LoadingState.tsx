@@ -5,7 +5,7 @@ interface LoadingStateProps {
   className?: string;
 }
 
-export function LoadingState({ message = 'Loading...', className }: LoadingStateProps) {
+export function LoadingState({ message = 'Loading…', className }: LoadingStateProps) {
   const classNames = [styles.loadingState, className].filter(Boolean).join(' ');
 
   return <p className={classNames}>{message}</p>;

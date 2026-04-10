@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { buildForwardRoute } from "../forward-route.js";
 import { Badge, LoadingState, ErrorDisplay } from "../ds/index.js";
+import { createForwardAuthHeaders } from "../forward-bridge.js";
 import styles from "./AgentDetail.module.css";
 
 interface AgentData {
@@ -26,13 +27,13 @@ export function AgentDetail({ apiBase, agentId, token }: AgentDetailProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${apiBase}/agents/${encodeURIComponent(agentId)}`, { headers: { Authorization: `Bearer ${token}` } })
+    fetch(`${apiBase}/agents/${encodeURIComponent(agentId)}`, { headers: createForwardAuthHeaders(token) })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then((data) => { setAgent(data.agent ?? null); setLoading(false); })
       .catch((err: unknown) => { setError(err instanceof Error ? err.message : "Failed to load agent"); setLoading(false); });
-  }, [apiBase, agentId]);
+  }, [apiBase, agentId, token]);
 
-  if (loading) return <LoadingState message="Loading agent..." />;
+  if (loading) return <LoadingState message="Loading agent…" />;
   if (error) return <ErrorDisplay message={`Error: ${error}`} />;
   if (!agent) return <ErrorDisplay message="Agent not found" />;
 

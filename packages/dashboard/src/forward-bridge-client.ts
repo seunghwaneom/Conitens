@@ -25,6 +25,7 @@ import type {
   ForwardBridgeConfig,
   ForwardOperatorSummaryResponse,
 } from "./forward-bridge-types.ts";
+import { createForwardAuthHeaders } from "./forward-bridge-auth.ts";
 
 function normalizeApiRoot(apiRoot: string): string {
   return apiRoot.replace(/\/+$/, "");
@@ -49,9 +50,7 @@ export async function forwardGet<T>(
   parser: (payload: unknown) => T,
 ): Promise<T> {
   const response = await fetch(`${normalizeApiRoot(config.apiRoot)}${path}`, {
-    headers: {
-      Authorization: `Bearer ${config.token}`,
-    },
+    headers: createForwardAuthHeaders(config.token),
   });
   if (!response.ok) {
     throw await createRequestError(response);
@@ -67,10 +66,9 @@ export async function forwardPost<T>(
 ): Promise<T> {
   const response = await fetch(`${normalizeApiRoot(config.apiRoot)}${path}`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${config.token}`,
+    headers: createForwardAuthHeaders(config.token, {
       "Content-Type": "application/json",
-    },
+    }),
     body: JSON.stringify(body),
   });
   if (!response.ok) {
@@ -87,10 +85,9 @@ export async function forwardPatch<T>(
 ): Promise<T> {
   const response = await fetch(`${normalizeApiRoot(config.apiRoot)}${path}`, {
     method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${config.token}`,
+    headers: createForwardAuthHeaders(config.token, {
       "Content-Type": "application/json",
-    },
+    }),
     body: JSON.stringify(body),
   });
   if (!response.ok) {
@@ -106,9 +103,7 @@ export async function forwardDelete<T>(
 ): Promise<T> {
   const response = await fetch(`${normalizeApiRoot(config.apiRoot)}${path}`, {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${config.token}`,
-    },
+    headers: createForwardAuthHeaders(config.token),
   });
   if (!response.ok) {
     throw await createRequestError(response);

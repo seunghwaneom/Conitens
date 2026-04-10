@@ -1,0 +1,199 @@
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.panel {
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  padding: 20px;
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.listShell {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.rail {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  padding: 16px;
+}
+
+.railHeader,
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.label {
+  margin: 0 0 8px;
+  color: var(--co-color-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.meta {
+  margin: 4px 0 0;
+  color: var(--co-color-text-secondary);
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.rowButton {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.rowButton:hover,
+.rowButtonActive {
+  border-color: rgba(139, 210, 255, 0.24);
+  background: rgba(139, 210, 255, 0.1);
+}
+
+.rowTopline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rowTopline strong {
+  font-size: 15px;
+}
+
+.rowMeta,
+.metricLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--co-color-text-muted);
+  font-size: 12px;
+}
+
+.empty {
+  margin: 0;
+  color: var(--co-color-text-secondary);
+}
+
+.detail {
+  display: grid;
+  gap: 20px;
+  border: 1px solid var(--co-color-line-default);
+  background: var(--co-color-bg-panel);
+  padding: 20px;
+  min-height: 420px;
+}
+
+.detailStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.detailStats div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.detailStats span {
+  color: var(--co-color-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detailStats strong {
+  font-size: 18px;
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--co-color-text-primary);
+  font: inherit;
+  text-decoration: none;
+}
+
+.section {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--co-color-line-default);
+}
+
+.timeline {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  padding: 12px 14px;
+  border: 1px solid var(--co-color-line-default);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.timelineTopline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timeline p {
+  margin: 6px 0 0;
+  color: var(--co-color-text-secondary);
+}
+
+@media (max-width: 1220px) {
+  .heroGrid,
+  .listShell {
+    grid-template-columns: 1fr;
+  }
+}

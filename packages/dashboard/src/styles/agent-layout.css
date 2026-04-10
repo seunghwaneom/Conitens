@@ -1,0 +1,16 @@
+.agent-fleet-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 368px;
+  gap: 24px;
+  align-items: start;
+}
+
+.agent-fleet-layout > * {
+  min-width: 0;
+}
+
+@media (max-width: 1220px) {
+  .agent-fleet-layout {
+    grid-template-columns: 1fr;
+  }
+}

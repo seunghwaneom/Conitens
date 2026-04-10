@@ -20,7 +20,7 @@ export function ForwardContextPanel({
         </div>
         <span className={styles.stateTag}>{state}</span>
       </div>
-      {state === "loading" ? <LoadingState message="Loading digests..." /> : null}
+      {state === "loading" ? <LoadingState message="Loading digests…" /> : null}
       {state === "error" && error ? <ErrorDisplay message={error} /> : null}
       {state === "ready" && !contextLatest ? (
         <EmptyState message="No context digest available." />
