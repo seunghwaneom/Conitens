@@ -94,6 +94,48 @@ export function OperatorTaskDetailPanel({
           </div>
         ))}
       </div>
+      <section className="forward-section">
+        <div className="forward-section-header">
+          <div>
+            <p className="forward-panel-label">PR / CI evidence</p>
+            <h3>Review and check posture</h3>
+          </div>
+          <span className={`forward-state state-${task.prCiEvidence.posture}`}>{task.prCiEvidence.posture}</span>
+        </div>
+        <div className="forward-stats">
+          {task.prCiEvidence.metrics.map((item) => (
+            <div key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+            </div>
+          ))}
+        </div>
+        {task.prCiEvidence.items.length > 0 ? (
+          <ul className="forward-timeline">
+            {task.prCiEvidence.items.map((item) => (
+              <li key={`${item.kind}:${item.observedAt}:${item.title}`}>
+                <div className="forward-timeline-topline">
+                  <strong>{item.kind === "pull_request" ? "Pull request" : "CI run"} | {item.title}</strong>
+                  <span>{item.statusLabel}</span>
+                </div>
+                <p>{item.summary}</p>
+                <p>{item.repository} | {item.branch} | {item.commitSha}</p>
+                {item.url ? (
+                  <p>
+                    <a href={item.url} target="_blank" rel="noreferrer">Open evidence</a>
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="forward-empty">No PR or CI evidence is linked to this task yet.</p>
+        )}
+        {task.prCiEvidence.suggestions.length > 0 ? (
+          <p className="forward-help">{task.prCiEvidence.suggestions.join(" | ")}</p>
+        ) : null}
+        <p className="forward-help">{task.prCiEvidence.privacyNote}</p>
+      </section>
       {onQuickStatus ? (
         <section className="forward-section">
           <div className="forward-section-header">

@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conitens 에이전트 시스템 비교 리포트</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-soft: #eef2f5;
+      --ink: #1d242b;
+      --muted: #63717e;
+      --line: #dce3e8;
+      --accent: #2d6cdf;
+      --good: #16825d;
+      --warn: #a06014;
+      --risk: #b23b3b;
+      --violet: #6f56c9;
+      --radius: 8px;
+      --shadow: 0 18px 45px rgba(29, 36, 43, 0.08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #ffffff 0, var(--bg) 430px);
+      line-height: 1.6;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .page {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 36px 0 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 28px;
+      align-items: end;
+      padding: 30px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--good);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 820px;
+      font-size: clamp(32px, 4.5vw, 54px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 820px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .meta {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-size: 13px;
+    }
+
+    .meta strong {
+      display: block;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 20px 0 28px;
+      padding: 10px;
+      background: rgba(246, 247, 249, 0.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav a {
+      padding: 7px 10px;
+      color: var(--ink);
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .nav a:hover {
+      background: #e7edf3;
+      text-decoration: none;
+    }
+
+    section {
+      margin-top: 34px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .section-lead {
+      max-width: 850px;
+      margin-bottom: 16px;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .panel p,
+    .panel li {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-bottom: 10px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #e9f2ff;
+      color: #194f9e;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge.good {
+      background: #e5f5ee;
+      color: var(--good);
+    }
+
+    .badge.warn {
+      background: #fff2dd;
+      color: var(--warn);
+    }
+
+    .badge.risk {
+      background: #fae7e7;
+      color: var(--risk);
+    }
+
+    .matrix {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 860px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #eef2f5;
+      color: var(--ink);
+      font-size: 12px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td:nth-child(3),
+    td:nth-child(4) {
+      color: var(--muted);
+    }
+
+    .backlog {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .backlog ol,
+    .guardrails ul,
+    .sources ul {
+      margin: 10px 0 0;
+      padding-left: 20px;
+    }
+
+    .backlog li,
+    .guardrails li,
+    .sources li {
+      margin: 8px 0;
+      color: var(--muted);
+    }
+
+    .callout {
+      padding: 18px;
+      background: #101820;
+      color: #edf3f8;
+      border-radius: var(--radius);
+    }
+
+    .callout p {
+      color: #c9d6df;
+    }
+
+    .footer {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    code {
+      padding: 1px 5px;
+      background: #edf1f5;
+      border-radius: 5px;
+      color: #27313a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    .callout code {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .grid,
+      .backlog {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        width: min(100% - 24px, 720px);
+        padding-top: 18px;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .nav {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">2026-06-06 비교 리포트</p>
+        <h1>Conitens 에이전트 시스템 비교 리포트</h1>
+        <p class="subtitle">
+          Agentland, Maestro, Optio, Agent Squad, AutoGen, Claw3D, Pixel Agents, CLI-JAW를
+          현재 Conitens와 비교해 증거, 안전, 운영자 워크벤치 중심의 실행 백로그로 정리했다.
+        </p>
+      </div>
+      <aside class="meta" aria-label="리포트 메타데이터">
+        <p><strong>기준 커밋</strong><code>2c25a9e2</code> 기반의 로컬 워크트리 비교</p>
+        <p><strong>리포트 성격</strong>계획 산출물이며 이 조사 패스 자체는 제품 코드를 변경하지 않았다.</p>
+        <p><strong>운영 정체성</strong>Conitens는 외부 AI 런타임을 대체하지 않는 event-first 운영/control plane이다.</p>
+      </aside>
+    </header>
+
+    <nav class="nav" aria-label="문서 섹션">
+      <a href="#baseline">기준선</a>
+      <a href="#findings">핵심 판단</a>
+      <a href="#matrix">격차 매트릭스</a>
+      <a href="#backlog">우선순위 백로그</a>
+      <a href="#guardrails">가드레일</a>
+      <a href="#sources">소스 스냅샷</a>
+    </nav>
+
+    <section id="baseline">
+      <h2>기준선</h2>
+      <div class="callout">
+        <p>
+          현재 런타임 진실은 계속 <code>scripts/ensemble.py</code>, <code>.notes/</code>,
+          <code>.agent/</code>에 있다. <code>.conitens/</code>는 forward 계약 표면이며,
+          나중 배치에서 명시하기 전까지 기존 런타임을 대체한다고 주장하지 않는다.
+        </p>
+      </div>
+    </section>
+
+    <section id="findings">
+      <h2>핵심 판단</h2>
+      <p class="section-lead">
+        외부 시스템의 강점은 그대로 복제하지 않고 Conitens의 approval, verify, replay 경계에 맞춰 선택적으로 흡수한다.
+      </p>
+      <div class="grid">
+        <article class="panel">
+          <span class="badge good">Adopt</span>
+          <h3>Agentland식 관측성</h3>
+          <p>provider, model, token, cost, latency, tool, PII 필드를 event/projection 레이어부터 도입한다.</p>
+        </article>
+        <article class="panel">
+          <span class="badge good">Adopt</span>
+          <h3>Optio식 reconciler</h3>
+          <p>작업 상태 전환을 pure decision으로 분리하고, 나중에 CAS와 periodic resync로 확장한다.</p>
+        </article>
+        <article class="panel">
+          <span class="badge warn">Adapt</span>
+          <h3>Maestro와 CLI-JAW 운영 UX</h3>
+          <p>세션 roster, doctor evidence, worktree-aware 메타데이터를 우선하고 remote control은 뒤로 둔다.</p>
+        </article>
+        <article class="panel">
+          <span class="badge warn">Adapt</span>
+          <h3>Agent Squad와 AutoGen 패턴</h3>
+          <p>새 런타임 dependency가 아니라 workflow/router/prompt 계약으로 번역한다.</p>
+        </article>
+        <article class="panel">
+          <span class="badge warn">Defer</span>
+          <h3>Spatial UI 심화</h3>
+          <p>Claw3D와 Pixel Agents는 presence와 layout 참고용이며 운영 워크벤치가 제품 중심이다.</p>
+        </article>
+        <article class="panel">
+          <span class="badge risk">Avoid</span>
+          <h3>승인 우회</h3>
+          <p>원격, 웹, MCP, 공간 UI 쓰기 경로는 기존 approval/verify gate를 약화하면 안 된다.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="matrix">
+      <h2>격차 매트릭스</h2>
+      <div class="matrix">
+        <table>
+          <thead>
+            <tr>
+              <th>축</th>
+              <th>참고 시스템</th>
+              <th>Conitens 상태</th>
+              <th>결정</th>
+              <th>권장 변경</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Provider traffic observability</td>
+              <td>Agentland</td>
+              <td>append-only event와 replay는 있으나 provider-call telemetry schema가 부족하다.</td>
+              <td>Adopt</td>
+              <td>provider-call event contract를 먼저 추가하고 reverse proxy는 제외한다.</td>
+            </tr>
+            <tr>
+              <td>Cost and budget rollups</td>
+              <td>Agentland, Maestro</td>
+              <td>token compression과 task evidence는 있으나 runtime/model/task별 spend attribution이 약하다.</td>
+              <td>Adopt</td>
+              <td>run, task, agent, provider, model별 read-only cost summary projection을 추가한다.</td>
+            </tr>
+            <tr>
+              <td>Task/PR feedback loop</td>
+              <td>Optio</td>
+              <td>operator task, linked evidence, approval은 있으나 PR/CI watcher loop가 없다.</td>
+              <td>Adapt</td>
+              <td>auto-merge 전에 GitHub/CI read evidence와 human-approved resume suggestion을 붙인다.</td>
+            </tr>
+            <tr>
+              <td>Reconciliation loop</td>
+              <td>Optio</td>
+              <td>validator/retry/approval discipline은 있으나 stuck task repair decision이 bridge 내부에 흩어져 있다.</td>
+              <td>Adopt</td>
+              <td><code>operator_task_reconciler</code>를 pure decision module로 분리한다.</td>
+            </tr>
+            <tr>
+              <td>Runtime/session operations</td>
+              <td>Maestro, CLI-JAW</td>
+              <td>background CLI session과 dashboard는 있으나 multi-runtime roster와 install evidence가 얇다.</td>
+              <td>Adapt</td>
+              <td>runtime/session roster와 doctor evidence artifact를 operator-facing으로 노출한다.</td>
+            </tr>
+            <tr>
+              <td>Intent routing</td>
+              <td>Agent Squad, AutoGen</td>
+              <td>workflow, room, replay, handoff는 있으나 classifier/router contract가 없다.</td>
+              <td>Adapt</td>
+              <td>routing decision을 evidence로 기록하는 workflow contract를 추가한다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="backlog">
+      <h2>우선순위 백로그</h2>
+      <div class="backlog">
+        <article class="panel">
+          <span class="badge good">P0 Evidence and Safety</span>
+          <ol>
+            <li>Provider-call telemetry event contract: provider, model, token, cost, latency, tool, PII 필드 추가.</li>
+            <li>Operator task reconciler: task, approval, run, validation, handoff evidence 기반 pure decision 추가.</li>
+            <li>Install/doctor evidence mode: 환경, CLI, PATH, version, auth posture, verification log를 redacted artifact로 출력.</li>
+          </ol>
+        </article>
+        <article class="panel">
+          <span class="badge warn">P1 Operator Workbench</span>
+          <ol start="4">
+            <li>Runtime/session roster: Codex, Claude, Gemini, OpenCode와 toolchain 상태를 read-only로 표시.</li>
+            <li>PR/CI evidence ingestion: task detail에 GitHub/CI 읽기 evidence를 붙이고 resume suggestion만 제공.</li>
+            <li>Persistent-agent wake model: wake source, per-turn record, inbox state를 기존 background/session adapter 뒤에 둔다.</li>
+            <li>Router workflow contract: task intent를 role, room, workflow 후보로 분류하고 이유를 evidence로 기록.</li>
+          </ol>
+        </article>
+        <article class="panel">
+          <span class="badge warn">P2 Spatial and Interaction</span>
+          <ol start="8">
+            <li>Status-confidence and transcript watcher: heuristic status에 evidence ref와 confidence를 붙인다.</li>
+            <li>Office layout import/export: asset manifest와 layout editor 아이디어를 보조 기능으로 제한한다.</li>
+            <li>Keyboard-first command surface: run, task, agent, approval, evidence search 전환을 빠르게 만든다.</li>
+          </ol>
+        </article>
+      </div>
+    </section>
+
+    <section id="guardrails" class="guardrails">
+      <h2>가드레일</h2>
+      <div class="grid">
+        <article class="panel">
+          <span class="badge risk">금지</span>
+          <h3>새 런타임 소유자 도입 금지</h3>
+          <ul>
+            <li>AutoGen core dependency를 추가하지 않는다.</li>
+            <li>Agent Squad runtime을 embedding하지 않는다.</li>
+            <li>Agentland full reverse proxy를 첫 slice에서 만들지 않는다.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <span class="badge risk">금지</span>
+          <h3>승인 약화 금지</h3>
+          <ul>
+            <li>approval-bypass launch control을 추가하지 않는다.</li>
+            <li>remote, web, MCP, spatial UI write path는 existing approval/verify gate를 따라야 한다.</li>
+            <li>auto-merge와 unattended resume은 별도 승인 정책 전까지 제외한다.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <span class="badge warn">주의</span>
+          <h3>민감 telemetry 처리</h3>
+          <ul>
+            <li>cost와 PII telemetry는 projection control과 redaction을 먼저 둔다.</li>
+            <li>raw prompt, completion, response content는 provider event payload와 dashboard summary에 노출하지 않는다.</li>
+            <li>active runtime truth는 <code>scripts/ensemble.py</code>, <code>.notes/</code>, <code>.agent/</code>로 유지한다.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="sources" class="sources">
+      <h2>소스 스냅샷</h2>
+      <p class="section-lead">
+        Markdown 원문은 <code>docs/AGENT_SYSTEMS_COMPARISON_2026-06-06.md</code>에 있고,
+        repo-scoped mirror는 <code>.conitens/reviews/agent_systems_comparison_2026-06-06.md</code>에 있다.
+      </p>
+      <div class="panel">
+        <ul>
+          <li>Agentland <code>0a57e92c</code>: provider event, policy, cost SQL, dashboard manifest.</li>
+          <li>Maestro <code>575efd0d</code>: multi-CLI session manager, worktrees, playbooks, cost tracking.</li>
+          <li>Optio <code>9f5abb9d</code>: task/PR flow, reconciler docs, persistent-agent docs.</li>
+          <li>Agent Squad <code>db10bf56</code>: classifier routing, supervisor team references.</li>
+          <li>AutoGen <code>027ecf0a</code>: agent-as-tool orchestration and maintenance-mode guidance.</li>
+          <li>Claw3D <code>eeb6f31</code>: live office, runtime seam, approvals, history, activity surfaces.</li>
+          <li>Pixel Agents <code>17ad25d</code>: transcript watcher, visual status, layout/assets ideas.</li>
+          <li>CLI-JAW <code>358c851</code>: doctor evidence, install safety, PABCD phase gates.</li>
+        </ul>
+      </div>
+    </section>
+
+    <p class="footer">
+      이 HTML은 2026-06-06 비교 Markdown을 기준으로 UTF-8 정적 문서로 재생성되었다.
+      제품 런타임과 dashboard 동작은 이 문서 복구로 변경하지 않는다.
+    </p>
+  </main>
+</body>
+</html>

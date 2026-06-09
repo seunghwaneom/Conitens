@@ -11,6 +11,8 @@ import { ForwardStateDocsPanel } from "./components/ForwardStateDocsPanel.js";
 import { OperatorInboxPanel } from "./components/OperatorInboxPanel.js";
 import { OperatorSummaryPanel } from "./components/OperatorSummaryPanel.js";
 import { OperatorTaskDetailPanel } from "./components/OperatorTaskDetailPanel.js";
+import { OperatorTaskReconcilePreviewPanel } from "./components/OperatorTaskReconcilePreviewPanel.js";
+import { OperatorWakeReadinessPanel } from "./components/OperatorWakeReadinessPanel.js";
 import {
   OperatorTaskEditorPanel,
   type OperatorTaskDraft,
@@ -32,6 +34,8 @@ import {
   forwardGetOperatorWorkspace,
   forwardGetOperatorWorkspaces,
   forwardGetOperatorSummary,
+  forwardGetOperatorTaskReconcilePreview,
+  forwardGetOperatorWakeReadiness,
   forwardRequestOperatorTaskApproval,
   forwardRestoreOperatorTask,
   forwardUpdateOperatorTask,
@@ -54,7 +58,9 @@ import {
   type ForwardContextLatestResponse,
   type ForwardOperatorInboxResponse,
   type ForwardOperatorTaskDetailResponse,
+  type ForwardOperatorTaskReconcilePreviewResponse,
   type ForwardOperatorTasksResponse,
+  type ForwardOperatorWakeReadinessResponse,
   type ForwardOperatorWorkspaceDetailResponse,
   type ForwardOperatorWorkspacesResponse,
   type ForwardOperatorSummaryResponse,
@@ -69,8 +75,10 @@ import { buildForwardRoute, parseForwardRoute } from "./forward-route.js";
 import { deriveForwardGraphModel } from "./forward-graph.js";
 import { toOperatorAgentProfiles } from "./operator-agents-model.js";
 import { toOperatorInboxViewModel } from "./operator-inbox-model.js";
+import { toOperatorTaskReconcilePreview } from "./operator-reconciler-model.js";
 import { toOperatorSummaryViewModel } from "./operator-summary-model.js";
 import { toOperatorTaskDetail, toOperatorTaskListItems } from "./operator-tasks-model.js";
+import { toOperatorWakeReadinessViewModel } from "./operator-wake-readiness-model.js";
 import {
   buildOperatorWorkspaceMutationBody,
   getOperatorWorkspaceQuickStatusActions,
@@ -93,8 +101,12 @@ import { AgentFleetOverview } from "./components/AgentFleetOverview.js";
 import { AgentProfilePanel } from "./components/AgentProfilePanel.js";
 import { AgentRelationshipGraph } from "./components/AgentRelationshipGraph.js";
 import { ProposalQueuePanel } from "./components/ProposalQueuePanel.js";
-import { demoFleet } from "./agent-fleet-model.js";
+import { compareAgentAttention, demoFleet } from "./agent-fleet-model.js";
 import { demoProposals, demoEvolution, demoLearningMetrics } from "./evolution-model.js";
+import {
+  buildOperatorTaskDraftMutationBody,
+  buildOperatorTaskStatusMutationBody,
+} from "./operator-task-actions.js";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 type DetailTab = "operations" | "intelligence" | "data";
@@ -119,12 +131,14 @@ export function App() {
   const [operatorAgents, setOperatorAgents] = useState<ForwardOperatorAgentsResponse | null>(null);
   const [operatorTasks, setOperatorTasks] = useState<ForwardOperatorTasksResponse | null>(null);
   const [selectedTask, setSelectedTask] = useState<ForwardOperatorTaskDetailResponse | null>(null);
+  const [taskReconcilePreview, setTaskReconcilePreview] = useState<ForwardOperatorTaskReconcilePreviewResponse | null>(null);
   const [operatorWorkspaces, setOperatorWorkspaces] = useState<ForwardOperatorWorkspacesResponse | null>(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState<ForwardOperatorWorkspaceDetailResponse | null>(null);
   const [workspaceLinkedTasks, setWorkspaceLinkedTasks] = useState<ForwardOperatorTasksResponse | null>(null);
   const [runs, setRuns] = useState<ForwardRunSummary[]>([]);
   const [operatorInbox, setOperatorInbox] = useState<ForwardOperatorInboxResponse | null>(null);
   const [operatorSummary, setOperatorSummary] = useState<ForwardOperatorSummaryResponse | null>(null);
+  const [operatorWakeReadiness, setOperatorWakeReadiness] = useState<ForwardOperatorWakeReadinessResponse | null>(null);
   const [selectedRun, setSelectedRun] = useState<ForwardRunDetailResponse | null>(null);
   const [replay, setReplay] = useState<ForwardReplayResponse | null>(null);
   const [stateDocs, setStateDocs] = useState<ForwardStateDocsResponse | null>(null);
@@ -135,6 +149,7 @@ export function App() {
   const [inboxState, setInboxState] = useState<LoadState>("idle");
   const [tasksState, setTasksState] = useState<LoadState>("idle");
   const [taskDetailState, setTaskDetailState] = useState<LoadState>("idle");
+  const [taskReconcileState, setTaskReconcileState] = useState<LoadState>("idle");
   const [workspacesState, setWorkspacesState] = useState<LoadState>("idle");
   const [workspaceDetailState, setWorkspaceDetailState] = useState<LoadState>("idle");
   const [workspaceMutationState, setWorkspaceMutationState] = useState<LoadState>("idle");
@@ -142,6 +157,7 @@ export function App() {
   const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
   const [runsState, setRunsState] = useState<LoadState>("idle");
   const [overviewState, setOverviewState] = useState<LoadState>("idle");
+  const [wakeReadinessState, setWakeReadinessState] = useState<LoadState>("idle");
   const [detailState, setDetailState] = useState<LoadState>("idle");
   const [replayState, setReplayState] = useState<LoadState>("idle");
   const [stateDocsState, setStateDocsState] = useState<LoadState>("idle");
@@ -166,6 +182,7 @@ export function App() {
   const [inboxError, setInboxError] = useState<string | null>(null);
   const [tasksError, setTasksError] = useState<string | null>(null);
   const [taskDetailError, setTaskDetailError] = useState<string | null>(null);
+  const [taskReconcileError, setTaskReconcileError] = useState<string | null>(null);
   const [workspacesError, setWorkspacesError] = useState<string | null>(null);
   const [workspaceDetailError, setWorkspaceDetailError] = useState<string | null>(null);
   const [workspaceMutationError, setWorkspaceMutationError] = useState<string | null>(null);
@@ -180,6 +197,7 @@ export function App() {
   const [taskBulkError, setTaskBulkError] = useState<string | null>(null);
   const [runsError, setRunsError] = useState<string | null>(null);
   const [overviewError, setOverviewError] = useState<string | null>(null);
+  const [wakeReadinessError, setWakeReadinessError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [replayError, setReplayError] = useState<string | null>(null);
   const [stateDocsError, setStateDocsError] = useState<string | null>(null);
@@ -189,6 +207,7 @@ export function App() {
   const [taskBulkReport, setTaskBulkReport] = useState<TaskBulkReport | null>(null);
   const [route, setRoute] = useState(() => parseForwardRoute(window.location.hash));
   const [liveRevision, setLiveRevision] = useState(0);
+  const [streamRevision, setStreamRevision] = useState(0);
   const [detailTab, setDetailTab] = useState<DetailTab>("operations");
   const [taskDraft, setTaskDraft] = useState<OperatorTaskDraft>({
     title: "",
@@ -225,7 +244,6 @@ export function App() {
   const isDemo = !config.token.trim() && !isOfficePreview;
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const selectedAgent = demoFleet.find(a => a.id === selectedAgentId) ?? null;
   const [agentView, setAgentView] = useState<"fleet" | "graph">("fleet");
   const showOnboarding = (route.screen === "overview" || route.screen === "runs") && isDemo;
 
@@ -237,11 +255,25 @@ export function App() {
         subtitle: "Room topology, crew focus, and handoff rhythm in one shared operator shell.",
       };
     }
-    if (route.screen === "agents") {
+    if (route.screen === "agents" || route.screen === "agent-detail") {
       return {
         eyebrow: "Agent fleet",
         title: "Conitens Control Plane",
         subtitle: "Lifecycle, memory growth, proposal flow, and relationship topology for the active fleet.",
+      };
+    }
+    if (route.screen === "approvals") {
+      return {
+        eyebrow: "Approval queue",
+        title: "Conitens Control Plane",
+        subtitle: "Review pending operator approvals without starting from a specific run or task.",
+      };
+    }
+    if (route.screen === "threads" || route.screen === "thread-detail") {
+      return {
+        eyebrow: "Thread archive",
+        title: "Conitens Control Plane",
+        subtitle: "Thread routes are reserved for the replay conversation surface and remain deferred in this shell.",
       };
     }
     if (route.screen === "run-detail") {
@@ -330,6 +362,37 @@ export function App() {
         setOperatorSummary(null);
         setOverviewState("error");
         setOverviewError(err.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [config, isOfficePreview, route.screen, liveRevision]);
+
+  useEffect(() => {
+    if (isOfficePreview || route.screen !== "overview" || !config.token.trim()) {
+      setOperatorWakeReadiness(null);
+      setWakeReadinessState("idle");
+      setWakeReadinessError(null);
+      return;
+    }
+    let cancelled = false;
+    setWakeReadinessState("loading");
+    setWakeReadinessError(null);
+    forwardGetOperatorWakeReadiness(config, { limit: 12 })
+      .then((payload) => {
+        if (cancelled) {
+          return;
+        }
+        setOperatorWakeReadiness(payload);
+        setWakeReadinessState("ready");
+      })
+      .catch((err: Error) => {
+        if (cancelled) {
+          return;
+        }
+        setOperatorWakeReadiness(null);
+        setWakeReadinessState("error");
+        setWakeReadinessError(err.message);
       });
     return () => {
       cancelled = true;
@@ -505,6 +568,38 @@ export function App() {
   }, [config, isOfficePreview, route.screen, route.taskId]);
 
   useEffect(() => {
+    if (isOfficePreview || !config.token.trim() || route.screen !== "task-detail" || !route.taskId) {
+      setTaskReconcilePreview(null);
+      setTaskReconcileState("idle");
+      setTaskReconcileError(null);
+      return;
+    }
+    const activeTaskId = route.taskId;
+    let cancelled = false;
+    setTaskReconcileState("loading");
+    setTaskReconcileError(null);
+    forwardGetOperatorTaskReconcilePreview(config, activeTaskId)
+      .then((payload) => {
+        if (cancelled || payload.task_id !== activeTaskId) {
+          return;
+        }
+        setTaskReconcilePreview(payload);
+        setTaskReconcileState("ready");
+      })
+      .catch((err: Error) => {
+        if (cancelled) {
+          return;
+        }
+        setTaskReconcilePreview(null);
+        setTaskReconcileState("error");
+        setTaskReconcileError(err.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [config, isOfficePreview, route.screen, route.taskId, liveRevision]);
+
+  useEffect(() => {
     if (isOfficePreview || !config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
       setSelectedWorkspace(null);
       setWorkspaceDetailState("idle");
@@ -594,7 +689,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [config, isOfficePreview]);
+  }, [config, isOfficePreview, liveRevision]);
 
   useEffect(() => {
     if (isOfficePreview || !config.token.trim() || !activeLinkedRunId) {
@@ -686,7 +781,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [activeLinkedRunId, config, liveRevision, isOfficePreview]);
+  }, [activeLinkedRunId, config, liveRevision, streamRevision, isOfficePreview]);
 
   useEffect(() => {
     if (isOfficePreview || !config.token.trim() || !selectedRoomId) {
@@ -717,7 +812,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [config, selectedRoomId, isOfficePreview]);
+  }, [config, selectedRoomId, isOfficePreview, liveRevision, streamRevision]);
 
   const liveAgentProfiles = useMemo(
     () => (operatorAgents ? toOperatorAgentProfiles(operatorAgents) : []),
@@ -726,6 +821,10 @@ export function App() {
   const visibleTaskRecords = useMemo(() => operatorTasks?.tasks ?? [], [operatorTasks]);
   const taskItems = useMemo(() => (operatorTasks ? toOperatorTaskListItems(operatorTasks) : []), [operatorTasks]);
   const taskDetail = useMemo(() => (selectedTask ? toOperatorTaskDetail(selectedTask) : null), [selectedTask]);
+  const reconcilePreview = useMemo(
+    () => (taskReconcilePreview ? toOperatorTaskReconcilePreview(taskReconcilePreview) : null),
+    [taskReconcilePreview],
+  );
   const workspaceItems = useMemo(
     () => (operatorWorkspaces ? toOperatorWorkspaceListItems(operatorWorkspaces) : []),
     [operatorWorkspaces],
@@ -812,6 +911,10 @@ export function App() {
   const inboxItems = useMemo(() => (operatorInbox ? toOperatorInboxViewModel(operatorInbox) : []), [operatorInbox]);
   const runItems = useMemo(() => runs.map(toRunListItemViewModel), [runs]);
   const overview = useMemo(() => (operatorSummary ? toOperatorSummaryViewModel(operatorSummary) : null), [operatorSummary]);
+  const wakeReadiness = useMemo(
+    () => (operatorWakeReadiness ? toOperatorWakeReadinessViewModel(operatorWakeReadiness) : null),
+    [operatorWakeReadiness],
+  );
   const runDetail = useMemo(() => (selectedRun ? toRunDetailViewModel(selectedRun) : null), [selectedRun]);
   const roomOptions = useMemo(() => (replay ? extractRoomOptions(replay) : []), [replay]);
   const taskRoomOptions = useMemo(() => {
@@ -829,6 +932,7 @@ export function App() {
   const findingsSummary = useMemo(() => summarizeFindingsDocument(stateDocs), [stateDocs]);
   const validatorCorrelations = useMemo(() => summarizeValidatorCorrelations(replay), [replay]);
   const agentProfiles = isDemo ? demoFleet : liveAgentProfiles;
+  const orderedAgentProfiles = useMemo(() => agentProfiles.slice().sort(compareAgentAttention), [agentProfiles]);
   const activeAgent = agentProfiles.find((agent) => agent.id === selectedAgentId) ?? null;
   const taskChangedFields = useMemo(() => {
     if (!taskDetail) {
@@ -989,21 +1093,30 @@ export function App() {
     if (route.screen !== "agents") {
       return;
     }
-    if (agentProfiles.length === 0) {
+    if (orderedAgentProfiles.length === 0) {
       if (selectedAgentId !== null) {
         setSelectedAgentId(null);
       }
       return;
     }
-    if (!selectedAgentId || !agentProfiles.some((agent) => agent.id === selectedAgentId)) {
-      setSelectedAgentId(agentProfiles[0]?.id ?? null);
+    if (route.screen === "agents" && route.agentId && orderedAgentProfiles.some((agent) => agent.id === route.agentId)) {
+      if (selectedAgentId !== route.agentId) {
+        setSelectedAgentId(route.agentId);
+      }
+      return;
     }
-  }, [agentProfiles, route.screen, selectedAgentId]);
+    if (!selectedAgentId || !orderedAgentProfiles.some((agent) => agent.id === selectedAgentId)) {
+      setSelectedAgentId(orderedAgentProfiles[0]?.id ?? null);
+    }
+  }, [orderedAgentProfiles, route.agentId, route.screen, selectedAgentId]);
 
   const connect = (event: React.FormEvent) => {
     event.preventDefault();
     persistBridgeConfig(draftConfig);
     setConfig(draftConfig);
+    if (draftConfig.token.trim()) {
+      setShowConnectForm(false);
+    }
   };
 
   const openRun = (runId: string) => {
@@ -1286,25 +1399,7 @@ export function App() {
     if (!config.token.trim()) {
       return;
     }
-    const body = {
-      title: taskDraft.title,
-      objective: taskDraft.objective,
-      status: taskDraft.status,
-      priority: taskDraft.priority,
-      owner_agent_id: taskDraft.ownerAgentId || undefined,
-      linked_run_id: taskDraft.linkedRunId || undefined,
-      linked_iteration_id: taskDraft.linkedIterationId || undefined,
-      linked_room_ids: taskDraft.linkedRoomIds
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      blocked_reason: taskDraft.blockedReason || undefined,
-      acceptance_json: taskDraft.acceptance
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      workspace_ref: taskDraft.workspaceRef || undefined,
-    };
+    const body = buildOperatorTaskDraftMutationBody(taskDraft);
     try {
       setTaskMutationState("loading");
       setTaskMutationError(null);
@@ -1320,28 +1415,10 @@ export function App() {
   }
 
   async function handleTaskQuickStatus(status: string) {
-    if (!config.token.trim() || route.screen !== "task-detail" || !route.taskId) {
+    if (!config.token.trim() || route.screen !== "task-detail" || !route.taskId || !selectedTask) {
       return;
     }
-    const body = {
-      title: taskDraft.title,
-      objective: taskDraft.objective,
-      status,
-      priority: taskDraft.priority,
-      owner_agent_id: taskDraft.ownerAgentId || undefined,
-      linked_run_id: taskDraft.linkedRunId || undefined,
-      linked_iteration_id: taskDraft.linkedIterationId || undefined,
-      linked_room_ids: taskDraft.linkedRoomIds
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      blocked_reason: taskDraft.blockedReason || undefined,
-      acceptance_json: taskDraft.acceptance
-        .split("\n")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      workspace_ref: taskDraft.workspaceRef || undefined,
-    };
+    const body = buildOperatorTaskStatusMutationBody(selectedTask.task, status);
     try {
       setTaskMutationState("loading");
       setTaskMutationError(null);
@@ -1461,7 +1538,7 @@ export function App() {
   }
 
   const handleStreamSnapshot = useEffectEvent(() => {
-    setLiveRevision((current) => current + 1);
+    setStreamRevision((current) => current + 1);
   });
 
   const liveStream = useForwardStream({
@@ -1506,6 +1583,75 @@ export function App() {
     return () => window.removeEventListener("keydown", handler);
   }, [runItems, route, isOfficePreview]);
 
+  function focusTab(tabId: string) {
+    document.getElementById(tabId)?.focus();
+  }
+
+  function handleAgentTabKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+    if (!isDemo) {
+      return;
+    }
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      const nextView = agentView === "fleet" ? "graph" : "fleet";
+      setAgentView(nextView);
+      focusTab(`agent-tab-${nextView}`);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setAgentView("fleet");
+      focusTab("agent-tab-fleet");
+    } else if (event.key === "End") {
+      event.preventDefault();
+      setAgentView("graph");
+      focusTab("agent-tab-graph");
+    }
+  }
+
+  function handleRunDetailTabKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+    const tabs: DetailTab[] = ["operations", "intelligence", "data"];
+    const currentIndex = tabs.indexOf(detailTab);
+    const nextIndex =
+      event.key === "ArrowRight"
+        ? (currentIndex + 1) % tabs.length
+        : event.key === "ArrowLeft"
+          ? (currentIndex - 1 + tabs.length) % tabs.length
+          : event.key === "Home"
+            ? 0
+            : event.key === "End"
+              ? tabs.length - 1
+              : -1;
+    if (nextIndex === -1) {
+      return;
+    }
+    event.preventDefault();
+    const nextTab = tabs[nextIndex];
+    setDetailTab(nextTab);
+    focusTab(`run-detail-tab-${nextTab}`);
+  }
+
+  function openAgent(agentId: string) {
+    window.location.hash = buildForwardRoute({
+      screen: "agents",
+      runId: null,
+      taskId: null,
+      workspaceId: null,
+      threadId: null,
+      agentId,
+    });
+  }
+
+  function openSpatialRoom(roomId: string) {
+    window.sessionStorage.setItem("conitens.officeFocusRoom", roomId);
+    window.location.hash = buildForwardRoute({
+      screen: "office-preview",
+      runId: null,
+      taskId: null,
+      workspaceId: null,
+      threadId: null,
+      agentId: null,
+    });
+  }
+
   return (
     <div className={`forward-shell${isOfficePreview ? " forward-shell-preview" : ""}`}>
       <header className="forward-header">
@@ -1514,42 +1660,69 @@ export function App() {
           <h1>{shellCopy.title}</h1>
           <p className="forward-subtitle">{shellCopy.subtitle}</p>
         </div>
-        <div className="forward-chip-row">
-          <a className={`forward-chip forward-chip-link${route.screen === "overview" ? " active" : ""}`} href="#/overview">Overview</a>
-          <a className={`forward-chip forward-chip-link${route.screen === "inbox" ? " active" : ""}`} href="#/inbox">Inbox</a>
-          <a className={`forward-chip forward-chip-link${route.screen === "tasks" || route.screen === "task-detail" ? " active" : ""}`} href="#/tasks">Tasks</a>
-          <a className={`forward-chip forward-chip-link${route.screen === "workspaces" || route.screen === "workspace-detail" ? " active" : ""}`} href="#/workspaces">Workspaces</a>
-          <a className={`forward-chip forward-chip-link${route.screen === "runs" || route.screen === "run-detail" ? " active" : ""}`} href="#/runs">Runs</a>
-          <a className={`forward-chip forward-chip-link${isOfficePreview ? " active" : ""}`} href="#/office-preview">Spatial Lens</a>
-          <a className={`forward-chip forward-chip-link${route.screen === "agents" ? " active" : ""}`} href="#/agents">Agents</a>
-          {isOfficePreview ? (
-            <span className="forward-chip">Preview data</span>
-          ) : (
-            <>
-              <span className="forward-chip">API {config.apiRoot}</span>
-              <span className="forward-chip">{config.token ? "Token loaded" : "Token required"}</span>
-              <span className="forward-chip">Live: {liveStream.status}</span>
-            </>
-          )}
+        <div className="forward-header-controls">
+          <nav className="forward-chip-row forward-chip-row-nav" aria-label="Forward shell routes">
+            <a className={`forward-chip forward-chip-link${route.screen === "overview" ? " active" : ""}`} aria-current={route.screen === "overview" ? "page" : undefined} href="#/overview">Overview</a>
+            <a className={`forward-chip forward-chip-link${route.screen === "inbox" ? " active" : ""}`} aria-current={route.screen === "inbox" ? "page" : undefined} href="#/inbox">Inbox</a>
+            <a className={`forward-chip forward-chip-link${route.screen === "approvals" ? " active" : ""}`} aria-current={route.screen === "approvals" ? "page" : undefined} href="#/approvals">Approvals</a>
+            <a className={`forward-chip forward-chip-link${route.screen === "tasks" || route.screen === "task-detail" ? " active" : ""}`} aria-current={route.screen === "tasks" || route.screen === "task-detail" ? "page" : undefined} href="#/tasks">Tasks</a>
+            <a className={`forward-chip forward-chip-link${route.screen === "workspaces" || route.screen === "workspace-detail" ? " active" : ""}`} aria-current={route.screen === "workspaces" || route.screen === "workspace-detail" ? "page" : undefined} href="#/workspaces">Workspaces</a>
+            <a className={`forward-chip forward-chip-link${route.screen === "runs" || route.screen === "run-detail" ? " active" : ""}`} aria-current={route.screen === "runs" || route.screen === "run-detail" ? "page" : undefined} href="#/runs">Runs</a>
+            <a className={`forward-chip forward-chip-link${isOfficePreview ? " active" : ""}`} aria-current={isOfficePreview ? "page" : undefined} href="#/office-preview">Spatial Lens</a>
+            <a className={`forward-chip forward-chip-link${route.screen === "agents" || route.screen === "agent-detail" ? " active" : ""}`} aria-current={route.screen === "agents" || route.screen === "agent-detail" ? "page" : undefined} href="#/agents">Agents</a>
+          </nav>
+          <div className="forward-status-row forward-chip-row-status" aria-label="Bridge connection status">
+            {isOfficePreview ? (
+              <span className="forward-chip forward-status-chip">Preview data</span>
+            ) : (
+              <>
+                <span className="forward-chip forward-status-chip">API {config.apiRoot}</span>
+                <span className="forward-chip forward-status-chip">{config.token ? "Token loaded" : "Token required"}</span>
+                <span className="forward-chip forward-live-chip" role="status" aria-live="polite">Live: {liveStream.status}</span>
+                <button
+                  className="forward-chip forward-chip-link"
+                  type="button"
+                  onClick={() => setShowConnectForm((value) => !value)}
+                  aria-expanded={showConnectForm}
+                >
+                  {showConnectForm ? "Hide settings" : "Bridge settings"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
       {isOfficePreview ? (
         <main className="forward-main forward-main-preview">
-          <PixelOffice agents={demoAgents} tasks={demoTasks} events={demoEvents} />
+          <PixelOffice agents={demoAgents} tasks={demoTasks} events={demoEvents} onOpenAgent={openAgent} />
         </main>
       ) : route.screen === "agents" ? (
         <main className="forward-main">
-          <div className="forward-tab-bar">
+          <div className="forward-tab-bar" role="tablist" aria-label="Agent view">
             <button
               className={`forward-tab${agentView === "fleet" ? " active" : ""}`}
+              type="button"
+              role="tab"
+              id="agent-tab-fleet"
+              aria-selected={agentView === "fleet"}
+              aria-controls="agent-panel-fleet"
+              tabIndex={agentView === "fleet" ? 0 : -1}
               onClick={() => setAgentView("fleet")}
+              onKeyDown={handleAgentTabKeyDown}
             >
               Fleet
             </button>
             <button
               className={`forward-tab${agentView === "graph" ? " active" : ""}`}
+              type="button"
+              role="tab"
+              id="agent-tab-graph"
+              aria-selected={agentView === "graph"}
+              aria-controls="agent-panel-graph"
+              tabIndex={agentView === "graph" ? 0 : -1}
               onClick={() => setAgentView("graph")}
+              onKeyDown={handleAgentTabKeyDown}
               disabled={!isDemo}
             >
               Relationships
@@ -1564,16 +1737,21 @@ export function App() {
             </div>
           ) : null}
           {(isDemo || (agentsState === "ready" && agentProfiles.length > 0)) && (agentView === "fleet" || !isDemo) ? (
-            <div className="agent-fleet-layout">
-              <AgentFleetOverview agents={agentProfiles} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
+            <div className="agent-fleet-layout" role="tabpanel" id="agent-panel-fleet" aria-labelledby="agent-tab-fleet">
+              <AgentFleetOverview agents={orderedAgentProfiles} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
               <AgentProfilePanel
                 agent={activeAgent}
                 evolution={isDemo ? demoEvolution.filter(e => e.agentId === selectedAgentId) : []}
                 metrics={isDemo ? (demoLearningMetrics.find(m => m.agentId === selectedAgentId) ?? null) : null}
+                onOpenRoom={openSpatialRoom}
               />
             </div>
           ) : null}
-          {isDemo && agentView === "graph" ? <AgentRelationshipGraph agents={demoFleet} /> : null}
+          {isDemo && agentView === "graph" ? (
+            <div role="tabpanel" id="agent-panel-graph" aria-labelledby="agent-tab-graph">
+              <AgentRelationshipGraph agents={demoFleet} />
+            </div>
+          ) : null}
           {isDemo ? (
             <ProposalQueuePanel proposals={demoProposals} agents={demoFleet} />
           ) : agentsState === "ready" && agentProfiles.length > 0 ? (
@@ -1582,6 +1760,66 @@ export function App() {
               <p>The roster is now live. Graph and proposal/evolution projections will follow in a later slice.</p>
             </div>
           ) : null}
+        </main>
+      ) : route.screen === "approvals" ? (
+        <main className="forward-main">
+          {isDemo ? (
+            <div className="forward-demo-banner">
+              <span>Connect to a live bridge to review approval records.</span>
+              <button type="button" onClick={() => setShowConnectForm((v) => !v)}>
+                {showConnectForm ? "Hide form" : "Connect to live bridge"}
+              </button>
+            </div>
+          ) : null}
+          {showConnectForm ? (
+            <section className="forward-setup">
+              <form className="forward-form" onSubmit={connect}>
+                <label>
+                  <span>API root</span>
+                  <input
+                    value={draftConfig.apiRoot}
+                    onChange={(event) => setDraftConfig((current) => ({ ...current, apiRoot: event.target.value }))}
+                    placeholder="http://127.0.0.1:8785/api"
+                  />
+                </label>
+                <label>
+                  <span>Bearer token</span>
+                  <input
+                    type="password"
+                    autoComplete="off"
+                    value={draftConfig.token}
+                    onChange={(event) => setDraftConfig((current) => ({ ...current, token: event.target.value }))}
+                    placeholder="Paste token from `ensemble forward serve`"
+                  />
+                </label>
+                <button type="submit">Connect</button>
+              </form>
+            </section>
+          ) : null}
+          {!isDemo ? (
+            <ForwardApprovalCenterPanel config={config} heading="All approvals" />
+          ) : (
+            <div className="forward-placeholder">
+              <h3>Approval queue requires a live bridge</h3>
+              <p>Approval records are sensitive operational data, so the global queue appears only after a bearer token is loaded.</p>
+            </div>
+          )}
+        </main>
+      ) : route.screen === "threads" || route.screen === "thread-detail" || route.screen === "agent-detail" ? (
+        <main className="forward-main">
+          <div className="forward-placeholder">
+            <h3>{route.screen === "agent-detail" ? "Agent detail route is deferred" : "Thread route is deferred"}</h3>
+            <p>
+              {route.screen === "agent-detail"
+                ? "Use the live Agents route for the current roster. Dedicated agent detail records will be wired in a later projection slice."
+                : "Thread browser and thread detail routes are reserved for a later replay conversation surface."}
+            </p>
+            <div className="forward-approval-actions">
+              <a className="forward-chip-button active" href={route.screen === "agent-detail" ? "#/agents" : "#/runs"}>
+                {route.screen === "agent-detail" ? "Back to agents" : "Back to runs"}
+              </a>
+            </div>
+          </div>
         </main>
       ) : (
       <main className="forward-main">
@@ -1594,7 +1832,7 @@ export function App() {
             </button>
           </div>
         ) : null}
-        {!isDemo || showConnectForm ? (
+        {showConnectForm ? (
           <section className="forward-setup">
             <form className="forward-form" onSubmit={connect}>
               <label>
@@ -1858,11 +2096,12 @@ export function App() {
                       }))
                     : taskItems
                   ).map((item) => (
-                    <div key={item.taskId} className="forward-run-row">
+                    <div key={item.taskId} className="forward-run-row" role="group" aria-label={`Task ${item.title}`}>
                       {!isDemo ? (
                         <label className="forward-task-select">
                           <input
                             type="checkbox"
+                            aria-label={`Select task ${item.title}`}
                             checked={selectedTaskIds.includes(item.taskId)}
                             onChange={() => toggleTaskSelection(item.taskId)}
                           />
@@ -1871,6 +2110,7 @@ export function App() {
                       ) : null}
                       <button
                         className={`forward-run-item${route.taskId === item.taskId ? " active" : ""}${item.status === "in_progress" ? " running" : ""}`}
+                        type="button"
                         onClick={() => openTask(item.taskId)}
                       >
                         <div className="forward-run-topline">
@@ -1999,33 +2239,43 @@ export function App() {
               </span>
             </div>
             {route.screen === "overview" ? (
-              <OperatorSummaryPanel
-                summary={
-                  isDemo
-                    ? {
-                        postureLabel: "demo",
-                        latestRunLabel: "demo-run-001 | active",
-                        metrics: [
-                          { id: "demo-runs", label: "Active runs", value: "1", detail: `${demoTasks.length} demo tasks visible` },
-                          { id: "demo-approvals", label: "Pending approvals", value: String(demoProposals.length), detail: "Demo proposal queue is standing in for operator attention." },
-                          { id: "demo-rooms", label: "Active rooms", value: "6", detail: `${demoAgents.length} agents distributed across the office lens` },
-                          { id: "demo-events", label: "Failing runs", value: "0", detail: `${demoEvents.length} demo events in the current feed` },
-                          { id: "demo-handoffs", label: "Open handoffs", value: "2", detail: "Sample coordination load from the office demo." },
-                        ],
-                        attention: [
-                          {
-                            id: "demo-attention",
-                            tone: "info",
-                            title: "Demo mode is showing sample operator posture",
-                            detail: "Connect to a live forward bridge to replace these sample signals with real runtime projections.",
-                          },
-                        ],
-                      }
-                    : overview
-                }
-                state={isDemo ? "ready" : overviewState}
-                error={overviewError}
-              />
+              <>
+                <OperatorSummaryPanel
+                  summary={
+                    isDemo
+                      ? {
+                          postureLabel: "demo",
+                          latestRunLabel: "demo-run-001 | active",
+                          metrics: [
+                            { id: "demo-runs", label: "Active runs", value: "1", detail: `${demoTasks.length} demo tasks visible` },
+                            { id: "demo-approvals", label: "Pending approvals", value: String(demoProposals.length), detail: "Demo proposal queue is standing in for operator attention." },
+                            { id: "demo-rooms", label: "Active rooms", value: "6", detail: `${demoAgents.length} agents distributed across the office lens` },
+                            { id: "demo-events", label: "Failing runs", value: "0", detail: `${demoEvents.length} demo events in the current feed` },
+                            { id: "demo-handoffs", label: "Open handoffs", value: "2", detail: "Sample coordination load from the office demo." },
+                          ],
+                          attention: [
+                            {
+                              id: "demo-attention",
+                              tone: "info",
+                              title: "Demo mode is showing sample operator posture",
+                              detail: "Connect to a live forward bridge to replace these sample signals with real runtime projections.",
+                            },
+                          ],
+                          evidence: null,
+                          doctor: null,
+                          runtimeRoster: null,
+                        }
+                      : overview
+                  }
+                  state={isDemo ? "ready" : overviewState}
+                  error={overviewError}
+                />
+                <OperatorWakeReadinessPanel
+                  readiness={isDemo ? null : wakeReadiness}
+                  state={isDemo ? "idle" : wakeReadinessState}
+                  error={wakeReadinessError}
+                />
+              </>
             ) : route.screen === "inbox" ? (
               <OperatorInboxPanel
                 items={
@@ -2081,6 +2331,18 @@ export function App() {
                             { label: "Rooms", value: "1" },
                             { label: "Workspace", value: "none" },
                           ],
+                          prCiEvidence: {
+                            posture: "ok",
+                            metrics: [
+                              { label: "PRs", value: "0" },
+                              { label: "CI", value: "0" },
+                              { label: "Failing", value: "0" },
+                              { label: "Pending", value: "0" },
+                            ],
+                            suggestions: ["Connect a live bridge to show task-linked PR and CI evidence."],
+                            privacyNote: "Demo mode does not fetch external PR or CI data.",
+                            items: [],
+                          },
                         }
                       : taskDetail
                   }
@@ -2105,6 +2367,30 @@ export function App() {
                   onApprovalRationaleChange={setTaskApprovalRationale}
                   approvalRequestedChanges={taskChangedFields}
                 />
+                {route.screen === "task-detail" ? (
+                  <OperatorTaskReconcilePreviewPanel
+                    preview={
+                      isDemo
+                          ? {
+                            taskId: "demo-task",
+                            decisionId: "demo-reconcile-preview",
+                            generatedAt: "demo",
+                            currentStatus: "todo",
+                            recommendedStatus: "in review",
+                            confidence: "medium",
+                            tone: "info",
+                            summary: "Demo preview: live reconcile decisions appear here when connected to a forward bridge.",
+                            requiresApproval: false,
+                            blockers: [],
+                            suggestedActions: ["Connect a live bridge to replace this sample with projected task evidence."],
+                            evidenceRefs: ["demo:operator-task"],
+                          }
+                        : reconcilePreview
+                    }
+                    state={isDemo ? "ready" : taskReconcileState}
+                    error={taskReconcileError}
+                  />
+                ) : null}
                 {!isDemo && (route.screen !== "task-detail" || !taskDetail?.archivedAt) ? (
                   <OperatorTaskEditorPanel
                     mode={route.screen === "task-detail" ? "edit" : "create"}
@@ -2400,35 +2686,42 @@ export function App() {
                       </ul>
                     )}
                   </div>
-                  <div className="forward-tab-bar">
+                  <div className="forward-tab-bar" role="tablist" aria-label="Run detail sections">
                     {(["operations", "intelligence", "data"] as const).map((tab) => (
                       <button
                         key={tab}
                         className={`forward-tab${detailTab === tab ? " active" : ""}`}
+                        type="button"
+                        role="tab"
+                        id={`run-detail-tab-${tab}`}
+                        aria-selected={detailTab === tab}
+                        aria-controls={`run-detail-panel-${tab}`}
+                        tabIndex={detailTab === tab ? 0 : -1}
                         onClick={() => setDetailTab(tab)}
+                        onKeyDown={handleRunDetailTabKeyDown}
                       >
                         {tab === "operations" ? "Operations" : tab === "intelligence" ? "Intelligence" : "Data"}
                       </button>
                     ))}
                   </div>
                   {detailTab === "operations" && (
-                    <>
+                    <div role="tabpanel" id="run-detail-panel-operations" aria-labelledby="run-detail-tab-operations">
                       <ForwardApprovalCenterPanel config={config} runId={runDetail.runId} />
                       <ForwardReplayPanel replay={replay} state={replayState} error={replayError} />
-                    </>
+                    </div>
                   )}
                   {detailTab === "intelligence" && (
-                    <>
+                    <div role="tabpanel" id="run-detail-panel-intelligence" aria-labelledby="run-detail-tab-intelligence">
                       <ForwardGraphPanel model={graphModel} />
                       <ForwardInsightsPanel
                         insights={insightCards}
                         findingsSummary={findingsSummary}
                         validatorCorrelations={validatorCorrelations}
                       />
-                    </>
+                    </div>
                   )}
                   {detailTab === "data" && (
-                    <>
+                    <div role="tabpanel" id="run-detail-panel-data" aria-labelledby="run-detail-tab-data">
                       <ForwardStateDocsPanel stateDocs={stateDocs} state={stateDocsState} error={stateDocsError} />
                       <ForwardContextPanel contextLatest={contextLatest} state={contextState} error={contextError} />
                       <ForwardRoomPanel
@@ -2439,7 +2732,7 @@ export function App() {
                         state={roomState}
                         error={roomError}
                       />
-                    </>
+                    </div>
                   )}
                 </div>
               </ErrorBoundary>

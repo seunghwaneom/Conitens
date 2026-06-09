@@ -23,6 +23,7 @@ export function OfficeSidebar({
   selectedResident,
   selectedResidentId,
   onSelectResident,
+  onOpenAgent,
 }: {
   handoffs: OfficeHandoffSnapshot[];
   residents: OfficeResidentPresence[];
@@ -31,6 +32,7 @@ export function OfficeSidebar({
   selectedResident: OfficeResidentPresence | null;
   selectedResidentId: string | null;
   onSelectResident: (agentId: string) => void;
+  onOpenAgent?: (agentId: string) => void;
 }) {
   const rail = buildOfficeSidebarRailView({ residents, queuedTasks, handoffs });
   const focus = buildOfficeFocusStripView({
@@ -42,6 +44,25 @@ export function OfficeSidebar({
 
   return (
     <aside className={`${layoutStyles["office-panel"]} ${sidebarStyles["office-rail"]}`}>
+      <section className={sidebarStyles["office-focus-card"]}>
+        <p className={sidebarStyles["office-focus-kicker"]}>{focus.eyebrow}</p>
+        <div className={sidebarStyles["office-focus-head"]}>
+          <strong>{focus.headline}</strong>
+          <span className={sidebarStyles["office-focus-pill"]}>{focusModeLabel}</span>
+        </div>
+        <p className={sidebarStyles["office-focus-copy"]}>{focus.summary}</p>
+        <p className={sidebarStyles["office-focus-detail"]}>{focus.detail}</p>
+        {selectedResident && onOpenAgent ? (
+          <button
+            className={sidebarStyles["office-focus-action"]}
+            type="button"
+            onClick={() => onOpenAgent(selectedResident.agentId)}
+          >
+            View in Agents
+          </button>
+        ) : null}
+      </section>
+
       <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.agents}`}>
         <div className="section-head">
           <p className="panel-kicker">ACTIVE AGENTS</p>
@@ -169,15 +190,6 @@ export function OfficeSidebar({
         ) : null}
       </section>
 
-      <section className={sidebarStyles["office-focus-card"]}>
-        <p className={sidebarStyles["office-focus-kicker"]}>{focus.eyebrow}</p>
-        <div className={sidebarStyles["office-focus-head"]}>
-          <strong>{focus.headline}</strong>
-          <span className={sidebarStyles["office-focus-pill"]}>{focusModeLabel}</span>
-        </div>
-        <p className={sidebarStyles["office-focus-copy"]}>{focus.summary}</p>
-        <p className={sidebarStyles["office-focus-detail"]}>{focus.detail}</p>
-      </section>
     </aside>
   );
 }

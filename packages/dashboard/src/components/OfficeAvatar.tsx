@@ -7,6 +7,8 @@ import stageStyles from "../office-stage.module.css";
 const AVATAR_SCALE = 4;
 const AVATAR_W = 24;
 const AVATAR_H = 32;
+const AVATAR_DISPLAY_W = 32;
+const AVATAR_DISPLAY_H = 42;
 
 export function OfficeAvatar({
   profile,
@@ -47,8 +49,8 @@ export function OfficeAvatar({
         width={AVATAR_W * AVATAR_SCALE}
         height={AVATAR_H * AVATAR_SCALE}
         style={{
-          width: `${AVATAR_W}px`,
-          height: `${AVATAR_H}px`,
+          width: `${AVATAR_DISPLAY_W}px`,
+          height: `${AVATAR_DISPLAY_H}px`,
           imageRendering: "pixelated",
         }}
         aria-hidden="true"

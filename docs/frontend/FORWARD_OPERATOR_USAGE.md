@@ -27,6 +27,7 @@
 - approval list/detail 조회
 - approval approve / reject / resume
 - live snapshot 기반 자동 새로고침
+- forward doctor evidence JSON/Markdown artifact 생성
 
 현재 의도적으로 없는 것:
 
@@ -67,6 +68,7 @@
 ```powershell
 python --version
 pnpm --version
+python scripts/ensemble.py --workspace . forward doctor-evidence --format json
 ```
 
 ## 4. 가장 빠른 시작
@@ -93,6 +95,101 @@ python scripts/ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8
   "reviewer_identity": "local/eomshwan"
 }
 ```
+
+지원/릴리즈 증거가 필요하면 bridge를 띄우기 전에 doctor evidence artifact를 남긴다:
+
+```powershell
+python scripts/ensemble.py --workspace . forward doctor-evidence --format json --write-artifact
+```
+
+Runtime roster can be checked without starting the bridge:
+
+```powershell
+python scripts/ensemble.py --workspace . forward runtime-roster --format json --no-version-probe
+```
+
+This is read-only. It reuses the same bounded runtime roster contract as
+`/api/operator/runtime-roster`, records no events or artifacts, does not dump
+the environment, and does not run provider auth commands. Omit
+`--no-version-probe` when a short redacted version probe is useful.
+
+Runtime roster also supports focused multi-CLI review:
+
+```powershell
+python scripts/ensemble.py --workspace . forward runtime-roster --agent-runtimes-only --runtime codex --format json --no-version-probe
+```
+
+Use `--runtime <codex|claude|gemini|opencode|python|node|pnpm|git>` and
+`--category <agent_runtime|toolchain>` to filter. `--agent-runtimes-only` is a
+shortcut for `--category agent_runtime`. The JSON includes `ux_summary` and
+`operator_hints` so operators can see observed, available-but-unobserved, and
+missing CLI runtimes without launching provider auth commands or dumping the
+environment. The bridge equivalent is
+`GET /api/operator/runtime-roster?runtime=codex&category=agent_runtime&probe_versions=0`.
+
+Turn records can also be checked without starting the bridge:
+
+```powershell
+python scripts/ensemble.py --workspace . forward turn-records --run-id run-example --room-id R-20260607-001 --format json
+```
+
+This is a metadata-only projection over persisted room messages and tool events.
+It exposes sender, message/tool type, scope, evidence refs, metadata keys, and
+content/payload lengths only. It does not expose message content, tool payload
+values, or raw transcripts. The bridge equivalent is
+`GET /api/operator/turn-records?run_id=...&room_id=...&limit=50`.
+
+Workflow contracts can be checked without starting the bridge:
+
+```powershell
+python scripts/ensemble.py --workspace . forward workflow-contracts --format json
+```
+
+This is a read-only projection over `.agent/workflows/*.md`. It reports workflow
+slug/name, input names, required/optional posture, step ids/kinds, approval and
+parallel posture, and validation errors or warnings. It does not execute
+workflow commands, create workflow runs, bypass approval, or expose rendered
+command/payload values. Use `--workflow <slug-or-file-stem>` to inspect one
+contract. The bridge equivalent is
+`GET /api/operator/workflow-contracts?workflow=...`.
+
+Status confidence can be checked without starting the bridge:
+
+```powershell
+python scripts/ensemble.py --workspace . forward status-confidence --run-id run-example --format json
+```
+
+This is a read-only diagnostic projection over local operator tasks, runs, and
+rooms. It reports ids, current status, confidence level, reason codes, attention
+flags, linked refs, counts, and evidence refs only. It does not mutate task,
+run, or room status; it does not resync external systems; and it does not expose
+message content, approval payload values, tool payload values, or raw
+transcripts. Use `--task-id`, `--run-id`, `--room-id`, and `--limit` to scope
+the diagnostic. The bridge equivalent is
+`GET /api/operator/status-confidence?run_id=...&limit=80`.
+
+Wake readiness can be checked without starting the bridge:
+
+```powershell
+python scripts/ensemble.py --workspace . forward wake-readiness --run-id run-example --format json
+```
+
+This is a read-only composite projection over status-confidence, turn-records,
+and runtime-roster evidence. It reports candidate ids, readiness, confidence,
+blockers, suggested actions, linked refs, turn metadata counts, preferred agent
+runtime, and evidence refs only. It does not start a scheduler, send wake
+messages, mutate task/run/room status, fetch external systems, run provider auth
+commands, or expose message content, approval payload values, tool payload
+values, validator issue details, or raw transcripts. Use `--task-id`,
+`--run-id`, `--room-id`, and `--limit` to scope the projection. The bridge
+equivalent is `GET /api/operator/wake-readiness?run_id=...&limit=40`.
+
+이 명령은 `.omx/artifacts/forward-doctor-evidence/` 아래에 JSON과 Markdown을 쓴다.
+이 플래그는 명시적인 workspace mutation이며 `.notes/artifacts/manifest.jsonl`에도
+provenance를 남긴다. provider auth 명령이나 환경 변수 dump는 실행하지 않으며,
+runtime CLI availability와 redaction된 짧은 version 문자열, forward/doctor posture만
+기록한다. workspace 내부 경로는 상대 경로로, 외부 executable 경로는 basename 또는
+`PATH:<tool>` 형태로만 기록한다.
 
 터미널 2에서 dashboard preview 실행:
 
@@ -381,3 +478,32 @@ python scripts/ensemble.py --workspace . forward status --format json
 - [FE6_APPROVAL_CENTER.md](D:/Google/.Conitens/docs/frontend/FE6_APPROVAL_CENTER.md)
 - [CONTROL_PLANE_DECISION.md](D:/Google/.Conitens/docs/frontend/CONTROL_PLANE_DECISION.md)
 - [current-architecture-status-ko.md](D:/Google/.Conitens/docs/current-architecture-status-ko.md)
+
+## PR/CI Evidence Workflow
+
+The PR/CI evidence flow is documented separately in
+[PR_CI_EVIDENCE_WORKFLOW.md](D:/Google/.Conitens/docs/frontend/PR_CI_EVIDENCE_WORKFLOW.md).
+
+Use the two-step local flow:
+
+```powershell
+python scripts/ensemble.py --workspace . forward import-pr-ci-evidence --input output/github-export.json --task-id otask-example --format json > output/pr-ci-reviewed.json
+python scripts/ensemble.py --workspace . forward append-pr-ci-evidence --input output/pr-ci-reviewed.json --format json --reviewer local/operator
+```
+
+The import step is read-only. The append step is the explicit event-log write.
+Neither step performs live GitHub/CI fetches, provider auth checks, auto-merge,
+unattended resume, or task mutation. Token-like strings in retained PR/CI
+metadata values are redacted before reviewed JSON or append summaries are
+returned.
+
+## Wake Scheduler Design Gate
+
+Live wake scheduling is not implemented yet. The required approval,
+verification, mutation, audit, and privacy gates are documented in
+[WAKE_SCHEDULER_DESIGN.md](D:/Google/.Conitens/docs/frontend/WAKE_SCHEDULER_DESIGN.md).
+
+The next safe code slice is a read-only `wake-plan --dry-run` planner. It must
+not send wake messages, resume runs, mutate task/run/room state, append events,
+call providers, fetch external systems, or expose raw transcript/tool/approval
+payloads.

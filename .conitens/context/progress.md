@@ -1,5 +1,1229 @@
 # progress.md
 
+## Spatial Lens Prompt 4.13 Focused Generated Backdrop Status
+
+- [x] Latest "next step" request scoped to true generated room backdrop usage
+      after Prompt 4.12 added generated room-kit signatures
+- [x] `frontend-skill`, `visual-verdict`, `validation-gate`, and in-app
+      browser guidance applied
+- [x] Current generated reference assets, room templates, `RoomZone`,
+      `FocusedRouteTargetEdge`, CSS layer ordering, and browser evidence
+      inspected
+- [x] Generated Ops Control and Validation Office room references copied into
+      the dashboard public generated asset folder
+- [x] Added `generatedRoomBackdrops.ts` manifest with ids, dimensions, usage,
+      opacity, and fitting metadata
+- [x] Added `GeneratedRoomBackdropLayer` with stable backdrop data hooks
+- [x] `RoomZone` now renders generated room backdrops only when
+      `showGeneratedBackdrops` is true
+- [x] `FloorViewport` passes `showGeneratedBackdrops={isFocusedMode}` so Floor
+      Overview stays topology-only
+- [x] `FocusedRouteTargetEdge` renders the Validation target-edge backdrop
+      beneath checkpoint props
+- [x] Generated asset and room dressing regression coverage added
+- [x] Targeted Spatial Lens tests passed
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Visual verdict persisted at 98/100
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.13 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-generated-assets.test.mjs packages/dashboard/tests/spatial-lens-room-dressing.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- In-app browser capture against `http://localhost:3000/#/office-preview` for
+  Focused 1440px, Focused 1220px, Floor Overview 1440px, and Classic 1440px,
+  writing `output/playwright/spatial-lens-prompt53-results.json`
+
+## Spatial Lens Prompt 4.13 Outcome
+
+Prompt 4.13 is complete. Focused remains the default `3x` live-office camera,
+but Ops Control and the Validation receiving edge now blend project-owned
+generated room references under the authored sprite layers. Focused renders 3
+generated room backdrops; Floor Overview remains the `1x` topology/debug mode
+with 0 generated room backdrops; Classic remains isolated with 0 generated
+sprites. Browser checks show no console/page errors and no horizontal overflow.
+
+## Spatial Lens Prompt 4.12 Generated Room-Kit Signature Status
+
+- [x] Latest "next step" request scoped to richer room-kit generated-sprite
+      signatures after Prompt 4.11 added room depth accents
+- [x] `frontend-skill`, `visual-verdict`, and `validation-gate` guidance
+      applied
+- [x] Current `RoomZone`, generated sprite manifest, room templates, depth
+      layer, CSS layer ordering, and browser evidence inspected
+- [x] Added `roomKit.ts` as a pure room-template signature sprite map
+- [x] Added `RoomKitLayer` and rendered it inside `RoomZone` after
+      `RoomDepthLayer`
+- [x] Added at least two generated room-kit signature sprites per templated
+      room, with Ops Control and Validation Office visible in the Focused
+      camera contract
+- [x] Styled the layer as flat hard-pixel sprites with no skew, perspective,
+      soft shadows, or fractional scale transforms
+- [x] Added room dressing regression coverage for room-kit counts, hooks, and
+      required generated sprite ids
+- [x] Targeted Spatial Lens tests passed
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Visual verdict persisted at 98/100
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.12 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-room-dressing.test.mjs packages/dashboard/tests/spatial-lens-generated-assets.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- In-app browser capture against `http://localhost:3000/#/office-preview` for
+  Focused 1440px, Focused 1220px, Floor Overview 1440px, and Classic 1440px,
+  writing `output/playwright/spatial-lens-prompt52-results.json`
+
+## Spatial Lens Prompt 4.12 Outcome
+
+Prompt 4.12 is complete. Focused remains the default `3x` live-office camera
+on Ops Control with corridor and Validation context, while each templated room
+now has a generated room-kit signature layer. Focused and Floor Overview render
+6 room-kit layers and 13 generated room-kit sprites; Classic remains isolated
+with 0 room-kit layers and 0 generated sprites. Browser checks show no
+console/page errors and no horizontal overflow.
+
+## Spatial Lens Prompt 4.9 Visual Polish Status
+
+- [x] Latest "next step" request scoped to viewport dominance after Prompt 4.8
+      improved room/corridor continuity
+- [x] `frontend-skill`, `visual-verdict`, and `validation-gate` guidance
+      applied
+- [x] Current PixelOffice shell, OfficeStage header, office CSS, and latest
+      browser evidence inspected
+- [x] Added `data-office-preview-shell="viewport-dominant"` to PixelOffice
+- [x] Compacted the office summary band, metrics, focus line, and 1220px
+      responsive layout under the new shell hook
+- [x] Added `office-preview-shell.test.mjs` to lock laptop-width viewport
+      dominance
+- [x] Targeted shell + Spatial Lens tests passed
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Visual verdict persisted at 97/100
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.9 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/office-preview-shell.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Browser capture against `http://localhost:3000/#/office-preview`, writing
+  `output/playwright/spatial-lens-prompt49-results.json`
+
+## Spatial Lens Prompt 4.9 Outcome
+
+Prompt 4.9 is complete. The Spatial Lens operator shell is now more
+viewport-dominant: at laptop width the Focused floor starts at `y=362`, down
+from Prompt 4.8's `y=430`, while retaining the live metrics, focus line,
+Focused `3x`, Floor Overview `1x`, Classic fallback, route continuity,
+packet-slot, target-edge, and compact offscreen rail contracts. Browser checks
+show zero console errors and zero horizontal overflow.
+
+## Spatial Lens Prompt 4.8 Visual Polish Status
+
+- [x] Latest "next step" request scoped to authored room/corridor continuity
+      after Prompt 4.7 reduced offscreen awareness chrome
+- [x] `frontend-skill`, `visual-verdict`, and `validation-gate` guidance
+      applied
+- [x] Current Focused route, corridor graph, floorplate, CSS layer ordering,
+      and pixel grammar tests inspected
+- [x] Added `FocusedCorridorContinuityLayer` deriving `source-apron`,
+      `spine-runner`, and `target-apron` floor tiles from existing route
+      points
+- [x] Rendered continuity layer only in Focused mode
+- [x] Styled continuity tiles as low-contrast hard-pixel floor material under
+      rooms and route overlays
+- [x] Added pixel grammar coverage to prevent this from becoming extra route
+      markers
+- [x] Targeted Spatial Lens tests passed
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Visual verdict persisted at 96/100
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.8 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Browser capture against `http://localhost:3000/#/office-preview`, writing
+  `output/playwright/spatial-lens-prompt48-results.json`
+
+## Spatial Lens Prompt 4.8 Outcome
+
+Prompt 4.8 is complete. Focused remains the `3x` live office camera, and the
+Ops-to-Validation route now has three subtle floor continuity tiles that read
+as corridor material rather than dashboard route chrome. Floor Overview stays
+the `1x` topology mode with no continuity layer, Classic remains isolated, and
+browser checks show zero console errors and zero horizontal overflow.
+
+## Spatial Lens Prompt 4.7 Visual Polish Status
+
+- [x] Latest "next step" request scoped to offscreen awareness rail restraint
+      after Prompt 4.6 route storytelling reached pass threshold
+- [x] `frontend-skill`, `visual-verdict`, and `validation-gate` guidance
+      applied
+- [x] Existing Prompt 4.6 route guide, offscreen rail, target edge, camera
+      stage, and pixel grammar tests inspected
+- [x] `HandoffOverlay` route guide logic simplified to the accepted final
+      source-side horizontal tile only
+- [x] `AgentOffscreenRail` now exposes compact-tab treatment
+- [x] Offscreen awareness CSS reduced to a 112px transparent rail and compact
+      26px-min row
+- [x] Focused target edge and camera stage browser hooks added for stable
+      visual verification
+- [x] Targeted Spatial Lens tests passed
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Visual verdict persisted at 96/100
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.7 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Browser capture against `http://localhost:3000/#/office-preview`, writing
+  `output/playwright/spatial-lens-prompt47-results.json`
+
+## Spatial Lens Prompt 4.7 Outcome
+
+Prompt 4.7 is complete. Focused remains the `3x` live office camera and keeps
+Ops Control, the corridor, the Validation edge, the handoff packet, and the
+blocked barrier readable. The offscreen worker awareness remains available but
+now renders as a compact `112px` tab instead of a full card-like rail panel.
+Floor Overview remains a labeled `1x` topology/debug mode, Classic remains
+isolated, and browser checks show zero console errors and zero horizontal
+overflow.
+
+## Spatial Lens Prompt 4.4 Visual Polish Status
+
+- [x] Latest "next step" request scoped to Ops density/walk-path and
+      Validation threshold polish
+- [x] `frontend-skill`, `visual-verdict`, and `validation-gate` guidance
+      applied
+- [x] Current context, room templates, room dressing, target edge, CSS, and
+      agent station contracts inspected
+- [x] Behavior locked with targeted Spatial Lens tests before edits
+- [x] Ops Control prop density reduced while preserving authored agent slots
+- [x] Ops Control room floor now exposes `data-room-floor-id` and a subtle
+      hard-pixel walk lane
+- [x] Validation target connector/threshold extended toward the corridor
+- [x] Target-edge packet/inbox moved closer to the threshold
+- [x] Target sentinel rendered at integer `2x` inside the receiving edge
+- [x] Targeted Spatial Lens tests passed after edits
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Visual verdict persisted at 92/100
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.4 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-room-dressing.test.mjs packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Playwright real-browser capture against
+  `http://localhost:3000/#/office-preview`, writing
+  `output/playwright/spatial-lens-prompt44-results.json`
+
+## Spatial Lens Prompt 4.4 Outcome
+
+Prompt 4.4 is complete. Focused remains the default `3x` live-office camera,
+but Ops Control is less crowded: browser metrics report 29 Ops props and 12
+Ops workstation props, down from 44 and 18 in Prompt 4.3. Validation's target
+edge is more physically connected, and the sentinel receiver is readable at
+integer `2x`. Floor Overview remains `1x`, Classic remains isolated, and
+browser checks show zero console/page errors and zero horizontal overflow.
+
+## Spatial Lens Prompt 4.3 Cleanup/Review Status
+
+- [x] Latest "next step" request scoped to behavior-preserving cleanup/review
+      after Prompt 4.2 reached visual pass threshold
+- [x] `ai-slop-cleaner`, `frontend-skill`, and `visual-verdict` guidance
+      applied
+- [x] Cleanup plan written before code edits
+- [x] Behavior locked with targeted Spatial Lens tests before cleanup
+- [x] `FocusedRouteTargetEdge.tsx` route pixel repetition and target visual
+      derivation simplified
+- [x] `FloorViewport.tsx` mode/framing conditionals centralized
+- [x] Targeted Spatial Lens tests passed after cleanup
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Focused 1440 still reports `3x`, Ops -> Validation route framing,
+      corridor-connected target edge, 3 route pixels, 1 blocked marker,
+      4 agent stations, 0 floor canvases, and 0 horizontal overflow
+- [x] Visual verdict persisted at 90/100
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.3 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Playwright real-browser capture against
+  `http://localhost:3000/#/office-preview`, writing
+  `output/playwright/spatial-lens-prompt43-results.json`
+
+## Spatial Lens Prompt 4.3 Outcome
+
+Prompt 4.3 is complete. The recent Focused route code is a little cleaner
+without changing the visual contract: Focused remains the default `3x` live
+office camera, Floor Overview remains the `1x` topology view, Classic remains
+isolated, and the Ops -> Validation target edge, route pixels, packet, source
+plaque, blocked marker, and agent counts stayed stable in browser evidence.
+
+## Spatial Lens Prompt 4.2 Target-edge Continuity Status
+
+- [x] Latest "next step" request scoped to target-edge continuity and route
+      storytelling
+- [x] `frontend-skill` and `visual-verdict` guidance applied
+- [x] Current Prompt 4.1 Focused route edge, FloorViewport, CSS, tests, and
+      browser evidence inspected
+- [x] Added corridor-connected target-edge diagnostics
+- [x] Added corridor connector tile and route pixels into the Validation
+      receiving edge
+- [x] Added focused source plaque for Ops Control inside the route-side crop
+- [x] Reduced Focused route-line opacity and thickness while keeping Overview
+      route visibility intact
+- [x] Targeted Spatial Lens tests passed
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Visual verdict persisted at 90/100
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.2 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Playwright real-browser capture against
+  `http://localhost:3000/#/office-preview`, writing
+  `output/playwright/spatial-lens-prompt42-results.json`
+
+## Spatial Lens Prompt 4.2 Outcome
+
+Prompt 4.2 is complete. Focused now reads as a connected route camera: the
+Ops Control source plaque survives the route-side crop, the Validation target
+edge is explicitly corridor-connected, three route pixels bridge into the
+threshold, packet/inbox/sentinel carry the receiving story, and the Focused
+route line is visually quieter than the Overview topology route. Visual verdict
+is 90/100 and passes the configured threshold.
+
+## Spatial Lens Prompt 4.1 Route Composition Status
+
+- [x] Latest "next step" request scoped from the current visual audit
+- [x] `frontend-skill` and `visual-verdict` guidance applied
+- [x] Current camera, handoff overlay, floor viewport, room/corridor graph,
+      agent layer, and package scripts inspected
+- [x] Focused camera route pull implemented while preserving integer `3x`
+- [x] Focused route scene now exposes
+      `data-focused-route-framing="source-corridor-target-edge"`
+- [x] Validation receiving edge added with packet/inbox/checklist/sentinel
+      sprites
+- [x] Target-room sentinel moved out of offscreen rail and into the receiving
+      edge
+- [x] Floor Overview stabilized as explicit `1x` topology mode
+- [x] Targeted Spatial Lens tests passed
+- [x] Full dashboard tests passed
+- [x] Production build passed
+- [x] Real browser checks captured Focused, Floor Overview, Classic, and
+      laptop-width Focused
+- [x] Visual verdict persisted
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.1 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Playwright real-browser capture against
+  `http://localhost:3000/#/office-preview`, writing
+  `output/playwright/spatial-lens-prompt41-results.json`
+
+## Spatial Lens Prompt 4.1 Outcome
+
+Prompt 4.1 is complete. Focused now keeps the `3x` live camera contract while
+pulling toward the Ops -> Validation handoff route: the visible scene bounds
+are `15.833,1.833,33.333,33.333`, the corridor edge is inside the main crop,
+and a Validation receiving edge with sentinel, packet, checklist board, and
+inbox tray is visible in the scene. Floor Overview remains `1x` all-room
+topology with explicit labeling, and Classic remains isolated. Visual verdict
+is 87/100; the next gap is making the target edge feel more physically
+continuous with the corridor and reducing route-line dominance.
+
+## Spatial Lens Current Visual Audit Status
+
+- [x] Latest attached audit request inspected and scoped to Use Case A:
+      Visual Reference Audit
+- [x] Production code kept read-only for this step
+- [x] Active `#/office-preview` route, Focused, Floor Overview, and Classic
+      ownership inspected
+- [x] Current room/corridor geometry, handoff route, room dressing, agent
+      sprite layer, and right inspector selection surfaces mapped
+- [x] Existing browser evidence at 1440px desktop and laptop width captured
+      into the current-audit Playwright artifacts
+- [x] Added `docs/design/spatial-lens-current-visual-audit.md`
+- [x] Audit separates visual issues from data/runtime issues
+- [x] Audit records next five implementation tasks and exact package commands
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Current Visual Audit Commands Run
+
+- Browser capture through Codex bundled Playwright against
+  `http://localhost:3000/#/office-preview`, writing
+  `output/playwright/spatial-lens-current-audit-results.json`
+- `Get-Content -Raw packages/dashboard/package.json`
+- `git diff --check -- docs/design/spatial-lens-current-visual-audit.md .conitens/context/task_plan.md .conitens/context/findings.md .conitens/context/progress.md .conitens/context/LATEST_CONTEXT.md`
+- `Select-String` checks over
+  `docs/design/spatial-lens-current-visual-audit.md`
+
+## Current Outcome
+
+The Visual Reference Audit slice is complete as a documentation-only step.
+The current Spatial Lens implementation is closer to a live pixel office than
+the earlier floorplan: Focused uses `3x`, Floor Overview uses `1x`, Classic is
+isolated, generated agent sprites are readable, and the handoff has packet and
+barrier markers. The main remaining product-quality gap is composition, not
+more props: Focused still needs to frame Ops Control, corridor, and the
+Validation receiving edge together while keeping the Pixel Agents-like live
+office feel.
+
+## Spatial Lens Prompt 3.10 Focused Composition Status
+
+- [x] Attachment request read and scoped to Prompt 3.10 before Prompt 4
+- [x] `frontend-skill` and `visual-verdict` guidance applied
+- [x] Diagnosed Focused renderer, camera/framing logic, map panel CSS,
+      minimap overlay, and right inspector layout constraints
+- [x] Added focused camera contracts in `viewportCamera.ts`
+- [x] Added route-aware target bias for Focused camera while keeping integer
+      `3x` zoom
+- [x] Increased focused viewport height and added a pixel camera frame
+- [x] Added `SceneDockOverlay` and `MinimapDock`
+- [x] Moved minimap out of room-prop overlap and into the upper camera dock
+- [x] Reduced Focused local map chrome to a compact `Live camera` header and
+      mode toggle
+- [x] Narrowed/tightened the right inspector rail without changing behavior
+- [x] Added camera regression coverage for connected handoff target bias
+- [x] Browser diagnostics captured Focused desktop, Focused laptop, Floor
+      Overview, and CLASSIC
+- [x] Dashboard tests and production build passed
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 3.10 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Playwright browser capture through Codex bundled Node runtime wrote
+  `output/playwright/spatial-lens-prompt310-results.json`
+- `git diff --check -- packages/dashboard/src/spatial-lens/viewport/viewportCamera.ts packages/dashboard/src/spatial-lens/components/FloorViewport.tsx packages/dashboard/src/spatial-lens/components/FloorMiniMap.tsx packages/dashboard/src/spatial-lens/components/SceneDockOverlay.tsx packages/dashboard/src/spatial-lens/components/MinimapDock.tsx packages/dashboard/src/spatial-lens/styles/spatial-lens.module.css packages/dashboard/src/components/OfficeStage.tsx packages/dashboard/src/office-stage.module.css packages/dashboard/src/office.module.css packages/dashboard/src/office-sidebar.module.css packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs`
+
+## Spatial Lens Prompt 3.10 Outcome
+
+Prompt 3.10 is complete. Focused mode is now a larger live camera surface
+instead of a small top-pinned scene: desktop measured 750px tall and laptop
+measured 720px tall. The camera keeps `3x`, defaults to Ops Control, records
+`validation-office` as the connected route target, and exposes the intentional
+scene bounds. The minimap is docked into a small upper camera HUD slot and
+final browser metrics show 0 overlap with Ops Control and Impl Office. Floor
+Overview remains `1x` topology, CLASSIC remains separate, and no canonical
+state writes were introduced. Visual verdict improved to 78/100 but remains
+below threshold until Prompt 4 replaces avatar marks with real AgentSprite
+characters.
+
+## Spatial Lens Building Shell Cleanup Status
+
+- [x] `ai-slop-cleaner` guidance applied to the current Spatial Lens
+      building-shell files
+- [x] Cleanup scope bounded to the door/corridor diagnostic boundary and its
+      regression test
+- [x] Confirmed targeted floor layout and geometry tests before and after the
+      cleanup
+- [x] Changed `DoorFrameLayer` to use `data-door-corridor-node` instead of
+      `data-corridor-node`
+- [x] Added a `CORRIDOR_NODES.length === 9` assertion to
+      `spatial-lens-floor-layout.test.mjs`
+- [x] Browser diagnostics captured Focused 1440px, Focused laptop width,
+      Floor Overview 1440px, and CLASSIC 1220px
+- [x] Dashboard tests and production build passed
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Building Shell Cleanup Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-layout.test.mjs packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Playwright browser capture through Codex bundled Node runtime wrote
+  `output/playwright/spatial-lens-cleanup-results.json`
+
+## Spatial Lens Building Shell Cleanup Outcome
+
+The cleanup pass is complete. Corridor diagnostics now count only the 9 actual
+corridor graph nodes, while door alignment metadata is separately exposed as
+6 `data-door-corridor-node` references. Focused remains `3x`, Floor Overview
+remains `1x`, CLASSIC remains separate, generated sprite counts remain stable
+at 259, and browser checks reported no console/page errors, no horizontal
+overflow, and 0 SVG routes. No runtime truth, approval, provider, scheduler,
+or task mutation surface changed.
+
+## Spatial Lens Building Shell Composition Slice Status
+
+- [x] Attached request read and decoded enough to extract the English
+      implementation contract
+- [x] `frontend-skill` and `imagegen` skill guidance applied
+- [x] Generated a layout/background-only reference for the shared building
+      shell and saved it to repo-owned docs assets
+- [x] Diagnosed active VIEWPORT renderer, geometry, corridor rendering,
+      background/floorplate rendering, and room templates
+- [x] Root cause recorded: rooms were rendered as independent absolute rects
+      over dark background with no shared floorplate, corridor graph, door
+      thresholds, or building shell layer
+- [x] Added `floorLayout.ts` for floorplate zones, shell bounds, wall segments,
+      and structural columns
+- [x] Added `corridorGraph.ts` for a 7% central corridor spine, six room stubs,
+      handoff hub, corridor nodes, door-aligned routes, blocked-lane corridor
+      placement, and corridor hit testing
+- [x] Added `roomPlacement.ts` for VIEWPORT-only door alignment data
+- [x] Added `BuildingShellLayer`, `FloorplateLayer`, `CorridorLayer`, and
+      `DoorFrameLayer`
+- [x] Wired new layers into `FloorViewport`
+- [x] Updated `floorGeometry.ts` to use the new corridor graph and route
+      handoffs through doors plus the central hub
+- [x] Moved blocked-lane marker placement from room interior slot to corridor
+      tile
+- [x] Updated Spatial Lens CSS for facility floorplate, outer/inner walls,
+      columns, narrow corridor, stubs, hub, route nodes, door frames, and
+      lower-profile in-world route channel
+- [x] Added `spatial-lens-floor-layout.test.mjs`
+- [x] Updated floor geometry regression tests for connected corridor/door
+      contracts
+- [x] Dashboard tests and production build passed
+- [x] Browser diagnostics captured Focused, Floor Overview, and Classic modes
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Building Shell Composition Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-layout.test.mjs packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-room-dressing.test.mjs packages/dashboard/tests/spatial-lens-generated-assets.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `git diff --check -- packages/dashboard/src/spatial-lens packages/dashboard/tests/spatial-lens-floor-layout.test.mjs packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs docs/design/spatial-lens-pixel-office-reference.md`
+- Playwright browser capture through Codex bundled Node runtime wrote
+  `output/playwright/spatial-lens-building-shell-results.json`
+
+## Spatial Lens Building Shell Composition Outcome
+
+The building shell composition pass is complete. Floor Overview now renders a
+connected facility floorplate with 6 floorplate zones, 16 building wall
+segments, 6 structural columns, 8 corridor lanes, 9 corridor nodes, 6 door
+frames, 6 door corridor references, 6 room connection stubs, and 1 handoff hub.
+The central corridor is a
+7% spine and measured about 74px in Overview at 1440px. Focused remains `3x`,
+Floor Overview remains `1x`, and CLASSIC remains separate with zero new
+Spatial Lens layers. Browser diagnostics reported no console/page errors, no
+horizontal overflow, no checked text overflow, and 0 SVG routes. Remaining
+visual gap: room interiors are still dense/repetitive; the next pass should
+reduce crowding and introduce walk-path rules rather than add more props.
+
+## Spatial Lens Generated Sprite Fidelity Slice Status
+
+- [x] `frontend-skill` and image generation workflow guidance applied
+- [x] Generated full Spatial Lens UI mockup, Ops Control room reference,
+      Validation Office room reference, and pixel office asset sheet
+- [x] Copied generated references into
+      `docs/design/assets/spatial-lens/generated/`
+- [x] Copied generated sheet source into
+      `packages/dashboard/public/assets/spatial-lens/generated/`
+- [x] Chroma-keyed the generated green-screen asset sheet to transparent PNG
+- [x] Created `pixel-office-asset-sheet-1x.png`, a 384x256 nearest-neighbor
+      frontend sheet downsampled 4:1 from the 1536x1024 source
+- [x] Added `docs/design/spatial-lens-pixel-office-reference.md`
+- [x] Added generated asset NOTICE under the public asset folder
+- [x] Added `generatedAssetManifest.ts` with manual slicing rects, anchors, and
+      integer sprite scale values
+- [x] Added `GeneratedSprite.tsx` for manifest-backed sprite-sheet crops
+- [x] Updated `PixelProp` to prefer generated sprites where available and keep
+      CSS placeholders as fallback
+- [x] Updated `HandoffOverlay` so packet and blocked barrier markers use
+      generated sprite crops
+- [x] Added generated asset manifest regression tests
+- [x] Browser diagnostics captured Focused, Floor Overview, and Classic modes
+- [x] Dashboard tests and production build passed
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Generated Sprite Fidelity Commands Run
+
+- `python C:\Users\eomsh\.codex\skills\.system\imagegen\scripts\remove_chroma_key.py --input packages/dashboard/public/assets/spatial-lens/generated/pixel-office-asset-sheet-source.png --out packages/dashboard/public/assets/spatial-lens/generated/pixel-office-asset-sheet.png --auto-key border --soft-matte --transparent-threshold 12 --opaque-threshold 220 --despill`
+- Python/Pillow generated `pixel-office-asset-sheet-1x.png` via nearest-neighbor
+  4:1 downsample
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-generated-assets.test.mjs`
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-room-dressing.test.mjs packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Playwright browser capture through Codex bundled Node runtime wrote
+  `output/playwright/spatial-lens-generated-assets-results.json`
+
+## Spatial Lens Generated Sprite Fidelity Outcome
+
+The generated asset slice is complete. Focused and Floor Overview now render
+259 generated sprite crops from `pixel-office-asset-sheet-1x.png`, including
+257 PixelProps plus handoff packet and blocked barrier markers. Focused 1440px
+and 1220px checks reported `cameraZoom: "3"`, no console/page errors, no
+horizontal overflow, 0 SVG routes, and generated sprite backgrounds for packet,
+barrier, console desk, and status board. Floor Overview remains at `1x` and
+Classic remains a separate fallback with 0 generated Spatial Lens sprites.
+The main remaining visual gap is art-directed composition: current room
+templates are denser than the generated references, and Ops -> Validation
+cannot be fully framed at `3x` with the existing topology without either a
+route-aware camera tradeoff or authored layout adjustment.
+
+## Spatial Lens Room Dressing Detail Slice Status
+
+- [x] Prompt 3.7 attachment read and scoped to VIEWPORT room dressing only
+- [x] `frontend-skill` and `validation-gate` guidance applied
+- [x] Existing `FloorViewport`, `RoomZone`, `HandoffOverlay`, and
+      `floorGeometry.ts` implementation diagnosed
+- [x] Root cause recorded: previous VIEWPORT separation changed frame and
+      routing, but room interiors were still mostly sparse fixtures plus labels
+- [x] `roomTemplates.ts` added with deterministic room-specific templates for
+      Ops Control, Impl Office, Research Lab, Validation Office, Review Office,
+      and Central Commons
+- [x] `roomDressing.ts` added to expand templates into wall, workstation,
+      floor, and operational PixelProp specs plus count/anchor helpers
+- [x] `PixelProp`, `WallDetailLayer`, `WorkstationLayer`,
+      `RoomDressingLayer`, and `OperationalOverlayLayer` added under
+      `packages/dashboard/src/spatial-lens/viewport/`
+- [x] `RoomZone` now mounts the dressing layers in VIEWPORT mode only
+- [x] Handoff routes now anchor to route ports and blocked markers anchor to
+      barrier/cone slots when templates provide them
+- [x] CSS pixel prop placeholders added for all required prop kinds
+- [x] Room dressing regression tests added
+- [x] Dashboard tests and production build passed
+- [x] Real browser preview verification captured at 1440px, 1220px, 820px,
+      with a hidden-label check and CLASSIC fallback capture
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Room Dressing Detail Slice Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-room-dressing.test.mjs`
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Touched-file trailing whitespace check over the new viewport, model, style,
+  export, and test files returned `NO_TRAILING_WHITESPACE`
+- Local preview:
+  `pnpm.cmd --filter @conitens/dashboard preview` on
+  `http://localhost:4173/#/office-preview`
+- Playwright GUI check wrote:
+  `output/playwright/spatial-lens-viewport-37-results.json`
+- Screenshots:
+  - `output/playwright/spatial-lens-viewport-37-1440.png`
+  - `output/playwright/spatial-lens-viewport-37-1220.png`
+  - `output/playwright/spatial-lens-viewport-37-820.png`
+  - `output/playwright/spatial-lens-viewport-37-hidden-labels-1440.png`
+  - `output/playwright/spatial-lens-viewport-37-classic-1220.png`
+
+## Spatial Lens Room Dressing Detail Slice Outcome
+
+Prompt 3.7 is complete. VIEWPORT now renders 257 deterministic `PixelProp`
+instances across six semantically distinct rooms: Ops Control 44, Impl Office
+45, Central Commons 54, Research Lab 32, Validation Office 48, and Review
+Office 34. All required prop kinds are implemented, every room has at least 3
+wall details and at least 2 workstation/task-related details, handoff routes
+attach to route ports, and blocked lanes attach to barrier/cone objects.
+Browser diagnostics reported zero console/page errors, zero horizontal
+overflow, zero non-empty text overflow, 6 rooms, 1 handoff route, 1 handoff
+packet, 1 blocked marker, 16 route ports, 4 barriers, and 4 cones. CLASSIC
+fallback rendered zero new PixelProps.
+
+## Spatial Lens Viewport Visual Delta Slice Status
+
+- [x] Attached Prompt 3.5 request read from Codex attachment
+- [x] Current Spatial Lens route, VIEWPORT/CLASSIC toggle, legacy room map, and
+      new FloorViewport components diagnosed
+- [x] Root cause recorded: Prompt 3 used a separate component but retained
+      card-like room styling, so the visible delta was too subtle
+- [x] VIEWPORT kept as default and CLASSIC kept as fallback
+- [x] `FloorViewport` wired to receive handoff snapshots through `OfficeStage`
+- [x] `floorGeometry.ts` extended with visible handoff route and blocked marker
+      model contracts
+- [x] `HandoffOverlay.tsx` added for route line, packet marker, and barrier
+- [x] VIEWPORT room styling changed away from old card visuals toward thin wall
+      zones, in-world nameplates, small flags, and floor-level overlays
+- [x] Focused floor geometry tests updated
+- [x] Dashboard tests and production build passed
+- [x] Real browser preview verification captured at 1440px, 1220px, and 820px
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Viewport Visual Delta Slice Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `git diff --check -- packages/dashboard/src/components/PixelOffice.tsx packages/dashboard/src/components/OfficeStage.tsx packages/dashboard/src/spatial-lens/components/FloorViewport.tsx packages/dashboard/src/spatial-lens/components/HandoffOverlay.tsx packages/dashboard/src/spatial-lens/components/RoomZone.tsx packages/dashboard/src/spatial-lens/styles/spatial-lens.module.css packages/dashboard/src/spatial-lens/model/floorGeometry.ts packages/dashboard/src/spatial-lens/index.ts packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs output/playwright/spatial-lens-viewport-35-results.json`
+- Local preview:
+  `pnpm.cmd --filter @conitens/dashboard preview --host 127.0.0.1 --port 4315`
+- Playwright GUI check wrote:
+  `output/playwright/spatial-lens-viewport-35-results.json`
+- Screenshots:
+  - `output/playwright/spatial-lens-viewport-35-1440.png`
+  - `output/playwright/spatial-lens-viewport-35-1220.png`
+  - `output/playwright/spatial-lens-viewport-35-820.png`
+
+## Spatial Lens Viewport Visual Delta Slice Outcome
+
+Prompt 3.5 is complete. The previous Prompt 3 looked too similar because
+`RoomZone` still carried old room-card visual hierarchy: strong independent
+frames, beige header bands, inset room floors, and heavy shadows. VIEWPORT now
+uses its own floor renderer branch with slimmer wall-zone treatment,
+floor-level route/barrier overlays, in-world nameplates, and small flags.
+Browser diagnostics reported zero console/page errors, zero horizontal
+overflow, zero checked text overflow, 6 rooms, 4 corridor/focal lanes, 74
+fixtures, 4 agent buttons, 1 handoff route, 1 handoff packet, and 1 blocked
+lane marker at 1440px, 1220px, and 820px.
+
+## Spatial Lens Static FloorViewport Slice Status
+
+- [x] Runtime and repo context re-read before implementation
+- [x] Prompt 3 scope locked to static floor viewport and route-local toggle
+- [x] Existing `OfficeStage`, `OfficeRoomScene`, schema, fixture, and presence
+      model surfaces inspected
+- [x] `spatial-lens/model/floorGeometry.ts` added as a pure geometry adapter
+- [x] `FloorViewport`, `FloorGrid`, `RoomZone`, and `CorridorLane` added under
+      `packages/dashboard/src/spatial-lens/components/`
+- [x] New `spatial-lens.module.css` added for the viewport/room/corridor layers
+- [x] `OfficeStage` wired to default `Viewport` mode with `Classic` fallback
+- [x] Avatar role mark sizing patched after browser overflow diagnostics
+- [x] Focused floor geometry tests added
+- [x] Dashboard tests and production build passed
+- [x] Real browser preview verification captured at 1440px, 1220px, and 820px
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Static FloorViewport Slice Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `git diff --check -- packages/dashboard/src/components/OfficeStage.tsx packages/dashboard/src/office-stage.module.css packages/dashboard/src/spatial-lens/index.ts packages/dashboard/src/spatial-lens/model/floorGeometry.ts packages/dashboard/src/spatial-lens/components/CorridorLane.tsx packages/dashboard/src/spatial-lens/components/FloorGrid.tsx packages/dashboard/src/spatial-lens/components/FloorViewport.tsx packages/dashboard/src/spatial-lens/components/RoomZone.tsx packages/dashboard/src/spatial-lens/styles/spatial-lens.module.css packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- Local preview:
+  `pnpm.cmd --filter @conitens/dashboard preview --host 127.0.0.1 --port 4314`
+- Playwright GUI check wrote:
+  `output/playwright/spatial-lens-floor-viewport-results.json`
+- Screenshots:
+  - `output/playwright/spatial-lens-floor-viewport-1440.png`
+  - `output/playwright/spatial-lens-floor-viewport-1220.png`
+  - `output/playwright/spatial-lens-floor-viewport-820.png`
+
+## Spatial Lens Static FloorViewport Slice Outcome
+
+Prompt 3 is complete. The dashboard office preview now defaults to a new
+`spatial-lens` FloorViewport renderer backed by a pure geometry model and the
+Prompt 2 asset registry, while the previous renderer remains available through
+the `Classic` toggle. Browser diagnostics reported zero console/page errors,
+zero horizontal overflow, zero checked text overflow, 6 rooms, 4 corridor/focal
+lanes, 74 fixtures, and 4 agent buttons at 1440px, 1220px, and 820px.
+
+## Spatial Lens Asset Registry Slice Status
+
+- [x] Runtime and repo context re-read before implementation
+- [x] Prompt 2 scope locked to optional registry/manual-import contract only
+- [x] Existing dashboard public assets and fixture/avatar registries inspected
+- [x] `spatial-lens/assets/assetRegistry.ts` added with floor, wall,
+      furniture, and character manifest types
+- [x] Existing local floor tiles, local fixture sheet, local command-center
+      agent sprites, and CSS placeholders registered
+- [x] Manual-import README added with license/attribution guardrails
+- [x] Spatial Lens import surface updated
+- [x] Focused asset registry tests added
+- [x] Asset source existence and local-only validation covered by tests
+- [x] Dashboard tests and production build passed
+- [x] New-file whitespace/diff check passed
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Asset Registry Slice Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-asset-registry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `git diff --check -- packages/dashboard/src/spatial-lens/index.ts packages/dashboard/src/spatial-lens/assets/assetRegistry.ts packages/dashboard/src/spatial-lens/assets/README.md packages/dashboard/tests/spatial-lens-asset-registry.test.mjs`
+
+## Spatial Lens Asset Registry Slice Outcome
+
+Prompt 2 is complete. The dashboard now has an unused-but-importable
+`spatial-lens/assets` registry with typed floor, wall, furniture, and character
+entries plus kind-specific placeholders. It references only existing local
+assets or `src: null` CSS fallbacks, and it is not mounted into the current
+route. Dashboard verification passed with 90 tests and a production build.
+
+## Spatial Lens Pixel Primitives Slice Status
+
+- [x] Runtime and repo context re-read before implementation
+- [x] Prompt 1 scope locked to reusable primitives/tokens only
+- [x] Existing dashboard test and TypeScript build patterns inspected
+- [x] `spatial-lens/tokens.ts` added with limited pixel status palette
+- [x] `PixelThemeProvider`, `PixelFrame`, `PixelPanel`, `PixelButton`,
+      `StatusPill`, `PixelDivider`, and `PixelTooltip` added
+- [x] Pixel primitive CSS module added with dark shell tokens and hard-edged
+      status tones
+- [x] Spatial Lens import surface added
+- [x] Focused token/status normalization tests added
+- [x] Dashboard tests and production build passed
+- [x] New-file trailing whitespace check passed
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Pixel Primitives Slice Commands Run
+
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `git diff --check -- packages\dashboard\src\spatial-lens\tokens.ts packages\dashboard\src\spatial-lens\components\PixelPrimitives.tsx packages\dashboard\src\spatial-lens\styles\pixel-primitives.module.css packages\dashboard\src\spatial-lens\index.ts packages\dashboard\tests\spatial-lens-primitives.test.mjs`
+- `Select-String -Path packages\dashboard\src\spatial-lens\tokens.ts,packages\dashboard\src\spatial-lens\components\PixelPrimitives.tsx,packages\dashboard\src\spatial-lens\styles\pixel-primitives.module.css,packages\dashboard\src\spatial-lens\index.ts,packages\dashboard\tests\spatial-lens-primitives.test.mjs -Pattern "\s+$"`
+
+## Spatial Lens Pixel Primitives Slice Outcome
+
+Prompt 1 is complete. The dashboard now has an unused-but-importable
+`spatial-lens` primitive surface for future floor/HUD/inspector work:
+tokenized status tones, hard-edged pixel shell primitives, and a small
+normalization helper. The current routes and data flow are unchanged because
+none of the new components are mounted. Dashboard verification passed with 85
+tests and a production build.
+
+## Spatial Lens Pixel Office Planning Slice Status
+
+- [x] `frontend-skill` guidance read and applied
+- [x] `.codex/agents/frontend-developer.toml` role contract read
+- [x] Attached Korean frontend review decoded as UTF-8
+- [x] Pixel Agents GitHub README checked for current reference facts
+- [x] Current Spatial Lens dashboard route and component boundaries inspected
+- [x] Dashboard office model/schema/fixture/sidebar data flow inspected
+- [x] Command-center spatial/agent/task store hotspots sampled as avoid-expand
+      surfaces
+- [x] Audit-only design plan added under `docs/design/`
+- [x] Production UI code left unchanged for this slice
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Pixel Office Planning Slice Commands Run
+
+- `Get-Content -Raw -Encoding UTF8 C:\Users\eomsh\.codex\attachments\8a1dcc89-8638-4244-8687-57c77d5b5898\pasted-text.txt`
+- `Get-Content -Raw .codex\agents\frontend-developer.toml`
+- `Get-Content -Raw packages\dashboard\src\components\PixelOffice.tsx`
+- `Get-Content -Raw packages\dashboard\src\components\OfficeStage.tsx`
+- `Get-Content -Raw packages\dashboard\src\components\OfficeRoomScene.tsx`
+- `Get-Content -Raw packages\dashboard\src\components\OfficeSidebar.tsx`
+- `Get-Content -Raw packages\dashboard\src\office-presence-model.ts`
+- `Get-Content -Raw packages\dashboard\src\office-stage-schema.ts`
+- `Get-Content -Raw packages\dashboard\src\dashboard-model.ts`
+- `Get-Content -Raw packages\dashboard\src\office-system.ts`
+- `Get-Content -Raw packages\dashboard\src\office-sidebar-view-model.ts`
+- `Get-Content -Raw packages\dashboard\src\store\event-store.ts`
+
+## Spatial Lens Pixel Office Planning Slice Outcome
+
+`docs/design/spatial-lens-pixel-office-plan.md` now captures the safe migration
+from the current Spatial Lens preview toward an agent-first pixel office shell.
+It documents current architecture, hotspots, feature-folder component
+boundaries, typed model contracts, migration order, validation commands, and
+risks. This slice made no production UI, backend, protocol, approval, bridge,
+runtime, scheduler, PR/CI, or asset-copy changes.
+
+## Pixel Office Reference-Quality Visual Slice Status
+
+- [x] Runtime and repo context re-read before visual work
+- [x] Pixel Agents reference quality attributes mapped to Conitens constraints
+- [x] Existing Pixel Office schema, fixture registry, avatar, and stage CSS inspected
+- [x] Office stage converted from CSS-grid cards to a schema-positioned floorplate
+- [x] Corridors, focal lanes, and corridor fixtures rendered behind rooms
+- [x] Room walls, room shadows, fixture scale, task markers, and avatar scale refined
+- [x] Room label/status/stat contrast improved after screenshot review
+- [x] Dashboard tests and production build passed
+- [x] Real browser preview verification captured at 1440px, 1220px, and 820px
+- [x] `.conitens/context/*` refreshed
+
+## Pixel Office Reference-Quality Visual Slice Commands Run
+
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Local preview:
+  `pnpm.cmd --filter @conitens/dashboard preview --host 127.0.0.1 --port 4312`
+- Playwright GUI check wrote:
+  `output/playwright/pixel-agents-quality-results.json`
+  (`SHA256 0AD27B15E2590BD94466751AA5EDE6651D490B538DCD54F69F595347CB4AFBC4`)
+- Screenshots:
+  - `output/playwright/pixel-agents-quality-office-1440.png`
+    (`SHA256 9A1D595969975D4CAB96F0B24D47BFA41553281DA98DF9A0F46F93E49459511D`)
+  - `output/playwright/pixel-agents-quality-office-1220.png`
+    (`SHA256 C6D43DC1E2CAED08CDBAA89C2D8BD17AE84B60D5E778FDD864C2C682BD6FC09F`)
+  - `output/playwright/pixel-agents-quality-office-820.png`
+    (`SHA256 C19ABF34E1DD772A44DD8B6E600122710C6700CF63F2E5CDD7824CBB150442CC`)
+
+## Pixel Office Reference-Quality Visual Slice Outcome
+
+Pixel Office now renders as a dark tiled floorplate with schema-driven rooms,
+corridors, focal lanes, corridor fixtures, stronger room walls, larger pixel
+avatars, and more legible room labels. Browser diagnostics across 1440px,
+1220px, and 820px report zero console/page errors, zero horizontal overflow,
+zero checked text overflow, 6 rooms, 74 fixtures, 4 avatars, 2 corridors, and 2
+focal lanes. The slice copied no external Pixel Agents assets and changed no
+runtime, bridge, approval, protocol, scheduler, or PR/CI behavior.
+
+## Agent Systems Dashboard GUI Polish Slice Status
+
+- [x] Previous live GUI verification findings reviewed
+- [x] Bridge setup visibility flow inspected
+- [x] Pixel Office rail and avatar slot CSS inspected
+- [x] Connect handler now collapses setup after a token is submitted
+- [x] Header bridge settings toggle added
+- [x] Setup panel now renders only when explicitly opened
+- [x] Pixel Office sidebar rail contrast refined
+- [x] Pixel room avatar slot width adjusted to clear overflow diagnostics
+- [x] Dashboard tests and build passed
+- [x] Live GUI verification refreshed
+- [x] Pixel Office next improvement direction recorded
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems Dashboard GUI Polish Slice Commands Run
+
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Local bridge:
+  `python -u scripts\ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8811 --reviewer local/codex-gui-polish`
+- Local preview:
+  `pnpm.cmd --filter @conitens/dashboard preview --host 127.0.0.1 --port 4311`
+- Playwright GUI polish check wrote:
+  `output/playwright/gui-polish-check-results.json`
+- Screenshots:
+  - `output/playwright/gui-polish-overview-1440.png`
+    (`SHA256 4F50218B498923BB27204060B83653E03D03CA1BFED00F1EE816A5AE540CC59E`)
+  - `output/playwright/gui-polish-overview-390.png`
+    (`SHA256 23B926A56270B1281DEC4A7336E14B206F991279F91C8D92FA1E115804F07603`)
+  - `output/playwright/gui-polish-office-preview-1220.png`
+    (`SHA256 69B1F12C6F5B7BB199D299117B0A901B1930DB8FFF28149E4AC9D77BAA0D04BD`)
+
+## Agent Systems Dashboard GUI Polish Slice Outcome
+
+The dashboard now keeps the bridge setup form out of the primary live overview
+after a successful connection while preserving an explicit `Bridge settings`
+toggle. Pixel Office rail metadata is more legible, and the tiny avatar-slot
+text overflow diagnostic is cleared. Browser verification reports
+`setupVisibleAfterConnect: 0`, `settingsButtonVisible: 1`, no console/page
+errors, no horizontal overflow, and no checked text overflow on the refreshed
+overview and office-preview captures.
+
+## Agent Systems Dashboard GUI Verification Slice Status
+
+- [x] Runtime and repo context re-read before execution
+- [x] Dashboard production build refreshed
+- [x] Local forward bridge launched on loopback
+- [x] Dashboard preview launched on loopback
+- [x] Browser automation connected the overview to the live bridge token
+- [x] Desktop/tablet/mobile overview screenshots captured
+- [x] Office-preview screenshot captured
+- [x] Automated layout diagnostics collected
+- [x] Manual screenshot review completed
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems Dashboard GUI Verification Slice Commands Run
+
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Local bridge:
+  `python -u scripts\ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8810 --reviewer local/codex-gui-check`
+- Local preview:
+  `pnpm.cmd --filter @conitens/dashboard preview --host 127.0.0.1 --port 4310`
+- Playwright GUI check wrote:
+  `output/playwright/gui-design-check-results.json`
+- Screenshots:
+  - `output/playwright/gui-check-overview-1440.png`
+    (`SHA256 1DAAE4940B86AFC29BC7EC76F1914E3EF9DCA09E594C22EF109506CE25CF2950`)
+  - `output/playwright/gui-check-overview-820.png`
+    (`SHA256 C8FB7C380E665B67698B0E4C7B0CBCB2B2FB319B889A5BC3ADD91C3A460A7A5B`)
+  - `output/playwright/gui-check-overview-390.png`
+    (`SHA256 8EB53A2A7EC44D85B12954A183F59C697FF8FE8B9AC3729AB6942548F9982F9C`)
+  - `output/playwright/gui-check-office-preview-1220.png`
+    (`SHA256 32500FB48D3106A592D100D7DCC6EDCDAC9A5DF03C8FC4979C882ACE52F9EDCC`)
+
+## Agent Systems Dashboard GUI Verification Slice Outcome
+
+The live dashboard GUI passed the execution check. Overview desktop, tablet,
+and mobile rendered without horizontal overflow, console errors, page errors,
+or checked control text overflow. Office preview also rendered without
+horizontal overflow or page errors. Two non-blocking polish candidates remain:
+the live bridge setup form stays expanded after connection and consumes mobile
+first-screen space, and some low-priority office-preview rail metadata is very
+subtle on the dark background.
+
+## Agent Systems P1 Wake Scheduler Design Gate Slice Status
+
+- [x] Current wake-readiness/dashboard context inspected
+- [x] Existing operator usage documentation inspected
+- [x] Wake scheduler design gate document added
+- [x] Approval-by-id, fresh verification, append-before-mutation, and raw-content
+      rejection gates documented
+- [x] Next safe implementation slice narrowed to read-only
+      `wake-plan --dry-run`
+- [x] Operator usage guide linked to the design gate
+- [x] Static document checks passed
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 Wake Scheduler Design Gate Slice Commands Run
+
+- `Select-String -Path docs/frontend/WAKE_SCHEDULER_DESIGN.md -Pattern "wake-plan --dry-run","Approval Gate","Verification Gate","Mutation Gate","must not"`
+- `Select-String -Path docs/frontend/FORWARD_OPERATOR_USAGE.md -Pattern "Wake Scheduler Design Gate","wake-plan --dry-run"`
+- `git diff --check -- docs/frontend/WAKE_SCHEDULER_DESIGN.md docs/frontend/FORWARD_OPERATOR_USAGE.md .conitens/context/task_plan.md .conitens/context/findings.md .conitens/context/progress.md .conitens/context/LATEST_CONTEXT.md`
+- `Select-String -Path docs/frontend/WAKE_SCHEDULER_DESIGN.md -Pattern "\s+$"` returned no trailing whitespace
+
+## Agent Systems P1 Wake Scheduler Design Gate Slice Outcome
+
+Live wake scheduling remains unimplemented. The repo now has a concrete design
+gate that future scheduler work must pass: explicit approval-by-id, fresh local
+verification before execution, append-before-mutation ordering, fail-closed
+behavior, and raw-content/secret rejection. The next code slice is limited to a
+pure read-only `wake-plan --dry-run` planner.
+
+## Agent Systems P1 Wake-Readiness Dashboard Consumption Slice Status
+
+- [x] Existing dashboard bridge split, overview fetch flow, and operator summary
+      panel patterns inspected
+- [x] Wake-readiness bridge types, parser, client, and public exports added
+- [x] Overview wake-readiness view model added
+- [x] Read-only overview panel added using existing dashboard styling
+- [x] Live overview fetch wired behind bridge-token and route checks
+- [x] Parser/model regression coverage added
+- [x] Dashboard tests and production build passed
+- [x] Local bridge + dashboard preview browser evidence captured
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 Wake-Readiness Dashboard Consumption Slice Commands Run
+
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Temporary Playwright runner install under `%TEMP%/conitens-playwright-runner`
+  for browser verification only
+- Local bridge smoke:
+  `python -u scripts\ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8800 --reviewer local/codex`
+- Local preview smoke:
+  `pnpm.cmd --filter @conitens/dashboard preview --host 127.0.0.1 --port 4300`
+- Browser evidence:
+  `output/playwright/wake-readiness-overview-1220.png`
+  (`SHA256 ABBF537527917122870248AFA1F4880F842721BE1592A29C729D59FB6FC65193`)
+
+## Agent Systems P1 Wake-Readiness Dashboard Consumption Slice Outcome
+
+The dashboard overview now consumes the existing read-only wake-readiness
+projection from a live bridge. It renders readiness metrics, source projection
+counts, candidate evidence links, and privacy/read-only contract labels without
+adding scheduler controls, wake-message delivery, provider-auth execution,
+external fetches, event writes, or task/run/room mutations.
+
+## Agent Systems P1 Wake-Readiness Projection Slice Status
+
+- [x] Existing runtime roster, turn-records, and status-confidence projections inspected
+- [x] Read-only wake-readiness payload builder implemented
+- [x] Authenticated bridge route added
+- [x] Forward CLI action added
+- [x] Runtime-mode regression test added
+- [x] Bridge regression test added
+- [x] Operator usage doc updated
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 Wake-Readiness Projection Slice Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_wake_readiness_combines_sources_without_scheduling tests.test_forward_bridge.ForwardBridgeTests.test_operator_wake_readiness_endpoint_combines_sources_without_scheduling`
+- `python -m compileall scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `python scripts/ensemble.py --workspace . forward wake-readiness --format json --limit 10`
+- `python scripts/ensemble.py --workspace . forward wake-readiness --format text --limit 2`
+- `git diff --check -- scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py docs/frontend/FORWARD_OPERATOR_USAGE.md`
+
+## Agent Systems P1 Wake-Readiness Projection Slice Outcome
+
+The forward surface now has a read-only wake-readiness projection for future
+persistent-agent wake planning. It combines existing status-confidence,
+turn-record, and runtime-roster evidence into candidate readiness decisions
+without starting a scheduler, sending wake messages, mutating task/run/room
+status, executing provider auth commands, fetching external systems, or
+exposing transcript/tool/approval/validator raw details.
+
+## Agent Systems P1 Multi-CLI Runtime Roster UX Slice Status
+
+- [x] Existing runtime roster payload and CLI inspected
+- [x] Runtime/category filters implemented
+- [x] `ux_summary` and `operator_hints` added
+- [x] Authenticated bridge query filters added
+- [x] Forward CLI options added
+- [x] Runtime-mode regression test added
+- [x] Bridge regression test added
+- [x] Operator usage doc updated
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 Multi-CLI Runtime Roster UX Slice Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_runtime_roster_can_filter_agent_runtime_with_ux_hints`
+- `python -m unittest tests.test_forward_bridge.ForwardBridgeTests.test_operator_runtime_roster_endpoint_filters_agent_runtime_with_ux_hints`
+- `python scripts/ensemble.py --workspace . forward runtime-roster --agent-runtimes-only --runtime codex --format json --no-version-probe`
+- `python -m compileall scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `git diff --check -- scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py docs/frontend/FORWARD_OPERATOR_USAGE.md`
+
+## Agent Systems P1 Multi-CLI Runtime Roster UX Slice Outcome
+
+Runtime roster is still read-only, but now supports focused CLI/API review of
+individual runtimes and runtime categories. Operators get observed,
+available-unobserved, and missing agent-runtime posture plus next-action hints
+without provider auth commands, environment dumps, event writes, artifact
+writes, or launch controls.
+
+## Agent Systems P1 Status Confidence Diagnostics Slice Status
+
+- [x] Existing task/run/room/read-model APIs inspected
+- [x] Read-only status-confidence projection implemented
+- [x] Authenticated bridge route added
+- [x] Forward CLI action added
+- [x] Runtime-mode regression test added
+- [x] Bridge regression test added
+- [x] Operator usage doc updated
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 Status Confidence Diagnostics Slice Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_status_confidence_reports_reasons_without_raw_content`
+- `python -m unittest tests.test_forward_bridge.ForwardBridgeTests.test_operator_status_confidence_endpoint_returns_reasons_without_raw_content`
+- `python scripts/ensemble.py --workspace . forward status-confidence --format json --limit 20`
+- `python -m compileall scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `git diff --check -- scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py docs/frontend/FORWARD_OPERATOR_USAGE.md`
+
+## Agent Systems P1 Status Confidence Diagnostics Slice Outcome
+
+The forward surface now exposes read-only task/run/room status-confidence
+diagnostics. It reports confidence levels, reason codes, attention flags,
+signal counts, and evidence refs from local SQLite evidence without mutating
+status, launching resync, calling external systems, or exposing transcript,
+approval payload, validator issue, or tool payload values.
+
+## Agent Systems P1 Workflow Contracts Projection Slice Status
+
+- [x] Existing `.agent/workflows/*.md` contracts inspected
+- [x] Existing `ensemble_workflow` load/validate contract reused
+- [x] Read-only workflow contract projection implemented
+- [x] Authenticated bridge route added
+- [x] Forward CLI action added
+- [x] Runtime-mode regression test added
+- [x] Bridge regression test added
+- [x] Operator usage doc updated
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 Workflow Contracts Projection Slice Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_workflow_contracts_reports_contracts_without_execution`
+- `python -m unittest tests.test_forward_bridge.ForwardBridgeTests.test_operator_workflow_contracts_endpoint_returns_contracts_without_execution`
+- `python scripts/ensemble.py --workspace . forward workflow-contracts --format json`
+- `python -m compileall scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `git diff --check -- scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py docs/frontend/FORWARD_OPERATOR_USAGE.md`
+
+## Agent Systems P1 Workflow Contracts Projection Slice Outcome
+
+The forward surface now exposes a read-only workflow contract inventory for
+`.agent/workflows/*.md`. Current repo contracts validate as ready, and the
+projection reports input names plus step posture without executing workflow
+commands, creating workflow runs, bypassing approval, or returning rendered
+command/payload values.
+
+## Agent Systems P1 Turn Records Projection Slice Status
+
+- [x] Existing room message and tool-event persistence inspected
+- [x] Metadata-only turn record projection implemented
+- [x] Authenticated bridge route added
+- [x] Forward CLI action added
+- [x] Runtime-mode regression test added
+- [x] Bridge regression test added
+- [x] Operator usage doc updated
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 Turn Records Projection Slice Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_turn_records_reports_metadata_without_transcript_content tests.test_forward_bridge.ForwardBridgeTests.test_operator_turn_records_endpoint_returns_metadata_without_transcript_content`
+- `python -m compileall scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py`
+- Inline CLI smoke using `python scripts/ensemble.py --workspace <tmp> forward turn-records --run-id <run> --room-id <room> --format json`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `git diff --check -- scripts/ensemble_forward_bridge.py scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py tests/test_forward_bridge.py docs/frontend/FORWARD_OPERATOR_USAGE.md .conitens/context/task_plan.md .conitens/context/findings.md .conitens/context/progress.md .conitens/context/LATEST_CONTEXT.md`
+
+## Agent Systems P1 Turn Records Projection Slice Outcome
+
+The forward surface now has a metadata-only per-turn ledger for persisted room
+messages and tool events. It can support future persistent-agent wake planning
+without exposing raw transcripts or tool payload values.
+
+## Agent Systems P1 Runtime Roster CLI Slice Status
+
+- [x] Existing bridge runtime roster payload inspected
+- [x] `runtime-roster` added to forward read-only actions
+- [x] Standalone `ensemble_forward.py` parser updated
+- [x] Main `ensemble.py forward` parser and dispatch updated
+- [x] Text and JSON runtime roster render paths added
+- [x] `--no-version-probe` added for fast bounded checks
+- [x] Runtime-mode regression test added
+- [x] Operator usage doc updated
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 Runtime Roster CLI Slice Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_runtime_roster_reports_cli_runtime_without_writes`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `python -m compileall scripts/ensemble_forward.py scripts/ensemble.py tests/test_forward_runtime_mode.py`
+- `python scripts/ensemble.py --workspace . forward runtime-roster --format json --no-version-probe`
+- `python scripts/ensemble_forward.py --workspace . runtime-roster --format json --no-version-probe`
+
+## Agent Systems P1 Runtime Roster CLI Slice Outcome
+
+The runtime roster can now be checked from the forward CLI without starting the
+bridge. The command is read-only, writes no events/artifacts, and preserves the
+same no environment dump / no provider auth boundary as the bridge route.
+
+## Agent Systems P1 PR/CI Evidence Redaction Patch Status
+
+- [x] Code/security review findings reproduced locally
+- [x] Import reviewed metadata value redaction implemented
+- [x] Append summaries switched to redacted event payloads
+- [x] `sk-...` redaction narrowed so `otask-...` ids are preserved
+- [x] Import top-level `run_id` now reflects inherited linked run id
+- [x] Focused PR/CI import/append tests updated and passing
+- [x] PR/CI workflow docs updated for metadata value redaction
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 PR/CI Evidence Redaction Patch Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_import_pr_ci_evidence_prepares_local_github_export_without_writes tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_append_pr_ci_evidence_records_reviewed_metadata_only`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `python -m compileall scripts/ensemble_forward.py scripts/ensemble_events.py tests/test_forward_runtime_mode.py`
+- `git diff --check -- scripts/ensemble_forward.py scripts/ensemble_events.py tests/test_forward_runtime_mode.py docs/frontend/PR_CI_EVIDENCE_WORKFLOW.md docs/frontend/FORWARD_OPERATOR_USAGE.md .conitens/context/task_plan.md .conitens/context/findings.md .conitens/context/progress.md .conitens/context/LATEST_CONTEXT.md`
+
+## Agent Systems P1 PR/CI Evidence Redaction Patch Outcome
+
+The local PR/CI evidence workflow now redacts token-like strings in retained
+metadata values before importer review output and append summaries are returned.
+Identifier fields remain stable, and importer output reports the inherited
+linked run id consistently.
+
 ## Batch 0 Status
 
 - [x] Repo inspected before edits
@@ -215,6 +1439,56 @@ Batch 9 is complete as a working iterative execution loop delivery. The repo
 now has a narrow worker path, structured validation, persisted retry decisions,
 reflection-driven candidate patch output, and a real loop inside the existing
 planner/build orchestration boundary.
+
+## Agent Systems Comparison Research Status
+
+- [x] `deep-research-codex` workflow instructions reviewed
+- [x] `.conitens/context/LATEST_CONTEXT.md` and `.vibe/context/LATEST_CONTEXT.md`
+      read before substantial work
+- [x] Existing dirty working tree identified before edits
+- [x] Research workspace created at
+      `RESEARCH/agent-systems-comparison-2026-06-06/`
+- [x] Eight external repositories shallow-cloned for source inspection
+- [x] External HEAD commits verified against the planned snapshots
+- [x] Source checkouts isolated via `.gitignore`
+- [x] Source inventory recorded in
+      `RESEARCH/agent-systems-comparison-2026-06-06/sources/sources.jsonl`
+- [x] Comparison report written to
+      `docs/AGENT_SYSTEMS_COMPARISON_2026-06-06.md`
+- [x] Repo-scoped review written to
+      `.conitens/reviews/agent_systems_comparison_2026-06-06.md`
+- [x] Context files refreshed for the current research task
+
+## Agent Systems Comparison Commands Run
+
+- `git clone --depth 1 ...` for Agentland, Maestro, Optio, Agent Squad,
+  AutoGen, Claw3D, Pixel Agents, and CLI-JAW into the ignored research
+  workspace
+- `git rev-parse HEAD` for each external checkout
+- `nl -ba ... | sed -n ...` over source READMEs, docs, SQL migrations, and
+  local Conitens docs to collect line-grounded evidence
+
+## Agent Systems Comparison Outcome
+
+The comparison is complete as a documentation/backlog pass. The recommended
+direction is to adopt provider-call telemetry, an operator task reconciler, and
+install/runtime doctor evidence first; adapt multi-CLI, PR/CI, persistent-agent
+wake, router, and spatial-diagnostic ideas next; and avoid adding new core
+runtime dependencies or approval-bypass controls.
+
+## Agent Systems HTML Summary Status
+
+- [x] Source Markdown report inspected
+- [x] Static HTML report created at
+      `docs/AGENT_SYSTEMS_COMPARISON_2026-06-06.html`
+- [x] HTML includes summary, source snapshots, feature gap matrix, prioritized
+      backlog, guardrails, and source links
+- [x] Context files refreshed for the HTML artifact
+
+## Agent Systems HTML Summary Outcome
+
+The comparison is now available as a standalone static HTML report. It does not
+require a dev server and does not change product code.
 
 ## Batch 10 Status
 
@@ -1032,3 +2306,679 @@ The candidate patch surface is now harder to bypass. Raw files on disk no
 longer become pending/applicable patches unless they are backed by a recorded
 proposal event and contain an actual reviewable delta, and the improver path no
 longer emits placeholder candidate patch artifacts.
+
+## Dashboard UI Review Ultrawork Status
+
+- [x] UI review findings scoped into a concrete dashboard goal
+- [x] test-engineer and designer agents used for parallel review of test and UI patch direction
+- [x] task quick-status mutation made safe against unsaved editor draft bleed-through
+- [x] route contract regression updated for `threadId` / `agentId` and deferred routes
+- [x] runs rail refresh tied to `liveRevision`
+- [x] shell nav/status and tab accessibility semantics improved
+- [x] mobile task queue layout visually checked at `820px`
+- [x] dashboard package tests passed
+- [x] dashboard package build passed
+- [x] `.conitens/context/*` refreshed
+
+## Dashboard UI Review Ultrawork Commands Run
+
+- `pnpm --filter @conitens/dashboard test`
+- `pnpm --filter @conitens/dashboard build`
+- `npx playwright screenshot --viewport-size=820,1100 http://localhost:4173/#/tasks output\playwright\ui-fix-tasks-820.png`
+- `npx playwright screenshot --viewport-size=1440,1000 http://localhost:4173/#/overview output\playwright\ui-fix-overview-1440.png`
+
+## Current Outcome
+
+The dashboard UI review implementation pass is complete. The operator task
+quick-status flow no longer commits unrelated dirty editor fields, route tests
+match the current parser/builder contract, the runs rail refreshes with live
+snapshots, and the dashboard shell has better navigation, tab, and mobile task
+queue semantics without changing backend contracts.
+
+## Dashboard UI Review Follow-up Status
+
+- [x] live stream snapshot refresh split from manual/mutation `liveRevision`
+- [x] global approvals route no longer falls through to run detail
+- [x] deferred agent/thread deep links show explicit route states
+- [x] tab ARIA semantics backed by keyboard navigation
+- [x] bridge telemetry visually separated from route navigation
+- [x] static API/token telemetry removed from live-region announcements
+- [x] mobile task queue returned to a single-column scan pattern
+- [x] dashboard package tests passed
+- [x] dashboard package build passed
+- [x] browser screenshots captured for overview, tasks, approvals, and deferred agent detail
+- [x] `.conitens/context/*` refreshed
+
+## Dashboard UI Review Follow-up Commands Run
+
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `npx.cmd playwright screenshot --browser chromium --viewport-size "1440,1000" --wait-for-timeout 1000 "http://127.0.0.1:4173/#/overview" "output/playwright/ui-fixes-overview-1440.png"`
+- `npx.cmd playwright screenshot --browser chromium --viewport-size "820,1100" --wait-for-timeout 1000 "http://127.0.0.1:4173/#/tasks" "output/playwright/ui-fixes-tasks-820.png"`
+- `npx.cmd playwright screenshot --browser chromium --viewport-size "1220,900" --wait-for-timeout 1000 "http://127.0.0.1:4173/#/approvals" "output/playwright/ui-fixes-approvals-1220.png"`
+- `npx.cmd playwright screenshot --browser chromium --viewport-size "1220,900" --wait-for-timeout 1000 "http://127.0.0.1:4173/#/agents/agent-1" "output/playwright/ui-fixes-agent-deferred-1220.png"`
+
+## Current Outcome
+
+The follow-up resolves the review cautions without introducing backend routes:
+live snapshots no longer churn the runs rail, unsupported deep links are
+truthful deferred screens, approvals has a clear global route, tab semantics
+have matching keyboard behavior, status telemetry is less likely to be confused
+with navigation, and the mobile task queue supports linear operator scanning.
+
+## Dashboard Insane-Design Apply Status
+
+- [x] bundled insane-design references reviewed
+- [x] Linear selected as the primary design contract for the operator shell
+- [x] dashboard shell tokens updated to near-black neutral + restrained indigo
+- [x] shell, live panel, form, tab, chip, and demo banner styles refined
+- [x] edited CSS grep-checked against the relevant DON'T patterns
+- [x] dashboard package tests passed
+- [x] dashboard package build passed
+- [x] overview and tasks screenshots captured through local preview
+- [x] `.conitens/context/*` refreshed
+
+## Dashboard Insane-Design Apply Commands Run
+
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `pnpm.cmd --filter @conitens/dashboard preview --host 127.0.0.1 --port 4174`
+- `npx.cmd --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/insane-design-overview-1440.png`
+- `npx.cmd --yes --package @playwright/cli playwright-cli screenshot --filename output/playwright/insane-design-tasks-820.png`
+
+## Current Outcome
+
+The dashboard shell now follows a calmer Linear-inspired operator aesthetic:
+near-black surfaces, less ornamental background treatment, restricted indigo
+selection states, compact radius/motion tokens, and tighter panel density. The
+change is CSS-only and does not alter the forward bridge, route contract, or
+operator data model.
+
+## Spatial Lens + Agents Coherence Status
+
+- [x] Spatial Lens summary hierarchy reframed around current floor posture
+- [x] Spatial Lens focus rail reordered to show selected room/resident first
+- [x] room/resident to agent navigation added through `#/agents?agent=<id>`
+- [x] Agents fleet reordered by attention level
+- [x] Agents metrics changed to needs-review / running / blocked / dormant
+- [x] Agent profile current-assignment block added
+- [x] disabled lifecycle mutation controls removed from profile
+- [x] relationship graph labelled as read-only/deferred
+- [x] office/agents CSS aligned with shell tokens in touched surfaces
+- [x] dashboard package tests passed
+- [x] dashboard package build passed
+- [x] browser screenshots captured for office preview and agents at desktop/mobile widths
+- [x] room-to-agent navigation verified in browser
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens + Agents Coherence Commands Run
+
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `Select-String` grep over touched office/agents CSS for old cyan, zero
+  radius, negative/high letter-spacing patterns
+- `npx.cmd --yes playwright@latest screenshot --browser chromium --viewport-size "1440,1000" --wait-for-timeout 1200 "http://127.0.0.1:4174/#/office-preview" output\playwright\coherence-office-1440.png`
+- `npx.cmd --yes playwright@latest screenshot --browser chromium --viewport-size "820,1000" --wait-for-timeout 1200 "http://127.0.0.1:4174/#/office-preview" output\playwright\coherence-office-820.png`
+- `npx.cmd --yes playwright@latest screenshot --browser chromium --viewport-size "1440,1000" --wait-for-timeout 1200 "http://127.0.0.1:4174/#/agents?agent=worker-1" output\playwright\coherence-agents-1440.png`
+- `npx.cmd --yes playwright@latest screenshot --browser chromium --viewport-size "820,1000" --wait-for-timeout 1200 "http://127.0.0.1:4174/#/agents?agent=worker-1" output\playwright\coherence-agents-820.png`
+- `npx.cmd --yes --package @playwright/cli playwright-cli` session checks for
+  `Open in Agents`, `Relationships`, and the read-only graph note
+
+## Current Outcome
+
+The Spatial Lens and Agents surfaces now read as a connected operations map and
+roster without widening the backend contract. Spatial Lens explains why the
+selected room matters and links the focused resident into Agents. Agents now
+starts from who needs attention, shows assignment context before health/stats,
+and links the selected agent's room back to the office preview.
+
+## Agent Systems P0 Evidence Foundation Status
+
+- [x] `conitens-core`, `frontend-skill`, `validation-gate`, `security-audit`,
+      and Build Web Apps React guidance reviewed for the implementation lane
+- [x] Native sidecar architecture and frontend agents used for read-only review
+- [x] provider-call evidence projection added to the forward bridge
+- [x] install/runtime doctor evidence projection added to the forward bridge
+- [x] read-only task reconcile preview added to the forward bridge
+- [x] operator summary payload extended with optional evidence and doctor blocks
+- [x] dashboard bridge types, parsers, clients, and models extended
+- [x] overview evidence-health and doctor-evidence UI added
+- [x] task-detail reconcile preview UI added
+- [x] protocol event aliases synchronized to `scripts/ensemble_allowed_events.py`
+- [x] Python bridge and approval regression tests passed
+- [x] dashboard parser tests and package build passed
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P0 Evidence Foundation Commands Run
+
+- `python3 scripts/sync_event_types.py`
+- `pnpm --filter @conitens/dashboard test`
+- `pnpm --filter @conitens/dashboard build`
+- `CI=true pnpm install --frozen-lockfile`
+- `python3 -m unittest tests.test_forward_bridge`
+- `python3 -m unittest tests.test_loop_state`
+- `python3 -m unittest tests.test_room_replay`
+- `python3 -m unittest tests.test_forward_operator_flow tests.test_approval_controls`
+
+## Current Outcome
+
+The first P0 backlog item from the agent-systems comparison is now implemented
+as an additive, read-only evidence foundation. Conitens can surface provider
+telemetry posture, local doctor posture, and task reconciliation recommendations
+inside the forward bridge and dashboard without introducing a provider proxy,
+new orchestration dependency, approval bypass, or task mutation path.
+
+## Forward Doctor Evidence CLI Artifact Status
+
+- [x] `forward doctor-evidence` CLI action added
+- [x] stdout JSON/text output added for doctor evidence
+- [x] explicit `--write-artifact` JSON/Markdown artifact flow added
+- [x] runtime CLI availability/version probes added
+- [x] support payload path labels sanitized to avoid absolute workspace/home
+      path leakage
+- [x] version probe output redacts secret-like strings and drops path/email-like
+      output
+- [x] artifact writes record `.notes/artifacts/manifest.jsonl` provenance
+- [x] artifact directory symlink escape guard added
+- [x] forward bridge doctor evidence path labels sanitized
+- [x] forward operator usage guide updated
+- [x] security-review sidecar findings reviewed and addressed
+- [x] Python runtime-mode and forward-bridge regression tests passed
+- [x] `.conitens/context/*` refreshed
+
+## Forward Doctor Evidence CLI Artifact Commands Run
+
+- `python3 -m unittest tests.test_forward_runtime_mode`
+- `python3 -m unittest tests.test_forward_bridge`
+- `python3 scripts/ensemble.py --workspace . forward doctor-evidence --format json | python3 -m json.tool >/tmp/conitens-forward-doctor-evidence-check.json`
+
+## Current Outcome
+
+The install/runtime doctor recommendation now has a concrete CLI evidence
+flow. Operators can print redacted doctor evidence or explicitly write
+support/release artifacts with manifest provenance, while the default forward
+runtime contract remains read-only by default and the active Conitens runtime
+identity remains unchanged.
+
+## Forward Evidence Verification Stabilization Status
+
+- [x] resumed dirty forward evidence / dashboard working tree inspected
+- [x] failing Python verification reproduced
+- [x] Windows runtime CLI command resolution fixed for PATH/PATHEXT fixtures
+- [x] runtime probe secret/path redaction regression restored
+- [x] operator summary runtime roster made lightweight by skipping external
+      version probes in the summary route
+- [x] dashboard dependencies restored from the frozen lockfile after `tsc`
+      shim resolution failed
+- [x] Python bridge/runtime/approval regression tests passed
+- [x] dashboard package tests and build passed
+- [x] `.conitens/context/*` refreshed
+
+## Forward Evidence Verification Stabilization Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_doctor_evidence_redacts_secret_like_probe_output`
+- `python -m unittest tests.test_forward_bridge.ForwardBridgeTests.test_operator_runtime_and_evidence_payloads_redact_metric_labels`
+- `python -m unittest tests.test_forward_bridge tests.test_forward_runtime_mode tests.test_approval_controls`
+- `$env:CI='true'; pnpm.cmd install --frozen-lockfile`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+
+## Current Outcome
+
+The resumed forward evidence work is stabilized. Runtime CLI probe redaction is
+portable across Windows/POSIX fixtures, `/api/operator/summary` no longer
+blocks on detailed runtime version probes, and the changed Python and dashboard
+surfaces pass their focused verification.
+
+## Agent Systems P0 Completion Slice Status
+
+- [x] `openai-docs`, `conitens-core`, `plan-scope`, `validation-gate`,
+      `security-audit`, and HTML-scoped `frontend-skill` guidance reviewed
+- [x] latest agent-systems comparison HTML regenerated as readable UTF-8 Korean
+      static HTML
+- [x] `provider.call_recorded` added to the protocol event registry
+- [x] Python allowed event registry regenerated from the TypeScript protocol
+- [x] provider event append path rejects raw-content payload fields
+- [x] evidence summary reads provider event-log rows and checkpoint fallback
+      rows, preferring event-log rows when present
+- [x] provider evidence summary regression added for event-log source priority
+      and raw-content rejection
+- [x] operator task reconciler extracted to a pure decision module
+- [x] reconcile-preview endpoint remains read-only and now emits `decision_id`
+- [x] dashboard parser/type/view-model contract updated for reconcile
+      `decision_id`
+- [x] P1 PR/CI evidence ingestion left as the next read-only candidate
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P0 Completion Slice Commands Run
+
+- `python scripts/sync_event_types.py`
+- `python -m unittest tests.test_operator_reconciler tests.test_forward_bridge.ForwardBridgeTests.test_operator_evidence_summary_prefers_provider_call_events tests.test_forward_bridge.ForwardBridgeTests.test_operator_evidence_doctor_and_reconcile_preview_are_read_only`
+- `python -m unittest tests.test_forward_bridge tests.test_forward_runtime_mode tests.test_approval_controls tests.test_operator_reconciler`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `Select-String` checks for readable HTML Korean title/H1/nav/backlog/guardrail
+  text
+- UTF-8 string scan for known mojibake markers in
+  `docs/AGENT_SYSTEMS_COMPARISON_2026-06-06.html`
+
+## Current Outcome
+
+The agent-systems P0 evidence/safety recommendations are now closed as a
+verified completion slice. Conitens has readable comparison HTML, a canonical
+provider-call telemetry event contract with raw-content rejection, event-log
+first evidence summaries, and a pure read-only operator task reconciler without
+changing the active runtime truth or weakening approval gates.
+
+## Agent Systems P1 PR/CI Evidence Slice Status
+
+- [x] task-detail and event contracts inspected before implementation
+- [x] `pr.evidence_observed` and `ci.evidence_observed` added to the protocol
+      registry
+- [x] Python allowed event registry regenerated from the TypeScript protocol
+- [x] PR/CI evidence append path rejects raw external content fields
+- [x] task detail now projects PR/CI evidence from append-only events
+- [x] task/run scoping, URL sanitization, and privacy metadata implemented
+- [x] dashboard parser/type/view-model contract updated for PR/CI evidence
+- [x] task detail renders the PR/CI evidence block read-only
+- [x] focused Python and dashboard regression coverage added
+- [x] Python forward bridge/runtime/approval/reconciler tests passed
+- [x] dashboard package tests and build passed
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 PR/CI Evidence Slice Commands Run
+
+- `python scripts/sync_event_types.py`
+- `python -m unittest tests.test_forward_bridge.ForwardBridgeTests.test_operator_task_detail_projects_pr_ci_read_evidence`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `python -m unittest tests.test_forward_bridge tests.test_forward_runtime_mode tests.test_approval_controls tests.test_operator_reconciler`
+- `pnpm.cmd --filter @conitens/dashboard build`
+
+## Current Outcome
+
+The first P1 PR/CI evidence slice is complete as a read-only, event-first task
+detail projection. Conitens can now show PR and CI posture beside a canonical
+operator task when bounded evidence events already exist, while raw logs,
+diffs, comments, tokens, external fetches, auto-merge, unattended resume, and
+task mutation remain out of scope.
+
+## Agent Systems P1 PR/CI Evidence Producer Slice Status
+
+- [x] forward CLI and event append patterns inspected
+- [x] producer contract scoped to reviewed local JSON input
+- [x] `append-pr-ci-evidence --input` added to the forward CLI
+- [x] producer validates task existence and run/task scope before append
+- [x] producer strips URL credentials, query strings, and fragments before
+      writing events
+- [x] unknown fields and raw external-content fields rejected before any append
+- [x] producer output kept bounded to event ids, counts, refs, and privacy
+      booleans
+- [x] focused CLI regression tests added
+- [x] Python forward runtime/bridge/approval/reconciler tests passed
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 PR/CI Evidence Producer Slice Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_append_pr_ci_evidence_records_reviewed_metadata_only tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_append_pr_ci_evidence_rejects_raw_content_without_partial_write`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `python -m compileall scripts/ensemble_forward.py scripts/ensemble.py scripts/ensemble_events.py tests/test_forward_runtime_mode.py`
+
+## Current Outcome
+
+The PR/CI evidence producer slice is complete. Operators now have an explicit
+file-based command for recording reviewed PR/CI metadata into append-only
+events, and the existing task-detail projection displays those events without
+adding live external fetches, provider auth checks, merge/resume behavior, or
+task mutation.
+
+## Agent Systems P1 PR/CI Local Export Importer Slice Status
+
+- [x] current PR/CI producer and CLI hooks inspected
+- [x] read-only importer scoped to local GitHub PR / Actions export JSON
+- [x] `import-pr-ci-evidence --input --task-id` added to the forward CLI
+- [x] importer maps common PR and CI export fields into reviewed evidence items
+- [x] importer validates canonical task existence and run/task scope
+- [x] importer strips URL credentials, query strings, and fragments before
+      output
+- [x] importer ignores raw source-export fields and performs no event writes
+- [x] importer output validated through the producer normalization path
+- [x] focused importer regression tests added
+- [x] Python forward runtime/bridge/approval/reconciler tests passed
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 PR/CI Local Export Importer Slice Commands Run
+
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_import_pr_ci_evidence_prepares_local_github_export_without_writes tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_import_pr_ci_evidence_rejects_mismatched_run_without_writes`
+- `python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge tests.test_approval_controls tests.test_operator_reconciler`
+- `python -m compileall scripts/ensemble_forward.py scripts/ensemble.py scripts/ensemble_events.py tests/test_forward_runtime_mode.py`
+
+## Current Outcome
+
+The local export importer slice is complete. Operators can now normalize local
+GitHub PR / Actions JSON into reviewed PR/CI evidence items without mutating the
+event log, then explicitly pass that sanitized JSON to `append-pr-ci-evidence`
+when ready.
+
+## Agent Systems P1 PR/CI Operator Examples Docs Slice Status
+
+- [x] current operator usage guide and PR/CI CLI surfaces inspected
+- [x] dedicated `PR_CI_EVIDENCE_WORKFLOW.md` guide added
+- [x] import-review-append command sequence documented
+- [x] read-only import and explicit append boundary documented
+- [x] no-fetch, no-auth, no-merge, no-resume, and no-task-mutation constraints
+      documented
+- [x] supported local export shapes and common GitHub PR/Actions fields
+      documented
+- [x] troubleshooting and privacy checks documented
+- [x] `FORWARD_OPERATOR_USAGE.md` linked to the dedicated PR/CI guide
+- [x] focused forward import/append tests passed
+- [x] `.conitens/context/*` refreshed
+
+## Agent Systems P1 PR/CI Operator Examples Docs Slice Commands Run
+
+- `Select-String` checks over `docs/frontend/PR_CI_EVIDENCE_WORKFLOW.md` and
+  `docs/frontend/FORWARD_OPERATOR_USAGE.md` for implemented command names and
+  safety constraints
+- `python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_import_pr_ci_evidence_prepares_local_github_export_without_writes tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_append_pr_ci_evidence_records_reviewed_metadata_only`
+
+## Current Outcome
+
+The PR/CI local evidence lane now has operator-facing documentation. The local
+workflow is explicit: import local export JSON for review, inspect the sanitized
+items, then run the append command when the operator chooses to write bounded
+events.
+
+## Spatial Lens Pixel Art Direction Reset Status
+
+- [x] attached art-direction reset brief inspected
+- [x] `frontend-skill`, Product Design brief playback, `visual-verdict`, and
+      `validation-gate` guidance applied
+- [x] current VIEWPORT renderer, `PixelProp`, room dressing, `RoomZone`,
+      `FloorViewport`, corridor/grid, and `HandoffOverlay` surfaces inspected
+- [x] pseudo-3D sources identified: soft shadows, filters, heavy room labels,
+      legacy room fixtures, SVG dashed handoff route, prop highlight gradients,
+      and unclamped focused-camera blank space
+- [x] `docs/design/spatial-lens-pixel-art-direction.md` added
+- [x] `pixelSpriteGrammar.ts` added with integer scale, tile snapping, palette,
+      anchor, and y-sort helpers
+- [x] focused camera helper added and clamped to floor bounds
+- [x] `FloorMiniMap` added and kept visible in VIEWPORT
+- [x] `PixelProp`, room dressing sort order, and temporary agent z-indexing
+      moved onto the shared sprite grammar
+- [x] dressed VIEWPORT rooms stop rendering legacy fixture sprites
+- [x] handoff overlay replaced SVG dashed route lines with pixel conduit
+      spans, beacons, packet marker, and in-world blocked marker
+- [x] Spatial Lens CSS no longer contains `filter`, `drop-shadow`,
+      `perspective`, `skew`, `rotate`, `stroke-dasharray`, route SVG class, or
+      radial glow patterns
+- [x] visual verdict recorded at
+      `.omx/state/spatial-lens-art-direction/ralph-progress.json`
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Pixel Art Direction Reset Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs`
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-room-dressing.test.mjs`
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- `Select-String` / `rg --no-ignore` scans for pseudo-3D CSS/SVG route
+  patterns in `packages/dashboard/src/spatial-lens`
+- Playwright real-browser capture at 1440px, 1220px, and 820px for VIEWPORT,
+  hidden-label VIEWPORT, and CLASSIC fallback
+- touched-file trailing whitespace checks
+
+## Current Outcome
+
+The Spatial Lens VIEWPORT art-direction reset is complete. VIEWPORT now reads
+as a focused, flat orthographic pixel-office camera instead of a miniature
+whole-floor map: Ops Control is the default focus, props use a shared sprite
+grammar, labels/status are in-world, handoffs use floor conduit routes, blocked
+lanes use in-world markers, and CLASSIC remains separate with zero new
+PixelProps. The remaining quality gap is authored sprite fidelity and future
+AgentSprite/TaskObject lifecycle work, not projection consistency.
+
+## Spatial Lens Camera And Scale Pass Status
+
+- [x] user feedback inspected: VIEWPORT still felt like a whole-building
+      overview rather than a Pixel Agents-style live office
+- [x] Product Design brief resolved without new questions: live office camera,
+      Pixel Agents-like reference, functional mode toggle
+- [x] `OfficeStage` mode contract expanded to `Focused`, `Floor Overview`, and
+      `Classic`
+- [x] Focused made the default, including migration from old stored `viewport`
+      value
+- [x] `FloorViewport` now takes `viewMode` and exposes browser-checkable
+      camera/mode/zoom data attributes
+- [x] camera helper updated to integer zoom contract:
+      Focused `3x`, Overview `1x`
+- [x] Focused mode changed from enlarged layout box to real
+      `transform: scale(3)` camera zoom so sprites become readable
+- [x] Focused viewport height reduced so the main surface reads as a camera
+      window rather than a tall floorplate
+- [x] Floor Overview remains available, shows all rooms at `1x`, and is
+      labeled as overview/topology
+- [x] Classic remains available with zero new Spatial Lens PixelProps
+- [x] Focused minimap retained for whole-floor awareness
+- [x] Focused room plaques/status lights reduced at base CSS size to stay
+      in-world under 3x zoom
+- [x] visual verdict recorded at
+      `.omx/state/spatial-lens-camera/ralph-progress.json`
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Camera And Scale Pass Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs`
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- scoped `Select-String` scans for pseudo-3D route/style regressions and
+  trailing whitespace
+- Playwright real-browser capture for Focused 1440px, Focused 1220px, Floor
+  Overview 1440px, and Classic 1220px
+
+## Current Outcome
+
+The camera/scale pass is complete. Focused VIEWPORT now uses an integer 3x
+camera transform, starts on Ops Control, shows nearby corridor plus Impl Office,
+and makes desks and agent placeholders visibly scene-sized. Floor Overview is
+kept as a 1x topology/debug mode and Classic remains separate.
+
+## Spatial Lens Prompt 4 Agent-first Live Activity Pass Status
+
+- [x] latest Prompt 4 attachment inspected and scoped to agent-first live
+      activity rendering
+- [x] current `RoomZone`, `FloorViewport`, `OfficeStage`, `PixelOffice`, room
+      template, generated sprite manifest, and task/handoff types inspected
+- [x] `frontend-skill` and `visual-verdict` guidance applied
+- [x] authored station model added in `agentStations.ts`
+- [x] pure visual role/state/station/task/handoff cue mapping added in
+      `agentVisualState.ts`
+- [x] generated-sprite `AgentSprite`, `AgentStation`, `AgentLayer`,
+      `AgentActivityCue`, `AgentSpeechBubble`, and offscreen rail added
+- [x] Spatial Lens `RoomZone` no longer renders legacy `OfficeAvatar` canvases
+- [x] task snapshots passed read-only into `FloorViewport`
+- [x] decorative agent internals made non-hit-testable so station buttons own
+      click selection
+- [x] focused unit tests added for pure mapping utilities
+- [x] real browser Focused, Floor Overview, CLASSIC, laptop-width, and agent
+      click checks passed
+- [x] visual verdict recorded at
+      `.omx/state/spatial-lens-agent-pass/ralph-progress.json`
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4 Agent-first Live Activity Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- Playwright real-browser capture against
+  `http://localhost:3000/#/office-preview` for Focused 1440px, Focused 1220px,
+  Floor Overview 1440px, Classic 1440px, and owner-station click selection
+- Visual inspection of
+  `output/playwright/spatial-lens-agent-pass-focused-1440-floor.png` and
+  `output/playwright/spatial-lens-agent-pass-focused-1220-floor.png`
+
+## Current Outcome
+
+Prompt 4 is complete. Focused VIEWPORT now presents agents as readable,
+sprite-backed pixel office characters with distinct active, blocked, review,
+handoff, and assigned cues. The remaining quality gap is a follow-up
+composition pass: frame the Validation receiving edge in the main 3x camera
+and reduce Ops Control prop crowding without adding write actions or changing
+canonical data.
+
+## Spatial Lens Prompt 4.5 Route Object Polish Status
+
+- [x] latest "next step" request scoped to route-object state and route dock
+      restraint, building on the passing Prompt 4.4 visual state
+- [x] context, `frontend-skill`, `visual-verdict`, and `validation-gate`
+      guidance refreshed
+- [x] behavior locked first with targeted Spatial Lens tests
+- [x] `HandoffOverlay` patched so the generated route packet lives inside a
+      physical `data-handoff-packet-slot`
+- [x] `SceneDockOverlay` / `MinimapDock` patched so the helper is labeled and
+      styled as a compact route minimap
+- [x] Focused route minimap reduced to `104px x 64px`, 1px border, and muted
+      route colors
+- [x] pixel grammar regression coverage added for packet slot, route minimap,
+      and integer CSS scale transforms
+- [x] real app browser verified Focused 1440px, Focused 1220px, Floor Overview
+      1440px, and Classic 1440px
+- [x] visual verdict recorded at
+      `.omx/state/spatial-lens-prompt45/ralph-progress.json`
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.5 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- In-app browser capture against `http://localhost:3000/#/office-preview` for
+  Focused 1440px, Focused 1220px, Floor Overview 1440px, and Classic 1440px
+- Visual inspection of
+  `output/playwright/spatial-lens-prompt45-focused-1440-floor.png`
+
+## Current Outcome
+
+Prompt 4.5 is complete. Focused VIEWPORT keeps the `3x` live-office camera,
+but its whole-floor awareness is now a smaller `Route Minimap`, and the
+handoff packet is a single generated sprite anchored to an in-world floor slot.
+Floor Overview and Classic remain available for topology/debug fallback. The
+remaining visual gap is optional corridor storytelling across the wide authored
+Ops-to-Validation span.
+
+## Spatial Lens Prompt 4.6 Corridor Route Storytelling Status
+
+- [x] latest "next step" request scoped to the remaining wide corridor gap
+      from Prompt 4.5
+- [x] context, `frontend-skill`, `visual-verdict`, `validation-gate`, and
+      in-app browser guidance refreshed
+- [x] behavior locked first with targeted Spatial Lens tests
+- [x] `HandoffOverlay` patched to derive route guide tiles from existing route
+      points without changing canonical route data
+- [x] visual iteration reduced guide density from 4 to 3 to 1 tile after
+      screenshot review showed extra spine/target tiles were distracting
+- [x] final route guide is one source-side horizontal in-world tile
+- [x] CSS route guide styling added with hard-pixel treatment and no
+      pseudo-3D/fractional-scale effects
+- [x] pixel grammar regression coverage added for the route guide layer
+- [x] real app browser verified Focused 1440px, Focused 1220px, Floor Overview
+      1440px, and Classic 1440px
+- [x] visual verdict recorded at
+      `.omx/state/spatial-lens-prompt46/ralph-progress.json`
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.6 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-agent-visual-state.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- In-app browser capture against `http://localhost:3000/#/office-preview` for
+  Focused 1440px, Focused 1220px, Floor Overview 1440px, and Classic 1440px
+- Visual inspection of
+  `output/playwright/spatial-lens-prompt46-focused-1440-floor.png`
+
+## Current Outcome
+
+Prompt 4.6 is complete. Focused VIEWPORT still keeps the `3x` live-office
+camera, compact route minimap, and physical packet slot; the wide corridor now
+has one restrained source-side guide tile rather than additional dashboard-like
+route decoration. Further visual improvement should move to authored topology
+or generated-room continuity rather than more route markers.
+
+## Spatial Lens Prompt 4.10 Validation Checkpoint Room Polish Status
+
+- [x] latest "next step" request scoped to the remaining Validation target
+      edge richness from Prompt 4.9
+- [x] context, `frontend-skill`, `visual-verdict`, `validation-gate`, and
+      in-app browser guidance refreshed
+- [x] `FocusedRouteTargetEdge` patched with a Focused-only
+      `data-focused-validation-checkpoint="true"` floor hook
+- [x] generated sprite props added for clipboard rack, route port, stamp desk,
+      document stack, green status light, and red status light
+- [x] CSS positions the new props as a compact in-world checkpoint/review
+      cluster around the existing checklist board, inbox, packet, and sentinel
+- [x] pixel grammar regression coverage added for the Validation checkpoint
+      contract
+- [x] real app browser verified Focused 1440px, Focused 1220px, Floor Overview
+      1440px, and Classic 1440px
+- [x] visual verdict recorded at
+      `.omx/state/spatial-lens-prompt50/ralph-progress.json`
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.10 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-generated-assets.test.mjs packages/dashboard/tests/spatial-lens-room-dressing.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- In-app browser capture against `http://localhost:3000/#/office-preview` for
+  Focused 1440px, Focused 1220px, Floor Overview 1440px, and Classic 1440px
+- Visual inspection of
+  `output/playwright/spatial-lens-prompt50-focused-1440.png` and
+  `output/playwright/spatial-lens-prompt50-focused-1220.png`
+
+## Current Outcome
+
+Prompt 4.10 is complete. The Focused VIEWPORT still keeps the `3x` live-office
+camera and existing route contract, while the Validation receiving edge now
+reads as a checkpoint room with a stamp desk, clipboard rack, queue/status
+lights, route port, and document stack. Floor Overview and Classic remain
+available for topology/debug fallback.
+
+## Spatial Lens Prompt 4.11 Room Depth Accent Layer Status
+
+- [x] latest "next step" request scoped to generated-room/asset-depth visual
+      polish after Prompt 4.10
+- [x] context, `frontend-skill`, `visual-verdict`, `validation-gate`, and
+      in-app browser guidance refreshed
+- [x] `RoomDepthLayer` added as a visual-only layer for templated rooms
+- [x] `RoomZone` now renders `RoomDepthLayer` before wall, workstation,
+      dressing, and operational prop layers
+- [x] CSS adds hard-pixel `back-wall-shadow`, `baseboard`, `work-mat`, and
+      `foreground-lip` accents with theme-specific ops/validation/research/
+      review/impl/commons treatments
+- [x] room dressing regression coverage added for the depth layer contract
+- [x] real app browser verified Focused 1440px, Focused 1220px, Floor Overview
+      1440px, and Classic 1440px
+- [x] visual verdict recorded at
+      `.omx/state/spatial-lens-prompt51/ralph-progress.json`
+- [x] `.conitens/context/*` refreshed
+
+## Spatial Lens Prompt 4.11 Commands Run
+
+- `node --experimental-strip-types --test packages/dashboard/tests/spatial-lens-room-dressing.test.mjs packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs packages/dashboard/tests/spatial-lens-generated-assets.test.mjs`
+- `pnpm.cmd --filter @conitens/dashboard test`
+- `pnpm.cmd --filter @conitens/dashboard build`
+- In-app browser capture against `http://localhost:3000/#/office-preview` for
+  Focused 1440px, Focused 1220px, Floor Overview 1440px, and Classic 1440px
+- Visual inspection of
+  `output/playwright/spatial-lens-prompt51-focused-1440.png` and
+  `output/playwright/spatial-lens-prompt51-focused-1220.png`
+
+## Current Outcome
+
+Prompt 4.11 is complete. Templated rooms now have a reusable depth layer that
+adds wall base, work mat, and foreground cutaway accents without changing data
+or route behavior. Focused remains the `3x` live camera; Floor Overview remains
+the `1x` topology/debug mode; Classic remains isolated.

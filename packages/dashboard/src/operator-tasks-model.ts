@@ -1,5 +1,6 @@
 import type {
   ForwardOperatorTaskDetailResponse,
+  ForwardOperatorPrCiEvidenceItem,
   ForwardOperatorTaskRecord,
   ForwardOperatorTasksResponse,
 } from "./forward-bridge.js";
@@ -29,6 +30,29 @@ export interface OperatorTaskDetailViewModel {
   blockedReason: string | null;
   acceptance: string[];
   stats: Array<{ label: string; value: string }>;
+  prCiEvidence: OperatorTaskPrCiEvidenceViewModel;
+}
+
+export interface OperatorTaskPrCiEvidenceViewModel {
+  posture: "ok" | "warning" | "danger";
+  metrics: Array<{ label: string; value: string }>;
+  suggestions: string[];
+  privacyNote: string;
+  items: OperatorTaskPrCiEvidenceItemViewModel[];
+}
+
+export interface OperatorTaskPrCiEvidenceItemViewModel {
+  kind: "pull_request" | "ci";
+  title: string;
+  provider: string;
+  statusLabel: string;
+  repository: string;
+  branch: string;
+  commitSha: string;
+  url: string | null;
+  observedAt: string;
+  summary: string;
+  evidenceRefs: string[];
 }
 
 function statusLabel(task: ForwardOperatorTaskRecord): string {
@@ -60,6 +84,7 @@ export function toOperatorTaskDetail(
   response: ForwardOperatorTaskDetailResponse,
 ): OperatorTaskDetailViewModel {
   const task = response.task;
+  const prCiEvidence = response.pr_ci_evidence;
   return {
     taskId: task.task_id,
     title: task.title,
@@ -82,5 +107,34 @@ export function toOperatorTaskDetail(
       { label: "Rooms", value: String(task.linked_room_ids_json.length) },
       { label: "Workspace", value: task.workspace_ref ?? "none" },
     ],
+    prCiEvidence: {
+      posture: prCiEvidence.status,
+      metrics: [
+        { label: "PRs", value: String(prCiEvidence.counts.pull_requests) },
+        { label: "CI", value: String(prCiEvidence.counts.ci_runs) },
+        { label: "Failing", value: String(prCiEvidence.counts.failing) },
+        { label: "Pending", value: String(prCiEvidence.counts.pending) },
+      ],
+      suggestions: prCiEvidence.resume_suggestions,
+      privacyNote: prCiEvidence.privacy.redaction,
+      items: prCiEvidence.items.map(toPrCiEvidenceItem),
+    },
+  };
+}
+
+function toPrCiEvidenceItem(item: ForwardOperatorPrCiEvidenceItem): OperatorTaskPrCiEvidenceItemViewModel {
+  const statusParts = [item.status, item.conclusion].filter(Boolean);
+  return {
+    kind: item.kind,
+    title: item.title,
+    provider: item.provider,
+    statusLabel: statusParts.length > 0 ? statusParts.join(" / ") : "unknown",
+    repository: item.repository ?? "unknown repository",
+    branch: item.branch ?? "unknown branch",
+    commitSha: item.commit_sha ?? "no commit",
+    url: item.url,
+    observedAt: item.observed_at,
+    summary: item.summary ?? "No PR/CI summary recorded.",
+    evidenceRefs: item.evidence_refs,
   };
 }

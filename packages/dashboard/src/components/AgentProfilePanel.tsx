@@ -15,12 +15,12 @@ function timeAgo(iso: string): string {
 
 function statusColor(status: AgentLifecycleStatus): string {
   switch (status) {
-    case "running": return "#4fb062";
+    case "running": return "#27a644";
     case "assigned":
-    case "idle": return "#4fb062";
-    case "paused": return "#c98b12";
-    case "dormant": return "rgba(177, 205, 255, 0.3)";
-    case "retired": return "rgba(177, 205, 255, 0.3)";
+    case "idle": return "#27a644";
+    case "paused": return "#d4b144";
+    case "dormant": return "rgba(180, 184, 190, 0.3)";
+    case "retired": return "rgba(180, 184, 190, 0.3)";
   }
 }
 
@@ -57,9 +57,10 @@ interface AgentProfilePanelProps {
   agent: AgentProfile | null;
   evolution: EvolutionEntry[];
   metrics: LearningMetric | null;
+  onOpenRoom?: (roomId: string) => void;
 }
 
-export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePanelProps) {
+export function AgentProfilePanel({ agent, evolution, metrics, onOpenRoom }: AgentProfilePanelProps) {
   if (!agent) {
     return (
       <div className="agent-profile agent-profile-empty">
@@ -71,8 +72,6 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
     );
   }
 
-  const canPause = agent.status === "running" || agent.status === "idle" || agent.status === "assigned";
-  const canResume = agent.status === "paused";
   const errorPct = agent.errorRate * 100;
 
   return (
@@ -84,6 +83,37 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
           <span className={roleToneClass(agent.role)}>{agent.role}</span>
           <span className="agent-archetype-label">{agent.archetype}</span>
         </div>
+      </div>
+
+      <div className="agent-profile-section">
+        <p className="forward-panel-label">Current assignment</p>
+        <div className="agent-assignment-list">
+          <div className="agent-assignment-row">
+            <span>Room</span>
+            {onOpenRoom ? (
+              <button className="agent-room-link" type="button" onClick={() => onOpenRoom(agent.roomId)}>
+                {agent.roomId}
+              </button>
+            ) : (
+              <strong>{agent.roomId}</strong>
+            )}
+          </div>
+          <div className="agent-assignment-row">
+            <span>Latest run</span>
+            <strong>{agent.latestRunId ?? "No run linked"}</strong>
+          </div>
+          <div className="agent-assignment-row">
+            <span>Run status</span>
+            <strong>{agent.latestRunStatus ?? agent.status}</strong>
+          </div>
+          <div className="agent-assignment-row">
+            <span>Workspace</span>
+            <strong>{agent.workspaceRef ?? "Unassigned"}</strong>
+          </div>
+        </div>
+        {agent.latestBlocker ? (
+          <p className="agent-health-active">Latest blocker: {agent.latestBlocker}</p>
+        ) : null}
       </div>
 
       <div className="agent-profile-section">
@@ -121,50 +151,12 @@ export function AgentProfilePanel({ agent, evolution, metrics }: AgentProfilePan
             <span>Memories</span>
             <strong>{agent.memoryCount}</strong>
           </div>
-          <div className="agent-stat-item">
-            <span>Room</span>
-            <strong className="agent-stat-room">{agent.roomId}</strong>
-          </div>
-          {agent.latestRunId ? (
-            <div className="agent-stat-item">
-              <span>Latest run</span>
-              <strong className="agent-stat-room">{agent.latestRunId}</strong>
-            </div>
-          ) : null}
           {typeof agent.pendingApprovals === "number" ? (
             <div className="agent-stat-item">
               <span>Approvals</span>
               <strong>{agent.pendingApprovals}</strong>
             </div>
           ) : null}
-        </div>
-        {agent.latestRunStatus ? (
-          <p className="agent-health-active">Latest run status: {agent.latestRunStatus}</p>
-        ) : null}
-        {agent.latestBlocker ? (
-          <p className="agent-health-active">Latest blocker: {agent.latestBlocker}</p>
-        ) : null}
-        {agent.workspaceRef ? (
-          <p className="agent-health-active">Workspace: {agent.workspaceRef}</p>
-        ) : null}
-      </div>
-
-      <div className="agent-profile-section">
-        <p className="forward-panel-label">Actions</p>
-        <div className="agent-action-bar">
-          {canPause && (
-            <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
-              Pause
-            </button>
-          )}
-          {canResume && (
-            <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
-              Resume
-            </button>
-          )}
-          <button className="forward-chip agent-action-btn" disabled title="Lifecycle control — coming soon">
-            Retire
-          </button>
         </div>
       </div>
 
