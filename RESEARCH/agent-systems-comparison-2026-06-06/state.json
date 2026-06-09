@@ -1,0 +1,24 @@
+{
+  "session_id": "agent-systems-comparison-2026-06-06",
+  "status": "complete",
+  "mode": "new research",
+  "created_at": "2026-06-06",
+  "topic": "Compare Conitens with selected open-source agent orchestration and agent-UX projects.",
+  "output_format": "document_plus_backlog",
+  "source_strategy": "pinned GitHub source snapshots plus local Conitens source inspection",
+  "conitens_baseline": {
+    "branch": "main",
+    "commit": "2c25a9e2aa998fe16edaa83792c52a9db14f2d3c",
+    "working_tree_note": "working tree includes local changes"
+  },
+  "snapshots": {
+    "agentland": "0a57e92cff793ac81d77cbf494cdea44bbc4fee8",
+    "maestro": "575efd0dccc7076c5df035813627cc0445e72d54",
+    "optio": "9f5abb9de7f7bc07beeff8b79939505798ac1ed3",
+    "agent-squad": "db10bf56aafcca4f04806be8e06c4d02eb4da2da",
+    "autogen": "027ecf0a379bcc1d09956d46d12d44a3ad9cee14",
+    "claw3d": "eeb6f31f06c6c9a9f32bf359339fe547d5b92c47",
+    "pixel-agents": "17ad25ddbfad3392628a2d91b5303335cc5c4923",
+    "cli-jaw": "358c8511aa254d5dd0ce055f570f4e953f6d9ab8"
+  }
+}

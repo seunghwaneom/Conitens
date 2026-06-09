@@ -16,7 +16,17 @@ sys.path.insert(0, str(SCRIPTS))
 
 from ensemble_approval import ApprovalInterruptAdapter
 from ensemble_context_markdown import ContextRegenerator, TaskPlanWriterReader
-from ensemble_forward_bridge import launch_forward_bridge
+from ensemble_events import append_event, load_events
+from ensemble_forward_bridge import (
+    build_operator_evidence_summary_payload,
+    build_operator_runtime_roster_payload,
+    build_operator_status_confidence_payload,
+    build_operator_task_detail_payload,
+    build_operator_turn_records_payload,
+    build_operator_wake_readiness_payload,
+    build_operator_workflow_contracts_payload,
+    launch_forward_bridge,
+)
 from ensemble_insight_extractor import InsightExtractor
 from ensemble_iteration_service import IterationService
 from ensemble_loop_repository import LoopStateRepository
@@ -160,6 +170,649 @@ class ForwardBridgeTests(unittest.TestCase):
         self.assertEqual(payload["runs"]["awaiting_approval"], 1)
         self.assertEqual(payload["validation"]["failing_runs"], 1)
         self.assertEqual(payload["runs"]["latest_run_id"], run_id)
+        self.assertIn("evidence", payload)
+        self.assertIn("doctor", payload)
+        self.assertIn("runtime_roster", payload)
+
+    def test_operator_runtime_roster_endpoint_returns_read_only_projection(self) -> None:
+        root, repo, run_id, _iteration_id = self.prepare_workspace()
+        repo.append_orchestration_checkpoint(
+            run_id=run_id,
+            graph_kind="build",
+            step_name="provider-call",
+            state={"agent_id": "sample-agent"},
+            loop_cost_metrics={
+                "provider": "codex",
+                "model": "gpt-5.4",
+                "total_tokens": 42,
+            },
+        )
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8911)
+        try:
+            with self.assertRaises(HTTPError) as unauth_exc:
+                urlopen("http://127.0.0.1:8911/api/operator/runtime-roster", timeout=10)
+            self.assertEqual(unauth_exc.exception.code, 403)
+            unauth_exc.exception.close()
+
+            request = Request(
+                "http://127.0.0.1:8911/api/operator/runtime-roster",
+                headers={"Authorization": f"Bearer {launched['token']}"},
+            )
+            with urlopen(request, timeout=10) as response:
+                payload_text = response.read().decode("utf-8")
+                payload = json.loads(payload_text)
+        finally:
+            launched["server"].shutdown()
+
+        self.assertIn(payload["status"], {"ok", "warning", "danger"})
+        self.assertFalse(payload["privacy"]["environment_dumped"])
+        self.assertFalse(payload["privacy"]["auth_tokens_exposed"])
+        self.assertFalse(payload["privacy"]["raw_session_content_exposed"])
+        self.assertGreaterEqual(payload["counts"]["agent_runtimes"], 4)
+        codex = next(item for item in payload["runtimes"] if item["id"] == "codex")
+        self.assertEqual(codex["category"], "agent_runtime")
+        self.assertEqual(codex["session_status"], "observed")
+        self.assertEqual(codex["latest_run_id"], run_id)
+        self.assertTrue(codex["evidence_refs"])
+        self.assertNotIn(str(root), payload_text)
+        self.assertNotIn("Authorization", payload_text)
+        self.assertNotIn("Bearer", payload_text)
+
+    def test_operator_runtime_roster_endpoint_filters_agent_runtime_with_ux_hints(self) -> None:
+        root, repo, run_id, _iteration_id = self.prepare_workspace()
+        repo.append_orchestration_checkpoint(
+            run_id=run_id,
+            graph_kind="build",
+            step_name="provider-call",
+            state={"agent_id": "sample-agent"},
+            loop_cost_metrics={
+                "provider": "codex",
+                "model": "gpt-5.4",
+                "total_tokens": 42,
+            },
+        )
+        events_before = load_events(root)
+        direct_payload = build_operator_runtime_roster_payload(
+            root,
+            probe_versions=False,
+            runtime_id="codex",
+            category="agent_runtime",
+        )
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8915)
+        try:
+            request = Request(
+                "http://127.0.0.1:8915/api/operator/runtime-roster?runtime=codex&category=agent_runtime&probe_versions=0",
+                headers={"Authorization": f"Bearer {launched['token']}"},
+            )
+            with urlopen(request, timeout=10) as response:
+                payload_text = response.read().decode("utf-8")
+                payload = json.loads(payload_text)
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(direct_payload["counts"]["total"], 1)
+        self.assertEqual(payload["scope"]["runtime_id"], "codex")
+        self.assertEqual(payload["scope"]["category"], "agent_runtime")
+        self.assertFalse(payload["scope"]["probe_versions"])
+        self.assertEqual(payload["counts"]["total"], 1)
+        self.assertEqual(payload["counts"]["agent_runtimes"], 1)
+        self.assertEqual(payload["counts"]["toolchains"], 0)
+        self.assertEqual(payload["runtimes"][0]["id"], "codex")
+        self.assertEqual(payload["runtimes"][0]["session_status"], "observed")
+        self.assertEqual(payload["ux_summary"]["preferred_agent_runtime"], "codex")
+        self.assertTrue(payload["ux_summary"]["filter_active"])
+        self.assertEqual(payload["operator_hints"][0]["readiness"], "observed")
+        self.assertFalse(payload["privacy"]["provider_auth_commands_executed"])
+        self.assertEqual(load_events(root), events_before)
+        self.assertNotIn(str(root), payload_text)
+        self.assertNotIn("Authorization", payload_text)
+        self.assertNotIn("Bearer", payload_text)
+
+    def test_operator_turn_records_endpoint_returns_metadata_without_transcript_content(self) -> None:
+        root, repo, run_id, _iteration_id = self.prepare_workspace()
+        room = repo.list_room_records(run_id=run_id)[0]
+        repo.append_tool_event(
+            room_id=room["room_id"],
+            run_id=run_id,
+            actor="sample-agent",
+            tool_name="shell",
+            payload={"command": "echo SECRET"},
+        )
+        direct_payload = build_operator_turn_records_payload(root, run_id=run_id, room_id=room["room_id"], limit=10)
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8912)
+        try:
+            with self.assertRaises(HTTPError) as unauth_exc:
+                urlopen("http://127.0.0.1:8912/api/operator/turn-records", timeout=10)
+            self.assertEqual(unauth_exc.exception.code, 403)
+            unauth_exc.exception.close()
+
+            request = Request(
+                f"http://127.0.0.1:8912/api/operator/turn-records?run_id={run_id}&room_id={room['room_id']}&limit=10",
+                headers={"Authorization": f"Bearer {launched['token']}"},
+            )
+            with urlopen(request, timeout=10) as response:
+                payload_text = response.read().decode("utf-8")
+                payload = json.loads(payload_text)
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(direct_payload["counts"]["messages"], 1)
+        self.assertEqual(payload["counts"]["messages"], 1)
+        self.assertEqual(payload["counts"]["tool_events"], 1)
+        self.assertFalse(payload["privacy"]["message_content_exposed"])
+        self.assertFalse(payload["privacy"]["tool_payload_values_exposed"])
+        self.assertFalse(payload["privacy"]["raw_transcript_exposed"])
+        self.assertNotIn("DECISION: bridge stays read-only", payload_text)
+        self.assertNotIn("echo SECRET", payload_text)
+        self.assertNotIn("Authorization", payload_text)
+        self.assertNotIn("Bearer", payload_text)
+
+    def test_operator_workflow_contracts_endpoint_returns_contracts_without_execution(self) -> None:
+        root, _repo, _run_id, _iteration_id = self.prepare_workspace()
+        workflows_dir = root / ".agent" / "workflows"
+        workflows_dir.mkdir(parents=True, exist_ok=True)
+        (workflows_dir / "review-build.md").write_text(
+            """---
+schema_v: 1
+name: "Review Build"
+slug: "review-build"
+description: "Review-gated build workflow."
+inputs:
+  task_id:
+    type: string
+    required: true
+steps:
+  - id: ask
+    kind: approval
+    question: "approve SECRET workflow {{task_id}}"
+    on_fail: stop
+  - id: run
+    kind: cli
+    cmd: "echo SECRET {{task_id}}"
+    on_fail: stop
+---
+
+# Notes
+""",
+            encoding="utf-8",
+        )
+        events_before = load_events(root)
+        direct_payload = build_operator_workflow_contracts_payload(root, workflow_ref="review-build")
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8913)
+        try:
+            with self.assertRaises(HTTPError) as unauth_exc:
+                urlopen("http://127.0.0.1:8913/api/operator/workflow-contracts", timeout=10)
+            self.assertEqual(unauth_exc.exception.code, 403)
+            unauth_exc.exception.close()
+
+            request = Request(
+                "http://127.0.0.1:8913/api/operator/workflow-contracts?workflow=review-build",
+                headers={"Authorization": f"Bearer {launched['token']}"},
+            )
+            with urlopen(request, timeout=10) as response:
+                payload_text = response.read().decode("utf-8")
+                payload = json.loads(payload_text)
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(direct_payload["counts"]["total"], 1)
+        self.assertEqual(payload["counts"]["total"], 1)
+        self.assertEqual(payload["counts"]["ready"], 1)
+        self.assertEqual(payload["counts"]["requiring_approval"], 1)
+        self.assertTrue(payload["router_contract"]["read_only"])
+        self.assertFalse(payload["router_contract"]["execution_performed"])
+        self.assertFalse(payload["router_contract"]["workflow_runs_created"])
+        self.assertFalse(payload["router_contract"]["approval_bypassed"])
+        self.assertFalse(payload["privacy"]["raw_workflow_body_exposed"])
+        self.assertFalse(payload["privacy"]["rendered_command_values_exposed"])
+        self.assertFalse(payload["privacy"]["rendered_payload_values_exposed"])
+        contract = payload["contracts"][0]
+        self.assertEqual(contract["slug"], "review-build")
+        self.assertEqual(contract["required_inputs"], ["task_id"])
+        self.assertTrue(contract["requires_approval"])
+        self.assertEqual(load_events(root), events_before)
+        self.assertNotIn("echo SECRET", payload_text)
+        self.assertNotIn("approve SECRET workflow", payload_text)
+        self.assertNotIn("Authorization", payload_text)
+        self.assertNotIn("Bearer", payload_text)
+
+    def test_operator_status_confidence_endpoint_returns_reasons_without_raw_content(self) -> None:
+        root, repo, run_id, iteration_id = self.prepare_workspace()
+        room = repo.list_room_records(run_id=run_id)[0]
+        task = repo.create_operator_task(
+            task_id="otask-status-confidence",
+            title="Status confidence",
+            objective="Explain read-only status posture",
+            status="in_review",
+            priority="high",
+            owner_agent_id="sample-agent",
+            linked_run_id=run_id,
+            linked_iteration_id=iteration_id,
+            linked_room_ids=[room["room_id"]],
+            acceptance=["bridge returns diagnostics"],
+        )
+        events_before = load_events(root)
+        direct_payload = build_operator_status_confidence_payload(root, run_id=run_id, limit=20)
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8914)
+        try:
+            with self.assertRaises(HTTPError) as unauth_exc:
+                urlopen("http://127.0.0.1:8914/api/operator/status-confidence", timeout=10)
+            self.assertEqual(unauth_exc.exception.code, 403)
+            unauth_exc.exception.close()
+
+            request = Request(
+                f"http://127.0.0.1:8914/api/operator/status-confidence?run_id={run_id}&limit=20",
+                headers={"Authorization": f"Bearer {launched['token']}"},
+            )
+            with urlopen(request, timeout=10) as response:
+                payload_text = response.read().decode("utf-8")
+                payload = json.loads(payload_text)
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(direct_payload["counts"]["runs"], 1)
+        self.assertEqual(payload["counts"]["runs"], 1)
+        self.assertEqual(payload["counts"]["tasks"], 1)
+        self.assertEqual(payload["counts"]["rooms"], 1)
+        self.assertGreaterEqual(payload["counts"]["partial"], 1)
+        self.assertTrue(payload["diagnostic_contract"]["read_only"])
+        self.assertFalse(payload["diagnostic_contract"]["mutations_performed"])
+        self.assertFalse(payload["diagnostic_contract"]["external_fetch_performed"])
+        self.assertFalse(payload["privacy"]["message_content_exposed"])
+        self.assertFalse(payload["privacy"]["tool_payload_values_exposed"])
+        run_row = next(row for row in payload["diagnostics"] if row["id"] == f"run:{run_id}")
+        task_row = next(row for row in payload["diagnostics"] if row["id"] == f"task:{task['task_id']}")
+        self.assertIn("latest_validator_failed", run_row["reason_codes"])
+        self.assertIn("latest_validator_failed", task_row["reason_codes"])
+        self.assertEqual(load_events(root), events_before)
+        self.assertNotIn("DECISION: bridge stays read-only", payload_text)
+        self.assertNotIn("validator history visible", payload_text)
+        self.assertNotIn("Authorization", payload_text)
+        self.assertNotIn("Bearer", payload_text)
+
+    def test_operator_wake_readiness_endpoint_combines_sources_without_scheduling(self) -> None:
+        root, repo, run_id, iteration_id = self.prepare_workspace()
+        room = repo.list_room_records(run_id=run_id)[0]
+        task = repo.create_operator_task(
+            task_id="otask-wake-readiness",
+            title="Wake readiness",
+            objective="Expose read-only wake planning posture",
+            status="in_review",
+            priority="high",
+            owner_agent_id="sample-agent",
+            linked_run_id=run_id,
+            linked_iteration_id=iteration_id,
+            linked_room_ids=[room["room_id"]],
+            acceptance=["bridge returns wake readiness"],
+        )
+        repo.append_tool_event(
+            room_id=room["room_id"],
+            run_id=run_id,
+            iteration_id=iteration_id,
+            actor="sample-agent",
+            tool_name="shell",
+            payload={"command": "echo SECRET wake bridge"},
+        )
+        repo.append_orchestration_checkpoint(
+            run_id=run_id,
+            graph_kind="build",
+            step_name="provider-call",
+            state={"agent_id": "sample-agent"},
+            loop_cost_metrics={
+                "provider": "codex",
+                "model": "gpt-5.4",
+                "total_tokens": 42,
+            },
+        )
+        events_before = load_events(root)
+        direct_payload = build_operator_wake_readiness_payload(root, run_id=run_id, limit=20)
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8916)
+        try:
+            with self.assertRaises(HTTPError) as unauth_exc:
+                urlopen("http://127.0.0.1:8916/api/operator/wake-readiness", timeout=10)
+            self.assertEqual(unauth_exc.exception.code, 403)
+            unauth_exc.exception.close()
+
+            request = Request(
+                f"http://127.0.0.1:8916/api/operator/wake-readiness?run_id={run_id}&limit=20",
+                headers={"Authorization": f"Bearer {launched['token']}"},
+            )
+            with urlopen(request, timeout=10) as response:
+                payload_text = response.read().decode("utf-8")
+                payload = json.loads(payload_text)
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(direct_payload["counts"]["returned"], payload["counts"]["returned"])
+        self.assertEqual(payload["scope"]["run_id"], run_id)
+        self.assertGreaterEqual(payload["counts"]["returned"], 3)
+        self.assertGreaterEqual(payload["counts"]["needs_review"], 1)
+        self.assertEqual(payload["source_projections"]["runtime_roster"]["preferred_agent_runtime"], "codex")
+        task_candidate = next(row for row in payload["candidates"] if row["subject_id"] == task["task_id"])
+        self.assertIn(task_candidate["readiness"], {"needs_review", "ready", "hold"})
+        self.assertTrue(payload["wake_contract"]["read_only"])
+        self.assertFalse(payload["wake_contract"]["scheduler_started"])
+        self.assertFalse(payload["wake_contract"]["wake_messages_sent"])
+        self.assertFalse(payload["wake_contract"]["task_status_mutated"])
+        self.assertFalse(payload["wake_contract"]["provider_auth_commands_executed"])
+        self.assertFalse(payload["privacy"]["message_content_exposed"])
+        self.assertFalse(payload["privacy"]["tool_payload_values_exposed"])
+        self.assertFalse(payload["privacy"]["raw_transcript_exposed"])
+        self.assertEqual(load_events(root), events_before)
+        self.assertNotIn("DECISION: bridge stays read-only", payload_text)
+        self.assertNotIn("echo SECRET wake bridge", payload_text)
+        self.assertNotIn("validator history visible", payload_text)
+        self.assertNotIn("Authorization", payload_text)
+        self.assertNotIn("Bearer", payload_text)
+
+    def test_operator_runtime_and_evidence_payloads_redact_metric_labels(self) -> None:
+        root, repo, run_id, _iteration_id = self.prepare_workspace()
+        repo.append_orchestration_checkpoint(
+            run_id=run_id,
+            graph_kind="build",
+            step_name="provider-call",
+            state={"agent_id": "sample-agent"},
+            loop_cost_metrics={
+                "provider": "api_key=SECRET1234567890 /home/example",
+                "model": "/home/example/model",
+                "total_tokens": 42,
+            },
+        )
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8912)
+        try:
+            headers = {"Authorization": f"Bearer {launched['token']}"}
+            with urlopen(
+                Request("http://127.0.0.1:8912/api/operator/evidence-summary", headers=headers),
+                timeout=10,
+            ) as response:
+                evidence_text = response.read().decode("utf-8")
+                evidence_payload = json.loads(evidence_text)
+            with urlopen(
+                Request("http://127.0.0.1:8912/api/operator/summary", headers=headers),
+                timeout=10,
+            ) as response:
+                summary_text = response.read().decode("utf-8")
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(evidence_payload["provider_calls"]["latest_provider"], "[REDACTED]")
+        self.assertIsNone(evidence_payload["provider_calls"]["latest_model"])
+        for payload_text in (evidence_text, summary_text):
+            self.assertNotIn("SECRET1234567890", payload_text)
+            self.assertNotIn("/home/example", payload_text)
+            self.assertNotIn(str(root), payload_text)
+
+    def test_operator_evidence_summary_prefers_provider_call_events(self) -> None:
+        root, repo, run_id, iteration_id = self.prepare_workspace()
+        repo.append_orchestration_checkpoint(
+            run_id=run_id,
+            graph_kind="build",
+            step_name="provider-call",
+            state={"agent_id": "sample-agent"},
+            loop_cost_metrics={
+                "provider": "checkpoint-runtime",
+                "model": "checkpoint-model",
+                "total_tokens": 999,
+                "estimated_cost": 9.99,
+            },
+        )
+        with self.assertRaisesRegex(ValueError, "forbids raw content fields"):
+            append_event(
+                root,
+                event_type="provider.call_recorded",
+                actor={"type": "agent", "name": "sample-agent"},
+                payload={
+                    "provider": "codex",
+                    "model": "gpt-5.4",
+                    "input_tokens": 10,
+                    "output_tokens": 5,
+                    "total_tokens": 15,
+                    "estimated_cost": 0.03,
+                    "latency_ms": 50,
+                    "tool_calls_count": 2,
+                    "pii_findings": 1,
+                    "run_id": run_id,
+                    "iteration_id": iteration_id,
+                    "task_id": "otask-provider",
+                    "agent_id": "sample-agent",
+                    "evidence_refs": [f"run:{run_id}"],
+                    "prompt": "raw prompt should not be accepted",
+                },
+            )
+        append_event(
+            root,
+            event_type="provider.call_recorded",
+            actor={"type": "agent", "name": "sample-agent"},
+            payload={
+                "provider": "codex",
+                "model": "gpt-5.4",
+                "input_tokens": 10,
+                "output_tokens": 5,
+                "total_tokens": 15,
+                "estimated_cost": 0.03,
+                "latency_ms": 50,
+                "tool_calls_count": 2,
+                "pii_findings": 1,
+                "run_id": run_id,
+                "iteration_id": iteration_id,
+                "task_id": "otask-provider",
+                "agent_id": "sample-agent",
+                "evidence_refs": [f"run:{run_id}"],
+            },
+        )
+
+        payload = build_operator_evidence_summary_payload(root)
+        payload_text = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(payload["provider_calls"]["source"], "event_log")
+        self.assertTrue(payload["provider_calls"]["checkpoint_fallback_available"])
+        self.assertEqual(payload["provider_calls"]["observed"], 1)
+        self.assertEqual(payload["provider_calls"]["total_tokens"], 15)
+        self.assertEqual(payload["provider_calls"]["tool_calls_count"], 2)
+        self.assertEqual(payload["provider_calls"]["latest_provider"], "codex")
+        self.assertEqual(payload["provider_calls"]["latest_model"], "gpt-5.4")
+        self.assertEqual(payload["budget"]["event_log_sources"], 1)
+        self.assertEqual(payload["budget"]["checkpoint_sources"], 1)
+        self.assertEqual(payload["sensitivity"]["pii_findings"], 1)
+        self.assertIn("event:provider.call_recorded:", payload["evidence_refs"][0])
+        self.assertNotIn("raw prompt should not be accepted", payload_text)
+        self.assertNotIn("checkpoint-runtime", payload_text)
+
+    def test_operator_task_detail_projects_pr_ci_read_evidence(self) -> None:
+        root, repo, run_id, iteration_id = self.prepare_workspace()
+        task = repo.create_operator_task(
+            task_id="otask-pr-ci",
+            title="Attach PR CI evidence",
+            objective="Show read-only GitHub and CI posture on task detail",
+            status="in_review",
+            priority="high",
+            owner_agent_id="sample-agent",
+            linked_run_id=run_id,
+            linked_iteration_id=iteration_id,
+        )
+        with self.assertRaisesRegex(ValueError, "forbids raw PR/CI content fields"):
+            append_event(
+                root,
+                event_type="ci.evidence_observed",
+                actor={"type": "system", "name": "ci-reader"},
+                payload={
+                    "provider": "github-actions",
+                    "repository": "owner/repo",
+                    "workflow": "tests",
+                    "status": "completed",
+                    "conclusion": "failure",
+                    "task_id": task["task_id"],
+                    "run_id": run_id,
+                    "rawLog": "secret log should be rejected",
+                    "authToken": "SECRET",
+                },
+            )
+        append_event(
+            root,
+            event_type="pr.evidence_observed",
+            actor={"type": "system", "name": "github-reader"},
+            scope={"task_id": task["task_id"]},
+            payload={
+                "provider": "github",
+                "repository": "owner/repo",
+                "pr_number": 42,
+                "title": "Add operator evidence",
+                "status": "open",
+                "conclusion": None,
+                "url": "https://github.com/owner/repo/pull/42?token=SECRET#files",
+                "branch": "feature/evidence",
+                "commit_sha": "abcdef1234567890",
+                "task_id": task["task_id"],
+                "observed_at": "2026-06-07T08:00:00Z",
+                "summary": "Review is waiting on CI.",
+                "evidence_refs": ["github:pr:42"],
+            },
+        )
+        append_event(
+            root,
+            event_type="ci.evidence_observed",
+            actor={"type": "system", "name": "ci-reader"},
+            scope={"run_id": run_id},
+            payload={
+                "provider": "github-actions",
+                "repository": "owner/repo",
+                "workflow": "tests",
+                "job": "unit",
+                "ci_run_id": "ci-100",
+                "status": "completed",
+                "conclusion": "failure",
+                "url": "https://github.com/owner/repo/actions/runs/100?check_suite_focus=true",
+                "branch": "feature/evidence",
+                "commit_sha": "abcdef1234567890",
+                "run_id": run_id,
+                "observed_at": "2026-06-07T08:01:00Z",
+                "summary": "Unit tests failed.",
+                "evidence_refs": ["github:actions:100"],
+            },
+        )
+        append_event(
+            root,
+            event_type="ci.evidence_observed",
+            actor={"type": "system", "name": "ci-reader"},
+            payload={
+                "provider": "github-actions",
+                "repository": "owner/repo",
+                "workflow": "deploy",
+                "status": "completed",
+                "conclusion": "success",
+                "task_id": "other-task",
+                "observed_at": "2026-06-07T08:02:00Z",
+            },
+        )
+
+        detail = build_operator_task_detail_payload(root, task["task_id"])
+        evidence = detail["pr_ci_evidence"]
+        detail_text = json.dumps(detail, ensure_ascii=False)
+
+        self.assertEqual(evidence["counts"]["total"], 2)
+        self.assertEqual(evidence["counts"]["pull_requests"], 1)
+        self.assertEqual(evidence["counts"]["ci_runs"], 1)
+        self.assertEqual(evidence["counts"]["failing"], 1)
+        self.assertEqual(evidence["counts"]["rejected"], 0)
+        self.assertEqual(evidence["status"], "danger")
+        self.assertEqual(evidence["items"][0]["kind"], "ci")
+        self.assertEqual(evidence["items"][0]["commit_sha"], "abcdef123456")
+        self.assertEqual(evidence["items"][1]["url"], "https://github.com/owner/repo/pull/42")
+        self.assertFalse(evidence["privacy"]["external_fetch_performed"])
+        self.assertFalse(evidence["privacy"]["auth_tokens_exposed"])
+        self.assertFalse(evidence["privacy"]["raw_logs_exposed"])
+        self.assertTrue(any("failing PR/CI" in suggestion for suggestion in evidence["resume_suggestions"]))
+        self.assertNotIn("SECRET", detail_text)
+        self.assertNotIn("secret log should be rejected", detail_text)
+        self.assertNotIn("other-task", detail_text)
+
+    def test_operator_evidence_doctor_and_reconcile_preview_are_read_only(self) -> None:
+        root, repo, run_id, iteration_id = self.prepare_workspace()
+        repo.append_orchestration_checkpoint(
+            run_id=run_id,
+            graph_kind="build",
+            step_name="provider-call",
+            state={"agent_id": "sample-agent"},
+            retry_count=1,
+            approval_pending=True,
+            loop_cost_metrics={
+                "provider": "codex",
+                "model": "gpt-5.4",
+                "total_tokens": 321,
+                "estimated_cost": 0.1234,
+                "latency_ms": 250,
+                "pii_findings": 0,
+            },
+        )
+        repo.append_retry_decision(
+            run_id=run_id,
+            graph_kind="build",
+            retry_index=1,
+            decision="retry",
+            reason="validator history visible",
+        )
+        task = repo.create_operator_task(
+            task_id="otask-reconcile",
+            title="Reconcile operator task",
+            objective="Preview evidence-based task repair decisions",
+            status="todo",
+            priority="high",
+            owner_agent_id="sample-agent",
+            linked_run_id=run_id,
+            linked_iteration_id=iteration_id,
+        )
+        pending = ApprovalInterruptAdapter(root).enqueue_request(
+            run_id=run_id,
+            iteration_id=iteration_id,
+            actor="sample-agent",
+            action_type="network_access",
+            action_payload={"url": "https://example.com"},
+        )
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8910)
+        try:
+            for path in (
+                "/api/operator/evidence-summary",
+                "/api/operator/doctor-evidence",
+                f"/api/operator/tasks/{task['task_id']}/reconcile-preview",
+            ):
+                with self.assertRaises(HTTPError) as unauth_exc:
+                    urlopen(f"http://127.0.0.1:8910{path}", timeout=10)
+                self.assertEqual(unauth_exc.exception.code, 403)
+                unauth_exc.exception.close()
+
+            headers = {"Authorization": f"Bearer {launched['token']}"}
+            with urlopen(
+                Request("http://127.0.0.1:8910/api/operator/evidence-summary", headers=headers),
+                timeout=10,
+            ) as response:
+                evidence_payload = json.loads(response.read().decode("utf-8"))
+            with urlopen(
+                Request("http://127.0.0.1:8910/api/operator/doctor-evidence", headers=headers),
+                timeout=10,
+            ) as response:
+                doctor_payload = json.loads(response.read().decode("utf-8"))
+            with urlopen(
+                Request(
+                    f"http://127.0.0.1:8910/api/operator/tasks/{task['task_id']}/reconcile-preview",
+                    headers=headers,
+                ),
+                timeout=10,
+            ) as response:
+                reconcile_payload = json.loads(response.read().decode("utf-8"))
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(evidence_payload["provider_calls"]["observed"], 1)
+        self.assertEqual(evidence_payload["provider_calls"]["total_tokens"], 321)
+        self.assertFalse(evidence_payload["sensitivity"]["raw_content_exposed"])
+        self.assertIn("bridge-auth", {check["id"] for check in doctor_payload["checks"]})
+        self.assertEqual(reconcile_payload["task_id"], "otask-reconcile")
+        self.assertTrue(str(reconcile_payload["decision_id"]).startswith("reconcile-"))
+        self.assertEqual(reconcile_payload["recommended_status"], "blocked")
+        self.assertTrue(reconcile_payload["requires_approval"])
+        self.assertTrue(any(pending["request_id"] in ref for ref in reconcile_payload["evidence_refs"]))
+        self.assertEqual(repo.get_operator_task("otask-reconcile"), task)
+        self.assertEqual(len(repo.list_approval_requests(status="pending")), 1)
 
     def test_operator_inbox_endpoint_returns_projection_shape(self) -> None:
         root, repo, run_id, iteration_id = self.prepare_workspace()

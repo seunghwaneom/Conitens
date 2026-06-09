@@ -6,11 +6,11 @@ interface AgentRelationshipGraphProps {
 }
 
 const ROLE_COLORS: Record<AgentProfile["role"], string> = {
-  orchestrator: "#ff7043",
-  implementer: "#66bb6a",
-  researcher: "#ab47bc",
-  reviewer: "#42a5f5",
-  validator: "#ef5350",
+  orchestrator: "#d4b144",
+  implementer: "#27a644",
+  researcher: "#7170ff",
+  reviewer: "#5e6ad2",
+  validator: "#eb5757",
 };
 
 const DEMO_EDGES: Array<{ from: string; to: string }> = [
@@ -67,6 +67,13 @@ export function AgentRelationshipGraph({ agents }: AgentRelationshipGraphProps) 
 
   return (
     <div className="agent-graph-container">
+      <div className="agent-graph-header">
+        <div>
+          <p className="forward-panel-label">Role topology</p>
+          <h3>Demo coordination map</h3>
+        </div>
+        <span className="forward-state">read-only</span>
+      </div>
       <svg
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
         width="100%"
@@ -103,6 +110,9 @@ export function AgentRelationshipGraph({ agents }: AgentRelationshipGraphProps) 
           </g>
         ))}
       </svg>
+      <p className="agent-graph-note">
+        Relationship topology is a read-only planning aid. Live graph editing remains deferred.
+      </p>
     </div>
   );
 }

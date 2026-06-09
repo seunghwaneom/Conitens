@@ -8,6 +8,8 @@ from __future__ import annotations
 import json
 import os
 import secrets
+import shutil
+import sys
 import threading
 import time
 import getpass
@@ -15,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse, urlsplit, urlunsplit
 
 from ensemble_approval import APPROVAL_STATUSES, ApprovalInterruptAdapter
 from ensemble_context_markdown import (
@@ -24,7 +26,8 @@ from ensemble_context_markdown import (
     ProgressAppendOnlyService,
     TaskPlanWriterReader,
 )
-from ensemble_forward import _read_optional_text, _repo_latest_context_path
+from ensemble_events import load_events
+from ensemble_forward import _read_optional_text, _repo_latest_context_path, build_runtime_cli_checks, sanitize_runtime_label
 from ensemble_loop_paths import findings_path, latest_context_path, progress_path, task_plan_path
 from ensemble_loop_repository import (
     LoopStateRepository,
@@ -32,6 +35,7 @@ from ensemble_loop_repository import (
     OPERATOR_WORKSPACE_STATUSES,
     utc_iso,
 )
+from ensemble_operator_reconciler import reconcile_operator_task
 from ensemble_orchestration import LocalOrchestrationRuntime
 from ensemble_replay_service import ReplayService
 from ensemble_agent_registry import agent_list, agent_show
@@ -41,10 +45,54 @@ from ensemble_ui import _host_is_loopback, _request_is_loopback, _validate_api_i
 
 MAX_REQUEST_BODY_BYTES = 1_000_000
 STALE_RUN_AGE_HOURS = 6
+TURN_RECORD_DEFAULT_LIMIT = 50
+TURN_RECORD_MAX_LIMIT = 200
+WORKFLOW_CONTRACT_MESSAGE_LIMIT = 8
+STATUS_CONFIDENCE_DEFAULT_LIMIT = 80
+STATUS_CONFIDENCE_MAX_LIMIT = 240
+WAKE_READINESS_DEFAULT_LIMIT = 40
+WAKE_READINESS_MAX_LIMIT = 120
+RUNTIME_ROSTER_AGENT_RUNTIME_IDS = ("codex", "claude", "gemini", "opencode")
+RUNTIME_ROSTER_TOOLCHAIN_IDS = ("python", "node", "pnpm", "git")
+RUNTIME_ROSTER_CATEGORIES = {"agent_runtime", "toolchain"}
 OPERATOR_TASK_STATUSES = {"backlog", "todo", "in_progress", "blocked", "in_review", "done", "cancelled"}
 OPERATOR_TASK_PRIORITIES = {"low", "medium", "high", "critical"}
 OPERATOR_WORKSPACE_KINDS_SET = set(OPERATOR_WORKSPACE_KINDS)
 OPERATOR_WORKSPACE_STATUSES_SET = set(OPERATOR_WORKSPACE_STATUSES)
+PROVIDER_CALL_EVENT_TYPE = "provider.call_recorded"
+PR_EVIDENCE_EVENT_TYPE = "pr.evidence_observed"
+CI_EVIDENCE_EVENT_TYPE = "ci.evidence_observed"
+PR_CI_EVIDENCE_EVENT_TYPES = {PR_EVIDENCE_EVENT_TYPE, CI_EVIDENCE_EVENT_TYPE}
+PROVIDER_CALL_FORBIDDEN_PAYLOAD_FIELDS = {
+    "prompt",
+    "completion",
+    "content",
+    "messages",
+    "request",
+    "response",
+    "raw_prompt",
+    "raw_completion",
+    "raw_request",
+    "raw_response",
+}
+PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS = {
+    "raw_log",
+    "raw_logs",
+    "log",
+    "logs",
+    "trace",
+    "raw_trace",
+    "diff",
+    "patch",
+    "content",
+    "body",
+    "comment",
+    "comments",
+    "review_body",
+    "token",
+    "auth_token",
+    "secret",
+}
 
 
 def _bridge_root_html() -> str:
@@ -84,6 +132,7 @@ def _bridge_root_html() -> str:
     <li><code>GET /api/runs/&lt;run_id&gt;/replay</code></li>
     <li><code>GET /api/runs/&lt;run_id&gt;/state-docs</code></li>
     <li><code>GET /api/runs/&lt;run_id&gt;/context-latest</code></li>
+    <li><code>GET /api/operator/wake-readiness</code></li>
     <li><code>GET /api/rooms/&lt;room_id&gt;/timeline</code></li>
   </ul>
 </body>
@@ -227,6 +276,365 @@ def _ensure_run_exists(repository: LoopStateRepository, run_id: str) -> dict[str
         if str(exc).startswith("Unknown run_id:"):
             raise FileNotFoundError(str(exc)) from exc
         raise
+
+
+def _walk_dicts(value: Any) -> list[dict[str, Any]]:
+    if isinstance(value, dict):
+        rows = [value]
+        for nested in value.values():
+            rows.extend(_walk_dicts(nested))
+        return rows
+    if isinstance(value, list):
+        rows: list[dict[str, Any]] = []
+        for item in value:
+            rows.extend(_walk_dicts(item))
+        return rows
+    return []
+
+
+def _metric_number(value: Any) -> float | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _first_text_metric(row: dict[str, Any], keys: tuple[str, ...]) -> str | None:
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def _sum_numeric_metrics(row: dict[str, Any], keys: tuple[str, ...]) -> float:
+    total = 0.0
+    for key in keys:
+        number = _metric_number(row.get(key))
+        if number is not None:
+            total += number
+    return total
+
+
+def _provider_metric_token_total(row: dict[str, Any]) -> float:
+    explicit_total = _metric_number(row.get("total_tokens"))
+    if explicit_total is not None:
+        return explicit_total
+    generic_total = _metric_number(row.get("tokens"))
+    if generic_total is not None:
+        return generic_total
+    return _sum_numeric_metrics(row, ("input_tokens", "output_tokens", "prompt_tokens", "completion_tokens"))
+
+
+def _provider_metric_pii_count(row: dict[str, Any]) -> int:
+    value = row.get("pii_findings")
+    if isinstance(value, list):
+        return len(value)
+    if isinstance(value, dict):
+        return len(value)
+    if isinstance(value, str) and value.strip():
+        return 1
+    pii = _metric_number(value)
+    if pii is not None:
+        return int(pii)
+    return int(_sum_numeric_metrics(row, ("pii_count", "redaction_count")))
+
+
+def _provider_call_event_metric_rows(workspace: str | Path) -> tuple[list[dict[str, Any]], list[str]]:
+    metric_rows: list[dict[str, Any]] = []
+    evidence_refs: list[str] = []
+    for event in load_events(workspace):
+        if event.get("type") != PROVIDER_CALL_EVENT_TYPE:
+            continue
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        row: dict[str, Any] = {}
+        for key, value in payload.items():
+            normalized_key = str(key).lower()
+            if normalized_key in PROVIDER_CALL_FORBIDDEN_PAYLOAD_FIELDS or normalized_key.endswith("_content"):
+                continue
+            row[str(key)] = value
+        scope = event.get("scope") if isinstance(event.get("scope"), dict) else {}
+        if not row.get("run_id") and isinstance(scope.get("run_id"), str):
+            row["run_id"] = scope["run_id"]
+        if not row.get("iteration_id") and isinstance(scope.get("iteration_id"), str):
+            row["iteration_id"] = scope["iteration_id"]
+        metric_rows.append(row)
+        event_id = str(event.get("event_id") or "unknown")
+        evidence_refs.append(f"event:{PROVIDER_CALL_EVENT_TYPE}:{event_id}")
+    return metric_rows, evidence_refs
+
+
+def _summarize_provider_metric_rows(metric_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    latest_provider: str | None = None
+    latest_model: str | None = None
+    total_cost = 0.0
+    total_tokens = 0
+    tool_calls_count = 0
+    with_cost = 0
+    with_tokens = 0
+    with_latency = 0
+    pii_findings = 0
+
+    for row in metric_rows:
+        provider = sanitize_runtime_label(_first_text_metric(row, ("provider", "provider_id", "runtime", "adapter")))
+        model = sanitize_runtime_label(_first_text_metric(row, ("model", "model_id", "model_name")))
+        if provider:
+            latest_provider = provider
+        if model:
+            latest_model = model
+
+        cost = _sum_numeric_metrics(row, ("cost", "estimated_cost", "cost_usd", "usd"))
+        if cost:
+            total_cost += cost
+            with_cost += 1
+
+        tokens = _provider_metric_token_total(row)
+        if tokens:
+            total_tokens += int(tokens)
+            with_tokens += 1
+
+        latency = _sum_numeric_metrics(row, ("latency_ms", "duration_ms", "elapsed_ms"))
+        if latency:
+            with_latency += 1
+
+        pii_findings += _provider_metric_pii_count(row)
+        tool_calls_count += int(_sum_numeric_metrics(row, ("tool_calls_count", "tool_count")))
+
+    return {
+        "observed": len(metric_rows),
+        "with_cost": with_cost,
+        "with_tokens": with_tokens,
+        "with_latency": with_latency,
+        "estimated_cost": round(total_cost, 6) if with_cost else None,
+        "total_tokens": total_tokens if with_tokens else None,
+        "tool_calls_count": tool_calls_count,
+        "latest_provider": latest_provider,
+        "latest_model": latest_model,
+        "pii_findings": pii_findings,
+    }
+
+
+def _safe_text(value: Any, *, max_length: int = 180) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    return text[:max_length]
+
+
+def _safe_url(value: Any) -> str | None:
+    text = _safe_text(value, max_length=500)
+    if not text:
+        return None
+    try:
+        parsed = urlsplit(text)
+    except ValueError:
+        return None
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return None
+    netloc = parsed.hostname or ""
+    if parsed.port:
+        netloc = f"{netloc}:{parsed.port}"
+    return urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
+
+
+def _short_commit_sha(value: Any) -> str | None:
+    text = _safe_text(value, max_length=80)
+    if not text:
+        return None
+    if len(text) >= 12 and all(char in "0123456789abcdefABCDEF" for char in text):
+        return text[:12]
+    return text[:40]
+
+
+def _pr_ci_event_scope_matches(
+    event: dict[str, Any],
+    payload: dict[str, Any],
+    *,
+    task_id: str,
+    linked_run_id: str | None,
+) -> bool:
+    scope = event.get("scope") if isinstance(event.get("scope"), dict) else {}
+    candidate_task_ids = {
+        str(payload.get("task_id") or ""),
+        str(scope.get("task_id") or ""),
+    }
+    if task_id in candidate_task_ids:
+        return True
+    if linked_run_id:
+        candidate_run_ids = {
+            str(payload.get("run_id") or ""),
+            str(payload.get("conitens_run_id") or ""),
+            str(scope.get("run_id") or ""),
+            str(scope.get("conitens_run_id") or ""),
+        }
+        return linked_run_id in candidate_run_ids
+    return False
+
+
+def _payload_key_variants(key: Any) -> tuple[str, str]:
+    normalized = str(key).strip().lower()
+    compact = "".join(char for char in normalized if char.isalnum())
+    return normalized, compact
+
+
+def _pr_ci_forbidden_payload_fields(payload: dict[str, Any]) -> list[str]:
+    fields: list[str] = []
+    forbidden_compact = {"".join(char for char in key if char.isalnum()) for key in PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS}
+    for key in payload:
+        normalized, compact = _payload_key_variants(key)
+        if (
+            normalized in PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS
+            or compact in forbidden_compact
+            or normalized.endswith("_log")
+            or normalized.endswith("_logs")
+            or normalized.endswith("_content")
+            or normalized.endswith("_body")
+            or normalized.endswith("_diff")
+            or normalized.endswith("_patch")
+            or compact.endswith("log")
+            or compact.endswith("logs")
+            or compact.endswith("content")
+            or compact.endswith("body")
+            or compact.endswith("diff")
+            or compact.endswith("patch")
+        ):
+            fields.append(str(key))
+    return fields
+
+
+def _build_pr_ci_evidence_item(event: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    event_type = str(event.get("type") or "")
+    kind = "pull_request" if event_type == PR_EVIDENCE_EVENT_TYPE else "ci"
+    observed_at = (
+        _safe_text(payload.get("observed_at"), max_length=80)
+        or _safe_text(event.get("ts_utc"), max_length=80)
+        or utc_iso()
+    )
+    status = _safe_text(payload.get("status"), max_length=80) or "unknown"
+    conclusion = _safe_text(payload.get("conclusion"), max_length=80)
+    title = (
+        _safe_text(payload.get("title"), max_length=180)
+        or _safe_text(payload.get("workflow"), max_length=180)
+        or _safe_text(payload.get("job"), max_length=180)
+        or ("Pull request evidence" if kind == "pull_request" else "CI evidence")
+    )
+    summary = _safe_text(payload.get("summary"), max_length=260)
+    evidence_refs = []
+    payload_refs = payload.get("evidence_refs")
+    if isinstance(payload_refs, list):
+        evidence_refs.extend(str(item)[:180] for item in payload_refs if isinstance(item, str) and item.strip())
+    evidence_refs.append(f"event:{event_type}:{event.get('event_id') or 'unknown'}")
+    return {
+        "kind": kind,
+        "evidence_id": str(event.get("event_id") or f"{event_type}:unknown"),
+        "provider": _safe_text(payload.get("provider"), max_length=80) or ("github" if kind == "pull_request" else "ci"),
+        "repository": _safe_text(payload.get("repository"), max_length=180),
+        "title": title,
+        "status": status,
+        "conclusion": conclusion,
+        "url": _safe_url(payload.get("url")),
+        "branch": _safe_text(payload.get("branch"), max_length=120),
+        "commit_sha": _short_commit_sha(payload.get("commit_sha")),
+        "observed_at": observed_at,
+        "summary": summary,
+        "evidence_refs": evidence_refs[:6],
+    }
+
+
+def _pr_ci_item_is_failing(item: dict[str, Any]) -> bool:
+    values = {str(item.get("status") or "").lower(), str(item.get("conclusion") or "").lower()}
+    return bool(values & {"failure", "failed", "error", "cancelled", "timed_out", "action_required"})
+
+
+def _pr_ci_item_is_pending(item: dict[str, Any]) -> bool:
+    values = {str(item.get("status") or "").lower(), str(item.get("conclusion") or "").lower()}
+    return bool(values & {"pending", "queued", "running", "in_progress", "waiting"})
+
+
+def _pr_ci_item_is_successful(item: dict[str, Any]) -> bool:
+    values = {str(item.get("status") or "").lower(), str(item.get("conclusion") or "").lower()}
+    return bool(values & {"success", "successful", "passed", "green"})
+
+
+def _pr_ci_item_is_merged(item: dict[str, Any]) -> bool:
+    values = {str(item.get("status") or "").lower(), str(item.get("conclusion") or "").lower()}
+    return bool(values & {"merged"})
+
+
+def build_operator_pr_ci_evidence_payload(workspace: str | Path, task: dict[str, Any]) -> dict[str, Any]:
+    task_id = str(task.get("task_id") or "")
+    linked_run_id = task.get("linked_run_id") if isinstance(task.get("linked_run_id"), str) else None
+    items: list[dict[str, Any]] = []
+    rejected_events = 0
+    for event in load_events(workspace):
+        event_type = str(event.get("type") or "")
+        if event_type not in PR_CI_EVIDENCE_EVENT_TYPES:
+            continue
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        if _pr_ci_forbidden_payload_fields(payload):
+            rejected_events += 1
+            continue
+        if not _pr_ci_event_scope_matches(event, payload, task_id=task_id, linked_run_id=linked_run_id):
+            continue
+        items.append(_build_pr_ci_evidence_item(event, payload))
+
+    items.sort(key=lambda item: str(item.get("observed_at") or ""), reverse=True)
+    failing = sum(1 for item in items if _pr_ci_item_is_failing(item))
+    pending = sum(1 for item in items if _pr_ci_item_is_pending(item))
+    successful = sum(1 for item in items if _pr_ci_item_is_successful(item))
+    merged = sum(1 for item in items if item["kind"] == "pull_request" and _pr_ci_item_is_merged(item))
+    suggestions: list[str] = []
+    if failing:
+        suggestions.append("review failing PR/CI evidence before resuming this task")
+    if pending:
+        suggestions.append("wait for pending checks or attach their final result before closing the task")
+    if merged and not failing:
+        suggestions.append("review merged PR evidence before marking the task done")
+    if not items:
+        suggestions.append("attach PR/CI read evidence when this task enters a GitHub or CI workflow")
+
+    return {
+        "generated_at": utc_iso(),
+        "status": _status_from_counts(danger=failing, warning=pending),
+        "counts": {
+            "total": len(items),
+            "pull_requests": sum(1 for item in items if item["kind"] == "pull_request"),
+            "ci_runs": sum(1 for item in items if item["kind"] == "ci"),
+            "failing": failing,
+            "pending": pending,
+            "successful": successful,
+            "merged": merged,
+            "rejected": rejected_events,
+        },
+        "resume_suggestions": suggestions[:4],
+        "items": items[:12],
+        "privacy": {
+            "external_fetch_performed": False,
+            "auth_tokens_exposed": False,
+            "raw_logs_exposed": False,
+            "redaction": "task detail reads append-only PR/CI evidence events and omits raw logs, diffs, patches, comments, and URL query strings",
+        },
+    }
+
+
+def _status_from_counts(*, danger: int = 0, warning: int = 0) -> str:
+    if danger > 0:
+        return "danger"
+    if warning > 0:
+        return "warning"
+    return "ok"
 
 
 def _next_operator_task_id() -> str:
@@ -584,7 +992,7 @@ def build_operator_task_detail_payload(workspace: str | Path, task_id: str) -> d
     task = repository.get_operator_task(task_id)
     if task is None:
         raise FileNotFoundError(f"Operator task not found: {task_id}")
-    return {"task": task}
+    return {"task": task, "pr_ci_evidence": build_operator_pr_ci_evidence_payload(workspace, task)}
 
 
 def build_operator_workspaces_payload(
@@ -677,6 +1085,1404 @@ def restore_operator_task_payload(workspace: str | Path, task_id: str) -> dict[s
     return {"task": restored}
 
 
+def build_operator_evidence_summary_payload(workspace: str | Path) -> dict[str, Any]:
+    repository = LoopStateRepository(workspace)
+    checkpoints = repository.list_orchestration_checkpoints()
+    retry_decisions = [
+        decision
+        for run in repository.list_runs()
+        for decision in repository.list_retry_decisions(run_id=str(run["run_id"]))
+    ]
+
+    checkpoint_metric_rows: list[dict[str, Any]] = []
+    checkpoint_evidence_refs: list[str] = []
+    for checkpoint in checkpoints:
+        metrics = checkpoint.get("loop_cost_metrics_json")
+        if not isinstance(metrics, dict) or not metrics:
+            continue
+        checkpoint_metric_rows.extend(_walk_dicts(metrics))
+        checkpoint_evidence_refs.append(
+            f"orchestration_checkpoint:{checkpoint['run_id']}:{checkpoint['graph_kind']}:{checkpoint['id']}"
+        )
+
+    event_metric_rows, event_evidence_refs = _provider_call_event_metric_rows(workspace)
+    if event_metric_rows:
+        source = "event_log"
+        metric_rows = event_metric_rows
+        evidence_refs = event_evidence_refs + checkpoint_evidence_refs
+    else:
+        source = "checkpoint"
+        metric_rows = checkpoint_metric_rows
+        evidence_refs = checkpoint_evidence_refs
+
+    provider_summary = _summarize_provider_metric_rows(metric_rows)
+
+    pending_checkpoint_count = sum(1 for checkpoint in checkpoints if checkpoint.get("approval_pending"))
+
+    return {
+        "generated_at": utc_iso(),
+        "provider_calls": {
+            "observed": provider_summary["observed"],
+            "source": source,
+            "checkpoint_fallback_available": bool(checkpoint_metric_rows),
+            "with_cost": provider_summary["with_cost"],
+            "with_tokens": provider_summary["with_tokens"],
+            "with_latency": provider_summary["with_latency"],
+            "estimated_cost": provider_summary["estimated_cost"],
+            "total_tokens": provider_summary["total_tokens"],
+            "tool_calls_count": provider_summary["tool_calls_count"],
+            "latest_provider": provider_summary["latest_provider"],
+            "latest_model": provider_summary["latest_model"],
+        },
+        "budget": {
+            "sources": len(evidence_refs),
+            "event_log_sources": len(event_evidence_refs),
+            "checkpoint_sources": len(checkpoint_evidence_refs),
+            "retry_decisions": len(retry_decisions),
+            "approval_pending": pending_checkpoint_count,
+        },
+        "sensitivity": {
+            "pii_findings": provider_summary["pii_findings"],
+            "raw_content_exposed": False,
+            "redaction": "forward projection omits raw prompt, completion, request, and response content",
+        },
+        "evidence_refs": evidence_refs[:12],
+    }
+
+
+def build_operator_doctor_evidence_payload(workspace: str | Path) -> dict[str, Any]:
+    workspace_root = Path(workspace)
+    repository = LoopStateRepository(workspace_root)
+    db_path = repository.db_path
+    checks: list[dict[str, Any]] = []
+
+    def add_check(check_id: str, label: str, status: str, detail: str, evidence_ref: str) -> None:
+        checks.append(
+            {
+                "id": check_id,
+                "label": label,
+                "status": status,
+                "detail": detail,
+                "evidence_ref": evidence_ref,
+            }
+        )
+
+    add_check(
+        "loop-state",
+        "Loop state repository",
+        "ok" if db_path.exists() else "warning",
+        "SQLite loop state is available." if db_path.exists() else "SQLite loop state will be created on first forward write.",
+        _relative_display_path(db_path, workspace_root),
+    )
+    add_check(
+        "active-runtime-contract",
+        "Active runtime contract",
+        "ok",
+        "Forward bridge remains a sidecar; current runtime truth stays scripts/ensemble.py plus .notes and .agent.",
+        "CONITENS.md",
+    )
+    add_check(
+        "python",
+        "Python runtime",
+        "ok" if Path(sys.executable).exists() else "warning",
+        Path(sys.executable).name,
+        _relative_display_path(Path(sys.executable), workspace_root),
+    )
+    add_check(
+        "node",
+        "Node runtime",
+        "ok" if shutil.which("node") else "warning",
+        "node is available on PATH" if shutil.which("node") else "node was not found on PATH",
+        "PATH:node",
+    )
+    add_check(
+        "dashboard-package",
+        "Dashboard package",
+        "ok" if (workspace_root / "packages" / "dashboard" / "package.json").exists() else "warning",
+        "Dashboard package manifest is present." if (workspace_root / "packages" / "dashboard" / "package.json").exists() else "Dashboard package manifest is missing.",
+        "packages/dashboard/package.json",
+    )
+    add_check(
+        "bridge-auth",
+        "Bridge auth boundary",
+        "ok",
+        "Read and write routes require loopback plus bearer authorization; this evidence payload does not include the bearer token.",
+        "scripts/ensemble_forward_bridge.py",
+    )
+    add_check(
+        "events-projection",
+        "Event projection",
+        "ok" if (workspace_root / ".notes" / "EVENTS" / "events.jsonl").exists() else "warning",
+        "Append-only events projection is present." if (workspace_root / ".notes" / "EVENTS" / "events.jsonl").exists() else "No events projection found in this workspace.",
+        ".notes/EVENTS/events.jsonl",
+    )
+
+    status = _status_from_counts(
+        danger=sum(1 for check in checks if check["status"] == "danger"),
+        warning=sum(1 for check in checks if check["status"] == "warning"),
+    )
+    return {
+        "generated_at": utc_iso(),
+        "status": status,
+        "checks": checks,
+    }
+
+
+def _validate_runtime_roster_category(category: str | None) -> str | None:
+    if category is None:
+        return None
+    safe_category = category.strip()
+    if not safe_category:
+        return None
+    if safe_category not in RUNTIME_ROSTER_CATEGORIES:
+        raise ValueError(f"Unsupported runtime roster category: {safe_category}")
+    return safe_category
+
+
+def _validate_runtime_roster_runtime_id(runtime_id: str | None) -> str | None:
+    if runtime_id is None:
+        return None
+    safe_runtime_id = runtime_id.strip().lower()
+    if not safe_runtime_id:
+        return None
+    allowed = set(RUNTIME_ROSTER_AGENT_RUNTIME_IDS + RUNTIME_ROSTER_TOOLCHAIN_IDS)
+    if safe_runtime_id not in allowed:
+        raise ValueError(f"Unsupported runtime id: {safe_runtime_id}")
+    return safe_runtime_id
+
+
+def _runtime_operator_hint(runtime: dict[str, Any]) -> dict[str, Any]:
+    runtime_id = str(runtime.get("id") or "")
+    category = str(runtime.get("category") or "")
+    available = bool(runtime.get("available"))
+    observed = runtime.get("session_status") == "observed"
+    if category == "agent_runtime":
+        if observed:
+            hint = "Runtime has local CLI presence or prior checkpoint evidence and can be considered for routed work."
+            readiness = "observed"
+        elif available:
+            hint = "Runtime CLI is available but has no provider checkpoint evidence in this workspace yet."
+            readiness = "available_unobserved"
+        else:
+            hint = "Runtime CLI is not found on PATH; do not route work to it until installed or configured."
+            readiness = "missing"
+    else:
+        if available:
+            hint = "Toolchain command is available for local support operations."
+            readiness = "available"
+        else:
+            hint = "Toolchain command is missing; related local operations may fail."
+            readiness = "missing"
+    return {
+        "runtime_id": runtime_id,
+        "category": category,
+        "readiness": readiness,
+        "hint": hint,
+        "evidence_refs": runtime.get("evidence_refs") or [],
+    }
+
+
+def _runtime_roster_ux_summary(
+    runtimes: list[dict[str, Any]],
+    *,
+    probe_versions: bool,
+    runtime_id: str | None,
+    category: str | None,
+) -> dict[str, Any]:
+    agent_runtimes = [runtime for runtime in runtimes if runtime["category"] == "agent_runtime"]
+    observed_agent_ids = [runtime["id"] for runtime in agent_runtimes if runtime["session_status"] == "observed"]
+    available_agent_ids = [runtime["id"] for runtime in agent_runtimes if runtime["available"]]
+    missing_agent_ids = [runtime["id"] for runtime in agent_runtimes if not runtime["available"]]
+    available_unobserved_ids = [
+        runtime["id"]
+        for runtime in agent_runtimes
+        if runtime["available"] and runtime["session_status"] == "available_not_observed"
+    ]
+    preferred = observed_agent_ids[0] if observed_agent_ids else (available_agent_ids[0] if available_agent_ids else None)
+    next_actions: list[str] = []
+    if missing_agent_ids:
+        next_actions.append("Install or configure only the missing agent runtimes you actually plan to route work to.")
+    if available_unobserved_ids:
+        next_actions.append("Use normal approved provider work to create checkpoint evidence before relying on routing.")
+    if not agent_runtimes and category == "toolchain":
+        next_actions.append("Remove the toolchain filter to compare agent CLI runtimes.")
+    if not probe_versions:
+        next_actions.append("Omit --no-version-probe when bounded first-line versions are useful.")
+    if runtime_id:
+        next_actions.append("Remove --runtime to compare the full roster.")
+    if not next_actions:
+        next_actions.append("Roster is ready for read-only operator review.")
+    return {
+        "filter_active": bool(runtime_id or category),
+        "preferred_agent_runtime": preferred,
+        "observed_agent_runtimes": observed_agent_ids,
+        "available_agent_runtimes": available_agent_ids,
+        "available_unobserved_agent_runtimes": available_unobserved_ids,
+        "missing_agent_runtimes": missing_agent_ids,
+        "next_actions": next_actions[:5],
+    }
+
+
+def build_operator_runtime_roster_payload(
+    workspace: str | Path,
+    *,
+    probe_versions: bool = True,
+    runtime_id: str | None = None,
+    category: str | None = None,
+) -> dict[str, Any]:
+    repository = LoopStateRepository(workspace)
+    safe_runtime_id = _validate_runtime_roster_runtime_id(runtime_id)
+    safe_category = _validate_runtime_roster_category(category)
+    runtime_checks = {check["id"]: check for check in build_runtime_cli_checks(probe_versions=probe_versions)}
+    checkpoints = repository.list_orchestration_checkpoints()
+    provider_observations: dict[str, dict[str, Any]] = {}
+
+    for checkpoint in checkpoints:
+        metrics = checkpoint.get("loop_cost_metrics_json")
+        if not isinstance(metrics, dict) or not metrics:
+            continue
+        for row in _walk_dicts(metrics):
+            provider = sanitize_runtime_label(_first_text_metric(row, ("provider", "provider_id", "runtime", "adapter")))
+            if not provider:
+                continue
+            provider_id = provider.lower()
+            observation = provider_observations.setdefault(
+                provider_id,
+                {
+                    "count": 0,
+                    "latest_seen_at": None,
+                    "latest_run_id": None,
+                    "evidence_refs": [],
+                },
+            )
+            observation["count"] += 1
+            observation["latest_seen_at"] = checkpoint.get("created_at")
+            observation["latest_run_id"] = checkpoint.get("run_id")
+            if len(observation["evidence_refs"]) < 4:
+                observation["evidence_refs"].append(
+                    f"orchestration_checkpoint:{checkpoint['run_id']}:{checkpoint['graph_kind']}:{checkpoint['id']}"
+                )
+
+    runtimes: list[dict[str, Any]] = []
+    for current_runtime_id in (*RUNTIME_ROSTER_AGENT_RUNTIME_IDS, *RUNTIME_ROSTER_TOOLCHAIN_IDS):
+        check = runtime_checks.get(current_runtime_id)
+        if check is None:
+            continue
+        observation = provider_observations.get(current_runtime_id)
+        if observation:
+            session_status = "observed"
+        elif check["available"]:
+            session_status = "available_not_observed"
+        else:
+            session_status = "not_found"
+        current_category = "agent_runtime" if current_runtime_id in RUNTIME_ROSTER_AGENT_RUNTIME_IDS else "toolchain"
+        runtimes.append(
+            {
+                "id": current_runtime_id,
+                "label": check["label"],
+                "category": current_category,
+                "availability_status": check["status"],
+                "session_status": session_status,
+                "command": check["command"],
+                "available": check["available"],
+                "version": check.get("version"),
+                "detail": check["detail"],
+                "latest_seen_at": observation["latest_seen_at"] if observation else None,
+                "latest_run_id": observation["latest_run_id"] if observation else None,
+                "observation_count": observation["count"] if observation else 0,
+                "evidence_refs": observation["evidence_refs"] if observation else [],
+            }
+        )
+
+    all_runtimes = list(runtimes)
+    if safe_category:
+        runtimes = [runtime for runtime in runtimes if runtime["category"] == safe_category]
+    if safe_runtime_id:
+        runtimes = [runtime for runtime in runtimes if runtime["id"] == safe_runtime_id]
+
+    available_count = sum(1 for item in runtimes if item["available"])
+    observed_count = sum(1 for item in runtimes if item["session_status"] == "observed")
+    missing_agent_count = sum(
+        1 for item in runtimes if item["category"] == "agent_runtime" and not item["available"]
+    )
+    warning_count = missing_agent_count + sum(1 for item in runtimes if item["availability_status"] == "warning")
+    operator_hints = [_runtime_operator_hint(runtime) for runtime in runtimes]
+    return {
+        "generated_at": utc_iso(),
+        "status": _status_from_counts(danger=0, warning=warning_count),
+        "scope": {
+            "runtime_id": safe_runtime_id,
+            "category": safe_category,
+            "probe_versions": probe_versions,
+        },
+        "runtimes": runtimes,
+        "counts": {
+            "total": len(runtimes),
+            "agent_runtimes": sum(1 for item in runtimes if item["category"] == "agent_runtime"),
+            "toolchains": sum(1 for item in runtimes if item["category"] == "toolchain"),
+            "available": available_count,
+            "observed": observed_count,
+            "missing_agent_runtimes": missing_agent_count,
+            "all_total": len(all_runtimes),
+            "all_agent_runtimes": sum(1 for item in all_runtimes if item["category"] == "agent_runtime"),
+        },
+        "ux_summary": _runtime_roster_ux_summary(
+            runtimes,
+            probe_versions=probe_versions,
+            runtime_id=safe_runtime_id,
+            category=safe_category,
+        ),
+        "operator_hints": operator_hints,
+        "privacy": {
+            "environment_dumped": False,
+            "auth_tokens_exposed": False,
+            "provider_auth_commands_executed": False,
+            "raw_session_content_exposed": False,
+            "detail": (
+                "Roster uses bounded command/version probes and orchestration checkpoint metadata only."
+                if probe_versions
+                else "Summary roster uses bounded command availability checks and orchestration checkpoint metadata only."
+            ),
+        },
+    }
+
+
+def _bounded_turn_record_limit(limit: int | None) -> int:
+    if limit is None:
+        return TURN_RECORD_DEFAULT_LIMIT
+    return max(1, min(int(limit), TURN_RECORD_MAX_LIMIT))
+
+
+def _metadata_keys(value: Any) -> list[str]:
+    if not isinstance(value, dict):
+        return []
+    return sorted(str(key) for key in value)[:20]
+
+
+def _evidence_refs(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item)[:180] for item in value if isinstance(item, (str, int, float))][:8]
+
+
+def build_operator_turn_records_payload(
+    workspace: str | Path,
+    *,
+    run_id: str | None = None,
+    room_id: str | None = None,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    repository = LoopStateRepository(workspace)
+    safe_limit = _bounded_turn_record_limit(limit)
+    messages = repository.list_room_messages(run_id=run_id, room_id=room_id)
+    tool_events = repository.list_tool_events(run_id=run_id, room_id=room_id)
+    records: list[dict[str, Any]] = []
+
+    for message in messages:
+        content = str(message.get("content") or "")
+        records.append(
+            {
+                "id": f"message:{message['id']}",
+                "record_type": "message",
+                "created_at": message["created_at"],
+                "room_id": message.get("room_id"),
+                "run_id": message.get("run_id"),
+                "iteration_id": message.get("iteration_id"),
+                "actor": str(message.get("sender") or "")[:120],
+                "actor_kind": str(message.get("sender_kind") or "")[:60],
+                "message_type": str(message.get("message_type") or "")[:80],
+                "content_length": len(content),
+                "content_redacted": True,
+                "metadata_keys": _metadata_keys(message.get("metadata_json")),
+                "evidence_refs": _evidence_refs(message.get("evidence_refs_json")),
+            }
+        )
+
+    for event in tool_events:
+        payload = event.get("payload_json") if isinstance(event.get("payload_json"), dict) else {}
+        records.append(
+            {
+                "id": f"tool_event:{event['id']}",
+                "record_type": "tool_event",
+                "created_at": event["created_at"],
+                "room_id": event.get("room_id"),
+                "run_id": event.get("run_id"),
+                "iteration_id": event.get("iteration_id"),
+                "actor": str(event.get("actor") or "")[:120],
+                "actor_kind": "agent",
+                "tool_name": str(event.get("tool_name") or "")[:120],
+                "payload_keys": _metadata_keys(payload),
+                "payload_redacted": True,
+                "evidence_refs": [],
+            }
+        )
+
+    records.sort(key=lambda row: (str(row.get("created_at") or ""), str(row.get("id") or "")))
+    total_records = len(records)
+    if total_records > safe_limit:
+        records = records[-safe_limit:]
+
+    return {
+        "generated_at": utc_iso(),
+        "status": "ok",
+        "scope": {
+            "run_id": run_id,
+            "room_id": room_id,
+            "limit": safe_limit,
+        },
+        "records": records,
+        "counts": {
+            "returned": len(records),
+            "total": total_records,
+            "messages": len(messages),
+            "tool_events": len(tool_events),
+            "agent_messages": sum(1 for message in messages if str(message.get("sender_kind")) == "agent"),
+            "truncated": total_records > safe_limit,
+        },
+        "wake_sources": [
+            {
+                "id": "room_messages",
+                "status": "present" if messages else "empty",
+                "record_count": len(messages),
+                "detail": "Persisted room message metadata is available without transcript content.",
+            },
+            {
+                "id": "tool_events",
+                "status": "present" if tool_events else "empty",
+                "record_count": len(tool_events),
+                "detail": "Persisted tool-event metadata is available without payload values.",
+            },
+        ],
+        "privacy": {
+            "message_content_exposed": False,
+            "tool_payload_values_exposed": False,
+            "metadata_values_exposed": False,
+            "raw_transcript_exposed": False,
+            "detail": "Turn records expose metadata, lengths, keys, and evidence refs only; message content and tool payload values are omitted.",
+        },
+    }
+
+
+def _workflow_contract_inputs(workflow: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    inputs = workflow.get("inputs")
+    if not isinstance(inputs, dict):
+        return [], {}
+
+    rows: list[dict[str, Any]] = []
+    sample_inputs: dict[str, str] = {}
+    for raw_name in sorted(str(name) for name in inputs):
+        spec = inputs.get(raw_name)
+        spec_dict = spec if isinstance(spec, dict) else {}
+        required = bool(spec_dict.get("required", False))
+        row = {
+            "name": raw_name,
+            "required": required,
+            "type": str(spec_dict.get("type") or "string")[:80],
+            "has_default": spec_dict.get("default") not in (None, ""),
+        }
+        if spec_dict.get("description") not in (None, ""):
+            row["description"] = str(spec_dict.get("description"))[:180]
+        rows.append(row)
+        sample_inputs[raw_name] = f"<{raw_name}>"
+    return rows, sample_inputs
+
+
+def _workflow_contract_step_summary(workflow: dict[str, Any], validation: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_steps = workflow.get("steps") if isinstance(workflow.get("steps"), list) else []
+    rows: list[dict[str, Any]] = []
+    for preview in validation.get("steps", []):
+        if not isinstance(preview, dict):
+            continue
+        index = int(preview.get("index") or 0)
+        raw_step = raw_steps[index] if 0 <= index < len(raw_steps) and isinstance(raw_steps[index], dict) else {}
+        kind = str(preview.get("kind") or "")
+        row: dict[str, Any] = {
+            "index": index,
+            "id": str(preview.get("id") or f"step-{index + 1}")[:120],
+            "kind": kind[:80],
+            "on_fail": str(preview.get("on_fail") or "")[:80],
+            "template_vars": [str(name)[:80] for name in preview.get("template_vars", [])[:20]],
+            "requires_approval": kind == "approval",
+            "emits_event": kind == "emit_event",
+        }
+        if raw_step.get("agent_id") not in (None, ""):
+            row["agent_id"] = str(raw_step.get("agent_id"))[:120]
+        if raw_step.get("event_type") not in (None, ""):
+            row["event_type"] = str(raw_step.get("event_type"))[:120]
+        branches = raw_step.get("branches")
+        if isinstance(branches, list):
+            row["branch_count"] = len(branches)
+        depends_on = raw_step.get("depends_on")
+        if isinstance(depends_on, list):
+            row["depends_on_count"] = len(depends_on)
+        elif depends_on not in (None, ""):
+            row["depends_on_count"] = 1
+        rows.append(row)
+    return rows
+
+
+def _workflow_contract_row(
+    workspace_root: Path,
+    workflow: dict[str, Any],
+    load_warnings: list[str],
+    workflow_path: Path,
+) -> dict[str, Any]:
+    from ensemble_workflow import validate_workflow
+
+    inputs, sample_inputs = _workflow_contract_inputs(workflow)
+    validation = validate_workflow(workflow, workflow_path, sample_inputs)
+    warnings = (load_warnings + validation.get("warnings", []))[:WORKFLOW_CONTRACT_MESSAGE_LIMIT]
+    errors = validation.get("errors", [])[:WORKFLOW_CONTRACT_MESSAGE_LIMIT]
+    steps = _workflow_contract_step_summary(workflow, validation)
+    step_kinds = sorted({row["kind"] for row in steps if row.get("kind")})
+    required_inputs = [row["name"] for row in inputs if row["required"]]
+    optional_inputs = [row["name"] for row in inputs if not row["required"]]
+
+    return {
+        "id": str(workflow.get("slug") or workflow_path.stem)[:120],
+        "slug": str(workflow.get("slug") or workflow_path.stem)[:120],
+        "name": str(workflow.get("name") or workflow_path.stem)[:180],
+        "description": str(workflow.get("description") or "")[:240],
+        "path": _relative_display_path(workflow_path, workspace_root),
+        "schema_v": workflow.get("schema_v"),
+        "execution_support": str(workflow.get("execution_support") or "unspecified")[:80],
+        "ready": not errors,
+        "warnings": warnings,
+        "errors": errors,
+        "input_requirements": inputs,
+        "required_inputs": required_inputs,
+        "optional_inputs": optional_inputs,
+        "step_count": len(steps),
+        "step_kinds": step_kinds,
+        "steps": steps,
+        "requires_approval": any(row["requires_approval"] for row in steps),
+        "supports_parallel": any(row.get("kind") in {"parallel", "join"} for row in steps),
+        "emits_events": any(row["emits_event"] for row in steps),
+    }
+
+
+def _validate_workflow_contract_ref(workflow_ref: str | None) -> str | None:
+    if workflow_ref is None:
+        return None
+    safe_ref = workflow_ref.strip()
+    if not safe_ref:
+        return None
+    if any(separator in safe_ref for separator in ("/", "\\", ":")) or safe_ref in {".", ".."}:
+        raise ValueError("workflow filter must be a workflow slug or file stem")
+    return safe_ref
+
+
+def build_operator_workflow_contracts_payload(
+    workspace: str | Path,
+    *,
+    workflow_ref: str | None = None,
+) -> dict[str, Any]:
+    from ensemble_workflow import get_agent_workflows_dir, load_workflow
+
+    workspace_root = Path(workspace)
+    safe_ref = _validate_workflow_contract_ref(workflow_ref)
+    workflows_dir = get_agent_workflows_dir(workspace_root)
+    if not workflows_dir.exists():
+        return {
+            "generated_at": utc_iso(),
+            "status": "warning",
+            "source": {
+                "path": _relative_display_path(workflows_dir, workspace_root),
+                "exists": False,
+            },
+            "contracts": [],
+            "counts": {
+                "total": 0,
+                "ready": 0,
+                "with_errors": 0,
+                "requiring_approval": 0,
+                "supporting_parallel": 0,
+                "feature_flagged": 0,
+            },
+            "router_contract": {
+                "read_only": True,
+                "execution_performed": False,
+                "workflow_runs_created": False,
+                "approval_bypassed": False,
+                "source": ".agent/workflows",
+            },
+            "privacy": {
+                "raw_workflow_body_exposed": False,
+                "rendered_command_values_exposed": False,
+                "rendered_payload_values_exposed": False,
+                "detail": "Workflow contracts expose metadata, input names, step kinds, and template variable names only.",
+            },
+        }
+
+    contracts: list[dict[str, Any]] = []
+    for workflow_path in sorted(workflows_dir.glob("*.md")):
+        try:
+            workflow, load_warnings, loaded_path = load_workflow(workspace_root, str(workflow_path))
+            contract = _workflow_contract_row(workspace_root, workflow, load_warnings, loaded_path)
+        except Exception as exc:  # Keep discovery resilient; execution is not attempted here.
+            contract = {
+                "id": workflow_path.stem,
+                "slug": workflow_path.stem,
+                "name": workflow_path.stem,
+                "description": "",
+                "path": _relative_display_path(workflow_path, workspace_root),
+                "schema_v": None,
+                "execution_support": "unknown",
+                "ready": False,
+                "warnings": [],
+                "errors": [str(exc)[:240]],
+                "input_requirements": [],
+                "required_inputs": [],
+                "optional_inputs": [],
+                "step_count": 0,
+                "step_kinds": [],
+                "steps": [],
+                "requires_approval": False,
+                "supports_parallel": False,
+                "emits_events": False,
+            }
+        if safe_ref and safe_ref not in {contract["id"], contract["slug"], workflow_path.stem, contract["name"]}:
+            continue
+        contracts.append(contract)
+
+    if safe_ref and not contracts:
+        raise FileNotFoundError(f"Workflow contract not found: {safe_ref}")
+
+    with_errors = sum(1 for contract in contracts if contract["errors"])
+    requiring_approval = sum(1 for contract in contracts if contract["requires_approval"])
+    supporting_parallel = sum(1 for contract in contracts if contract["supports_parallel"])
+    feature_flagged = sum(1 for contract in contracts if contract["execution_support"] == "feature-flagged")
+    status = _status_from_counts(danger=with_errors, warning=0 if contracts else 1)
+    return {
+        "generated_at": utc_iso(),
+        "status": status,
+        "source": {
+            "path": _relative_display_path(workflows_dir, workspace_root),
+            "exists": True,
+            "filter": safe_ref,
+        },
+        "contracts": contracts,
+        "counts": {
+            "total": len(contracts),
+            "ready": sum(1 for contract in contracts if contract["ready"]),
+            "with_errors": with_errors,
+            "requiring_approval": requiring_approval,
+            "supporting_parallel": supporting_parallel,
+            "feature_flagged": feature_flagged,
+        },
+        "router_contract": {
+            "read_only": True,
+            "execution_performed": False,
+            "workflow_runs_created": False,
+            "approval_bypassed": False,
+            "source": ".agent/workflows",
+        },
+        "privacy": {
+            "raw_workflow_body_exposed": False,
+            "rendered_command_values_exposed": False,
+            "rendered_payload_values_exposed": False,
+            "detail": "Workflow contracts expose metadata, input names, step kinds, and template variable names only.",
+        },
+    }
+
+
+def _bounded_status_confidence_limit(limit: int | None) -> int:
+    if limit is None:
+        return STATUS_CONFIDENCE_DEFAULT_LIMIT
+    return max(1, min(int(limit), STATUS_CONFIDENCE_MAX_LIMIT))
+
+
+def _status_confidence_age_hours(value: str | None, now: datetime) -> float | None:
+    parsed = _parse_utc_iso_timestamp(value)
+    if parsed is None:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return round(max(0.0, (now - parsed).total_seconds() / 3600), 2)
+
+
+def _status_confidence_level(reason_codes: list[str]) -> str:
+    if any(code.endswith("_stale") or code == "stale_active_run" for code in reason_codes):
+        return "stale"
+    partial_tokens = (
+        "missing",
+        "pending",
+        "blocked",
+        "failed",
+        "no_activity",
+        "no_iteration",
+        "unverified",
+        "unknown",
+    )
+    if any(any(token in code for token in partial_tokens) for code in reason_codes):
+        return "partial"
+    return "high"
+
+
+def _status_confidence_score(level: str) -> float:
+    return {"high": 0.92, "partial": 0.58, "stale": 0.34}.get(level, 0.5)
+
+
+def _status_confidence_attention(reason_codes: list[str]) -> list[str]:
+    flags: list[str] = []
+    if any("pending" in code for code in reason_codes):
+        flags.append("pending_approval")
+    if any("blocked" in code for code in reason_codes):
+        flags.append("blocked")
+    if any("failed" in code or "unverified" in code for code in reason_codes):
+        flags.append("needs_validation")
+    if any("stale" in code for code in reason_codes):
+        flags.append("stale")
+    return flags
+
+
+def _status_confidence_latest_at(values: list[str | None]) -> str | None:
+    parsed: list[tuple[datetime, str]] = []
+    for value in values:
+        timestamp = _parse_utc_iso_timestamp(value)
+        if timestamp is None or value is None:
+            continue
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+        parsed.append((timestamp, value))
+    if not parsed:
+        return None
+    parsed.sort(key=lambda item: item[0])
+    return parsed[-1][1]
+
+
+def _status_confidence_task_row(
+    repository: LoopStateRepository,
+    task: dict[str, Any],
+    runs_by_id: dict[str, dict[str, Any]],
+    rooms_by_id: dict[str, dict[str, Any]],
+    *,
+    now: datetime,
+    stale_age_hours: int,
+) -> dict[str, Any]:
+    task_id = str(task["task_id"])
+    linked_run_id = task.get("linked_run_id")
+    linked_room_ids = [str(item) for item in (task.get("linked_room_ids_json") or []) if isinstance(item, str)]
+    linked_rooms = [rooms_by_id[room_id] for room_id in linked_room_ids if room_id in rooms_by_id]
+    linked_run = runs_by_id.get(str(linked_run_id)) if linked_run_id else None
+    pending_approvals = repository.list_approval_requests(task_id=task_id, status="pending")
+    validator_history: list[dict[str, Any]] = []
+    blocked_handoffs: list[dict[str, Any]] = []
+    run_pending_approvals: list[dict[str, Any]] = []
+    room_message_count = 0
+    room_tool_event_count = 0
+
+    if linked_run:
+        validator_history = repository.list_validator_results(str(linked_run["run_id"]))
+        blocked_handoffs = repository.list_handoff_packets(run_id=str(linked_run["run_id"]), status="blocked")
+        run_pending_approvals = [
+            row
+            for row in repository.list_approval_requests(run_id=str(linked_run["run_id"]), status="pending")
+            if row.get("task_id") != task_id
+        ]
+    for room in linked_rooms:
+        room_message_count += len(repository.list_room_messages(room_id=str(room["room_id"])))
+        room_tool_event_count += len(repository.list_tool_events(room_id=str(room["room_id"])))
+
+    latest_validator = validator_history[-1] if validator_history else None
+    reason_codes: list[str] = []
+    reasons: list[str] = []
+    evidence_refs = [f"operator_task:{task_id}"]
+
+    status = str(task.get("status") or "")
+    if task.get("archived_at"):
+        reason_codes.append("task_archived")
+        reasons.append("Task is archived; status is historical.")
+    if status == "blocked" or task.get("blocked_reason"):
+        reason_codes.append("task_blocked")
+        reasons.append("Task is explicitly blocked.")
+    if status in {"in_progress", "in_review", "done"} and not linked_run_id:
+        reason_codes.append("missing_linked_run")
+        reasons.append("Task status expects run evidence but no linked run is recorded.")
+    if linked_run_id and linked_run is None:
+        reason_codes.append("missing_linked_run_record")
+        reasons.append("Task references a linked run that is not present in SQLite state.")
+    if linked_run:
+        evidence_refs.append(f"run:{linked_run['run_id']}")
+        run_age = _status_confidence_age_hours(str(linked_run.get("updated_at") or ""), now)
+        if str(linked_run.get("status")) in {"active", "running"} and run_age is not None and run_age > stale_age_hours:
+            reason_codes.append("linked_run_stale")
+            reasons.append("Linked active run has not updated within the stale-age window.")
+    if pending_approvals or run_pending_approvals:
+        reason_codes.append("pending_approval")
+        reasons.append("A pending approval is associated with this task or linked run.")
+        evidence_refs.extend([f"approval:{row['request_id']}" for row in (pending_approvals + run_pending_approvals)[:4]])
+    if blocked_handoffs:
+        reason_codes.append("blocked_handoff")
+        reasons.append("A blocked handoff is associated with the linked run.")
+        evidence_refs.extend([f"handoff:{row['handoff_id']}" for row in blocked_handoffs[:4]])
+    if latest_validator is not None:
+        evidence_refs.append(f"validator_result:{latest_validator['id']}")
+        if not latest_validator["passed"]:
+            reason_codes.append("latest_validator_failed")
+            reasons.append("Latest validator result for the linked run failed.")
+    elif status in {"in_review", "done"}:
+        reason_codes.append("unverified_task_status")
+        reasons.append("Task is in review or done without validator evidence.")
+    if linked_run and not validator_history and not pending_approvals and not blocked_handoffs and not linked_rooms:
+        reason_codes.append("no_activity_evidence")
+        reasons.append("Linked run exists, but no validation, approval, handoff, or linked room evidence is attached.")
+    if not reason_codes:
+        reason_codes.append("status_supported")
+        reasons.append("Task status has matching linked evidence and no attention flags.")
+
+    level = _status_confidence_level(reason_codes)
+    updated_at = str(task.get("updated_at") or "")
+    return {
+        "id": f"task:{task_id}",
+        "subject_type": "task",
+        "subject_id": task_id,
+        "status": status,
+        "confidence_level": level,
+        "confidence_score": _status_confidence_score(level),
+        "attention_flags": _status_confidence_attention(reason_codes),
+        "updated_at": updated_at,
+        "age_hours": _status_confidence_age_hours(updated_at, now),
+        "reason_codes": reason_codes,
+        "reasons": reasons[:6],
+        "evidence_refs": evidence_refs[:10],
+        "linked_refs": {
+            "run_id": linked_run_id,
+            "iteration_id": task.get("linked_iteration_id"),
+            "room_ids": linked_room_ids[:8],
+        },
+        "signals": {
+            "pending_approvals": len(pending_approvals) + len(run_pending_approvals),
+            "validator_results": len(validator_history),
+            "latest_validator_passed": latest_validator["passed"] if latest_validator else None,
+            "blocked_handoffs": len(blocked_handoffs),
+            "linked_rooms": len(linked_rooms),
+            "room_messages": room_message_count,
+            "room_tool_events": room_tool_event_count,
+            "acceptance_items": len(task.get("acceptance_json") or []),
+        },
+    }
+
+
+def _status_confidence_run_row(
+    repository: LoopStateRepository,
+    run: dict[str, Any],
+    *,
+    now: datetime,
+    stale_age_hours: int,
+) -> dict[str, Any]:
+    run_id = str(run["run_id"])
+    iterations = repository.list_iterations(run_id)
+    validators = repository.list_validator_results(run_id)
+    pending_approvals = repository.list_approval_requests(run_id=run_id, status="pending")
+    blocked_handoffs = repository.list_handoff_packets(run_id=run_id, status="blocked")
+    rooms = repository.list_room_records(run_id=run_id)
+    messages = repository.list_room_messages(run_id=run_id)
+    tool_events = repository.list_tool_events(run_id=run_id)
+    tasks = repository.list_operator_tasks(linked_run_id=run_id, include_archived=True)
+    latest_validator = validators[-1] if validators else None
+    reason_codes: list[str] = []
+    reasons: list[str] = []
+    evidence_refs = [f"run:{run_id}"]
+
+    age_hours = _status_confidence_age_hours(str(run.get("updated_at") or ""), now)
+    if str(run.get("status")) in {"active", "running"} and age_hours is not None and age_hours > stale_age_hours:
+        reason_codes.append("stale_active_run")
+        reasons.append("Active run has not updated within the stale-age window.")
+    if not iterations:
+        reason_codes.append("no_iteration_evidence")
+        reasons.append("Run has no recorded iterations.")
+    if pending_approvals:
+        reason_codes.append("pending_approval")
+        reasons.append("Run has pending approval requests.")
+        evidence_refs.extend([f"approval:{row['request_id']}" for row in pending_approvals[:4]])
+    if blocked_handoffs:
+        reason_codes.append("blocked_handoff")
+        reasons.append("Run has blocked handoff packets.")
+        evidence_refs.extend([f"handoff:{row['handoff_id']}" for row in blocked_handoffs[:4]])
+    if latest_validator is not None:
+        evidence_refs.append(f"validator_result:{latest_validator['id']}")
+        if latest_validator["passed"]:
+            reason_codes.append("validator_passed")
+            reasons.append("Latest validator result passed.")
+        else:
+            reason_codes.append("latest_validator_failed")
+            reasons.append("Latest validator result failed.")
+    elif str(run.get("status")) in {"stopped", "done", "complete", "completed"}:
+        reason_codes.append("unverified_terminal_run")
+        reasons.append("Terminal-looking run status has no validator evidence.")
+    if not rooms and not messages and not tool_events:
+        reason_codes.append("no_room_activity")
+        reasons.append("Run has no room, message, or tool-event activity.")
+    if not reason_codes:
+        reason_codes.append("run_status_supported")
+        reasons.append("Run status has recent activity and no attention flags.")
+
+    level = _status_confidence_level(reason_codes)
+    return {
+        "id": f"run:{run_id}",
+        "subject_type": "run",
+        "subject_id": run_id,
+        "status": str(run.get("status") or ""),
+        "confidence_level": level,
+        "confidence_score": _status_confidence_score(level),
+        "attention_flags": _status_confidence_attention(reason_codes),
+        "updated_at": str(run.get("updated_at") or ""),
+        "age_hours": age_hours,
+        "reason_codes": reason_codes,
+        "reasons": reasons[:6],
+        "evidence_refs": evidence_refs[:10],
+        "linked_refs": {
+            "latest_iteration_id": iterations[-1]["iteration_id"] if iterations else None,
+            "room_ids": [str(room["room_id"]) for room in rooms[:8]],
+            "task_ids": [str(task["task_id"]) for task in tasks[:8]],
+        },
+        "signals": {
+            "iterations": len(iterations),
+            "validator_results": len(validators),
+            "latest_validator_passed": latest_validator["passed"] if latest_validator else None,
+            "pending_approvals": len(pending_approvals),
+            "blocked_handoffs": len(blocked_handoffs),
+            "rooms": len(rooms),
+            "messages": len(messages),
+            "tool_events": len(tool_events),
+            "linked_tasks": len(tasks),
+        },
+    }
+
+
+def _status_confidence_room_row(
+    repository: LoopStateRepository,
+    room: dict[str, Any],
+    runs_by_id: dict[str, dict[str, Any]],
+    *,
+    now: datetime,
+    stale_age_hours: int,
+) -> dict[str, Any]:
+    room_id = str(room["room_id"])
+    run_id = room.get("run_id")
+    linked_run = runs_by_id.get(str(run_id)) if run_id else None
+    messages = repository.list_room_messages(room_id=room_id)
+    tool_events = repository.list_tool_events(room_id=room_id)
+    latest_activity = _status_confidence_latest_at(
+        [str(room.get("updated_at") or "")]
+        + [str(row.get("created_at") or "") for row in messages]
+        + [str(row.get("created_at") or "") for row in tool_events]
+    )
+    reason_codes: list[str] = []
+    reasons: list[str] = []
+    evidence_refs = [f"room:{room_id}"]
+
+    if not messages and not tool_events:
+        reason_codes.append("no_activity_evidence")
+        reasons.append("Room has no persisted messages or tool events.")
+    if run_id and linked_run is None:
+        reason_codes.append("missing_linked_run_record")
+        reasons.append("Room references a run that is not present in SQLite state.")
+    if linked_run:
+        evidence_refs.append(f"run:{linked_run['run_id']}")
+        run_age = _status_confidence_age_hours(str(linked_run.get("updated_at") or ""), now)
+        if str(linked_run.get("status")) in {"active", "running"} and run_age is not None and run_age > stale_age_hours:
+            reason_codes.append("linked_run_stale")
+            reasons.append("Room is attached to a stale active run.")
+    activity_age = _status_confidence_age_hours(latest_activity, now)
+    if str(room.get("status")) == "active" and activity_age is not None and activity_age > stale_age_hours:
+        reason_codes.append("room_activity_stale")
+        reasons.append("Active room has no recent persisted activity.")
+    if not reason_codes:
+        reason_codes.append("room_status_supported")
+        reasons.append("Room has persisted activity and no attention flags.")
+
+    level = _status_confidence_level(reason_codes)
+    return {
+        "id": f"room:{room_id}",
+        "subject_type": "room",
+        "subject_id": room_id,
+        "status": str(room.get("status") or ""),
+        "confidence_level": level,
+        "confidence_score": _status_confidence_score(level),
+        "attention_flags": _status_confidence_attention(reason_codes),
+        "updated_at": str(room.get("updated_at") or ""),
+        "age_hours": _status_confidence_age_hours(str(room.get("updated_at") or ""), now),
+        "reason_codes": reason_codes,
+        "reasons": reasons[:6],
+        "evidence_refs": evidence_refs[:10],
+        "linked_refs": {
+            "run_id": run_id,
+            "iteration_id": room.get("iteration_id"),
+            "task_id": room.get("task_id"),
+        },
+        "signals": {
+            "participants": len(room.get("participants_json") or []),
+            "messages": len(messages),
+            "tool_events": len(tool_events),
+            "latest_activity_at": latest_activity,
+            "latest_activity_age_hours": activity_age,
+        },
+    }
+
+
+def _sort_status_confidence_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rank = {"stale": 0, "partial": 1, "high": 2}
+
+    def sort_key(row: dict[str, Any]) -> tuple[int, float, str]:
+        updated = _parse_utc_iso_timestamp(str(row.get("updated_at") or "")) or datetime.fromtimestamp(0, timezone.utc)
+        return (rank.get(str(row.get("confidence_level")), 9), -updated.timestamp(), str(row.get("id") or ""))
+
+    return sorted(rows, key=sort_key)
+
+
+def build_operator_status_confidence_payload(
+    workspace: str | Path,
+    *,
+    task_id: str | None = None,
+    run_id: str | None = None,
+    room_id: str | None = None,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    repository = LoopStateRepository(workspace)
+    safe_limit = _bounded_status_confidence_limit(limit)
+    now = datetime.now(timezone.utc)
+    runs_by_id = {str(row["run_id"]): row for row in repository.list_runs()}
+    all_rooms = repository.list_room_records()
+    rooms_by_id = {str(row["room_id"]): row for row in all_rooms}
+
+    selected_tasks: list[dict[str, Any]]
+    selected_runs: list[dict[str, Any]]
+    selected_rooms: list[dict[str, Any]]
+
+    if task_id:
+        task = repository.get_operator_task(task_id)
+        if task is None:
+            raise FileNotFoundError(f"Operator task not found: {task_id}")
+        selected_tasks = [task]
+        linked_run_id = str(task.get("linked_run_id") or "")
+        selected_runs = [runs_by_id[linked_run_id]] if linked_run_id in runs_by_id else []
+        linked_room_ids = {str(item) for item in (task.get("linked_room_ids_json") or []) if isinstance(item, str)}
+        selected_rooms = [
+            room
+            for room in all_rooms
+            if str(room["room_id"]) in linked_room_ids or str(room.get("task_id") or "") == task_id
+        ]
+    elif run_id:
+        if run_id not in runs_by_id:
+            raise FileNotFoundError(f"Run not found: {run_id}")
+        selected_runs = [runs_by_id[run_id]]
+        selected_tasks = repository.list_operator_tasks(linked_run_id=run_id, include_archived=True)
+        selected_rooms = repository.list_room_records(run_id=run_id)
+    elif room_id:
+        room = rooms_by_id.get(room_id)
+        if room is None:
+            raise FileNotFoundError(f"Room not found: {room_id}")
+        selected_rooms = [room]
+        linked_run_id = str(room.get("run_id") or "")
+        selected_runs = [runs_by_id[linked_run_id]] if linked_run_id in runs_by_id else []
+        selected_tasks = [
+            task
+            for task in repository.list_operator_tasks(include_archived=True)
+            if str(task.get("task_id") or "") == str(room.get("task_id") or "")
+            or room_id in [str(item) for item in (task.get("linked_room_ids_json") or [])]
+        ]
+    else:
+        selected_tasks = repository.list_operator_tasks()
+        selected_runs = list(runs_by_id.values())
+        selected_rooms = all_rooms
+
+    rows: list[dict[str, Any]] = []
+    for task in selected_tasks:
+        rows.append(
+            _status_confidence_task_row(
+                repository,
+                task,
+                runs_by_id,
+                rooms_by_id,
+                now=now,
+                stale_age_hours=STALE_RUN_AGE_HOURS,
+            )
+        )
+    for run in selected_runs:
+        rows.append(_status_confidence_run_row(repository, run, now=now, stale_age_hours=STALE_RUN_AGE_HOURS))
+    for room in selected_rooms:
+        rows.append(
+            _status_confidence_room_row(
+                repository,
+                room,
+                runs_by_id,
+                now=now,
+                stale_age_hours=STALE_RUN_AGE_HOURS,
+            )
+        )
+
+    sorted_rows = _sort_status_confidence_rows(rows)
+    total_rows = len(sorted_rows)
+    returned_rows = sorted_rows[:safe_limit]
+    warning_count = sum(1 for row in rows if row["confidence_level"] in {"partial", "stale"})
+    return {
+        "generated_at": utc_iso(),
+        "status": _status_from_counts(danger=0, warning=warning_count),
+        "scope": {
+            "task_id": task_id,
+            "run_id": run_id,
+            "room_id": room_id,
+            "limit": safe_limit,
+            "stale_age_hours": STALE_RUN_AGE_HOURS,
+        },
+        "diagnostics": returned_rows,
+        "counts": {
+            "returned": len(returned_rows),
+            "total": total_rows,
+            "tasks": sum(1 for row in rows if row["subject_type"] == "task"),
+            "runs": sum(1 for row in rows if row["subject_type"] == "run"),
+            "rooms": sum(1 for row in rows if row["subject_type"] == "room"),
+            "high": sum(1 for row in rows if row["confidence_level"] == "high"),
+            "partial": sum(1 for row in rows if row["confidence_level"] == "partial"),
+            "stale": sum(1 for row in rows if row["confidence_level"] == "stale"),
+            "blocked": sum(1 for row in rows if "blocked" in row.get("attention_flags", [])),
+            "pending_approval": sum(1 for row in rows if "pending_approval" in row.get("attention_flags", [])),
+            "truncated": total_rows > safe_limit,
+        },
+        "diagnostic_contract": {
+            "read_only": True,
+            "mutations_performed": False,
+            "external_fetch_performed": False,
+            "task_status_mutated": False,
+            "run_status_mutated": False,
+            "room_status_mutated": False,
+        },
+        "privacy": {
+            "message_content_exposed": False,
+            "tool_payload_values_exposed": False,
+            "approval_payload_values_exposed": False,
+            "raw_transcript_exposed": False,
+            "detail": "Status-confidence diagnostics expose ids, statuses, counts, reason codes, and evidence refs only.",
+        },
+    }
+
+
+def _bounded_wake_readiness_limit(limit: int | None) -> int:
+    if limit is None:
+        return WAKE_READINESS_DEFAULT_LIMIT
+    return max(1, min(int(limit), WAKE_READINESS_MAX_LIMIT))
+
+
+def _wake_turn_record_matches(row: dict[str, Any], record: dict[str, Any]) -> bool:
+    subject_type = str(row.get("subject_type") or "")
+    subject_id = str(row.get("subject_id") or "")
+    linked_refs = row.get("linked_refs") if isinstance(row.get("linked_refs"), dict) else {}
+    if subject_type == "run":
+        return str(record.get("run_id") or "") == subject_id
+    if subject_type == "room":
+        return str(record.get("room_id") or "") == subject_id
+    if subject_type == "task":
+        linked_run_id = str(linked_refs.get("run_id") or "")
+        linked_room_ids = {str(item) for item in linked_refs.get("room_ids", []) if isinstance(item, str)}
+        return bool(
+            (linked_run_id and str(record.get("run_id") or "") == linked_run_id)
+            or (str(record.get("room_id") or "") in linked_room_ids)
+        )
+    return False
+
+
+def _wake_turn_summary(row: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
+    matched = [record for record in records if _wake_turn_record_matches(row, record)]
+    signals = row.get("signals") if isinstance(row.get("signals"), dict) else {}
+    fallback_messages = int(signals.get("messages") or signals.get("room_messages") or 0)
+    fallback_tool_events = int(signals.get("tool_events") or signals.get("room_tool_events") or 0)
+    messages = sum(1 for record in matched if record.get("record_type") == "message") or fallback_messages
+    tool_events = sum(1 for record in matched if record.get("record_type") == "tool_event") or fallback_tool_events
+    return {
+        "records": len(matched) or messages + tool_events,
+        "messages": messages,
+        "tool_events": tool_events,
+        "agent_messages": sum(1 for record in matched if record.get("record_type") == "message" and record.get("actor_kind") == "agent"),
+        "evidence_refs": [str(ref) for record in matched for ref in record.get("evidence_refs", [])][:8],
+    }
+
+
+def _wake_readiness_for_row(
+    row: dict[str, Any],
+    *,
+    preferred_runtime: str | None,
+    runtime_available: bool,
+    turn_summary: dict[str, Any],
+) -> tuple[str, list[str], list[str]]:
+    flags = set(str(flag) for flag in row.get("attention_flags", []))
+    confidence_level = str(row.get("confidence_level") or "")
+    blockers: list[str] = []
+    suggested_actions: list[str] = []
+
+    if "pending_approval" in flags:
+        blockers.append("pending_approval")
+        suggested_actions.append("Review the pending approval before waking or resuming work.")
+    if "blocked" in flags:
+        blockers.append("blocked_handoff_or_status")
+        suggested_actions.append("Inspect blocked task or handoff evidence before resuming.")
+    if blockers:
+        suggested_actions.append("Use status-confidence for the exact reason codes and evidence refs.")
+        return "hold", blockers[:5], suggested_actions[:5]
+
+    if not preferred_runtime and not runtime_available:
+        blockers.append("no_agent_runtime_ready")
+        suggested_actions.append("Install or configure an agent runtime before considering wake scheduling.")
+        return "wait_for_runtime", blockers, suggested_actions
+
+    if confidence_level == "stale":
+        blockers.append("stale_status_evidence")
+        suggested_actions.append("Inspect the stale run, room, or task before waking it.")
+        return "attention", blockers, suggested_actions
+
+    if confidence_level == "partial":
+        suggested_actions.append("Review missing or unverified evidence before handing work back to an agent.")
+        return "needs_review", blockers, suggested_actions
+
+    if int(turn_summary.get("records") or 0) > 0 or row.get("evidence_refs"):
+        suggested_actions.append(
+            f"Ready for operator-reviewed wake planning with {preferred_runtime or 'an approved runtime'}."
+        )
+        return "ready", blockers, suggested_actions
+
+    blockers.append("missing_context")
+    suggested_actions.append("Attach run, room, or validator evidence before wake planning.")
+    return "needs_context", blockers, suggested_actions
+
+
+def _wake_candidate(row: dict[str, Any], runtime_summary: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
+    preferred_runtime = runtime_summary.get("preferred_agent_runtime")
+    runtime_available = bool(
+        runtime_summary.get("observed_agent_runtimes")
+        or runtime_summary.get("available_agent_runtimes")
+        or runtime_summary.get("available_unobserved_agent_runtimes")
+    )
+    turn_summary = _wake_turn_summary(row, records)
+    readiness, blockers, suggested_actions = _wake_readiness_for_row(
+        row,
+        preferred_runtime=preferred_runtime if isinstance(preferred_runtime, str) else None,
+        runtime_available=runtime_available,
+        turn_summary=turn_summary,
+    )
+    subject_type = str(row.get("subject_type") or "")
+    subject_id = str(row.get("subject_id") or "")
+    return {
+        "decision_id": f"wake:{subject_type}:{subject_id}:{readiness}:{row.get('confidence_level')}",
+        "subject_type": subject_type,
+        "subject_id": subject_id,
+        "current_status": row.get("status"),
+        "readiness": readiness,
+        "confidence_level": row.get("confidence_level"),
+        "confidence_score": row.get("confidence_score"),
+        "attention_flags": row.get("attention_flags") or [],
+        "reason_codes": row.get("reason_codes") or [],
+        "blockers": blockers,
+        "suggested_actions": suggested_actions,
+        "requires_approval": readiness == "hold" or "pending_approval" in (row.get("attention_flags") or []),
+        "preferred_agent_runtime": preferred_runtime,
+        "linked_refs": row.get("linked_refs") or {},
+        "turn_summary": turn_summary,
+        "signal_counts": row.get("signals") or {},
+        "evidence_refs": list(dict.fromkeys((row.get("evidence_refs") or []) + turn_summary.get("evidence_refs", [])))[:12],
+    }
+
+
+def build_operator_wake_readiness_payload(
+    workspace: str | Path,
+    *,
+    task_id: str | None = None,
+    run_id: str | None = None,
+    room_id: str | None = None,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    safe_limit = _bounded_wake_readiness_limit(limit)
+    status_payload = build_operator_status_confidence_payload(
+        workspace,
+        task_id=task_id,
+        run_id=run_id,
+        room_id=room_id,
+        limit=safe_limit,
+    )
+    turn_payload = build_operator_turn_records_payload(workspace, run_id=run_id, room_id=room_id, limit=safe_limit)
+    runtime_payload = build_operator_runtime_roster_payload(
+        workspace,
+        probe_versions=False,
+        category="agent_runtime",
+    )
+    runtime_summary = runtime_payload.get("ux_summary") if isinstance(runtime_payload.get("ux_summary"), dict) else {}
+    records = turn_payload.get("records") if isinstance(turn_payload.get("records"), list) else []
+    candidates = [
+        _wake_candidate(row, runtime_summary, records)
+        for row in status_payload.get("diagnostics", [])
+        if isinstance(row, dict)
+    ]
+    readiness_counts = {
+        "ready": sum(1 for row in candidates if row["readiness"] == "ready"),
+        "needs_review": sum(1 for row in candidates if row["readiness"] == "needs_review"),
+        "attention": sum(1 for row in candidates if row["readiness"] == "attention"),
+        "hold": sum(1 for row in candidates if row["readiness"] == "hold"),
+        "wait_for_runtime": sum(1 for row in candidates if row["readiness"] == "wait_for_runtime"),
+        "needs_context": sum(1 for row in candidates if row["readiness"] == "needs_context"),
+    }
+    warning_count = (
+        readiness_counts["needs_review"]
+        + readiness_counts["attention"]
+        + readiness_counts["hold"]
+        + readiness_counts["wait_for_runtime"]
+        + readiness_counts["needs_context"]
+    )
+    return {
+        "generated_at": utc_iso(),
+        "status": _status_from_counts(danger=0, warning=warning_count),
+        "scope": {
+            "task_id": task_id,
+            "run_id": run_id,
+            "room_id": room_id,
+            "limit": safe_limit,
+        },
+        "candidates": candidates,
+        "counts": {
+            "returned": len(candidates),
+            "total": status_payload.get("counts", {}).get("total", len(candidates)),
+            **readiness_counts,
+            "truncated": bool(status_payload.get("counts", {}).get("truncated")),
+        },
+        "source_projections": {
+            "status_confidence": {
+                "status": status_payload.get("status"),
+                "returned": status_payload.get("counts", {}).get("returned"),
+                "total": status_payload.get("counts", {}).get("total"),
+            },
+            "turn_records": {
+                "status": turn_payload.get("status"),
+                "returned": turn_payload.get("counts", {}).get("returned"),
+                "total": turn_payload.get("counts", {}).get("total"),
+            },
+            "runtime_roster": {
+                "status": runtime_payload.get("status"),
+                "preferred_agent_runtime": runtime_summary.get("preferred_agent_runtime"),
+                "observed_agent_runtimes": runtime_summary.get("observed_agent_runtimes") or [],
+                "available_unobserved_agent_runtimes": runtime_summary.get("available_unobserved_agent_runtimes") or [],
+                "missing_agent_runtimes": runtime_summary.get("missing_agent_runtimes") or [],
+            },
+        },
+        "wake_contract": {
+            "read_only": True,
+            "scheduler_started": False,
+            "wake_messages_sent": False,
+            "task_status_mutated": False,
+            "run_status_mutated": False,
+            "room_status_mutated": False,
+            "provider_auth_commands_executed": False,
+            "external_fetch_performed": False,
+        },
+        "privacy": {
+            "message_content_exposed": False,
+            "tool_payload_values_exposed": False,
+            "approval_payload_values_exposed": False,
+            "validator_issue_details_exposed": False,
+            "raw_transcript_exposed": False,
+            "detail": "Wake readiness combines metadata-only projections and does not schedule, resume, mutate, or expose raw content.",
+        },
+    }
+
+
 def build_operator_summary_payload(workspace: str | Path) -> dict[str, Any]:
     repository = LoopStateRepository(workspace)
     runs = repository.list_runs()
@@ -734,6 +2540,9 @@ def build_operator_summary_payload(workspace: str | Path) -> dict[str, Any]:
             "open": sum(1 for row in handoffs if str(row.get("status")) != "completed"),
             "blocked": sum(1 for row in handoffs if str(row.get("status")) == "blocked"),
         },
+        "evidence": build_operator_evidence_summary_payload(workspace),
+        "doctor": build_operator_doctor_evidence_payload(workspace),
+        "runtime_roster": build_operator_runtime_roster_payload(workspace, probe_versions=False),
     }
 
 
@@ -870,6 +2679,39 @@ def build_operator_inbox_payload(workspace: str | Path) -> dict[str, Any]:
         "items": _sort_attention_items(items),
         "count": len(items),
     }
+
+
+def build_operator_task_reconcile_preview_payload(workspace: str | Path, task_id: str) -> dict[str, Any]:
+    repository = LoopStateRepository(workspace)
+    task = repository.get_operator_task(task_id)
+    if task is None:
+        raise FileNotFoundError(f"Operator task not found: {task_id}")
+
+    linked_run = None
+    approvals = repository.list_approval_requests(task_id=task_id, status="pending")
+    validator_history: list[dict[str, Any]] = []
+    handoffs: list[dict[str, Any]] = []
+    linked_run_id = task.get("linked_run_id")
+    if isinstance(linked_run_id, str) and linked_run_id:
+        linked_run = _ensure_run_exists(repository, linked_run_id)
+        approvals.extend(
+            [
+                row
+                for row in repository.list_approval_requests(run_id=linked_run_id, status="pending")
+                if row.get("task_id") != task_id
+            ]
+        )
+        validator_history = repository.list_validator_results(linked_run_id)
+        handoffs = repository.list_handoff_packets(run_id=linked_run_id, status="blocked")
+
+    return reconcile_operator_task(
+        task,
+        linked_run=linked_run,
+        approvals=approvals,
+        validator_history=validator_history,
+        handoffs=handoffs,
+        stale_age_hours=STALE_RUN_AGE_HOURS,
+    )
 
 
 def build_operator_agents_payload(workspace: str | Path) -> dict[str, Any]:
@@ -1323,6 +3165,109 @@ def _build_handler(
             if path == "/api/operator/summary":
                 _forward_json_response(self, build_operator_summary_payload(workspace_root))
                 return
+            if path == "/api/operator/evidence-summary":
+                _forward_json_response(self, build_operator_evidence_summary_payload(workspace_root))
+                return
+            if path == "/api/operator/doctor-evidence":
+                _forward_json_response(self, build_operator_doctor_evidence_payload(workspace_root))
+                return
+            if path == "/api/operator/runtime-roster":
+                try:
+                    runtime_id = query.get("runtime", [None])[0]
+                    category = query.get("category", [None])[0]
+                    raw_probe_versions = str(query.get("probe_versions", ["1"])[0]).strip().lower()
+                    probe_versions = raw_probe_versions not in {"0", "false", "no", "off"}
+                    _forward_json_response(
+                        self,
+                        build_operator_runtime_roster_payload(
+                            workspace_root,
+                            probe_versions=probe_versions,
+                            runtime_id=runtime_id,
+                            category=category,
+                        ),
+                    )
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                return
+            if path == "/api/operator/status-confidence":
+                try:
+                    raw_task_id = query.get("task_id", [None])[0]
+                    raw_run_id = query.get("run_id", [None])[0]
+                    raw_room_id = query.get("room_id", [None])[0]
+                    safe_task_id = _validate_api_identifier(raw_task_id, field_name="task_id") if raw_task_id else None
+                    safe_run_id = _validate_api_identifier(raw_run_id, field_name="run_id") if raw_run_id else None
+                    safe_room_id = validate_room_id(raw_room_id) if raw_room_id else None
+                    raw_limit = int(query.get("limit", [str(STATUS_CONFIDENCE_DEFAULT_LIMIT)])[0])
+                    _forward_json_response(
+                        self,
+                        build_operator_status_confidence_payload(
+                            workspace_root,
+                            task_id=safe_task_id,
+                            run_id=safe_run_id,
+                            room_id=safe_room_id,
+                            limit=raw_limit,
+                        ),
+                    )
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                except FileNotFoundError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=404)
+                return
+            if path == "/api/operator/wake-readiness":
+                try:
+                    raw_task_id = query.get("task_id", [None])[0]
+                    raw_run_id = query.get("run_id", [None])[0]
+                    raw_room_id = query.get("room_id", [None])[0]
+                    safe_task_id = _validate_api_identifier(raw_task_id, field_name="task_id") if raw_task_id else None
+                    safe_run_id = _validate_api_identifier(raw_run_id, field_name="run_id") if raw_run_id else None
+                    safe_room_id = validate_room_id(raw_room_id) if raw_room_id else None
+                    raw_limit = int(query.get("limit", [str(WAKE_READINESS_DEFAULT_LIMIT)])[0])
+                    _forward_json_response(
+                        self,
+                        build_operator_wake_readiness_payload(
+                            workspace_root,
+                            task_id=safe_task_id,
+                            run_id=safe_run_id,
+                            room_id=safe_room_id,
+                            limit=raw_limit,
+                        ),
+                    )
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                except FileNotFoundError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=404)
+                return
+            if path == "/api/operator/workflow-contracts":
+                try:
+                    workflow_ref = query.get("workflow", [None])[0]
+                    _forward_json_response(
+                        self,
+                        build_operator_workflow_contracts_payload(workspace_root, workflow_ref=workflow_ref),
+                    )
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                except FileNotFoundError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=404)
+                return
+            if path == "/api/operator/turn-records":
+                try:
+                    raw_run_id = query.get("run_id", [None])[0]
+                    raw_room_id = query.get("room_id", [None])[0]
+                    safe_run_id = _validate_api_identifier(raw_run_id, field_name="run_id") if raw_run_id else None
+                    safe_room_id = validate_room_id(raw_room_id) if raw_room_id else None
+                    raw_limit = int(query.get("limit", [str(TURN_RECORD_DEFAULT_LIMIT)])[0])
+                    _forward_json_response(
+                        self,
+                        build_operator_turn_records_payload(
+                            workspace_root,
+                            run_id=safe_run_id,
+                            room_id=safe_room_id,
+                            limit=raw_limit,
+                        ),
+                    )
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                return
             if path == "/api/operator/inbox":
                 _forward_json_response(self, build_operator_inbox_payload(workspace_root))
                 return
@@ -1369,6 +3314,16 @@ def _build_handler(
                     )
                 except ValueError as exc:
                     _forward_json_response(self, {"error": str(exc)}, status=400)
+                return
+            if path.startswith("/api/operator/tasks/") and path.endswith("/reconcile-preview"):
+                task_id = unquote(path.removeprefix("/api/operator/tasks/").removesuffix("/reconcile-preview"))
+                try:
+                    safe_task_id = _validate_api_identifier(task_id, field_name="task_id")
+                    _forward_json_response(self, build_operator_task_reconcile_preview_payload(workspace_root, safe_task_id))
+                except ValueError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=400)
+                except FileNotFoundError as exc:
+                    _forward_json_response(self, {"error": str(exc)}, status=404)
                 return
             if path.startswith("/api/operator/tasks/"):
                 task_id = unquote(path.removeprefix("/api/operator/tasks/"))
@@ -1980,9 +3935,18 @@ __all__ = [
     "delete_operator_task_payload",
     "detach_operator_task_workspace_payload",
     "restore_operator_task_payload",
+    "build_operator_doctor_evidence_payload",
+    "build_operator_evidence_summary_payload",
     "build_operator_inbox_payload",
     "build_operator_agents_payload",
+    "build_operator_runtime_roster_payload",
+    "build_operator_status_confidence_payload",
+    "build_operator_turn_records_payload",
+    "build_operator_wake_readiness_payload",
+    "build_operator_workflow_contracts_payload",
     "build_operator_summary_payload",
+    "build_operator_pr_ci_evidence_payload",
+    "build_operator_task_reconcile_preview_payload",
     "build_approvals_payload",
     "build_run_context_latest_payload",
     "build_run_detail_payload",

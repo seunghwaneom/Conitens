@@ -1,31 +1,35 @@
 :root {
   --font-ui: "IBM Plex Sans", "Inter", "Segoe UI", sans-serif;
   --font-mono-ui: "JetBrains Mono", "IBM Plex Mono", "SFMono-Regular", monospace;
-  --shell-bg: #0c1118;
-  --shell-bg-raised: #121926;
-  --shell-bg-soft: #162031;
-  --shell-panel: rgba(17, 24, 36, 0.84);
-  --shell-panel-strong: #151d2b;
-  --shell-panel-muted: rgba(255, 255, 255, 0.04);
-  --shell-line: rgba(196, 210, 228, 0.12);
-  --shell-line-strong: rgba(196, 210, 228, 0.22);
-  --shell-text: #edf3fb;
-  --shell-muted: rgba(216, 228, 243, 0.68);
-  --shell-accent: #8bd2ff;
-  --shell-accent-strong: #4db8ff;
-  --shell-success: #5dcc98;
-  --shell-warning: #d8b36a;
-  --shell-danger: #e18f95;
-  --shell-shadow: 0 24px 54px rgba(0, 0, 0, 0.28);
+  --shell-bg: #08090a;
+  --shell-bg-raised: #0f1011;
+  --shell-bg-soft: #191d20;
+  --shell-panel: rgba(15, 16, 17, 0.92);
+  --shell-panel-strong: #141516;
+  --shell-panel-muted: rgba(247, 248, 248, 0.035);
+  --shell-line: rgba(180, 184, 190, 0.16);
+  --shell-line-strong: rgba(180, 184, 190, 0.28);
+  --shell-text: #f7f8f8;
+  --shell-muted: rgba(180, 184, 190, 0.76);
+  --shell-accent: #7170ff;
+  --shell-accent-strong: #5e6ad2;
+  --shell-success: #27a644;
+  --shell-warning: #d4b144;
+  --shell-danger: #eb5757;
+  --shell-radius-control: 6px;
+  --shell-radius-panel: 8px;
+  --shell-speed: 160ms;
+  --shell-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --shell-shadow: 0 8px 2px rgba(0, 0, 0, 0), 0 5px 2px rgba(0, 0, 0, 0.01), 0 3px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.07), 0 0 1px rgba(0, 0, 0, 0.12);
 }
 
 body {
   background:
-    radial-gradient(circle at top right, rgba(77, 184, 255, 0.16), transparent 22%),
-    radial-gradient(circle at top left, rgba(93, 204, 152, 0.08), transparent 18%),
-    linear-gradient(180deg, #0c1118 0%, #101722 100%);
+    linear-gradient(180deg, rgba(113, 112, 255, 0.1) 0%, rgba(8, 9, 10, 0) 220px),
+    linear-gradient(180deg, var(--shell-bg) 0%, #0f1011 100%);
   color: var(--shell-text);
   font-family: var(--font-ui);
+  font-feature-settings: "cv01", "ss03";
 }
 
 button,
@@ -37,10 +41,10 @@ textarea {
 
 button {
   transition:
-    border-color 120ms ease,
-    background-color 120ms ease,
-    color 120ms ease,
-    box-shadow 120ms ease;
+    border-color var(--shell-speed) var(--shell-ease),
+    background-color var(--shell-speed) var(--shell-ease),
+    color var(--shell-speed) var(--shell-ease),
+    box-shadow var(--shell-speed) var(--shell-ease);
 }
 
 button:hover {
@@ -48,7 +52,7 @@ button:hover {
 }
 
 button:focus-visible {
-  outline: 2px solid rgba(139, 210, 255, 0.42);
+  outline: 2px solid rgba(113, 112, 255, 0.46);
   outline-offset: 2px;
 }
 
@@ -74,9 +78,10 @@ button:focus-visible {
 .forward-shell .forward-panel-label,
 .forward-shell .forward-detail-label {
   margin-bottom: 8px;
-  color: rgba(216, 228, 243, 0.58);
+  color: rgba(180, 184, 190, 0.74);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .forward-shell .section-head {
@@ -88,11 +93,12 @@ button:focus-visible {
 
 .forward-shell .section-head .panel-kicker {
   margin-bottom: 0;
-  color: rgba(216, 228, 243, 0.72);
+  color: rgba(180, 184, 190, 0.78);
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .forward-shell .badge,

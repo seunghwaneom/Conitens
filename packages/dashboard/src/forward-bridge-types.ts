@@ -156,6 +156,174 @@ export interface ForwardOperatorInboxItem {
   action_label: string;
 }
 
+export interface ForwardOperatorEvidenceSummaryResponse {
+  generated_at: string;
+  provider_calls: {
+    observed: number;
+    with_cost: number;
+    with_tokens: number;
+    with_latency: number;
+    estimated_cost: number | null;
+    total_tokens: number | null;
+    latest_provider: string | null;
+    latest_model: string | null;
+  };
+  budget: {
+    sources: number;
+    retry_decisions: number;
+    approval_pending: number;
+  };
+  sensitivity: {
+    pii_findings: number;
+    raw_content_exposed: boolean;
+    redaction: string;
+  };
+  evidence_refs: string[];
+}
+
+export interface ForwardOperatorDoctorEvidenceCheck {
+  id: string;
+  label: string;
+  status: "ok" | "warning" | "danger";
+  detail: string;
+  evidence_ref: string;
+}
+
+export interface ForwardOperatorDoctorEvidenceResponse {
+  generated_at: string;
+  status: "ok" | "warning" | "danger";
+  checks: ForwardOperatorDoctorEvidenceCheck[];
+}
+
+export interface ForwardOperatorRuntimeRosterItem {
+  id: string;
+  label: string;
+  category: "agent_runtime" | "toolchain";
+  availability_status: "ok" | "warning" | "danger";
+  session_status: "observed" | "available_not_observed" | "not_found";
+  command: string;
+  available: boolean;
+  version: string | null;
+  detail: string;
+  latest_seen_at: string | null;
+  latest_run_id: string | null;
+  observation_count: number;
+  evidence_refs: string[];
+}
+
+export interface ForwardOperatorRuntimeRosterResponse {
+  generated_at: string;
+  status: "ok" | "warning" | "danger";
+  runtimes: ForwardOperatorRuntimeRosterItem[];
+  counts: {
+    total: number;
+    agent_runtimes: number;
+    available: number;
+    observed: number;
+    missing_agent_runtimes: number;
+  };
+  privacy: {
+    environment_dumped: boolean;
+    auth_tokens_exposed: boolean;
+    raw_session_content_exposed: boolean;
+    detail: string;
+  };
+}
+
+export type ForwardOperatorWakeReadinessValue =
+  | "ready"
+  | "needs_review"
+  | "attention"
+  | "hold"
+  | "wait_for_runtime"
+  | "needs_context";
+
+export interface ForwardOperatorWakeReadinessCandidate {
+  decision_id: string;
+  subject_type: "task" | "run" | "room";
+  subject_id: string;
+  current_status: string;
+  readiness: ForwardOperatorWakeReadinessValue;
+  confidence_level: "high" | "partial" | "stale";
+  confidence_score: number;
+  attention_flags: string[];
+  reason_codes: string[];
+  blockers: string[];
+  suggested_actions: string[];
+  requires_approval: boolean;
+  preferred_agent_runtime: string | null;
+  linked_refs: Record<string, unknown>;
+  turn_summary: {
+    records: number;
+    messages: number;
+    tool_events: number;
+    agent_messages: number;
+    evidence_refs: string[];
+  };
+  signal_counts: Record<string, unknown>;
+  evidence_refs: string[];
+}
+
+export interface ForwardOperatorWakeReadinessResponse {
+  generated_at: string;
+  status: "ok" | "warning" | "danger";
+  scope: {
+    task_id: string | null;
+    run_id: string | null;
+    room_id: string | null;
+    limit: number;
+  };
+  candidates: ForwardOperatorWakeReadinessCandidate[];
+  counts: {
+    returned: number;
+    total: number;
+    ready: number;
+    needs_review: number;
+    attention: number;
+    hold: number;
+    wait_for_runtime: number;
+    needs_context: number;
+    truncated: boolean;
+  };
+  source_projections: {
+    status_confidence: {
+      status: "ok" | "warning" | "danger";
+      returned: number;
+      total: number;
+    };
+    turn_records: {
+      status: "ok" | "warning" | "danger";
+      returned: number;
+      total: number;
+    };
+    runtime_roster: {
+      status: "ok" | "warning" | "danger";
+      preferred_agent_runtime: string | null;
+      observed_agent_runtimes: string[];
+      available_unobserved_agent_runtimes: string[];
+      missing_agent_runtimes: string[];
+    };
+  };
+  wake_contract: {
+    read_only: boolean;
+    scheduler_started: boolean;
+    wake_messages_sent: boolean;
+    task_status_mutated: boolean;
+    run_status_mutated: boolean;
+    room_status_mutated: boolean;
+    provider_auth_commands_executed: boolean;
+    external_fetch_performed: boolean;
+  };
+  privacy: {
+    message_content_exposed: boolean;
+    tool_payload_values_exposed: boolean;
+    approval_payload_values_exposed: boolean;
+    validator_issue_details_exposed: boolean;
+    raw_transcript_exposed: boolean;
+    detail: string;
+  };
+}
+
 export interface ForwardOperatorSummaryResponse {
   generated_at: string;
   runs: {
@@ -181,6 +349,9 @@ export interface ForwardOperatorSummaryResponse {
     open: number;
     blocked: number;
   };
+  evidence: ForwardOperatorEvidenceSummaryResponse | null;
+  doctor: ForwardOperatorDoctorEvidenceResponse | null;
+  runtime_roster: ForwardOperatorRuntimeRosterResponse | null;
 }
 
 export interface ForwardOperatorInboxResponse {
@@ -236,8 +407,62 @@ export interface ForwardOperatorTasksResponse {
   count: number;
 }
 
+export interface ForwardOperatorPrCiEvidenceItem {
+  kind: "pull_request" | "ci";
+  evidence_id: string;
+  provider: string;
+  repository: string | null;
+  title: string;
+  status: string;
+  conclusion: string | null;
+  url: string | null;
+  branch: string | null;
+  commit_sha: string | null;
+  observed_at: string;
+  summary: string | null;
+  evidence_refs: string[];
+}
+
+export interface ForwardOperatorPrCiEvidenceResponse {
+  generated_at: string;
+  status: "ok" | "warning" | "danger";
+  counts: {
+    total: number;
+    pull_requests: number;
+    ci_runs: number;
+    failing: number;
+    pending: number;
+    successful: number;
+    merged: number;
+    rejected: number;
+  };
+  resume_suggestions: string[];
+  items: ForwardOperatorPrCiEvidenceItem[];
+  privacy: {
+    external_fetch_performed: boolean;
+    auth_tokens_exposed: boolean;
+    raw_logs_exposed: boolean;
+    redaction: string;
+  };
+}
+
 export interface ForwardOperatorTaskDetailResponse {
   task: ForwardOperatorTaskRecord;
+  pr_ci_evidence: ForwardOperatorPrCiEvidenceResponse;
+}
+
+export interface ForwardOperatorTaskReconcilePreviewResponse {
+  generated_at: string;
+  decision_id: string;
+  task_id: string;
+  current_status: ForwardOperatorTaskRecord["status"];
+  recommended_status: ForwardOperatorTaskRecord["status"];
+  confidence: "low" | "medium" | "high";
+  summary: string;
+  requires_approval: boolean;
+  blockers: string[];
+  suggested_actions: string[];
+  evidence_refs: string[];
 }
 
 export interface ForwardOperatorTaskDeleteResponse {

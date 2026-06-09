@@ -1,5 +1,5 @@
 import React from "react";
-import type { AgentProfile, AgentLifecycleStatus } from "../agent-fleet-model.js";
+import { compareAgentAttention, getAgentAttentionLevel, type AgentProfile, type AgentLifecycleStatus } from "../agent-fleet-model.js";
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -40,37 +40,41 @@ interface AgentFleetOverviewProps {
 }
 
 export function AgentFleetOverview({ agents, selectedAgentId, onSelectAgent }: AgentFleetOverviewProps) {
-  const totalCount = agents.length;
-  const activeCount = agents.filter(a => a.status === "running" || a.status === "assigned" || a.status === "idle").length;
-  const pausedCount = agents.filter(a => a.status === "paused").length;
-  const retiredCount = agents.filter(a => a.status === "retired").length;
+  const orderedAgents = agents.slice().sort(compareAgentAttention);
+  const reviewCount = agents.filter(a => getAgentAttentionLevel(a) === "review").length;
+  const runningCount = agents.filter(a => getAgentAttentionLevel(a) === "running").length;
+  const blockedCount = agents.filter(a => getAgentAttentionLevel(a) === "blocked").length;
+  const dormantCount = agents.filter(a => getAgentAttentionLevel(a) === "dormant").length;
 
   return (
     <div className="agent-fleet-overview">
       <div className="agent-fleet-metrics">
         <div className="agent-metric-item">
-          <span className="agent-metric-label">Total</span>
-          <strong className="agent-metric-value">{totalCount}</strong>
+          <span className="agent-metric-label">Needs Review</span>
+          <strong className="agent-metric-value agent-metric-review">{reviewCount}</strong>
         </div>
         <div className="agent-metric-item">
-          <span className="agent-metric-label">Active</span>
-          <strong className="agent-metric-value agent-metric-active">{activeCount}</strong>
+          <span className="agent-metric-label">Running</span>
+          <strong className="agent-metric-value agent-metric-active">{runningCount}</strong>
         </div>
         <div className="agent-metric-item">
-          <span className="agent-metric-label">Paused</span>
-          <strong className="agent-metric-value agent-metric-paused">{pausedCount}</strong>
+          <span className="agent-metric-label">Blocked</span>
+          <strong className="agent-metric-value agent-metric-paused">{blockedCount}</strong>
         </div>
         <div className="agent-metric-item">
-          <span className="agent-metric-label">Retired</span>
-          <strong className="agent-metric-value agent-metric-retired">{retiredCount}</strong>
+          <span className="agent-metric-label">Dormant</span>
+          <strong className="agent-metric-value agent-metric-retired">{dormantCount}</strong>
         </div>
       </div>
 
       <div className="agent-fleet-grid">
-        {agents.map(agent => (
+        {orderedAgents.map(agent => {
+          const attention = getAgentAttentionLevel(agent);
+          return (
           <button
             key={agent.id}
-            className={`agent-card${selectedAgentId === agent.id ? " active" : ""}`}
+            type="button"
+            className={`agent-card attention-${attention}${selectedAgentId === agent.id ? " active" : ""}`}
             onClick={() => onSelectAgent(agent.id)}
           >
             <div className="agent-card-header">
@@ -87,9 +91,10 @@ export function AgentFleetOverview({ agents, selectedAgentId, onSelectAgent }: A
               <span>{(agent.errorRate * 100).toFixed(0)}% err</span>
               {typeof agent.pendingApprovals === "number" ? <span>{agent.pendingApprovals} approvals</span> : null}
             </div>
-            <p className="agent-card-last-active">{timeAgo(agent.lastActive)}</p>
+            <p className="agent-card-last-active">{attention} / {timeAgo(agent.lastActive)}</p>
           </button>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

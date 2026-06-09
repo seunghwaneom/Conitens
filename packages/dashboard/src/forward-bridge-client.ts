@@ -1,10 +1,15 @@
 import {
   parseApprovalDetailResponse,
+  parseOperatorDoctorEvidenceResponse,
   parseOperatorAgentsResponse,
+  parseOperatorEvidenceSummaryResponse,
   parseOperatorInboxResponse,
+  parseOperatorRuntimeRosterResponse,
   parseOperatorTaskDeleteResponse,
   parseOperatorTaskDetailResponse,
+  parseOperatorTaskReconcilePreviewResponse,
   parseOperatorTasksResponse,
+  parseOperatorWakeReadinessResponse,
   parseOperatorWorkspaceDetailResponse,
   parseOperatorWorkspacesResponse,
   parseApprovalResumeResponse,
@@ -14,10 +19,15 @@ import {
 import type {
   ForwardApprovalDetailResponse,
   ForwardOperatorAgentsResponse,
+  ForwardOperatorDoctorEvidenceResponse,
+  ForwardOperatorEvidenceSummaryResponse,
   ForwardOperatorInboxResponse,
+  ForwardOperatorRuntimeRosterResponse,
   ForwardOperatorTaskDeleteResponse,
   ForwardOperatorTaskDetailResponse,
+  ForwardOperatorTaskReconcilePreviewResponse,
   ForwardOperatorTasksResponse,
+  ForwardOperatorWakeReadinessResponse,
   ForwardOperatorWorkspaceDetailResponse,
   ForwardOperatorWorkspacesResponse,
   ForwardApprovalResumeResponse,
@@ -135,6 +145,37 @@ export async function forwardGetOperatorSummary(
   return forwardGet(config, "/operator/summary", parseOperatorSummaryResponse);
 }
 
+export async function forwardGetOperatorEvidenceSummary(
+  config: ForwardBridgeConfig,
+): Promise<ForwardOperatorEvidenceSummaryResponse> {
+  return forwardGet(config, "/operator/evidence-summary", parseOperatorEvidenceSummaryResponse);
+}
+
+export async function forwardGetOperatorDoctorEvidence(
+  config: ForwardBridgeConfig,
+): Promise<ForwardOperatorDoctorEvidenceResponse> {
+  return forwardGet(config, "/operator/doctor-evidence", parseOperatorDoctorEvidenceResponse);
+}
+
+export async function forwardGetOperatorRuntimeRoster(
+  config: ForwardBridgeConfig,
+): Promise<ForwardOperatorRuntimeRosterResponse> {
+  return forwardGet(config, "/operator/runtime-roster", parseOperatorRuntimeRosterResponse);
+}
+
+export async function forwardGetOperatorWakeReadiness(
+  config: ForwardBridgeConfig,
+  filters: { taskId?: string; runId?: string; roomId?: string; limit?: number } = {},
+): Promise<ForwardOperatorWakeReadinessResponse> {
+  const search = new URLSearchParams();
+  if (filters.taskId) search.set("task_id", filters.taskId);
+  if (filters.runId) search.set("run_id", filters.runId);
+  if (filters.roomId) search.set("room_id", filters.roomId);
+  if (filters.limit != null) search.set("limit", String(filters.limit));
+  const suffix = search.toString() ? `?${search.toString()}` : "";
+  return forwardGet(config, `/operator/wake-readiness${suffix}`, parseOperatorWakeReadinessResponse);
+}
+
 export async function forwardGetOperatorInbox(
   config: ForwardBridgeConfig,
 ): Promise<ForwardOperatorInboxResponse> {
@@ -165,6 +206,13 @@ export async function forwardGetOperatorTask(
   taskId: string,
 ): Promise<ForwardOperatorTaskDetailResponse> {
   return forwardGet(config, `/operator/tasks/${encodeURIComponent(taskId)}`, parseOperatorTaskDetailResponse);
+}
+
+export async function forwardGetOperatorTaskReconcilePreview(
+  config: ForwardBridgeConfig,
+  taskId: string,
+): Promise<ForwardOperatorTaskReconcilePreviewResponse> {
+  return forwardGet(config, `/operator/tasks/${encodeURIComponent(taskId)}/reconcile-preview`, parseOperatorTaskReconcilePreviewResponse);
 }
 
 export async function forwardGetOperatorWorkspaces(

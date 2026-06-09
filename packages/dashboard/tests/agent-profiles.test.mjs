@@ -5,6 +5,7 @@ import {
   OFFICE_CANONICAL_ROLES,
   getAgentOfficeProfile,
 } from "../src/agent-profiles.ts";
+import { compareAgentAttention, getAgentAttentionLevel } from "../src/agent-fleet-model.ts";
 import { OFFICE_STAGE_ROOMS } from "../src/office-stage-schema.ts";
 
 test("agent office profiles map orchestrator-like ids to the ops control persona", () => {
@@ -38,4 +39,20 @@ test("dashboard office home rooms align with floorplate room ids", () => {
   for (const role of OFFICE_CANONICAL_ROLES) {
     assert.equal(roomIds.has(getAgentOfficeProfile(role).homeRoomId), true);
   }
+});
+
+test("agent attention ordering prioritizes review and blocked work", () => {
+  const agents = [
+    { id: "stable", name: "Stable", role: "reviewer", archetype: "Inspector", status: "idle", roomId: "review-office", taskCount: 1, lastActive: "2026-04-02T03:00:00Z", memoryCount: 2, errorRate: 0 },
+    { id: "blocked", name: "Blocked", role: "researcher", archetype: "Explorer", status: "paused", roomId: "research-lab", taskCount: 1, lastActive: "2026-04-02T03:00:00Z", memoryCount: 2, errorRate: 0 },
+    { id: "review", name: "Review", role: "validator", archetype: "Gatekeeper", status: "running", roomId: "validation-office", taskCount: 1, lastActive: "2026-04-02T03:00:00Z", memoryCount: 2, errorRate: 0.08 },
+  ];
+
+  assert.equal(getAgentAttentionLevel(agents[2]), "review");
+  assert.equal(getAgentAttentionLevel(agents[1]), "blocked");
+  assert.deepEqual(agents.slice().sort(compareAgentAttention).map((agent) => agent.id), [
+    "review",
+    "blocked",
+    "stable",
+  ]);
 });

@@ -18,8 +18,16 @@ export const EVENT_TYPES = [
   "handoff.rejected", "handoff.completed",
   // Decision
   "decision.proposed", "decision.accepted", "decision.rejected",
+  // Insight
+  "insight.extracted",
+  // Validation
+  "validation.passed", "validation.failed",
   // Approval
   "approval.requested", "approval.granted", "approval.denied",
+  // Provider telemetry
+  "provider.call_recorded",
+  // PR/CI evidence
+  "pr.evidence_observed", "ci.evidence_observed",
   // Agent — core lifecycle
   "agent.spawned", "agent.heartbeat", "agent.error", "agent.terminated",
   // Agent — extended lifecycle (RFC-1.0.1 §4 Sub-AC 2 extension)
@@ -292,6 +300,99 @@ export interface AgentEventPayloadMap {
 }
 
 // ---------------------------------------------------------------------------
+// Provider telemetry event payloads
+// ---------------------------------------------------------------------------
+
+export const PROVIDER_CALL_FORBIDDEN_PAYLOAD_FIELDS = [
+  "prompt",
+  "completion",
+  "content",
+  "messages",
+  "request",
+  "response",
+  "raw_prompt",
+  "raw_completion",
+  "raw_request",
+  "raw_response",
+] as const;
+
+export interface ProviderCallRecordedPayload {
+  provider: string;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  estimated_cost: number | null;
+  latency_ms: number | null;
+  tool_calls_count: number;
+  pii_findings: number | string[];
+  run_id: string | null;
+  iteration_id: string | null;
+  task_id: string | null;
+  agent_id: string | null;
+  evidence_refs: string[];
+}
+
+// ---------------------------------------------------------------------------
+// PR/CI read evidence event payloads
+// ---------------------------------------------------------------------------
+
+export const PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS = [
+  "raw_log",
+  "raw_logs",
+  "log",
+  "logs",
+  "trace",
+  "raw_trace",
+  "diff",
+  "patch",
+  "content",
+  "body",
+  "comment",
+  "comments",
+  "review_body",
+  "token",
+  "auth_token",
+  "secret",
+] as const;
+
+export interface PullRequestEvidenceObservedPayload {
+  provider: string;
+  repository: string | null;
+  pr_number: number | string | null;
+  pr_id: string | null;
+  title: string;
+  status: string;
+  conclusion: string | null;
+  url: string | null;
+  branch: string | null;
+  commit_sha: string | null;
+  run_id: string | null;
+  task_id: string | null;
+  observed_at: string;
+  summary: string | null;
+  evidence_refs: string[];
+}
+
+export interface CiEvidenceObservedPayload {
+  provider: string;
+  repository: string | null;
+  workflow: string | null;
+  job: string | null;
+  ci_run_id: string | null;
+  status: string;
+  conclusion: string | null;
+  url: string | null;
+  branch: string | null;
+  commit_sha: string | null;
+  run_id: string | null;
+  task_id: string | null;
+  observed_at: string;
+  summary: string | null;
+  evidence_refs: string[];
+}
+
+// ---------------------------------------------------------------------------
 // Obsolete alias map — §4.3
 // ---------------------------------------------------------------------------
 
@@ -304,8 +405,22 @@ export const OBSOLETE_ALIASES: Readonly<Record<string, EventType>> = {
   // Legacy SCREAMING_CASE events found in .notes/EVENTS/events.jsonl
   "QUESTION_CREATED":   "approval.requested",
   "APPROVAL_REQUESTED": "approval.requested",
+  "APPROVAL_APPROVED":  "approval.granted",
+  "APPROVAL_EDITED":    "approval.granted",
+  "APPROVAL_REJECTED":  "approval.denied",
   "AUTO_SELECTED":      "approval.granted",
+  "WORKER_EXECUTED":    "command.completed",
+  "VALIDATOR_PASSED":   "validation.passed",
+  "VALIDATOR_FAILED":   "validation.failed",
+  "REFLECTION_RECORDED": "memory.update_proposed",
+  "ROOM_TOOL_EVENT":    "interaction.command_executed",
+  "TOOL_EVENT":         "interaction.command_executed",
+  "HANDOFF_REQUESTED":  "handoff.requested",
+  "HANDOFF_ACCEPTED":   "handoff.accepted",
+  "HANDOFF_REJECTED":   "handoff.rejected",
+  "HANDOFF_COMPLETED":  "handoff.completed",
   "MEMORY_APPENDED":    "memory.update_proposed",
+  "INSIGHT_EXTRACTED":  "insight.extracted",
   "ROOM_CREATED":       "thread.created",
   "ROOM_MESSAGE":       "thread.message_appended",
 };

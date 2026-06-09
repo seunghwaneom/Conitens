@@ -19,6 +19,38 @@ from ensemble_paths import candidate_notes_dirs, ensure_notes_dir
 
 EVENT_SCHEMA_V = 1
 DEFAULT_EVENT_FILE = "events.jsonl"
+PROVIDER_CALL_EVENT_TYPE = "provider.call_recorded"
+PR_CI_EVIDENCE_EVENT_TYPES = frozenset({"pr.evidence_observed", "ci.evidence_observed"})
+PROVIDER_CALL_FORBIDDEN_PAYLOAD_FIELDS = {
+    "prompt",
+    "completion",
+    "content",
+    "messages",
+    "request",
+    "response",
+    "raw_prompt",
+    "raw_completion",
+    "raw_request",
+    "raw_response",
+}
+PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS = {
+    "raw_log",
+    "raw_logs",
+    "log",
+    "logs",
+    "trace",
+    "raw_trace",
+    "diff",
+    "patch",
+    "content",
+    "body",
+    "comment",
+    "comments",
+    "review_body",
+    "token",
+    "auth_token",
+    "secret",
+}
 
 REDACTION_PATTERNS = {
     "path": [
@@ -27,7 +59,7 @@ REDACTION_PATTERNS = {
         re.compile(r"[A-Za-z]:\\\\Users\\\\[^\\\s]+\\\\"),
     ],
     "token": [
-        re.compile(r"sk-[A-Za-z0-9]+", re.IGNORECASE),
+        re.compile(r"(?<![A-Za-z0-9])sk-[A-Za-z0-9]+", re.IGNORECASE),
         re.compile(r"ghp_[A-Za-z0-9]+", re.IGNORECASE),
         re.compile(r"\btoken[=:]\s*[A-Za-z0-9._-]+\b", re.IGNORECASE),
         re.compile(r"\bBearer\s+[A-Za-z0-9._-]+\b", re.IGNORECASE),
@@ -118,6 +150,56 @@ def redact_data(value: Any, rules: list[str] | None = None) -> tuple[Any, list[s
     return value, applied_rules
 
 
+def _payload_key_variants(key: Any) -> tuple[str, str]:
+    normalized = str(key).strip().lower()
+    compact = "".join(char for char in normalized if char.isalnum())
+    return normalized, compact
+
+
+def _provider_call_forbidden_payload_fields(payload: dict[str, Any]) -> list[str]:
+    fields: list[str] = []
+    forbidden_compact = {"".join(char for char in key if char.isalnum()) for key in PROVIDER_CALL_FORBIDDEN_PAYLOAD_FIELDS}
+    for key in payload:
+        normalized, compact = _payload_key_variants(key)
+        if (
+            normalized in PROVIDER_CALL_FORBIDDEN_PAYLOAD_FIELDS
+            or compact in forbidden_compact
+            or normalized.endswith("_content")
+            or compact.endswith("content")
+        ):
+            fields.append(str(key))
+    return sorted(fields)
+
+
+def _external_evidence_forbidden_payload_fields(payload: dict[str, Any]) -> list[str]:
+    fields: list[str] = []
+    forbidden_compact = {"".join(char for char in key if char.isalnum()) for key in PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS}
+    for key in payload:
+        normalized, compact = _payload_key_variants(key)
+        if (
+            normalized in PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS
+            or compact in forbidden_compact
+            or normalized.endswith("_log")
+            or normalized.endswith("_logs")
+            or normalized.endswith("_content")
+            or normalized.endswith("_body")
+            or normalized.endswith("_diff")
+            or normalized.endswith("_patch")
+            or compact.endswith("log")
+            or compact.endswith("logs")
+            or compact.endswith("content")
+            or compact.endswith("body")
+            or compact.endswith("diff")
+            or compact.endswith("patch")
+        ):
+            fields.append(str(key))
+    return sorted(fields)
+
+
+def external_evidence_forbidden_payload_fields(payload: dict[str, Any]) -> list[str]:
+    return _external_evidence_forbidden_payload_fields(payload)
+
+
 def append_event(
     workspace: str | Path,
     *,
@@ -137,6 +219,20 @@ def append_event(
         pass  # Graceful fallback if sync not yet run
     ts = utc_now()
     payload = payload or {}
+    if event_type == PROVIDER_CALL_EVENT_TYPE:
+        forbidden_fields = _provider_call_forbidden_payload_fields(payload)
+        if forbidden_fields:
+            raise ValueError(
+                "provider.call_recorded payload forbids raw content fields: "
+                + ", ".join(forbidden_fields)
+            )
+    if event_type in PR_CI_EVIDENCE_EVENT_TYPES:
+        forbidden_fields = _external_evidence_forbidden_payload_fields(payload)
+        if forbidden_fields:
+            raise ValueError(
+                f"{event_type} payload forbids raw PR/CI content fields: "
+                + ", ".join(forbidden_fields)
+            )
     redacted_payload, applied_rules = redact_data(deepcopy(payload), rules)
     shard_date = ts.strftime("%Y-%m-%d") if shard_by_date else None
     event_path = get_events_file(workspace, shard_date=shard_date)

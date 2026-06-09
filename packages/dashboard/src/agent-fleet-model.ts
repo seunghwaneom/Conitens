@@ -18,6 +18,47 @@ export interface AgentProfile {
   workspaceRef?: string | null;
 }
 
+export type AgentAttentionLevel = "review" | "running" | "blocked" | "dormant" | "stable";
+
+export function getAgentAttentionLevel(agent: AgentProfile): AgentAttentionLevel {
+  if ((agent.pendingApprovals ?? 0) > 0 || agent.errorRate >= 0.05) {
+    return "review";
+  }
+  if (agent.latestBlocker || agent.status === "paused") {
+    return "blocked";
+  }
+  if (agent.status === "running" || agent.status === "assigned") {
+    return "running";
+  }
+  if (agent.status === "dormant" || agent.status === "retired") {
+    return "dormant";
+  }
+  return "stable";
+}
+
+const ATTENTION_ORDER: Record<AgentAttentionLevel, number> = {
+  review: 0,
+  running: 1,
+  blocked: 2,
+  stable: 3,
+  dormant: 4,
+};
+
+export function compareAgentAttention(left: AgentProfile, right: AgentProfile): number {
+  const leftLevel = getAgentAttentionLevel(left);
+  const rightLevel = getAgentAttentionLevel(right);
+  if (leftLevel !== rightLevel) {
+    return ATTENTION_ORDER[leftLevel] - ATTENTION_ORDER[rightLevel];
+  }
+  if ((left.pendingApprovals ?? 0) !== (right.pendingApprovals ?? 0)) {
+    return (right.pendingApprovals ?? 0) - (left.pendingApprovals ?? 0);
+  }
+  if (left.taskCount !== right.taskCount) {
+    return right.taskCount - left.taskCount;
+  }
+  return new Date(right.lastActive).getTime() - new Date(left.lastActive).getTime();
+}
+
 export const demoFleet: AgentProfile[] = [
   { id: "architect", name: "Architect", role: "orchestrator", archetype: "Floor lead", status: "running", roomId: "ops-control", taskCount: 3, lastActive: "2026-04-02T04:30:00Z", memoryCount: 12, errorRate: 0.02 },
   { id: "sentinel", name: "Sentinel", role: "validator", archetype: "Gatekeeper", status: "running", roomId: "validation-office", taskCount: 2, lastActive: "2026-04-02T04:28:00Z", memoryCount: 8, errorRate: 0.05 },

@@ -4628,7 +4628,7 @@ def cmd_ui(args):
 
 
 def cmd_forward(args):
-    """Expose a minimal read-only entry contract for the forward `.conitens` runtime."""
+    """Expose the explicit forward `.conitens` runtime entry contract."""
     if args.action == "serve":
         try:
             from ensemble_forward_bridge import launch_forward_bridge
@@ -4667,7 +4667,31 @@ def cmd_forward(args):
         return
 
     output_format = getattr(args, "format", "text")
-    print(run_forward_action(WORKSPACE, action=args.action, output_format=output_format))
+    runtime_category = getattr(args, "runtime_category", None)
+    if getattr(args, "agent_runtimes_only", False):
+        if runtime_category and runtime_category != "agent_runtime":
+            print("Error: --agent-runtimes-only cannot be combined with --category toolchain")
+            return
+        runtime_category = "agent_runtime"
+    print(
+        run_forward_action(
+            WORKSPACE,
+            action=args.action,
+            output_format=output_format,
+            write_artifact=getattr(args, "write_artifact", False),
+            probe_versions=not getattr(args, "no_version_probe", False),
+            limit=getattr(args, "limit", None),
+            input_path=getattr(args, "input_path", None),
+            reviewer=getattr(args, "reviewer", None),
+            task_id=getattr(args, "task_id", None),
+            run_id=getattr(args, "run_id", None),
+            room_id=getattr(args, "room_id", None),
+            workflow_ref=getattr(args, "workflow_ref", None),
+            runtime_id=getattr(args, "runtime_id", None),
+            runtime_category=runtime_category,
+            repository=getattr(args, "repository", None),
+        )
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -5420,12 +5444,49 @@ def main():
 
     # additive forward runtime entry contract
     p_forward = subparsers.add_parser("forward", help="Read-only forward `.conitens` runtime entry surface")
-    p_forward.add_argument("action", choices=["status", "context-latest", "serve"], help="Forward action")
+    p_forward.add_argument(
+        "action",
+        choices=[
+            "status",
+            "context-latest",
+            "doctor-evidence",
+            "runtime-roster",
+            "turn-records",
+            "workflow-contracts",
+            "status-confidence",
+            "wake-readiness",
+            "import-pr-ci-evidence",
+            "append-pr-ci-evidence",
+            "serve",
+        ],
+        help="Forward action",
+    )
     p_forward.add_argument("--host", default="127.0.0.1")
     p_forward.add_argument("--port", type=int, default=8785)
     p_forward.add_argument("--reviewer")
     p_forward.add_argument("--once", action="store_true")
     p_forward.add_argument("--format", choices=["text", "json"], default="text")
+    p_forward.add_argument("--write-artifact", action="store_true", help="Write doctor evidence JSON and Markdown artifacts")
+    p_forward.add_argument("--no-version-probe", action="store_true", help="Skip runtime version probes for runtime-roster")
+    p_forward.add_argument("--runtime", dest="runtime_id", help="Optional runtime id for runtime-roster")
+    p_forward.add_argument(
+        "--category",
+        dest="runtime_category",
+        choices=["agent_runtime", "toolchain"],
+        help="Optional runtime category filter for runtime-roster",
+    )
+    p_forward.add_argument(
+        "--agent-runtimes-only",
+        action="store_true",
+        help="Shortcut for --category agent_runtime on runtime-roster",
+    )
+    p_forward.add_argument("--input", dest="input_path", help="Read local PR/CI JSON for import or append actions")
+    p_forward.add_argument("--task-id", dest="task_id", help="Canonical operator task id for scoped forward actions")
+    p_forward.add_argument("--run-id", dest="run_id", help="Optional run id for scoped forward actions")
+    p_forward.add_argument("--room-id", dest="room_id", help="Optional room id for scoped forward projections")
+    p_forward.add_argument("--workflow", dest="workflow_ref", help="Optional workflow slug or file stem for workflow-contracts")
+    p_forward.add_argument("--limit", type=int, help="Optional row limit for bounded forward projections")
+    p_forward.add_argument("--repository", help="Optional repository override for PR/CI evidence import")
     
     # v4.2 Upgrade System
     p_upgrade_scan = subparsers.add_parser("upgrade-scan", help="Scan journals for upgrade candidates (v4.2)")

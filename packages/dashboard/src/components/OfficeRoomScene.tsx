@@ -41,6 +41,12 @@ export function OfficeRoomScene({
         stageStyles[`status-${room.snapshot.tone}`],
         room.roomId === selectedRoomId ? stageStyles.selected : "",
       ].filter(Boolean).join(" ")}
+      style={{
+        left: `${room.schema.x}%`,
+        top: `${room.schema.y}%`,
+        width: `${room.schema.w}%`,
+        height: `${room.schema.h}%`,
+      }}
       onClick={() => onSelectRoom(room.roomId)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
