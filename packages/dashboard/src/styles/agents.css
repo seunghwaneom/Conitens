@@ -4,8 +4,8 @@
 }
 
 .agent-fleet-metrics {
-  gap: 18px;
-  padding: 16px 18px;
+  gap: 10px;
+  padding: 12px;
 }
 
 .agent-metric-label,
@@ -35,19 +35,31 @@
 
 .agent-card,
 .proposal-card {
-  border-radius: 0;
+  border-radius: var(--shell-radius-panel);
   cursor: pointer;
 }
 
 .agent-card:hover,
 .proposal-card:hover {
   transform: none;
-  border-color: rgba(139, 210, 255, 0.18);
+  border-color: var(--shell-line-strong);
 }
 
 .agent-card.active {
-  border-color: rgba(139, 210, 255, 0.28);
-  background: rgba(139, 210, 255, 0.08);
+  border-color: rgba(113, 112, 255, 0.36);
+  background: rgba(113, 112, 255, 0.1);
+}
+
+.agent-card.attention-review {
+  border-color: rgba(235, 87, 87, 0.32);
+}
+
+.agent-card.attention-running {
+  border-color: rgba(39, 166, 68, 0.28);
+}
+
+.agent-card.attention-blocked {
+  border-color: rgba(212, 177, 68, 0.28);
 }
 
 .agent-status-dot {
@@ -56,12 +68,12 @@
 
 .dot-running {
   background: var(--shell-success);
-  box-shadow: 0 0 0 3px rgba(93, 204, 152, 0.12);
+  box-shadow: 0 0 0 3px rgba(39, 166, 68, 0.12);
   animation: none;
 }
 
 .dot-idle {
-  background: rgba(93, 204, 152, 0.78);
+  background: rgba(39, 166, 68, 0.78);
 }
 
 .dot-paused {
@@ -85,7 +97,7 @@
 
 .agent-error-bar-fill,
 .proposal-confidence-bar {
-  background: rgba(139, 210, 255, 0.72);
+  background: rgba(113, 112, 255, 0.72);
 }
 
 .proposal-pending-badge {
@@ -101,7 +113,7 @@
 }
 
 .proposal-btn-approve {
-  border-color: rgba(93, 204, 152, 0.24);
+  border-color: rgba(39, 166, 68, 0.24);
   color: var(--shell-success);
 }
 
@@ -114,16 +126,76 @@
   padding: 20px;
 }
 
+.agent-graph-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.agent-graph-header h3 {
+  margin: 0;
+  color: var(--shell-text);
+}
+
+.agent-graph-note {
+  margin: 10px 0 0;
+  color: var(--shell-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .agent-graph-container text {
   fill: var(--shell-text);
 }
 
 .agent-graph-container line {
-  stroke: rgba(216, 228, 243, 0.24);
+  stroke: rgba(180, 184, 190, 0.28);
 }
 
 .agent-graph-container circle {
-  stroke: rgba(216, 228, 243, 0.2);
+  stroke: rgba(247, 248, 248, 0.22);
+}
+
+.agent-assignment-list {
+  display: grid;
+  gap: 8px;
+}
+
+.agent-assignment-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--shell-line);
+}
+
+.agent-assignment-row:last-child {
+  border-bottom: 0;
+}
+
+.agent-assignment-row span {
+  color: var(--shell-muted);
+  font-size: 12px;
+}
+
+.agent-assignment-row strong,
+.agent-room-link {
+  min-width: 0;
+  color: var(--shell-text);
+  overflow-wrap: anywhere;
+}
+
+.agent-room-link {
+  width: fit-content;
+  border: 1px solid rgba(113, 112, 255, 0.34);
+  background: rgba(113, 112, 255, 0.1);
+  border-radius: var(--shell-radius-control);
+  padding: 5px 8px;
+  font-size: 12px;
+  text-align: left;
 }
 
 @media (max-width: 1220px) {

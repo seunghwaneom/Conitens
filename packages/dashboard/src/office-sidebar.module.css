@@ -1,6 +1,6 @@
 .office-rail {
-  gap: 18px;
-  padding-left: 14px;
+  gap: 14px;
+  padding-left: 12px;
   border-left: 1px solid rgba(196, 210, 228, 0.12);
   min-height: 100%;
   align-self: start;
@@ -27,14 +27,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 10px 2px;
+  padding: 8px 2px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(46, 57, 46, 0.08);
+  border-bottom: 1px solid rgba(196, 210, 228, 0.1);
   text-align: left;
-  color: var(--text);
+  color: rgba(237, 243, 251, 0.76);
   transition: background 120ms ease, box-shadow 120ms ease;
 }
 
@@ -54,7 +54,7 @@
 }
 
 .office-staff-row:hover {
-  background: rgba(17, 122, 69, 0.04);
+  background: rgba(247, 248, 248, 0.045);
 }
 
 .office-staff-row:focus-visible,
@@ -66,7 +66,7 @@
 .office-staff-row strong,
 .office-task-main strong,
 .office-data-row strong {
-  color: var(--text);
+  color: rgba(237, 243, 251, 0.9);
   letter-spacing: 0.02em;
   font-family: inherit;
   font-size: 11px;
@@ -81,10 +81,10 @@
 }
 
 .office-section-count {
-  color: rgba(216, 228, 243, 0.48);
+  color: rgba(216, 228, 243, 0.64);
   font-size: 9px;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -132,7 +132,7 @@
 }
 
 .office-task-row:hover {
-  background: rgba(17, 122, 69, 0.04);
+  background: rgba(247, 248, 248, 0.045);
 }
 
 .office-route-meta {
@@ -142,23 +142,24 @@
 }
 
 .office-data-row:hover {
-  background: rgba(17, 122, 69, 0.04);
+  background: rgba(247, 248, 248, 0.045);
 }
 
 .office-focus-card {
   display: grid;
   gap: 6px;
-  margin-top: auto;
-  padding: 12px 0 0;
-  border-top: 1px solid rgba(196, 210, 228, 0.12);
-  background: transparent;
+  margin-top: 0;
+  padding: 10px;
+  border: 1px solid var(--shell-line);
+  background: rgba(247, 248, 248, 0.032);
+  border-radius: var(--shell-radius-panel);
 }
 
 .office-focus-kicker {
   margin: 0;
-  color: rgba(216, 228, 243, 0.48);
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  color: rgba(216, 228, 243, 0.64);
+  font-size: 10px;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -172,18 +173,19 @@
 .office-focus-pill {
   display: inline-flex;
   align-items: center;
-  padding: 5px 8px;
+  padding: 4px 7px;
   border: 1px solid rgba(196, 210, 228, 0.12);
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(216, 228, 243, 0.68);
+  color: rgba(216, 228, 243, 0.78);
   font-size: 9px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   text-transform: uppercase;
+  border-radius: var(--shell-radius-control);
 }
 
 .office-focus-copy {
   margin: 0;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.45;
   color: rgba(237, 243, 251, 0.8);
   letter-spacing: 0.01em;
@@ -191,11 +193,21 @@
 
 .office-focus-detail {
   margin: 0;
-  font-size: 10px;
+  font-size: 9px;
   line-height: 1.45;
-  color: rgba(216, 228, 243, 0.48);
-  letter-spacing: 0.04em;
+  color: rgba(216, 228, 243, 0.66);
+  letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.office-focus-action {
+  width: fit-content;
+  border: 1px solid rgba(113, 112, 255, 0.34);
+  background: rgba(113, 112, 255, 0.12);
+  color: var(--shell-text);
+  border-radius: var(--shell-radius-control);
+  padding: 5px 8px;
+  font-size: 10px;
 }
 
 .office-focus-meta {
@@ -212,12 +224,13 @@
   width: fit-content;
   margin-top: 8px;
   padding: 5px 10px;
-  border: 1px dashed rgba(196, 210, 228, 0.16);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(216, 228, 243, 0.48);
+  border: 1px dashed rgba(196, 210, 228, 0.24);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(216, 228, 243, 0.66);
   font-size: 9px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
   text-transform: uppercase;
+  border-radius: var(--shell-radius-control);
 }
 
 @media (max-width: 1220px) {

@@ -1758,6 +1758,28 @@ class LoopStateRepository:
             return None
         return self._decode_orchestration_checkpoint(dict(row))
 
+    def list_orchestration_checkpoints(
+        self,
+        *,
+        run_id: str | None = None,
+        graph_kind: str | None = None,
+    ) -> list[dict[str, Any]]:
+        query = "SELECT * FROM orchestration_checkpoints"
+        clauses = []
+        params: list[Any] = []
+        if run_id is not None:
+            clauses.append("run_id = ?")
+            params.append(run_id)
+        if graph_kind is not None:
+            clauses.append("graph_kind = ?")
+            params.append(graph_kind)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at DESC, id DESC"
+        with self.connect() as connection:
+            rows = connection.execute(query, tuple(params)).fetchall()
+        return [self._decode_orchestration_checkpoint(dict(row)) for row in rows]
+
     def append_retry_decision(
         self,
         *,

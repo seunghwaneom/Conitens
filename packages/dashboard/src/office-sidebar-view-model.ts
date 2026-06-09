@@ -58,8 +58,8 @@ export function buildOfficeFocusStripView({
         roleLabels[selectedResident.profile.role] ?? selectedResident.profile.role,
         selectedResident.status,
         `${selectedResident.taskCount} active`,
-      ].join(" · "),
-      detail: `${selectedResident.profile.archetype} lane · stay on ${selectedResident.roomLabel}`,
+      ].join(" / "),
+      detail: `${selectedResident.profile.archetype} lane / stay on ${selectedResident.roomLabel}`,
     };
   }
 
@@ -71,7 +71,7 @@ export function buildOfficeFocusStripView({
         `${selectedRoom.snapshot.agentCount} residents`,
         `${selectedRoom.snapshot.taskCount} tasks`,
         selectedRoom.snapshot.latestFamily ?? "stable",
-      ].join(" · "),
+      ].join(" / "),
       detail: selectedRoom.snapshot.runningCount > 0
         ? `${selectedRoom.snapshot.runningCount} live operator lanes in view`
         : "Quiet room held for the next handoff",

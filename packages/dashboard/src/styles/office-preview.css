@@ -19,7 +19,7 @@
 }
 
 .forward-shell-preview .forward-chip-link.active {
-  background: rgba(139, 210, 255, 0.12);
-  border-color: rgba(139, 210, 255, 0.24);
-  color: #f4f9ff;
+  background: rgba(113, 112, 255, 0.13);
+  border-color: rgba(113, 112, 255, 0.34);
+  color: var(--shell-text);
 }

@@ -1,0 +1,5 @@
+Generated for Conitens Spatial Lens; project-owned generated visual reference/assets.
+
+The source mockups and asset sheet were generated for this project. Do not mix
+these files with third-party pixel art assets unless license, attribution, and
+redistribution rights are reviewed first.

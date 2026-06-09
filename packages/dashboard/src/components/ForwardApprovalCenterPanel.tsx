@@ -44,7 +44,7 @@ export function ForwardApprovalCenterPanel({
   }, [runId, taskId]);
 
   useEffect(() => {
-    if (!config.token.trim() || (!runId && !taskId)) {
+    if (!config.token.trim()) {
       setApprovals([]);
       setSelectedApprovalId(null);
       setSelectedApproval(null);
@@ -79,7 +79,7 @@ export function ForwardApprovalCenterPanel({
   }, [config, runId, taskId]);
 
   useEffect(() => {
-    if (!config.token.trim() || (!runId && !taskId)) {
+    if (!config.token.trim()) {
       return;
     }
     let cancelled = false;
@@ -195,12 +195,14 @@ export function ForwardApprovalCenterPanel({
             {pendingCount > 0 ? <span className="badge danger">{pendingCount}</span> : null}
           </h3>
         </div>
-        <span className={`forward-state state-${listState}`}>{listState}</span>
+      <span className={`forward-state state-${listState}`}>{listState}</span>
       </div>
       {listState === "loading" ? <p className="forward-empty">Loading approvals...</p> : null}
       {listState === "error" ? <p className="forward-error">{error}</p> : null}
       {listState === "ready" && approvals.length === 0 ? (
-        <p className="forward-empty">No approval records for this run.</p>
+        <p className="forward-empty">
+          {runId || taskId ? "No approval records for this scope." : "No approval records in the global queue."}
+        </p>
       ) : null}
       {approvals.length > 0 ? (
         <div className="forward-approval-layout">

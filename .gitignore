@@ -10,6 +10,9 @@ tests/__pycache__/
 docs/.bkit-memory.json
 docs/.pdca-status.json
 
+# Deep research source checkouts
+RESEARCH/*/sources/repos/
+
 # Conitens runtime
 .conitens/runtime/
 .conitens/agents/*/memory.sqlite

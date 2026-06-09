@@ -19,35 +19,38 @@ const NULL_IDS = { runId: null, taskId: null, workspaceId: null, threadId: null,
 
 export function parseForwardRoute(hash: string): ForwardRoute {
   const cleaned = hash.replace(/^#/, "").replace(/^\/+/, "");
-  if (!cleaned || cleaned === "overview") {
+  const [path, query = ""] = cleaned.split("?", 2);
+  const params = new URLSearchParams(query);
+  const agentFocus = params.get("agent");
+  if (!path || path === "overview") {
     return { screen: "overview", ...NULL_IDS };
   }
-  if (cleaned === "inbox") return { screen: "inbox", ...NULL_IDS };
-  if (cleaned === "tasks") return { screen: "tasks", ...NULL_IDS };
-  if (cleaned === "workspaces") return { screen: "workspaces", ...NULL_IDS };
-  if (cleaned === "runs") return { screen: "runs", ...NULL_IDS };
-  if (cleaned === "office-preview") return { screen: "office-preview", ...NULL_IDS };
-  if (cleaned === "threads") return { screen: "threads", ...NULL_IDS };
-  if (cleaned === "agents") return { screen: "agents", ...NULL_IDS };
-  if (cleaned === "approvals") return { screen: "approvals", ...NULL_IDS };
+  if (path === "inbox") return { screen: "inbox", ...NULL_IDS };
+  if (path === "tasks") return { screen: "tasks", ...NULL_IDS };
+  if (path === "workspaces") return { screen: "workspaces", ...NULL_IDS };
+  if (path === "runs") return { screen: "runs", ...NULL_IDS };
+  if (path === "office-preview") return { screen: "office-preview", ...NULL_IDS };
+  if (path === "threads") return { screen: "threads", ...NULL_IDS };
+  if (path === "agents") return { screen: "agents", ...NULL_IDS, agentId: agentFocus ? decodeURIComponent(agentFocus) : null };
+  if (path === "approvals") return { screen: "approvals", ...NULL_IDS };
 
-  const taskMatch = cleaned.match(/^tasks\/([^/]+)$/);
+  const taskMatch = path.match(/^tasks\/([^/]+)$/);
   if (taskMatch) {
     return { screen: "task-detail", ...NULL_IDS, taskId: decodeURIComponent(taskMatch[1]) };
   }
-  const workspaceMatch = cleaned.match(/^workspaces\/([^/]+)$/);
+  const workspaceMatch = path.match(/^workspaces\/([^/]+)$/);
   if (workspaceMatch) {
     return { screen: "workspace-detail", ...NULL_IDS, workspaceId: decodeURIComponent(workspaceMatch[1]) };
   }
-  const threadMatch = cleaned.match(/^threads\/([^/]+)$/);
+  const threadMatch = path.match(/^threads\/([^/]+)$/);
   if (threadMatch) {
     return { screen: "thread-detail", ...NULL_IDS, threadId: decodeURIComponent(threadMatch[1]) };
   }
-  const agentMatch = cleaned.match(/^agents\/([^/]+)$/);
+  const agentMatch = path.match(/^agents\/([^/]+)$/);
   if (agentMatch) {
     return { screen: "agent-detail", ...NULL_IDS, agentId: decodeURIComponent(agentMatch[1]) };
   }
-  const runMatch = cleaned.match(/^runs\/([^/]+)$/);
+  const runMatch = path.match(/^runs\/([^/]+)$/);
   if (runMatch) {
     return { screen: "run-detail", ...NULL_IDS, runId: decodeURIComponent(runMatch[1]) };
   }
@@ -70,7 +73,9 @@ export function buildForwardRoute(route: ForwardRoute): string {
   if (route.screen === "thread-detail" && route.threadId) {
     return `#/threads/${encodeURIComponent(route.threadId)}`;
   }
-  if (route.screen === "agents") return "#/agents";
+  if (route.screen === "agents") {
+    return route.agentId ? `#/agents?agent=${encodeURIComponent(route.agentId)}` : "#/agents";
+  }
   if (route.screen === "agent-detail" && route.agentId) {
     return `#/agents/${encodeURIComponent(route.agentId)}`;
   }
