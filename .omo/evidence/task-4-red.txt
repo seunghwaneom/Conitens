@@ -1,0 +1,10 @@
+✔ office preview shell makes focused workbench dominant (1.4892ms)
+✔ forward shell nav keeps shortened one-row labels before mobile (0.651ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 67.1593

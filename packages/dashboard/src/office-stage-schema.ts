@@ -116,7 +116,7 @@ export const OFFICE_STAGE_ROOMS: OfficeStageRoomSchema[] = [
     x: 3,
     y: 3,
     w: 30,
-    h: 18,
+    h: 20,
     floorTone: "control",
     priority: "hero",
     fixtureClusters: [
@@ -165,9 +165,9 @@ export const OFFICE_STAGE_ROOMS: OfficeStageRoomSchema[] = [
     teamId: "refactor_team",
     teamLabel: "Refactor Team",
     x: 3,
-    y: 24,
+    y: 27,
     w: 30,
-    h: 29,
+    h: 31,
     floorTone: "workspace",
     priority: "support",
     fixtureClusters: [
@@ -222,10 +222,10 @@ export const OFFICE_STAGE_ROOMS: OfficeStageRoomSchema[] = [
     kind: "lobby",
     teamId: "advising_team",
     teamLabel: "Advising Team",
-    x: 11,
-    y: 64,
-    w: 41,
-    h: 28,
+    x: 34,
+    y: 60,
+    w: 24,
+    h: 32,
     floorTone: "lobby",
     priority: "hero",
     fixtureClusters: [
@@ -303,9 +303,9 @@ export const OFFICE_STAGE_ROOMS: OfficeStageRoomSchema[] = [
     teamId: "research_team",
     teamLabel: "Research Team",
     x: 61,
-    y: 3,
+    y: 58,
     w: 30,
-    h: 17,
+    h: 22,
     floorTone: "lab",
     priority: "support",
     fixtureClusters: [
@@ -355,9 +355,9 @@ export const OFFICE_STAGE_ROOMS: OfficeStageRoomSchema[] = [
     teamId: "review_team",
     teamLabel: "Review Team",
     x: 61,
-    y: 23,
+    y: 3,
     w: 30,
-    h: 18,
+    h: 22,
     floorTone: "validation",
     priority: "hero",
     fixtureClusters: [
@@ -408,9 +408,9 @@ export const OFFICE_STAGE_ROOMS: OfficeStageRoomSchema[] = [
     teamId: "design_team",
     teamLabel: "Design Team",
     x: 61,
-    y: 56,
+    y: 29,
     w: 30,
-    h: 24,
+    h: 23,
     floorTone: "review",
     priority: "quiet",
     fixtureClusters: [
@@ -456,16 +456,16 @@ export const OFFICE_STAGE_ROOMS: OfficeStageRoomSchema[] = [
 
 export const OFFICE_STAGE_CORRIDORS: OfficeStageCorridorSchema[] = [
   { x: 35, y: 0, w: 22, h: 100 },
-  { x: 0, y: 82, w: 62, h: 14 },
+  { x: 31, y: 58, w: 30, h: 14 },
 ];
 
 export const OFFICE_STAGE_CORRIDOR_FIXTURES: OfficeStageCorridorFixture[] = [
   { kind: "clock", left: 45, top: 18 },
   { kind: "bulletin", left: 47, top: 44 },
-  { kind: "extinguisher", left: 52, top: 78 },
+  { kind: "extinguisher", left: 52, top: 72 },
 ];
 
 export const OFFICE_STAGE_FOCAL_LANES: OfficeStageFocalLane[] = [
-  { x: 42.4, y: 14, w: 6.2, h: 58 },
-  { x: 22, y: 72.2, w: 23.6, h: 5.4 },
+  { x: 42.4, y: 14, w: 6.2, h: 56 },
+  { x: 34, y: 61.8, w: 18.4, h: 5.4 },
 ];

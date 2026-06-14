@@ -57,7 +57,7 @@ export const FLOOR_CORRIDOR_SEGMENTS = [
   {
     id: "corridor.impl-stub",
     kind: "stub",
-    rect: { x: 33, y: 33, w: 11, h: 5.8 },
+    rect: { x: 33, y: 36, w: 11, h: 5.8 },
     axis: "x",
     floorAssetId: "floor.lane",
     connectsRoomIds: ["impl-office"],
@@ -65,7 +65,7 @@ export const FLOOR_CORRIDOR_SEGMENTS = [
   {
     id: "corridor.commons-threshold",
     kind: "stub",
-    rect: { x: 45, y: 56, w: 7, h: 8 },
+    rect: { x: 47, y: 56, w: 7, h: 8 },
     axis: "y",
     floorAssetId: "floor.lane",
     connectsRoomIds: ["project-main"],
@@ -73,7 +73,7 @@ export const FLOOR_CORRIDOR_SEGMENTS = [
   {
     id: "corridor.research-stub",
     kind: "stub",
-    rect: { x: 51, y: 10, w: 10, h: 5.8 },
+    rect: { x: 51, y: 66.5, w: 10, h: 5.8 },
     axis: "x",
     floorAssetId: "floor.lane",
     connectsRoomIds: ["research-lab"],
@@ -81,7 +81,7 @@ export const FLOOR_CORRIDOR_SEGMENTS = [
   {
     id: "corridor.validation-stub",
     kind: "stub",
-    rect: { x: 51, y: 30.5, w: 10, h: 5.8 },
+    rect: { x: 51, y: 12, w: 10, h: 5.8 },
     axis: "x",
     floorAssetId: "floor.lane",
     connectsRoomIds: ["validation-office"],
@@ -89,7 +89,7 @@ export const FLOOR_CORRIDOR_SEGMENTS = [
   {
     id: "corridor.review-stub",
     kind: "stub",
-    rect: { x: 51, y: 66.5, w: 10, h: 5.8 },
+    rect: { x: 51, y: 37.2, w: 10, h: 5.8 },
     axis: "x",
     floorAssetId: "floor.lane",
     connectsRoomIds: ["review-office"],
@@ -105,14 +105,14 @@ export const FLOOR_CORRIDOR_SEGMENTS = [
 
 export const CORRIDOR_NODES = [
   { id: "node.ops-control", kind: "threshold", point: { left: 36.8, top: 12.9 }, label: "Ops door" },
-  { id: "node.impl-office", kind: "threshold", point: { left: 36.8, top: 35.9 }, label: "Impl door" },
-  { id: "node.commons", kind: "threshold", point: { left: 46.8, top: 63.8 }, label: "Commons door" },
-  { id: "node.research-lab", kind: "threshold", point: { left: 58.5, top: 11.8 }, label: "Research door" },
-  { id: "node.validation-office", kind: "threshold", point: { left: 58.5, top: 32.7 }, label: "Validation door" },
-  { id: "node.review-office", kind: "threshold", point: { left: 58.5, top: 67.5 }, label: "Review door" },
+  { id: "node.impl-office", kind: "threshold", point: { left: 36.8, top: 38.8 }, label: "Impl door" },
+  { id: "node.commons", kind: "threshold", point: { left: 53.7, top: 60 }, label: "Commons door" },
+  { id: "node.research-lab", kind: "threshold", point: { left: 58.5, top: 69.4 }, label: "Research door" },
+  { id: "node.validation-office", kind: "threshold", point: { left: 58.5, top: 14.9 }, label: "Validation door" },
+  { id: "node.review-office", kind: "threshold", point: { left: 58.5, top: 40 }, label: "Review door" },
   { id: "node.handoff-hub", kind: "hub", point: CORRIDOR_HANDOFF_HUB_POINT, label: "Handoff hub" },
-  { id: "node.route-north", kind: "route", point: { left: CORRIDOR_SPINE_CENTER_X, top: 21.5 } },
-  { id: "node.route-south", kind: "route", point: { left: CORRIDOR_SPINE_CENTER_X, top: 74 } },
+  { id: "node.route-north", kind: "route", point: { left: CORRIDOR_SPINE_CENTER_X, top: 23.5 } },
+  { id: "node.route-south", kind: "route", point: { left: CORRIDOR_SPINE_CENTER_X, top: 72 } },
 ] as const satisfies readonly CorridorNodeSpec[];
 
 export function createDoorAlignedHandoffRoute({
@@ -145,10 +145,10 @@ export function createDoorAlignedHandoffRoute({
 
 export function getBlockedLaneCorridorPoint(roomId: string): FloorLayoutPoint {
   if (roomId === "ops-control") {
-    return { left: CORRIDOR_SPINE_CENTER_X, top: 24.5 };
+    return { left: CORRIDOR_SPINE_CENTER_X, top: 24 };
   }
   if (roomId === "validation-office") {
-    return { left: CORRIDOR_SPINE_CENTER_X, top: 38.5 };
+    return { left: CORRIDOR_SPINE_CENTER_X, top: 22 };
   }
   return { left: CORRIDOR_SPINE_CENTER_X, top: 49 };
 }

@@ -6,10 +6,20 @@ export type GeneratedSpatialLensSpriteKind =
   | "character";
 
 export type GeneratedSpatialLensSpriteScale = 1 | 2 | 3;
+export type GeneratedSpatialLensSpriteCurationSource =
+  | "sprite-gen-component-row"
+  | "sprite-gen-sheet-unpack";
 
 export interface GeneratedSpatialLensSpriteAnchor {
   readonly x: number;
   readonly y: number;
+}
+
+export interface GeneratedSpatialLensSpriteCuration {
+  readonly source: GeneratedSpatialLensSpriteCurationSource;
+  readonly frame: number;
+  readonly dx: number;
+  readonly dy: number;
 }
 
 export interface GeneratedSpatialLensSpriteAsset {
@@ -23,6 +33,7 @@ export interface GeneratedSpatialLensSpriteAsset {
   readonly anchor: GeneratedSpatialLensSpriteAnchor;
   readonly scale: GeneratedSpatialLensSpriteScale;
   readonly pixelPropKind?: PixelPropKind;
+  readonly curation?: GeneratedSpatialLensSpriteCuration;
 }
 
 export interface PixelPropSpriteRequest {
@@ -51,12 +62,13 @@ export const GENERATED_SPATIAL_LENS_SOURCE_SPRITE_SHEET_SIZE = {
 const BOTTOM_CENTER = { x: 0.5, y: 1 } as const;
 const CENTER = { x: 0.5, y: 0.5 } as const;
 const TOP_LEFT = { x: 0, y: 0 } as const;
+const SHEET_UNPACK_CURATION = "sprite-gen-sheet-unpack" as const;
 
 function sprite(
   id: string,
   kind: GeneratedSpatialLensSpriteKind,
   rect: Pick<GeneratedSpatialLensSpriteAsset, "x" | "y" | "w" | "h">,
-  options: Pick<GeneratedSpatialLensSpriteAsset, "anchor" | "scale"> & {
+  options: Pick<GeneratedSpatialLensSpriteAsset, "anchor" | "scale" | "curation"> & {
     readonly pixelPropKind?: PixelPropKind;
   },
 ): GeneratedSpatialLensSpriteAsset {
@@ -191,6 +203,16 @@ export const GENERATED_SPATIAL_LENS_SPRITES = [
     anchor: CENTER,
     scale: 1,
   }),
+  sprite("prop.auditTicket", "prop", { x: 97, y: 128, w: 20, h: 17 }, {
+    anchor: CENTER,
+    scale: 1,
+    curation: {
+      source: SHEET_UNPACK_CURATION,
+      frame: 27,
+      dx: 0,
+      dy: -1,
+    },
+  }),
   sprite("prop.barrier", "prop", { x: 134, y: 126, w: 46, h: 21 }, {
     anchor: CENTER,
     scale: 1,
@@ -220,6 +242,16 @@ export const GENERATED_SPATIAL_LENS_SPRITES = [
     anchor: BOTTOM_CENTER,
     scale: 1,
     pixelPropKind: "sampleRack",
+  }),
+  sprite("prop.checkScanner", "prop", { x: 76, y: 155, w: 31, h: 33 }, {
+    anchor: BOTTOM_CENTER,
+    scale: 1,
+    curation: {
+      source: SHEET_UNPACK_CURATION,
+      frame: 32,
+      dx: 0,
+      dy: 1,
+    },
   }),
   sprite("prop.labMachine", "prop", { x: 128, y: 156, w: 26, h: 32 }, {
     anchor: BOTTOM_CENTER,
@@ -278,6 +310,16 @@ export const GENERATED_SPATIAL_LENS_SPRITES = [
   sprite("character.ownerWorking", "character", { x: 344, y: 199, w: 16, h: 30 }, {
     anchor: BOTTOM_CENTER,
     scale: 1,
+  }),
+  sprite("character.ownerReviewing", "character", { x: 292, y: 198, w: 17, h: 31 }, {
+    anchor: BOTTOM_CENTER,
+    scale: 1,
+    curation: {
+      source: SHEET_UNPACK_CURATION,
+      frame: 55,
+      dx: 0,
+      dy: 0,
+    },
   }),
 ] as const satisfies readonly GeneratedSpatialLensSpriteAsset[];
 
@@ -372,6 +414,20 @@ export function validateGeneratedSpatialLensSprites(
     }
     if (!Number.isFinite(asset.anchor.x) || !Number.isFinite(asset.anchor.y)) {
       errors.push(`${asset.id} anchor must be finite`);
+    }
+    if (asset.curation) {
+      if (
+        asset.curation.source !== "sprite-gen-component-row" &&
+        asset.curation.source !== "sprite-gen-sheet-unpack"
+      ) {
+        errors.push(`${asset.id} has an invalid curation source`);
+      }
+      if (!Number.isInteger(asset.curation.frame) || asset.curation.frame < 0) {
+        errors.push(`${asset.id} curation frame must be a non-negative integer`);
+      }
+      if (!Number.isFinite(asset.curation.dx) || !Number.isFinite(asset.curation.dy)) {
+        errors.push(`${asset.id} curation offsets must be finite`);
+      }
     }
   }
   return errors;

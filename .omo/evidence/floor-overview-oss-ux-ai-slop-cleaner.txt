@@ -1,0 +1,48 @@
+AI SLOP CLEANUP REPORT
+======================
+
+Scope: Floor Overview reposition files:
+packages/dashboard/src/components/PixelOffice.tsx,
+packages/dashboard/src/components/OfficeSidebar.tsx,
+packages/dashboard/src/office.module.css,
+packages/dashboard/src/office-sidebar.module.css,
+packages/dashboard/tests/office-preview-shell.test.mjs,
+.omo/evidence/run-frontend-design-architecture-qa.mjs.
+
+Behavior Lock: RED source contract failed first on missing floor-command-center;
+targeted tests then passed 31/31; final full dashboard tests passed 143/143;
+browser QA passed for Focused 1220/1440, Overview 1440/1220, and Classic 1440.
+
+Cleanup Plan: remove dead code, collapse duplicate speculative helpers, check
+wrong-layer edits, and reinforce tests only if a smell is found.
+
+Passes Completed:
+1. Pass 1: Dead code deletion - no dead code found in the new overview-mode
+   wiring or CSS selectors.
+2. Pass 2: Duplicate removal - no speculative component abstraction added;
+   existing mode helpers are single-purpose and keep JSX conditionals simple.
+3. Pass 3: Naming/error handling cleanup - overview names are explicit:
+   floor-command-center, overview inspector, getOfficePreviewShellMode, and
+   getOfficeSidebarMode.
+4. Pass 4: Test reinforcement - source contract and browser QA were updated
+   to cover overview shell mode, inspector mode, 1220px map-vs-rail width,
+   no overlap, and no horizontal overflow.
+
+Quality Gates:
+- Regression tests: PASS
+- Typecheck/build: PASS via dashboard production build
+- Full tests: PASS 143/143
+- Browser QA: PASS
+- Static/security scan: N/A for UI-only layout change
+
+Changed Files:
+- PixelOffice.tsx - adds shell/sidebar mode derivation.
+- OfficeSidebar.tsx - adds overview inspector mode label.
+- office.module.css - overview map+inspector grid.
+- office-sidebar.module.css - restrained overview rail.
+- office-preview-shell.test.mjs - layout contract.
+- run-frontend-design-architecture-qa.mjs - real browser geometry assertions.
+
+Remaining Risks:
+- Mobile below 820px was not screenshot-reviewed; CSS falls back to one column
+  and browser QA covered the requested 1220px and 1440px boundaries.

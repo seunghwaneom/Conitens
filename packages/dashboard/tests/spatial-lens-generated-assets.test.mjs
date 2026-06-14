@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -30,10 +30,13 @@ const REQUIRED_SPRITES = [
   "prop.inboxTray",
   "prop.outboxTray",
   "prop.packet",
+  "prop.auditTicket",
+  "prop.checkScanner",
   "prop.barrier",
   "prop.cone",
   "character.architectIdle",
   "character.sentinelReviewing",
+  "character.ownerReviewing",
 ];
 
 test("generated Spatial Lens sprite manifest is local and bounded", () => {
@@ -55,6 +58,16 @@ test("generated Spatial Lens sprite manifest is local and bounded", () => {
     assert.ok([1, 2, 3].includes(asset.scale));
     assert.ok(asset.x + asset.w <= GENERATED_SPATIAL_LENS_SPRITE_SHEET_SIZE.w);
     assert.ok(asset.y + asset.h <= GENERATED_SPATIAL_LENS_SPRITE_SHEET_SIZE.h);
+    if (asset.curation) {
+      assert.ok(
+        ["sprite-gen-component-row", "sprite-gen-sheet-unpack"].includes(
+          asset.curation.source,
+        ),
+      );
+      assert.equal(Number.isInteger(asset.curation.frame), true);
+      assert.equal(Number.isFinite(asset.curation.dx), true);
+      assert.equal(Number.isFinite(asset.curation.dy), true);
+    }
   }
 });
 
@@ -105,8 +118,35 @@ test("generated Spatial Lens room backdrops are local and focused-use bounded", 
     assert.ok(backdrop.src.startsWith("/assets/spatial-lens/generated/"));
     assert.ok(backdrop.opacity > 0 && backdrop.opacity <= 1);
     assert.ok(["room", "target-edge"].includes(backdrop.usage));
+    assert.equal(backdrop.curation.source, "sprite-gen-component-row");
+    assert.ok(backdrop.curation.tileW > 0 && backdrop.curation.tileH > 0);
+    assert.ok(backdrop.curation.anchorX >= 0 && backdrop.curation.anchorX <= 1);
+    assert.ok(backdrop.curation.anchorY >= 0 && backdrop.curation.anchorY <= 1);
 
     const backdropPath = path.join(DASHBOARD_ROOT, "public", backdrop.src.slice(1));
     assert.ok(existsSync(backdropPath), `${backdrop.id} should exist in public assets`);
   }
 });
+
+test("generated Spatial Lens renderers expose sprite-gen curation hooks", () => {
+  const generatedSpriteSource = readDashboardSource(
+    "src/spatial-lens/assets/GeneratedSprite.tsx",
+  );
+  const backdropLayerSource = readDashboardSource(
+    "src/spatial-lens/viewport/GeneratedRoomBackdropLayer.tsx",
+  );
+  const cssSource = readDashboardSource(
+    "src/spatial-lens/styles/spatial-lens.module.css",
+  );
+
+  assert.match(generatedSpriteSource, /data-generated-sprite-curation/);
+  assert.match(generatedSpriteSource, /--generated-sprite-dx/);
+  assert.match(backdropLayerSource, /data-generated-room-curation/);
+  assert.match(backdropLayerSource, /--generated-room-curation-tile-w/);
+  assert.match(cssSource, /\.generated-room-backdrop-layer::before/);
+  assert.match(cssSource, /\.pixel-prop\.pixel-generated-sprite/);
+});
+
+function readDashboardSource(relativePath) {
+  return readFileSync(path.join(DASHBOARD_ROOT, relativePath), "utf8");
+}

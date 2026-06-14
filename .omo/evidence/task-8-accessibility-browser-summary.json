@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "keyboard": {
+    "rightSelected": "Floor Overview",
+    "rightFocused": "Floor Overview",
+    "leftSelected": "Focused",
+    "leftFocused": "Focused"
+  },
+  "panels": [
+    [
+      "focused-1220",
+      3,
+      1,
+      true
+    ],
+    [
+      "focused-1440",
+      3,
+      1,
+      true
+    ],
+    [
+      "overview-1440",
+      3,
+      1,
+      true
+    ],
+    [
+      "classic-1440",
+      3,
+      1,
+      true
+    ]
+  ]
+}

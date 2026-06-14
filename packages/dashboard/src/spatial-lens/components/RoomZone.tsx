@@ -19,12 +19,16 @@ export function RoomZone({
   model,
   selectedRoomId,
   showGeneratedBackdrops = false,
+  showTaskNodes = true,
+  focusRole = "overview",
   onSelectRoom,
 }: {
   room: OfficeRoomPresence;
   model: FloorViewportRoom;
   selectedRoomId: string | null;
   showGeneratedBackdrops?: boolean;
+  showTaskNodes?: boolean;
+  focusRole?: "source" | "target" | "background" | "overview";
   onSelectRoom: (roomId: string) => void;
 }) {
   const latestFamily = room.snapshot.latestFamily ?? "stable";
@@ -46,6 +50,8 @@ export function RoomZone({
       data-room-theme={template?.theme ?? model.kind}
       data-wall-style={template?.wallStyle ?? "default-wall"}
       data-status-tone={model.statusTone}
+      data-room-task-treatment={showTaskNodes ? "room-nodes" : "rail-only"}
+      data-room-focus-role={focusRole}
       data-building-connected="true"
       style={toRoomZoneStyle(model)}
       onClick={() => onSelectRoom(room.roomId)}
@@ -125,15 +131,17 @@ export function RoomZone({
                   style={toFixtureStyle(fixture)}
                 />
               ))}
-          {room.taskNodes.map((taskNode) => (
-            <TaskNode
-              key={taskNode.taskId}
-              taskId={taskNode.taskId}
-              tone={taskNode.tone}
-              left={taskNode.left}
-              top={taskNode.top}
-            />
-          ))}
+          {showTaskNodes
+            ? room.taskNodes.map((taskNode) => (
+                <TaskNode
+                  key={taskNode.taskId}
+                  taskId={taskNode.taskId}
+                  tone={taskNode.tone}
+                  left={taskNode.left}
+                  top={taskNode.top}
+                />
+              ))
+            : null}
         </div>
         <div className={styles["room-agent-layer"]} aria-hidden="true">
           {room.overflowCount > 0 && (

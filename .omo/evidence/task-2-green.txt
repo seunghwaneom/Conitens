@@ -1,0 +1,30 @@
+✔ spatial lens pixel grammar uses integer scale and hard shadow anchors (1.0999ms)
+✔ spatial lens pixel grammar snaps props to the room tile field (0.2244ms)
+✔ spatial lens pixel grammar y-sorts props deterministically (9.0218ms)
+✔ spatial lens focused camera defaults to ops control and enlarges the floor (0.6837ms)
+✔ spatial lens focused camera biases toward a connected handoff target (0.2002ms)
+✔ spatial lens floor overview camera keeps the full topology at 1x (0.1382ms)
+✔ focused handoff workbench model surfaces the active blocker chain (1.7593ms)
+✔ focused handoff workbench model does not invent a blocked owner gate (0.4271ms)
+✔ focused handoff workbench blocked age starts from the block-opening event (0.3118ms)
+✔ focused handoff workbench model emits empty labels and correct edges without events (0.3428ms)
+✔ getAgentWorkState returns REVIEW for a handoff target and BLOCKED for a blocked-task assignee (0.1534ms)
+✔ agent work state vocabulary is shared between workbench and sidebar rail (0.4262ms)
+✔ spatial lens handoff packet is an in-world object with a floor slot (0.512ms)
+✔ spatial lens handoff route uses corridor guide tiles for storytelling (0.4273ms)
+✔ spatial lens floor viewport no longer mounts focused corridor continuity (0.4881ms)
+✔ spatial lens focused mode renders the workbench instead of a floor viewport (0.387ms)
+✔ spatial lens focused mode exposes one active handoff workbench (0.9022ms)
+✔ spatial lens focused target edge exposes stable route and agent hooks (0.1753ms)
+✔ spatial lens focused target edge reads as a validation checkpoint (0.414ms)
+✔ spatial lens handoff relation keeps route motion in overview and task identity in the workbench (0.6995ms)
+✔ spatial lens offscreen agent awareness stays compact (0.4182ms)
+✔ spatial lens CSS uses only integer scale transforms (0.3619ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.8792

@@ -25,11 +25,13 @@ export {
   FloorViewport,
 } from "./components/FloorViewport.js";
 export {
+  FocusedHandoffView,
+} from "./components/FocusedHandoffView.js";
+export {
   HandoffOverlay,
 } from "./components/HandoffOverlay.js";
 export {
   AgentLayer,
-  AgentOffscreenRail,
 } from "./viewport/AgentLayer.js";
 export {
   AgentActivityCue,
@@ -267,3 +269,11 @@ export {
   type FloorViewportRect,
   type FloorViewportRoom,
 } from "./model/floorGeometry.js";
+export {
+  createFocusedHandoffWorkbenchModel,
+  type FocusedHandoffWorkbenchModel,
+  type FocusedSpatialContext,
+  type FocusedWorkbenchStep,
+  type FocusedWorkbenchStepId,
+  type FocusedWorkbenchTone,
+} from "./model/focusedHandoffModel.js";

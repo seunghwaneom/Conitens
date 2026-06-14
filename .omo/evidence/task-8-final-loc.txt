@@ -1,0 +1,4 @@
+packages/dashboard/src/components/OfficeStage.tsx 238
+packages/dashboard/src/spatial-lens/model/focusedHandoffModel.ts 248
+packages/dashboard/src/spatial-lens/model/focusedNextAction.ts 59
+packages/dashboard/src/spatial-lens/model/focusedWorkbenchEvents.ts 67
