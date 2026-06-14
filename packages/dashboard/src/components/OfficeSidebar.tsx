@@ -4,6 +4,7 @@ import sidebarStyles from "../office-sidebar.module.css";
 import type { OfficeHandoffSnapshot } from "../dashboard-model.js";
 import type { OfficeResidentPresence, OfficeRoomPresence } from "../office-presence-model.js";
 import { buildOfficeFocusStripView, buildOfficeSidebarRailView } from "../office-sidebar-view-model.ts";
+import { getAgentWorkState } from "../spatial-lens/model/focusedHandoffModel.js";
 import type { TaskState } from "../store/event-store.js";
 import { getTaskTone } from "../utils.js";
 
@@ -16,6 +17,7 @@ const ROLE_LABELS = {
 } as const;
 
 export function OfficeSidebar({
+  mode = "full",
   handoffs,
   residents,
   queuedTasks,
@@ -25,6 +27,7 @@ export function OfficeSidebar({
   onSelectResident,
   onOpenAgent,
 }: {
+  mode?: "full" | "focused" | "overview";
   handoffs: OfficeHandoffSnapshot[];
   residents: OfficeResidentPresence[];
   queuedTasks: TaskState[];
@@ -40,10 +43,20 @@ export function OfficeSidebar({
     selectedRoom,
     roleLabels: ROLE_LABELS,
   });
-  const focusModeLabel = selectedResident ? "agent focus" : selectedRoom ? "room focus" : "preview";
+  const focusModeLabel =
+    mode === "overview"
+      ? "overview inspector"
+      : selectedResident
+        ? "agent focus"
+        : selectedRoom
+          ? "room focus"
+          : "preview";
 
   return (
-    <aside className={`${layoutStyles["office-panel"]} ${sidebarStyles["office-rail"]}`}>
+    <aside
+      className={`${layoutStyles["office-panel"]} ${sidebarStyles["office-rail"]}`}
+      data-office-sidebar-mode={mode}
+    >
       <section className={sidebarStyles["office-focus-card"]}>
         <p className={sidebarStyles["office-focus-kicker"]}>{focus.eyebrow}</p>
         <div className={sidebarStyles["office-focus-head"]}>
@@ -73,9 +86,14 @@ export function OfficeSidebar({
             <div className="empty-state compact">No residents online</div>
           ) : (
             rail.visibleResidents.map((resident) => {
-              const isBlocked = queuedTasks.some(
-                (t) => t.assignee === resident.agentId && t.state === "blocked"
+              const workState = getAgentWorkState(
+                resident.agentId,
+                residents,
+                queuedTasks,
+                handoffs,
               );
+              const workStateLabel = workState.toLowerCase();
+              const isBlocked = workState === "BLOCKED";
               return (
                 <button
                   key={resident.agentId}
@@ -105,8 +123,8 @@ export function OfficeSidebar({
                       </div>
                     </div>
                   </div>
-                  <span className={`badge ${isBlocked ? "danger" : resident.status === "running" ? "info" : "neutral"}`}>
-                    {resident.status}
+                  <span className={`badge ${getTaskTone(workStateLabel)}`}>
+                    {workStateLabel}
                   </span>
                 </button>
               );

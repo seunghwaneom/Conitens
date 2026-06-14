@@ -51,8 +51,18 @@ export function HandoffOverlay({
         const firstPoint = route.points[0];
         const lastPoint = route.points[route.points.length - 1];
         const packetPoint = route.points[Math.floor(route.points.length / 2)];
+        const pulsePoint = routeToPulsePoint(route);
         return (
           <Fragment key={`${route.id}-markers`}>
+            <span
+              key={`${route.id}-pulse`}
+              className={styles["handoff-route-pulse"]}
+              data-handoff-route-pulse={route.id}
+              style={{
+                left: `${pulsePoint.left}%`,
+                top: `${pulsePoint.top}%`,
+              }}
+            />
             <span
               key={`${route.id}-start`}
               className={styles["handoff-beacon"]}
@@ -172,6 +182,22 @@ function routeToGuideTiles(route: FloorViewportHandoffRoute): HandoffGuideTile[]
     ];
   }
   return [];
+}
+
+function routeToPulsePoint(route: FloorViewportHandoffRoute): {
+  readonly left: number;
+  readonly top: number;
+} {
+  const horizontalSegment = routeToSegments(route)
+    .filter((segment) => segment.axis === "x")
+    .sort((left, right) => right.width - left.width)[0];
+  if (horizontalSegment) {
+    return {
+      left: roundOverlayPercent(horizontalSegment.left + horizontalSegment.width * 0.58),
+      top: roundOverlayPercent(horizontalSegment.top),
+    };
+  }
+  return route.points[Math.floor(route.points.length / 2)] ?? { left: 50, top: 50 };
 }
 
 function roundOverlayPercent(value: number): number {

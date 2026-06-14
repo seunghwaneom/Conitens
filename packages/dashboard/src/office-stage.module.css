@@ -106,6 +106,10 @@
   color: rgba(244, 247, 251, 0.96);
 }
 
+.office-stage-tabpanel {
+  min-width: 0;
+}
+
 .office-stage-pill {
   display: inline-flex;
   align-items: center;

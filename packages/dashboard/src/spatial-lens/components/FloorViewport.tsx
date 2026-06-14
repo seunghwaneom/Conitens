@@ -6,10 +6,7 @@ import { BuildingShellLayer } from "./BuildingShellLayer.js";
 import { CorridorLayer } from "./CorridorLayer.js";
 import { DoorFrameLayer } from "./DoorFrameLayer.js";
 import { FloorplateLayer } from "./FloorplateLayer.js";
-import { FocusedCorridorContinuityLayer } from "./FocusedCorridorContinuityLayer.js";
-import { FocusedRouteTargetEdge } from "./FocusedRouteTargetEdge.js";
 import { HandoffOverlay } from "./HandoffOverlay.js";
-import { MinimapDock } from "./MinimapDock.js";
 import { RoomZone } from "./RoomZone.js";
 import { createFloorViewportModel } from "../model/floorGeometry.js";
 import type { OfficeHandoffSnapshot } from "../../dashboard-model.js";
@@ -18,13 +15,13 @@ import {
   createFloorViewportCameraFrame,
   type FloorViewportCameraMode,
 } from "../viewport/viewportCamera.js";
-import { AgentLayer, AgentOffscreenRail } from "../viewport/AgentLayer.js";
+import { AgentLayer } from "../viewport/AgentLayer.js";
 
 export function FloorViewport({
   rooms,
   tasks = [],
   handoffs = [],
-  viewMode = "focused",
+  viewMode = "overview",
   selectedRoomId,
   selectedResidentId,
   onSelectRoom,
@@ -60,18 +57,7 @@ export function FloorViewport({
       viewMode,
     ],
   );
-  const isFocusedMode = viewMode === "focused";
   const isOverviewMode = viewMode === "overview";
-  const focusedRouteFraming =
-    isFocusedMode && cameraFrame.targetRoomId
-      ? "source-corridor-target-edge"
-      : isFocusedMode
-        ? "source-room"
-        : "overview-topology";
-  const focusedRoomLabel =
-    rooms.find((room) => room.roomId === cameraFrame.focusRoomId)?.label ??
-    "Ops Control";
-
   return (
     <PixelThemeProvider className={styles["spatial-lens-root"]}>
       <div
@@ -82,8 +68,9 @@ export function FloorViewport({
         data-camera-zoom={cameraFrame.scale}
         data-focused-room-id={cameraFrame.focusRoomId ?? ""}
         data-camera-target-room-id={cameraFrame.targetRoomId ?? ""}
-        data-focused-route-framing={focusedRouteFraming}
+        data-focused-route-framing="overview-topology"
         data-overview-role={isOverviewMode ? "topology" : undefined}
+        data-map-task-treatment="room-nodes"
         data-camera-scene-bounds={
           `${cameraFrame.sceneBounds.x},${cameraFrame.sceneBounds.y},` +
           `${cameraFrame.sceneBounds.w},${cameraFrame.sceneBounds.h}`
@@ -115,9 +102,6 @@ export function FloorViewport({
             corridors={model.corridors}
             fixtures={model.corridorFixtures}
           />
-          {isFocusedMode ? (
-            <FocusedCorridorContinuityLayer routes={model.handoffRoutes} />
-          ) : null}
           <HandoffOverlay
             routes={model.handoffRoutes}
             blockedMarkers={model.blockedLaneMarkers}
@@ -132,7 +116,9 @@ export function FloorViewport({
                   room={room}
                   model={roomModel}
                   selectedRoomId={model.selectedRoomId ?? selectedRoomId}
-                  showGeneratedBackdrops={isFocusedMode}
+                  showGeneratedBackdrops={false}
+                  showTaskNodes={true}
+                  focusRole="overview"
                   onSelectRoom={onSelectRoom}
                 />
               );
@@ -143,48 +129,12 @@ export function FloorViewport({
             viewportRooms={model.rooms}
             tasks={tasks}
             handoffs={handoffs}
+            operatorFocusOnly={false}
             selectedResidentId={selectedResidentId}
             onSelectResident={onSelectResident}
           />
           <DoorFrameLayer rooms={model.rooms} />
         </div>
-        {isFocusedMode ? (
-          <span
-            className={styles["focused-source-plaque"]}
-            data-focused-source-plaque="true"
-          >
-            {focusedRoomLabel}
-          </span>
-        ) : null}
-        {isFocusedMode ? (
-          <FocusedRouteTargetEdge
-            rooms={rooms}
-            tasks={tasks}
-            handoffs={handoffs}
-            targetRoomId={cameraFrame.targetRoomId}
-            selectedResidentId={selectedResidentId}
-            onSelectResident={onSelectResident}
-          />
-        ) : null}
-        {isFocusedMode ? (
-          <MinimapDock
-            rooms={model.rooms}
-            focusedRoomId={cameraFrame.focusRoomId}
-            targetRoomId={cameraFrame.targetRoomId}
-            onSelectRoom={onSelectRoom}
-          />
-        ) : null}
-        {isFocusedMode ? (
-          <AgentOffscreenRail
-            rooms={rooms}
-            tasks={tasks}
-            handoffs={handoffs}
-            selectedResidentId={selectedResidentId}
-            focusedRoomId={cameraFrame.focusRoomId}
-            targetRoomId={cameraFrame.targetRoomId}
-            onSelectResident={onSelectResident}
-          />
-        ) : null}
       </div>
     </PixelThemeProvider>
   );

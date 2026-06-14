@@ -17,10 +17,10 @@ import {
   mapAgentToStation,
   mapAgentToVisualRole,
   mapAgentToVisualState,
+  shouldRenderAgentInOperatorFocusMap,
   type AgentActivityCue,
   type AgentVisualState,
 } from "./agentVisualState.js";
-import { AgentSprite } from "./AgentSprite.js";
 import { AgentStation } from "./AgentStation.js";
 import { getPixelLayerIndex } from "./pixelSpriteGrammar.js";
 
@@ -41,6 +41,7 @@ export function AgentLayer({
   viewportRooms,
   tasks = [],
   handoffs = [],
+  operatorFocusOnly = false,
   selectedResidentId,
   onSelectResident,
 }: {
@@ -48,18 +49,27 @@ export function AgentLayer({
   viewportRooms: readonly FloorViewportRoom[];
   tasks?: readonly TaskState[];
   handoffs?: readonly OfficeHandoffSnapshot[];
+  operatorFocusOnly?: boolean;
   selectedResidentId: string | null;
   onSelectResident: (agentId: string) => void;
 }) {
   const renderedAgents = useMemo(
-    () => createRenderedAgents({ rooms, viewportRooms, tasks, handoffs }),
-    [rooms, viewportRooms, tasks, handoffs],
+    () =>
+      createRenderedAgents({
+        rooms,
+        viewportRooms,
+        tasks,
+        handoffs,
+        operatorFocusOnly,
+      }),
+    [handoffs, operatorFocusOnly, rooms, tasks, viewportRooms],
   );
 
   return (
     <div
       className={styles["agent-layer"]}
       data-agent-layer="live"
+      data-agent-visibility={operatorFocusOnly ? "operator-focus" : "all"}
       data-agent-count={renderedAgents.length}
     >
       {renderedAgents.map((agent) => (
@@ -84,93 +94,18 @@ export function AgentLayer({
   );
 }
 
-export function AgentOffscreenRail({
-  rooms,
-  tasks = [],
-  handoffs = [],
-  selectedResidentId,
-  focusedRoomId,
-  targetRoomId,
-  onSelectResident,
-}: {
-  rooms: readonly OfficeRoomPresence[];
-  tasks?: readonly TaskState[];
-  handoffs?: readonly OfficeHandoffSnapshot[];
-  selectedResidentId: string | null;
-  focusedRoomId: string | null;
-  targetRoomId: string | null;
-  onSelectResident: (agentId: string) => void;
-}) {
-  const offscreenAgents = useMemo(
-    () =>
-      rooms
-        .flatMap((room) =>
-          room.visibleResidents.map((resident) => ({
-            resident,
-            roomLabel: room.label,
-            role: mapAgentToVisualRole(resident),
-            state: mapAgentToVisualState(resident, tasks, handoffs),
-            cue: chooseAgentActivityCue(resident, tasks, handoffs),
-          })),
-        )
-        .filter(
-          (agent) =>
-            agent.resident.roomId !== focusedRoomId &&
-            agent.resident.roomId !== targetRoomId,
-        ),
-    [focusedRoomId, handoffs, rooms, targetRoomId, tasks],
-  );
-
-  if (offscreenAgents.length === 0) return null;
-
-  return (
-    <div
-      className={styles["agent-offscreen-rail"]}
-      data-agent-offscreen-rail="true"
-      data-agent-offscreen-treatment="compact-tab"
-      data-target-room-id={targetRoomId ?? ""}
-      aria-label="Agents outside the focused camera"
-    >
-      {offscreenAgents.slice(0, 4).map((agent) => (
-        <button
-          key={`offscreen-${agent.resident.agentId}`}
-          type="button"
-          className={styles["agent-offscreen-card"]}
-          data-agent-offscreen-id={agent.resident.agentId}
-          data-agent-id={agent.resident.agentId}
-          data-agent-visual-state={agent.state}
-          data-agent-cue={agent.cue.kind}
-          aria-label={`${agent.resident.agentId}, ${agent.cue.label}, ${agent.roomLabel}`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelectResident(agent.resident.agentId);
-          }}
-        >
-          <AgentSprite
-            role={agent.role}
-            state={agent.state}
-            selected={agent.resident.agentId === selectedResidentId}
-          />
-          <span className={styles["agent-offscreen-copy"]}>
-            <strong>{agent.resident.agentId}</strong>
-            <span>{agent.roomLabel}</span>
-          </span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function createRenderedAgents({
   rooms,
   viewportRooms,
   tasks,
   handoffs,
+  operatorFocusOnly,
 }: {
   rooms: readonly OfficeRoomPresence[];
   viewportRooms: readonly FloorViewportRoom[];
   tasks: readonly TaskState[];
   handoffs: readonly OfficeHandoffSnapshot[];
+  operatorFocusOnly: boolean;
 }): RenderedAgent[] {
   const roomModelMap = new Map(viewportRooms.map((room) => [room.id, room]));
   const claimedStationIds = new Set<string>();
@@ -180,6 +115,13 @@ function createRenderedAgents({
       room.visibleResidents.map((resident) => {
         const role = mapAgentToVisualRole(resident);
         const state = mapAgentToVisualState(resident, tasks, handoffs);
+        const cue = chooseAgentActivityCue(resident, tasks, handoffs);
+        if (
+          operatorFocusOnly &&
+          !shouldRenderAgentInOperatorFocusMap(resident, state, cue)
+        ) {
+          return null;
+        }
         const station = mapAgentToStation(resident, AGENT_STATIONS, {
           visualRole: role,
           excludedStationIds: claimedStationIds,
@@ -188,7 +130,6 @@ function createRenderedAgents({
         if (!station || !viewportRoom) return null;
         claimedStationIds.add(station.id);
         const point = resolveStationWorldPoint(viewportRoom, station);
-        const cue = chooseAgentActivityCue(resident, tasks, handoffs);
         return {
           resident,
           station,

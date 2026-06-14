@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import layoutStyles from "../office.module.css";
 import { OfficeSidebar } from "./OfficeSidebar.js";
-import { OfficeStage } from "./OfficeStage.js";
+import {
+  OFFICE_STAGE_MODE_STORAGE_KEY,
+  OfficeStage,
+  getInitialOfficeStageMode,
+  type OfficeStageMode,
+} from "./OfficeStage.js";
 import { createOfficePresenceModel, resolveOfficeSelection } from "../office-presence-model.js";
 import { compareOfficeTasks } from "../office-system.js";
 import type { AgentState, EventRecord, TaskState } from "../store/event-store.js";
@@ -30,6 +35,7 @@ export function PixelOffice({
   const [selectedResidentId, setSelectedResidentId] = useState<string | null>(
     office.residents[0]?.agentId ?? null,
   );
+  const [stageMode, setStageMode] = useState<OfficeStageMode>(getInitialOfficeStageMode);
 
   useEffect(() => {
     const resolved = resolveOfficeSelection({
@@ -44,6 +50,10 @@ export function PixelOffice({
       setSelectedResidentId(resolved.selectedResidentId);
     }
   }, [office.rooms, selectedResidentId, selectedRoomId]);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(OFFICE_STAGE_MODE_STORAGE_KEY, stageMode);
+  }, [stageMode]);
 
   const selectedRoom =
     office.rooms.find((room) => room.roomId === selectedRoomId) ??
@@ -82,6 +92,7 @@ export function PixelOffice({
       }).length
     : 0;
   const surfacedTaskCount = queuedTasks.length;
+  const blockedFocusTask = queuedTasks.find((task) => task.state === "blocked");
   const activeThreadLabel = selectedResident?.taskCount === 1 ? "thread" : "threads";
   const focusSummary = selectedResident
     ? `${selectedResident.agentId} is in ${selectedResident.roomLabel}, carrying ${selectedResident.taskCount} active ${activeThreadLabel}.`
@@ -91,6 +102,9 @@ export function PixelOffice({
   const roomReason = selectedRoom
     ? `${selectedRoom.label}: ${selectedRoomRunningCount} running, ${selectedRoomTaskCount} tasks, ${selectedRoomHandoffCount} handoffs.`
     : "No room selected.";
+  const focusedReason = blockedFocusTask
+    ? `${blockedFocusTask.taskId} is waiting at the owner gate.`
+    : "No blocked owner gate.";
 
   const handleSelectRoom = (roomId: string) => {
     const room = office.rooms.find((entry) => entry.roomId === roomId);
@@ -107,54 +121,71 @@ export function PixelOffice({
   return (
     <div
       className={layoutStyles["office-frame"]}
-      data-office-preview-shell="viewport-dominant"
+      data-office-preview-shell={getOfficePreviewShellMode(stageMode)}
+      data-office-stage-mode={stageMode}
     >
-      <section className={layoutStyles["office-summary-band"]}>
+      <section
+        className={layoutStyles["office-summary-band"]}
+        data-summary-mode={stageMode === "focused" ? "compact" : "full"}
+      >
         <div className={layoutStyles["office-summary-copy"]}>
-          <p className={layoutStyles["office-summary-kicker"]}>Spatial Lens</p>
           <h2 className={layoutStyles["office-summary-title"]}>
-            Current floor posture
+            {stageMode === "focused" ? "Active handoff posture" : "Current floor posture"}
           </h2>
-          <p className={layoutStyles["office-summary-text"]}>{focusSummary}</p>
-          <p className={layoutStyles["office-summary-reason"]}>{roomReason}</p>
+          {stageMode !== "focused" ? (
+            <p className={layoutStyles["office-summary-text"]}>{focusSummary}</p>
+          ) : null}
+          <p className={layoutStyles["office-summary-reason"]}>
+            {stageMode === "focused" ? focusedReason : roomReason}
+          </p>
         </div>
-        <div className={layoutStyles["office-summary-side"]}>
-          <div className={layoutStyles["office-summary-grid"]}>
-            <div className={layoutStyles["office-summary-item"]}>
-              <span className={layoutStyles["office-summary-label"]}>Live Rooms</span>
-              <strong>{liveRoomCount}</strong>
-              <span className={layoutStyles["office-summary-note"]}>{office.rooms.length} total zones</span>
-            </div>
-            <div className={layoutStyles["office-summary-item"]}>
-              <span className={layoutStyles["office-summary-label"]}>Blocked Lanes</span>
-              <strong>{blockedTaskCount}</strong>
-              <span className={layoutStyles["office-summary-note"]}>{runningResidentCount} running operators</span>
-            </div>
-            <div className={layoutStyles["office-summary-item"]}>
-              <span className={layoutStyles["office-summary-label"]}>Handoffs</span>
-              <strong>{office.handoffCount}</strong>
-              <span className={layoutStyles["office-summary-note"]}>{surfacedTaskCount} surfaced tasks</span>
-            </div>
-          </div>
-          <div className={layoutStyles["office-focus-line"]}>
+        {stageMode === "focused" ? (
+          <div className={layoutStyles["office-summary-mode-note"]}>
             <span className={layoutStyles["office-focus-label"]}>Focus</span>
             <strong>{selectedResident ? selectedResident.agentId : selectedRoom?.label ?? "No focus selected"}</strong>
             <span className={layoutStyles["office-focus-meta"]}>
-              {selectedResident ? `${selectedResident.roomLabel} / ${selectedResident.status}` : "Select a room to inspect load"}
+              {selectedResident ? `${selectedResident.roomLabel} / ${selectedResident.status}` : "Room focus"}
             </span>
-            {selectedResident && onOpenAgent ? (
-              <button
-                className={layoutStyles["office-focus-link"]}
-                type="button"
-                onClick={() => onOpenAgent(selectedResident.agentId)}
-              >
-                Open in Agents
-              </button>
-            ) : null}
           </div>
-        </div>
+        ) : (
+          <div className={layoutStyles["office-summary-side"]}>
+            <div className={layoutStyles["office-summary-grid"]}>
+              <div className={layoutStyles["office-summary-item"]}>
+                <span className={layoutStyles["office-summary-label"]}>Live Rooms</span>
+                <strong>{liveRoomCount}</strong>
+                <span className={layoutStyles["office-summary-note"]}>{office.rooms.length} total zones</span>
+              </div>
+              <div className={layoutStyles["office-summary-item"]}>
+                <span className={layoutStyles["office-summary-label"]}>Blocked Lanes</span>
+                <strong>{blockedTaskCount}</strong>
+                <span className={layoutStyles["office-summary-note"]}>{runningResidentCount} running operators</span>
+              </div>
+              <div className={layoutStyles["office-summary-item"]}>
+                <span className={layoutStyles["office-summary-label"]}>Handoffs</span>
+                <strong>{office.handoffCount}</strong>
+                <span className={layoutStyles["office-summary-note"]}>{surfacedTaskCount} surfaced tasks</span>
+              </div>
+            </div>
+            <div className={layoutStyles["office-focus-line"]}>
+              <span className={layoutStyles["office-focus-label"]}>Focus</span>
+              <strong>{selectedResident ? selectedResident.agentId : selectedRoom?.label ?? "No focus selected"}</strong>
+              <span className={layoutStyles["office-focus-meta"]}>
+                {selectedResident ? `${selectedResident.roomLabel} / ${selectedResident.status}` : "Select a room to inspect load"}
+              </span>
+              {selectedResident && onOpenAgent ? (
+                <button
+                  className={layoutStyles["office-focus-link"]}
+                  type="button"
+                  onClick={() => onOpenAgent(selectedResident.agentId)}
+                >
+                  Open in Agents
+                </button>
+              ) : null}
+            </div>
+          </div>
+        )}
       </section>
-      <div className={layoutStyles["office-layout"]}>
+      <div className={layoutStyles["office-layout"]} data-stage-mode={stageMode}>
         {agents.length === 0 ? (
           <div className="empty-state animated">No agents online. Waiting for heartbeats...</div>
         ) : (
@@ -163,12 +194,16 @@ export function PixelOffice({
               rooms={office.rooms}
               tasks={queuedTasks}
               handoffs={office.handoffs}
+              events={events}
+              stageMode={stageMode}
               selectedRoomId={selectedRoomId}
               selectedResidentId={selectedResidentId}
+              onStageModeChange={setStageMode}
               onSelectRoom={handleSelectRoom}
               onSelectResident={handleSelectResident}
             />
             <OfficeSidebar
+              mode={getOfficeSidebarMode(stageMode)}
               handoffs={office.handoffs}
               residents={office.residents}
               queuedTasks={queuedTasks}
@@ -183,4 +218,19 @@ export function PixelOffice({
       </div>
     </div>
   );
+}
+
+type OfficePreviewShellMode = "workbench-dominant" | "floor-command-center" | "viewport-dominant";
+type OfficeSidebarMode = "full" | "focused" | "overview";
+
+function getOfficePreviewShellMode(stageMode: OfficeStageMode): OfficePreviewShellMode {
+  if (stageMode === "focused") return "workbench-dominant";
+  if (stageMode === "overview") return "floor-command-center";
+  return "viewport-dominant";
+}
+
+function getOfficeSidebarMode(stageMode: OfficeStageMode): OfficeSidebarMode {
+  if (stageMode === "focused") return "focused";
+  if (stageMode === "overview") return "overview";
+  return "full";
 }

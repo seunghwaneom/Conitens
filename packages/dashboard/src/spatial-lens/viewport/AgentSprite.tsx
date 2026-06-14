@@ -45,6 +45,9 @@ export function resolveAgentSpriteId(
     return "character.sentinelWorking";
   }
   if (role === "owner") {
+    if (state === "reviewing" || state === "handoff_receiving") {
+      return "character.ownerReviewing";
+    }
     if (state === "working" || state === "handoff_sending") return "character.ownerWorking";
     return "character.ownerIdle";
   }

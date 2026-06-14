@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   AGENT_STATIONS,
   getAgentStationsForRoom,
@@ -12,7 +15,10 @@ import {
   mapAgentToVisualState,
   mapHandoffToActivityCue,
   mapTaskToActivityCue,
+  shouldRenderAgentInOperatorFocusMap,
 } from "../src/spatial-lens/viewport/agentVisualState.ts";
+
+const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 const architect = {
   agentId: "architect",
@@ -86,6 +92,17 @@ test("agent visual states prioritize blocked, review, active, and assigned work"
   );
 });
 
+test("owner review state uses the curated generated sprite frame", () => {
+  const spriteSource = readFileSync(
+    path.join(TEST_DIR, "../src/spatial-lens/viewport/AgentSprite.tsx"),
+    "utf8",
+  );
+
+  assert.match(spriteSource, /state === "reviewing"/);
+  assert.match(spriteSource, /state === "handoff_receiving"/);
+  assert.match(spriteSource, /return "character\.ownerReviewing"/);
+});
+
 test("handoff targets make sentinel read as a review receiver", () => {
   const handoff = {
     id: "handoff-1",
@@ -131,5 +148,62 @@ test("activity cues distinguish live agent states", () => {
   assert.equal(
     chooseAgentActivityCue(owner, [{ taskId: "blocked", state: "blocked", assignee: "owner" }]).kind,
     "blocked",
+  );
+});
+
+test("operator focus map only keeps live, reviewing, and handoff agents on the floor", () => {
+  const handoff = {
+    id: "handoff-1",
+    fromRoomId: "ops-control",
+    fromLabel: "Ops Control",
+    toRoomId: "validation-office",
+    toLabel: "Validation Office",
+    taskId: "verify_append",
+    actorId: "architect",
+    targetId: "sentinel",
+    timestamp: "2026-06-08T00:00:00.000Z",
+  };
+  const workerAssignedTask = {
+    taskId: "assigned",
+    state: "assigned",
+    assignee: "worker-1",
+  };
+  const ownerBlockedTask = {
+    taskId: "blocked",
+    state: "blocked",
+    assignee: "owner",
+  };
+
+  assert.equal(
+    shouldRenderAgentInOperatorFocusMap(
+      architect,
+      mapAgentToVisualState(architect),
+      chooseAgentActivityCue(architect),
+    ),
+    true,
+  );
+  assert.equal(
+    shouldRenderAgentInOperatorFocusMap(
+      sentinel,
+      mapAgentToVisualState(sentinel, [], [handoff]),
+      chooseAgentActivityCue(sentinel, [], [handoff]),
+    ),
+    true,
+  );
+  assert.equal(
+    shouldRenderAgentInOperatorFocusMap(
+      worker,
+      mapAgentToVisualState(worker, [workerAssignedTask]),
+      chooseAgentActivityCue(worker, [workerAssignedTask]),
+    ),
+    false,
+  );
+  assert.equal(
+    shouldRenderAgentInOperatorFocusMap(
+      owner,
+      mapAgentToVisualState(owner, [ownerBlockedTask]),
+      chooseAgentActivityCue(owner, [ownerBlockedTask]),
+    ),
+    false,
   );
 });

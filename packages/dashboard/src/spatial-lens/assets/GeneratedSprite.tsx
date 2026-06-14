@@ -34,6 +34,7 @@ export function GeneratedSprite({
       {...spanProps}
       aria-hidden={decorative ? true : spanProps["aria-hidden"]}
       data-generated-sprite={resolved.id}
+      data-generated-sprite-curation={resolved.curation?.source}
       style={{
         ...toGeneratedSpriteStyle(resolved, spriteScale),
         ...style,
@@ -57,5 +58,7 @@ export function toGeneratedSpriteStyle(
       `${GENERATED_SPATIAL_LENS_SPRITE_SHEET_SIZE.w * scale}px ` +
       `${GENERATED_SPATIAL_LENS_SPRITE_SHEET_SIZE.h * scale}px`,
     imageRendering: "pixelated",
-  };
+    "--generated-sprite-dx": `${sprite.curation?.dx ?? 0}px`,
+    "--generated-sprite-dy": `${sprite.curation?.dy ?? 0}px`,
+  } as CSSProperties;
 }

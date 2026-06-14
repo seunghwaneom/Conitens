@@ -40,7 +40,7 @@ test("spatial lens floor viewport model maps office rooms into static geometry",
   assert.ok(model.totalFixtureCount > 70);
 
   const ops = model.rooms.find((room) => room.id === "ops-control");
-  assert.deepEqual(ops?.rect, { x: 3, y: 3, w: 30, h: 18 });
+  assert.deepEqual(ops?.rect, { x: 3, y: 3, w: 30, h: 20 });
   assert.equal(ops?.floorAssetId, "floor.control");
   assert.deepEqual(ops?.wallAssetIds, [
     "wall.north",
@@ -48,6 +48,45 @@ test("spatial lens floor viewport model maps office rooms into static geometry",
     "wall.south",
     "wall.west",
   ]);
+});
+
+test("spatial lens floor overview uses the operator-chain office arrangement", () => {
+  const office = createOfficePresenceModel({
+    agents: demoAgents,
+    tasks: demoTasks,
+    events: demoEvents,
+  });
+  const model = createFloorViewportModel({ rooms: office.rooms });
+  const roomsById = new Map(model.rooms.map((room) => [room.id, room.rect]));
+
+  assert.deepEqual(roomsById.get("validation-office"), {
+    x: 61,
+    y: 3,
+    w: 30,
+    h: 22,
+  });
+  assert.deepEqual(roomsById.get("review-office"), {
+    x: 61,
+    y: 29,
+    w: 30,
+    h: 23,
+  });
+  assert.deepEqual(roomsById.get("research-lab"), {
+    x: 61,
+    y: 58,
+    w: 30,
+    h: 22,
+  });
+  assert.deepEqual(roomsById.get("project-main"), {
+    x: 34,
+    y: 60,
+    w: 24,
+    h: 32,
+  });
+  assert.ok(
+    model.handoffRoutes[0].points.some((point) => point.left === 47.5),
+    "operator-chain handoff should still cross the central corridor",
+  );
 });
 
 test("spatial lens floor viewport exposes visible handoff and blocked lane overlays", () => {

@@ -1,0 +1,36 @@
+✔ spatial lens pixel grammar uses integer scale and hard shadow anchors (0.8363ms)
+✔ spatial lens pixel grammar snaps props to the room tile field (0.1446ms)
+✔ spatial lens pixel grammar y-sorts props deterministically (12.2772ms)
+✔ spatial lens focused camera defaults to ops control and enlarges the floor (0.9246ms)
+✔ spatial lens focused camera biases toward a connected handoff target (0.19ms)
+✔ spatial lens floor overview camera keeps the full topology at 1x (0.1621ms)
+✔ focused handoff workbench model surfaces the active blocker chain (2.3656ms)
+✔ focused handoff workbench model does not invent a blocked owner gate (0.4686ms)
+✔ focused handoff workbench blocked age starts from the block-opening event (0.317ms)
+✔ focused handoff workbench model emits empty labels and correct edges without events (0.3358ms)
+✔ getAgentWorkState returns REVIEW for a handoff target and BLOCKED for a blocked-task assignee (0.16ms)
+✔ agent work state vocabulary is shared between workbench and sidebar rail (1.0929ms)
+✔ spatial lens handoff packet is an in-world object with a floor slot (0.7118ms)
+✔ spatial lens handoff route uses corridor guide tiles for storytelling (1.1072ms)
+✔ spatial lens floor viewport no longer mounts focused corridor continuity (0.4221ms)
+✔ spatial lens focused mode renders the workbench instead of a floor viewport (0.4428ms)
+✔ spatial lens focused mode exposes one active handoff workbench (2.2337ms)
+✔ spatial lens handoff relation keeps route motion in overview and task identity in the workbench (0.8678ms)
+✔ spatial lens focused mode no longer exports offscreen agent rail (0.4108ms)
+✔ spatial lens CSS uses only integer scale transforms (0.547ms)
+✔ spatial lens room dressing templates cover every office room (1.4372ms)
+✔ spatial lens room dressing satisfies room-level density requirements (13.0962ms)
+✔ spatial lens room dressing implements every required prop kind (0.8435ms)
+✔ spatial lens room depth layer gives rooms authored pixel depth (1.1817ms)
+✔ spatial lens room kit layer uses generated signature sprites (1.4618ms)
+✔ spatial lens generated room backdrops are focused-only room material (0.8602ms)
+✔ spatial lens room dressing anchors operational affordances to props (0.2917ms)
+✔ spatial lens overview declutter rules are present in the CSS (0.4059ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 197.114

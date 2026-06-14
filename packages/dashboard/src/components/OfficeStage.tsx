@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import layoutStyles from "../office.module.css";
 import stageStyles from "../office-stage.module.css";
 import { OfficeRoomScene } from "./OfficeRoomScene.js";
 import { getOfficeFixtureStyle } from "../office-fixture-registry.js";
-import { FloorViewport } from "../spatial-lens/index.js";
+import { FloorViewport, FocusedHandoffView } from "../spatial-lens/index.js";
 import {
   OFFICE_STAGE_CORRIDORS,
   OFFICE_STAGE_CORRIDOR_FIXTURES,
@@ -11,13 +11,19 @@ import {
 } from "../office-stage-schema.js";
 import type { OfficeHandoffSnapshot } from "../dashboard-model.js";
 import type { OfficeRoomPresence } from "../office-presence-model.js";
-import type { TaskState } from "../store/event-store.js";
+import type { EventRecord, TaskState } from "../store/event-store.js";
 
-type OfficeStageMode = "focused" | "overview" | "classic";
+export type OfficeStageMode = "focused" | "overview" | "classic";
 
-const OFFICE_STAGE_MODE_STORAGE_KEY = "conitens.officeStageMode";
+export const OFFICE_STAGE_MODE_STORAGE_KEY = "conitens.officeStageMode";
 
-function getInitialStageMode(): OfficeStageMode {
+const OFFICE_STAGE_MODES = [
+  { mode: "focused", label: "Focused" },
+  { mode: "overview", label: "Floor Overview" },
+  { mode: "classic", label: "Classic" },
+] as const satisfies readonly { readonly mode: OfficeStageMode; readonly label: string }[];
+
+export function getInitialOfficeStageMode(): OfficeStageMode {
   const stored = window.sessionStorage.getItem(OFFICE_STAGE_MODE_STORAGE_KEY);
   if (stored === "classic" || stored === "overview") {
     return stored;
@@ -29,26 +35,47 @@ export function OfficeStage({
   rooms,
   tasks = [],
   handoffs = [],
+  events = [],
+  stageMode,
   selectedRoomId,
   selectedResidentId,
+  onStageModeChange,
   onSelectRoom,
   onSelectResident,
 }: {
   rooms: OfficeRoomPresence[];
   tasks?: TaskState[];
   handoffs?: OfficeHandoffSnapshot[];
+  events?: EventRecord[];
+  stageMode: OfficeStageMode;
   selectedRoomId: string | null;
   selectedResidentId: string | null;
+  onStageModeChange: (stageMode: OfficeStageMode) => void;
   onSelectRoom: (roomId: string) => void;
   onSelectResident: (agentId: string) => void;
 }) {
-  const [stageMode, setStageMode] = useState<OfficeStageMode>(getInitialStageMode);
   const selectedRoom = rooms.find((room) => room.roomId === selectedRoomId) ?? rooms[0] ?? null;
   const liveRoomCount = rooms.filter((room) => room.snapshot.runningCount > 0).length;
+  const activeModeIndex = OFFICE_STAGE_MODES.findIndex((entry) => entry.mode === stageMode);
+  const tabRefs = useRef<Record<OfficeStageMode, HTMLButtonElement | null>>({
+    focused: null,
+    overview: null,
+    classic: null,
+  });
+  const shouldFocusSelectedTab = useRef(false);
 
   useEffect(() => {
-    window.sessionStorage.setItem(OFFICE_STAGE_MODE_STORAGE_KEY, stageMode);
+    if (!shouldFocusSelectedTab.current) return;
+    shouldFocusSelectedTab.current = false;
+    tabRefs.current[stageMode]?.focus();
   }, [stageMode]);
+
+  const selectModeByOffset = (offset: -1 | 1) => {
+    const nextIndex =
+      (activeModeIndex + offset + OFFICE_STAGE_MODES.length) % OFFICE_STAGE_MODES.length;
+    shouldFocusSelectedTab.current = true;
+    onStageModeChange(OFFICE_STAGE_MODES[nextIndex].mode);
+  };
 
   return (
     <section
@@ -58,12 +85,18 @@ export function OfficeStage({
       <div className={stageStyles["office-stage-header"]}>
         <div className={stageStyles["office-stage-header-copy"]}>
           <p className={stageStyles["office-stage-kicker"]}>
-            {stageMode === "overview" ? "Floor overview" : "Live camera"}
+            {stageMode === "focused"
+              ? "Active handoff"
+              : stageMode === "overview"
+                ? "Floor overview"
+                : "Live camera"}
           </p>
           <span className={stageStyles["office-stage-meta"]}>
-            {stageMode === "overview"
-              ? "Whole-floor topology for debug and orientation."
-              : "Focused scene follows the selected room."}
+            {stageMode === "focused"
+              ? "Current blocker, owner, and next action."
+              : stageMode === "overview"
+                ? "Whole-floor topology for debug and orientation."
+                : "Focused scene follows the selected room."}
           </span>
         </div>
         <div className={stageStyles["office-stage-status"]}>
@@ -72,107 +105,145 @@ export function OfficeStage({
           <span className={stageStyles["office-stage-pill"]}>
             {selectedRoom ? `focus ${selectedRoom.label}` : "select a room"}
           </span>
-          <div className={stageStyles["office-stage-mode-toggle"]} aria-label="Map mode">
-            <button
-              className={[
-                stageStyles["office-stage-mode-button"],
-                stageMode === "focused" ? stageStyles.active : "",
-              ].filter(Boolean).join(" ")}
-              type="button"
-              aria-pressed={stageMode === "focused"}
-              onClick={() => setStageMode("focused")}
-            >
-              Focused
-            </button>
-            <button
-              className={[
-                stageStyles["office-stage-mode-button"],
-                stageMode === "overview" ? stageStyles.active : "",
-              ].filter(Boolean).join(" ")}
-              type="button"
-              aria-pressed={stageMode === "overview"}
-              onClick={() => setStageMode("overview")}
-            >
-              Floor Overview
-            </button>
-            <button
-              className={[
-                stageStyles["office-stage-mode-button"],
-                stageMode === "classic" ? stageStyles.active : "",
-              ].filter(Boolean).join(" ")}
-              type="button"
-              aria-pressed={stageMode === "classic"}
-              onClick={() => setStageMode("classic")}
-            >
-              Classic
-            </button>
+          <div
+            className={stageStyles["office-stage-mode-toggle"]}
+            role="tablist"
+            aria-label="Office stage mode"
+            onKeyDown={(event) => {
+              if (event.key === "ArrowRight") {
+                event.preventDefault();
+                selectModeByOffset(1);
+              }
+              if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                selectModeByOffset(-1);
+              }
+            }}
+          >
+            {OFFICE_STAGE_MODES.map((entry) => {
+              const isSelected = stageMode === entry.mode;
+              return (
+                <button
+                  key={entry.mode}
+                  id={getStageTabId(entry.mode)}
+                  ref={(node) => {
+                    tabRefs.current[entry.mode] = node;
+                  }}
+                  className={[
+                    stageStyles["office-stage-mode-button"],
+                    isSelected ? stageStyles.active : "",
+                  ].filter(Boolean).join(" ")}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  aria-controls={getStagePanelId(entry.mode)}
+                  tabIndex={isSelected ? 0 : -1}
+                  onClick={() => onStageModeChange(entry.mode)}
+                >
+                  {entry.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {stageMode !== "classic" ? (
-        <FloorViewport
-          rooms={rooms}
-          tasks={tasks}
-          handoffs={handoffs}
-          viewMode={stageMode}
-          selectedRoomId={selectedRoomId}
-          selectedResidentId={selectedResidentId}
-          onSelectRoom={onSelectRoom}
-          onSelectResident={onSelectResident}
-        />
-      ) : (
-        <div className={stageStyles["office-stage-shell"]}>
-          {OFFICE_STAGE_CORRIDORS.map((corridor, index) => (
-            <span
-              key={`corridor-${index}`}
-              className={stageStyles["office-stage-corridor"]}
-              style={{
-                left: `${corridor.x}%`,
-                top: `${corridor.y}%`,
-                width: `${corridor.w}%`,
-                height: `${corridor.h}%`,
-              }}
-              aria-hidden="true"
-            />
-          ))}
-          {OFFICE_STAGE_FOCAL_LANES.map((lane, index) => (
-            <span
-              key={`focal-lane-${index}`}
-              className={stageStyles["office-stage-focal-lane"]}
-              style={{
-                left: `${lane.x}%`,
-                top: `${lane.y}%`,
-                width: `${lane.w}%`,
-                height: `${lane.h}%`,
-              }}
-              aria-hidden="true"
-            />
-          ))}
-          {OFFICE_STAGE_CORRIDOR_FIXTURES.map((fixture, index) => (
-            <span
-              key={`corridor-fixture-${fixture.kind}-${index}`}
-              className={stageStyles["office-fixture"]}
-              style={{
-                ...getOfficeFixtureStyle(fixture.kind),
-                left: `${fixture.left}%`,
-                top: `${fixture.top}%`,
-              }}
-              aria-hidden="true"
-            />
-          ))}
-          {rooms.map((room) => (
-            <OfficeRoomScene
-              key={room.roomId}
-              room={room}
-              selectedRoomId={selectedRoomId}
-              selectedResidentId={selectedResidentId}
-              onSelectRoom={onSelectRoom}
-              onSelectResident={onSelectResident}
-            />
-          ))}
-        </div>
-      )}
+      {OFFICE_STAGE_MODES.map((entry) => {
+        const isSelected = stageMode === entry.mode;
+        return (
+          <div
+            key={`${entry.mode}-panel`}
+            id={getStagePanelId(entry.mode)}
+            role="tabpanel"
+            aria-labelledby={getStageTabId(entry.mode)}
+            hidden={!isSelected}
+            className={stageStyles["office-stage-tabpanel"]}
+          >
+            {isSelected && entry.mode === "focused" ? (
+              <FocusedHandoffView
+                rooms={rooms}
+                tasks={tasks}
+                handoffs={handoffs}
+                events={events}
+                selectedRoomId={selectedRoomId}
+                selectedResidentId={selectedResidentId}
+              />
+            ) : null}
+            {isSelected && entry.mode === "overview" ? (
+              <FloorViewport
+                rooms={rooms}
+                tasks={tasks}
+                handoffs={handoffs}
+                viewMode="overview"
+                selectedRoomId={selectedRoomId}
+                selectedResidentId={selectedResidentId}
+                onSelectRoom={onSelectRoom}
+                onSelectResident={onSelectResident}
+              />
+            ) : null}
+            {isSelected && entry.mode === "classic" ? (
+              <div className={stageStyles["office-stage-shell"]}>
+                {OFFICE_STAGE_CORRIDORS.map((corridor, index) => (
+                  <span
+                    key={`corridor-${index}`}
+                    className={stageStyles["office-stage-corridor"]}
+                    style={{
+                      left: `${corridor.x}%`,
+                      top: `${corridor.y}%`,
+                      width: `${corridor.w}%`,
+                      height: `${corridor.h}%`,
+                    }}
+                    aria-hidden="true"
+                  />
+                ))}
+                {OFFICE_STAGE_FOCAL_LANES.map((lane, index) => (
+                  <span
+                    key={`focal-lane-${index}`}
+                    className={stageStyles["office-stage-focal-lane"]}
+                    style={{
+                      left: `${lane.x}%`,
+                      top: `${lane.y}%`,
+                      width: `${lane.w}%`,
+                      height: `${lane.h}%`,
+                    }}
+                    aria-hidden="true"
+                  />
+                ))}
+                {OFFICE_STAGE_CORRIDOR_FIXTURES.map((fixture, index) => (
+                  <span
+                    key={`corridor-fixture-${fixture.kind}-${index}`}
+                    className={stageStyles["office-fixture"]}
+                    style={{
+                      ...getOfficeFixtureStyle(fixture.kind),
+                      left: `${fixture.left}%`,
+                      top: `${fixture.top}%`,
+                    }}
+                    aria-hidden="true"
+                  />
+                ))}
+                {rooms.map((room) => (
+                  <OfficeRoomScene
+                    key={room.roomId}
+                    room={room}
+                    selectedRoomId={selectedRoomId}
+                    selectedResidentId={selectedResidentId}
+                    onSelectRoom={onSelectRoom}
+                    onSelectResident={onSelectResident}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
     </section>
   );
+}
+
+function getStageTabId(mode: OfficeStageMode): string {
+  return `office-stage-${mode}-tab`;
+}
+
+function getStagePanelId(mode: OfficeStageMode): string {
+  return `office-stage-${mode}-panel`;
 }

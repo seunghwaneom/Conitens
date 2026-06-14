@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -16,8 +16,15 @@ import {
   createFloorViewportCameraFrame,
   FLOOR_VIEWPORT_CAMERA_ZOOMS,
 } from "../src/spatial-lens/viewport/viewportCamera.ts";
+import { demoAgents, demoEvents, demoTasks } from "../src/demo-data.ts";
+import { createOfficePresenceModel } from "../src/office-presence-model.ts";
+import {
+  createFocusedHandoffWorkbenchModel,
+  getAgentWorkState,
+} from "../src/spatial-lens/model/focusedHandoffModel.ts";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+const DASHBOARD_SRC = path.resolve(TEST_DIR, "../src");
 const SPATIAL_LENS_ROOT = path.resolve(TEST_DIR, "../src/spatial-lens");
 
 test("spatial lens pixel grammar uses integer scale and hard shadow anchors", () => {
@@ -125,6 +132,177 @@ test("spatial lens floor overview camera keeps the full topology at 1x", () => {
   assert.deepEqual(camera.sceneBounds, { x: 0, y: 0, w: 100, h: 100 });
 });
 
+test("focused handoff workbench model surfaces the active blocker chain", () => {
+  const office = createOfficePresenceModel({
+    agents: demoAgents,
+    tasks: demoTasks,
+    events: demoEvents,
+  });
+  const model = createFocusedHandoffWorkbenchModel({
+    rooms: office.rooms,
+    tasks: demoTasks,
+    handoffs: office.handoffs,
+    events: demoEvents,
+    selectedRoomId: "ops-control",
+    selectedResidentId: "architect",
+  });
+
+  assert.equal(model.blockedTaskId, "q_184_owner_gate");
+  assert.equal(model.nextActionKind, "owner-approval");
+  assert.equal(model.nextActionLabel, "Owner approval required");
+  assert.equal(model.nextActionCtaLabel, "Open approvals");
+  assert.equal(model.nextActionHref, "#/approvals");
+  assert.equal(model.handoffSummaryLabel, "verify_append handoff: architect -> sentinel");
+  assert.equal(model.routeLabel, "architect->sentinel->owner");
+  assert.equal(model.blockedAgeLabel, "blocked 11m");
+  assert.equal(model.latestEventLabel, "08:14:52 worker-1 artifact.written");
+  assert.deepEqual(
+    model.steps.map((step) => [step.primary, step.label, step.state]),
+    [
+      ["architect", "PLAN", "RUNNING"],
+      ["q_184_owner_gate", "BLOCKED", "BLOCKED"],
+      ["sentinel", "VALIDATE", "REVIEW"],
+      ["owner", "APPROVE", "BLOCKED"],
+    ],
+  );
+  assert.deepEqual(
+    model.edges.map((e) => [e.id, e.state]),
+    [
+      ["plan-blocked", "flow"],
+      ["blocked-validate", "held"],
+      ["validate-approve", "held"],
+    ],
+  );
+  assert.deepEqual(model.spatialContexts.map((context) => context.id), [
+    "ops-control",
+    "validation-office",
+  ]);
+});
+
+test("focused handoff workbench model does not invent a blocked owner gate", () => {
+  const tasksWithoutBlocker = demoTasks.filter((task) => task.state !== "blocked");
+  const office = createOfficePresenceModel({
+    agents: demoAgents,
+    tasks: tasksWithoutBlocker,
+    events: demoEvents,
+  });
+  const model = createFocusedHandoffWorkbenchModel({
+    rooms: office.rooms,
+    tasks: tasksWithoutBlocker,
+    handoffs: office.handoffs,
+    events: demoEvents,
+    selectedRoomId: "ops-control",
+    selectedResidentId: "architect",
+  });
+  const gateStep = model.steps.find((step) => step.id === "blocked");
+
+  assert.equal(model.nextActionKind, "sentinel-review");
+  assert.equal(model.nextActionLabel, "Sentinel review required");
+  assert.equal(model.nextActionCtaLabel, "Open review queue");
+  assert.equal(model.nextActionHref, "#/tasks");
+  assert.equal(model.nextActionDetail, "verify_append is ready for sentinel review");
+  assert.equal(model.headline, "No blocked owner gate");
+  assert.equal(model.blockedAgeLabel, "");
+  assert.ok(gateStep);
+  assert.equal(gateStep.label, "CLEAR");
+  assert.equal(gateStep.state, "CLEAR");
+  assert.equal(gateStep.tone, "idle");
+  assert.notEqual(gateStep.primary, "wf_apply");
+});
+
+test("focused handoff workbench blocked age starts from the block-opening event", () => {
+  const eventsWithEarlierTaskEvent = [
+    {
+      event_id: "evt-prior-task-created",
+      type: "task.created",
+      ts: "2026-03-21T07:00:00.000Z",
+      actor: { kind: "agent", id: "architect" },
+      task_id: "q_184_owner_gate",
+      payload: {},
+    },
+    ...demoEvents,
+  ];
+  const office = createOfficePresenceModel({
+    agents: demoAgents,
+    tasks: demoTasks,
+    events: eventsWithEarlierTaskEvent,
+  });
+  const model = createFocusedHandoffWorkbenchModel({
+    rooms: office.rooms,
+    tasks: demoTasks,
+    handoffs: office.handoffs,
+    events: eventsWithEarlierTaskEvent,
+    selectedRoomId: "ops-control",
+    selectedResidentId: "architect",
+  });
+
+  assert.equal(model.blockedAgeLabel, "blocked 11m");
+});
+
+test("focused handoff workbench model emits empty labels and correct edges without events", () => {
+  const office = createOfficePresenceModel({
+    agents: demoAgents,
+    tasks: demoTasks,
+    events: demoEvents,
+  });
+  const model = createFocusedHandoffWorkbenchModel({
+    rooms: office.rooms,
+    tasks: demoTasks,
+    handoffs: office.handoffs,
+    selectedRoomId: "ops-control",
+    selectedResidentId: "architect",
+  });
+
+  assert.equal(model.blockedAgeLabel, "");
+  assert.equal(model.latestEventLabel, "");
+  assert.deepEqual(
+    model.edges.map((e) => [e.id, e.state]),
+    [
+      ["plan-blocked", "flow"],
+      ["blocked-validate", "held"],
+      ["validate-approve", "held"],
+    ],
+  );
+});
+
+test("getAgentWorkState returns REVIEW for a handoff target and BLOCKED for a blocked-task assignee", () => {
+  const residents = [
+    { agentId: "sentinel", status: "running" },
+    { agentId: "owner", status: "idle" },
+  ];
+  const tasks = [
+    { taskId: "q_184_owner_gate", state: "blocked", assignee: "owner" },
+    { taskId: "verify_append", state: "review", assignee: "sentinel" },
+  ];
+  const handoffs = [
+    { id: "h1", actorId: "architect", targetId: "sentinel", taskId: "verify_append",
+      fromRoomId: "ops-control", toRoomId: "validation-office", timestamp: "2026-03-21T08:05:02.000Z" },
+  ];
+
+  assert.equal(getAgentWorkState("sentinel", residents, tasks, handoffs), "REVIEW");
+  assert.equal(getAgentWorkState("owner", residents, tasks, handoffs), "BLOCKED");
+});
+
+test("agent work state vocabulary is shared between workbench and sidebar rail", () => {
+  const office = createOfficePresenceModel({
+    agents: demoAgents,
+    tasks: demoTasks,
+    events: demoEvents,
+  });
+  const residents = office.rooms.flatMap((room) => room.residents);
+  const sidebarSource = readDashboardSource("components/OfficeSidebar.tsx");
+
+  assert.equal(getAgentWorkState("architect", residents, demoTasks, office.handoffs), "RUNNING");
+  assert.equal(getAgentWorkState("sentinel", residents, demoTasks, office.handoffs), "REVIEW");
+  assert.equal(getAgentWorkState("owner", residents, demoTasks, office.handoffs), "BLOCKED");
+  assert.match(sidebarSource, /getAgentWorkState\(/);
+  assert.doesNotMatch(
+    sidebarSource,
+    /\{resident\.status\}/,
+    "sidebar rail badge must print the shared work state, not raw runtime status",
+  );
+});
+
 test("spatial lens handoff packet is an in-world object with a floor slot", () => {
   const overlaySource = readSpatialLensSource("components/HandoffOverlay.tsx");
   const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
@@ -153,78 +331,108 @@ test("spatial lens handoff route uses corridor guide tiles for storytelling", ()
   assert.doesNotMatch(cssSource, /data-route-guide-kind="target"/);
 });
 
-test("spatial lens focused corridor continuity uses floor tiles, not extra route markers", () => {
+test("spatial lens floor viewport no longer mounts focused corridor continuity", () => {
   const viewportSource = readSpatialLensSource("components/FloorViewport.tsx");
-  const continuitySource = readSpatialLensSource(
-    "components/FocusedCorridorContinuityLayer.tsx",
-  );
-  const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
 
-  assert.match(viewportSource, /FocusedCorridorContinuityLayer/);
-  assert.match(viewportSource, /isFocusedMode \? \(/);
-  assert.match(continuitySource, /data-focused-corridor-continuity-layer="true"/);
-  assert.match(continuitySource, /"source-apron"/);
-  assert.match(continuitySource, /"spine-runner"/);
-  assert.match(continuitySource, /"target-apron"/);
-  assert.match(cssSource, /\.focused-corridor-continuity-tile/);
-  assert.doesNotMatch(continuitySource, /data-handoff-route-guide/);
+  assert.doesNotMatch(viewportSource, /FocusedCorridorContinuityLayer/);
+  assert.equal(
+    existsSync(path.join(SPATIAL_LENS_ROOT, "components/FocusedCorridorContinuityLayer.tsx")),
+    false,
+  );
 });
 
-test("spatial lens route minimap stays visually secondary in focused mode", () => {
-  const minimapSource = readSpatialLensSource("components/MinimapDock.tsx");
-  const dockSource = readSpatialLensSource("components/SceneDockOverlay.tsx");
-  const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
+test("spatial lens focused mode renders the workbench instead of a floor viewport", () => {
+  const officeStageSource = readDashboardSource("components/OfficeStage.tsx");
+  const viewportSource = readSpatialLensSource("components/FloorViewport.tsx");
 
-  assert.match(minimapSource, /Route Minimap/);
-  assert.doesNotMatch(minimapSource, /Route Dock/);
-  assert.match(dockSource, /data-scene-dock-role/);
-  assert.match(
-    cssSource,
-    /\.floor-viewport\[data-viewport-mode="focused"\] \.scene-dock-overlay\[data-scene-dock-role="route"\]/,
-  );
-  assert.match(cssSource, /width: 104px;/);
-  assert.match(cssSource, /height: 64px;/);
+  assert.equal(existsSync(path.join(SPATIAL_LENS_ROOT, "components/MinimapDock.tsx")), false);
+  assert.doesNotMatch(viewportSource, /import \{ MinimapDock \}/);
+  assert.doesNotMatch(viewportSource, /<MinimapDock/);
+  assert.match(officeStageSource, /FocusedHandoffView/);
+  assert.match(officeStageSource, /stageMode === "focused"/);
+  assert.match(officeStageSource, /<FocusedHandoffView/);
+  assert.match(officeStageSource, /viewMode="overview"/);
+  assert.doesNotMatch(officeStageSource, /viewMode=\{stageMode\}/);
+  assert.doesNotMatch(officeStageSource, /viewMode="focused"/);
 });
 
-test("spatial lens focused target edge exposes stable route and agent hooks", () => {
-  const targetEdgeSource = readSpatialLensSource(
-    "components/FocusedRouteTargetEdge.tsx",
-  );
-
-  assert.match(targetEdgeSource, /data-focused-route-target-edge="true"/);
-  assert.match(targetEdgeSource, /data-focused-target-route-pixel=/);
-  assert.match(targetEdgeSource, /data-focused-target-agent=/);
-  assert.match(targetEdgeSource, /data-edge-continuity="corridor-connected"/);
-});
-
-test("spatial lens focused target edge reads as a validation checkpoint", () => {
-  const targetEdgeSource = readSpatialLensSource(
-    "components/FocusedRouteTargetEdge.tsx",
-  );
-  const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
-
-  assert.match(targetEdgeSource, /data-focused-validation-checkpoint="true"/);
-  assert.match(targetEdgeSource, /sprite="prop\.clipboardRack"/);
-  assert.match(targetEdgeSource, /sprite="prop\.routePort"/);
-  assert.match(targetEdgeSource, /sprite="furniture\.stampDesk"/);
-  assert.match(targetEdgeSource, /sprite="prop\.documentStack"/);
-  assert.match(targetEdgeSource, /sprite="prop\.greenStatusLight"/);
-  assert.match(targetEdgeSource, /sprite="prop\.redStatusLight"/);
-  assert.match(targetEdgeSource, /data-focused-validation-prop="stamp-desk"/);
-  assert.match(cssSource, /\.focused-target-stamp-desk/);
-  assert.match(cssSource, /\.focused-target-document-stack/);
-  assert.match(cssSource, /\.focused-target-route-port/);
-});
-
-test("spatial lens offscreen agent awareness stays compact", () => {
+test("spatial lens focused mode exposes one active handoff workbench", () => {
+  const officeStageSource = readDashboardSource("components/OfficeStage.tsx");
+  const workbenchSource = readSpatialLensSource("components/FocusedHandoffView.tsx");
+  const modelSource = readSpatialLensSource("model/focusedHandoffModel.ts");
+  const nextActionSource = readSpatialLensSource("model/focusedNextAction.ts");
+  const viewportSource = readSpatialLensSource("components/FloorViewport.tsx");
+  const roomSource = readSpatialLensSource("components/RoomZone.tsx");
   const agentLayerSource = readSpatialLensSource("viewport/AgentLayer.tsx");
   const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
 
-  assert.match(agentLayerSource, /data-agent-offscreen-treatment="compact-tab"/);
-  assert.match(cssSource, /\.agent-offscreen-rail/);
-  assert.match(cssSource, /width: 112px;/);
-  assert.match(cssSource, /min-height: 26px;/);
-  assert.match(cssSource, /background: transparent;/);
+  assert.match(officeStageSource, /isSelected && entry\.mode === "focused" \? \(/);
+  assert.match(workbenchSource, /export function FocusedHandoffView/);
+  assert.match(workbenchSource, /data-focused-handoff-view="true"/);
+  assert.match(workbenchSource, /data-focused-view-layer="posture"/);
+  assert.match(workbenchSource, /data-focused-view-layer="workbench"/);
+  assert.match(workbenchSource, /data-focused-view-layer="spatial-context"/);
+  assert.match(workbenchSource, /data-active-handoff-workbench="true"/);
+  assert.match(workbenchSource, /data-workbench-primary="active-handoff"/);
+  assert.match(workbenchSource, /data-workbench-phase-representation="single"/);
+  assert.match(workbenchSource, /data-workbench-step-count=\{model\.steps\.length\}/);
+  assert.match(workbenchSource, /data-handoff-chain-task=\{model\.blockedTaskId\}/);
+  assert.match(workbenchSource, /data-next-operator-action=\{model\.nextActionKind\}/);
+  assert.match(workbenchSource, /href=\{model\.nextActionHref\}/);
+  assert.match(workbenchSource, /data-next-action-kind=\{model\.nextActionKind\}/);
+  assert.match(workbenchSource, /model\.nextActionCtaLabel/);
+  assert.doesNotMatch(workbenchSource, /href="#\/approvals"/);
+  assert.match(workbenchSource, /data-focused-spatial-context="muted"/);
+  assert.match(workbenchSource, /model\.handoffSummaryLabel/);
+  assert.match(modelSource, /"q_184_owner_gate"/);
+  assert.match(nextActionSource, /"Owner approval required"/);
+  assert.match(modelSource, /handoffSummaryLabel/);
+  assert.match(modelSource, /verify_append/);
+  assert.match(modelSource, /routeLabel: `\$\{actorId\}->\$\{targetId\}->\$\{ownerId\}`/);
+  assert.doesNotMatch(viewportSource, /data-operator-focus-map=/);
+  assert.match(viewportSource, /data-map-task-treatment=/);
+  assert.doesNotMatch(viewportSource, /showTaskNodes=\{!isFocusedMode\}/);
+  assert.doesNotMatch(viewportSource, /PhaseLaneIndicator/);
+  assert.doesNotMatch(viewportSource, /data-focused-handoff-rail=/);
+  assert.doesNotMatch(viewportSource, /data-handoff-chain-task=/);
+  assert.doesNotMatch(viewportSource, /data-next-operator-action=/);
+  assert.match(roomSource, /data-room-task-treatment=/);
+  assert.match(roomSource, /data-room-focus-role=/);
+  assert.match(roomSource, /showTaskNodes/);
+  assert.match(agentLayerSource, /operatorFocusOnly/);
+  assert.match(agentLayerSource, /data-agent-visibility/);
+  assert.match(cssSource, /\.focused-workbench-root/);
+  assert.match(cssSource, /\.focused-workbench-flow/);
+  assert.match(cssSource, /\.focused-context-strip/);
+  assert.match(cssSource, /data-room-focus-role="background"/);
+});
+
+test("spatial lens handoff relation keeps route motion in overview and task identity in the workbench", () => {
+  const overlaySource = readSpatialLensSource("components/HandoffOverlay.tsx");
+  const workbenchSource = readSpatialLensSource("components/FocusedHandoffView.tsx");
+  const nextActionSource = readSpatialLensSource("model/focusedNextAction.ts");
+  const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
+
+  assert.doesNotMatch(overlaySource, /data-handoff-edge-label=/);
+  assert.doesNotMatch(overlaySource, /HANDOFF/);
+  assert.match(overlaySource, /data-handoff-route-pulse=/);
+  assert.match(overlaySource, /routeToPulsePoint/);
+  assert.match(workbenchSource, /data-handoff-chain-task=\{model\.blockedTaskId\}/);
+  assert.match(workbenchSource, /href=\{model\.nextActionHref\}/);
+  assert.match(workbenchSource, /model\.handoffSummaryLabel/);
+  assert.match(nextActionSource, /owner-approval/);
+  assert.doesNotMatch(cssSource, /\.handoff-route-label/);
+  assert.match(cssSource, /\.focused-workbench-step\[data-workbench-step="blocked"\]/);
+  assert.match(cssSource, /\.handoff-route-pulse/);
+});
+
+test("spatial lens focused mode no longer exports offscreen agent rail", () => {
+  const indexSource = readSpatialLensSource("index.ts");
+  const agentLayerSource = readSpatialLensSource("viewport/AgentLayer.tsx");
+
+  assert.doesNotMatch(indexSource, /AgentOffscreenRail/);
+  assert.doesNotMatch(agentLayerSource, /export function AgentOffscreenRail/);
+  assert.doesNotMatch(agentLayerSource, /data-agent-offscreen-treatment/);
 });
 
 test("spatial lens CSS uses only integer scale transforms", () => {
@@ -239,4 +447,8 @@ test("spatial lens CSS uses only integer scale transforms", () => {
 
 function readSpatialLensSource(relativePath) {
   return readFileSync(path.join(SPATIAL_LENS_ROOT, relativePath), "utf8");
+}
+
+function readDashboardSource(relativePath) {
+  return readFileSync(path.join(DASHBOARD_SRC, relativePath), "utf8");
 }
