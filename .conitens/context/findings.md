@@ -1,5 +1,123 @@
 # findings.md
 
+## Office Component Reposition Fix Findings - 2026-06-14
+
+- User feedback clarified that the previous "reposition" was insufficient
+  because it only changed the preview shell/inspector composition. The real
+  acceptance target is the actual Floor Overview office/floor geometry:
+  `OFFICE_STAGE_ROOMS`, corridor graph, and floorplate layout.
+- The safe shared source of truth is `office-stage-schema.ts`. Moving rooms
+  there updates Classic directly and Overview through
+  `createFloorViewportModel`; moving only CSS or sidebar layout does not
+  satisfy "office component repositioning."
+- The new operator-chain arrangement is locked by coordinates:
+  Ops/Impl on the left, Validation/Review/Research stacked on the right, and
+  Central Commons as the lower-center hub. Browser QA additionally reads
+  each `[data-room-id]` inline placement from the rendered DOM.
+- Reviewer caveat: Central Commons is partly below the first viewport in
+  Overview screenshots. This is acceptable for the current operator-chain
+  acceptance target because the critical rooms and rail are visible and
+  non-overlapping; treat full Commons first-viewport visibility as a separate
+  future design decision, not a blocker for this fix.
+
+## Floor Overview OSS UX Reposition Findings - 2026-06-14
+
+- Current OSS agent-management UIs converge on a primary graph/canvas plus an
+  adjacent inspector or run rail: LangSmith/LangGraph Studio, AutoGen Studio,
+  Flowise, Dify, Langfuse, AgentOps, and Open WebUI all separate the
+  working surface from state/trace/administration detail. The transferable
+  Conitens pattern is map-first overview plus a narrower operator inspector,
+  not a second co-primary dashboard column.
+- The safe local implementation surface is shell/sidebar composition:
+  `PixelOffice.tsx`, `OfficeSidebar.tsx`, `office.module.css`, and
+  `office-sidebar.module.css`. `FloorViewport` internals do not need to change
+  for component repositioning and were left untouched in this pass.
+- 1220px is the critical boundary. Initial browser QA passed mechanically but
+  visual review found the rail too wide and too visually heavy. The final
+  layout narrows the overview rail to 260px at 1220px while the floor map
+  measures 869px wide; no horizontal overflow occurs.
+- CSS Module selectors cannot style global utility classes such as `.muted`
+  unless wrapped in `:global(...)`. The overview rail truncation rule for
+  agent meta uses `.office-staff-main :global(.muted)`.
+
+## Focused Workbench Review Patch Findings - 2026-06-12
+
+- Code review found that `createFocusedHandoffWorkbenchModel()` treated
+  `tasks[0]` as the blocked task fallback. That made active work such as
+  `wf_apply` render as the BLOCKED owner-gate step when no task was actually
+  blocked.
+- The safe fallback is explicit: if no blocked task exists, the owner-gate
+  slot renders `CLEAR`, the headline says `No blocked owner gate`, and the
+  next action follows the review task when one exists.
+- Blocked age must be computed from block-opening event types, not from the
+  earliest event with the same task id. Prior lifecycle events such as
+  `task.created` must not inflate the stuck-duration chip.
+
+## Overview Declutter Findings - 2026-06-12
+
+- Opacity/desaturation muting does NOT declutter a 1x pixel map — dozens of
+  sub-readable shapes remain visually present. Structural removal
+  (display:none for decoration layers) plus palette unification is what
+  reads as "clean". User explicitly rejected the transparency approach.
+- Remaining-prop attribution method: query each layer class inside a room
+  and count visible generated sprites — Impl Office clutter decomposed into
+  wall-detail (5), operational-overlay (6), room-kit (3) after dressing and
+  workstation were hidden.
+- The six `data-floor-style` base colors live at spatial-lens.module.css
+  ~line 785; overview-scoped overrides are safe because Focused/Classic
+  never mount FloorViewport.
+
+## OSS Agent-Visualization Research Findings - 2026-06-12
+
+- Surveyed: Langfuse, AgentOps,
+  disler/claude-code-hooks-multi-agent-observability (event/duration
+  surfaces), LangGraph Studio (stateful graph edges), a16z AI Town and
+  ChatDev (pixel agent worlds with live activity streams).
+- The transferable operator-dashboard patterns are: durations on stuck
+  spans, runtime state on graph edges, and a visible live event stream.
+  Pure aesthetic patterns (full world simulation, chat replay) do not fit
+  the Focused workbench contract.
+- Demo event timestamps are fixed ISO strings, so any age/duration label
+  must be derived relative to the latest event timestamp — `Date.now()`
+  against the 2026-03-21 demo data would render nonsense and break test
+  determinism and I-2 replayability.
+
+## State Vocabulary Findings - 2026-06-12
+
+- The dashboard had two status vocabularies for the same agents: runtime
+  status (`AgentState["status"]`, e.g. running/idle) and derived work state
+  (BLOCKED/REVIEW/RUNNING/...). Operator-facing rails must use the derived
+  work state; runtime status alone misreports handoff targets (sentinel) and
+  gate owners (owner).
+- `getTaskTone` in `src/utils.ts` already covers the work-state vocabulary
+  (running/active→success, review→info, blocked→danger, default→neutral) and
+  is the right tone source for any new status chip.
+
+## Frontend GUI UX Review Findings - 2026-06-12
+
+- The Focused context-strip thumbnails composed three layers fighting each
+  other: a decorative gradient, a near-invisible generated room backdrop
+  (opacity 0.34 + desaturation filter), and a scale-2 foreground sprite. For
+  96x62 thumbs, the room art must lead and sprites work only as scale-1
+  corner accents.
+- Workbench step cards were stretched by two mechanisms at once: fixed
+  min-heights (172/198px) and an internal `minmax(32px, 1fr)` spacer row.
+  Removing only one would not have freed the space — the root `min-height`
+  clamp would re-stretch the cards.
+- `PixelOffice` rendered a second `Spatial Lens` kicker 60px under the page
+  header's identical kicker; no test asserted it.
+
+## Focused Workbench Polish Findings - 2026-06-12
+
+- The duplicated `Owner approval required` copy had five render sites: the
+  workbench h3, the CTA link, the blocked step meta, the approve step detail,
+  and the `PixelOffice` focused summary reason (`office-summary-reason`).
+  The model string itself stays in `focusedHandoffModel.ts` (tests assert it).
+- The office-preview demo page can remount out of Focused mode after Vite HMR;
+  browser checks must re-select the `Focused` stage button before measuring.
+- `ensemble verify` is documented in CLAUDE.md (Ensemble v4.2) but the current
+  `scripts/ensemble.py` CLI has no `verify` subcommand.
+
 ## Guidance Files Found
 
 - Root guidance: `AGENTS.md`
@@ -23,6 +141,131 @@
   Python runtime code.
 - Existing Python test coverage already uses `unittest` under `tests/`.
 - `docs/shared/agent-tiers.md` is currently missing.
+
+## Spatial Lens Verification Findings - 2026-06-11
+
+- `pnpm.cmd --filter @conitens/dashboard test` passed with 138 tests.
+- `pnpm.cmd --filter @conitens/dashboard build` passed and built 137 Vite
+  modules.
+- Browser verification evidence lives at
+  `output/playwright/spatial-lens-verification-results.json`.
+- Focused 1440px and 1220px verification reported:
+  `focusedViewCount=1`, `workbenchCount=1`, `anyFloorCount=0`,
+  `minimapCount=0`, `phaseRailCount=0`, `stepCount=4`, `contextCount=2`,
+  `navRows=1`, and `horizontalOverflow=false`.
+- Focused verification also confirmed visible `q_184_owner_gate`, visible
+  `Owner approval required`, and visible
+  `verify_append handoff: architect -> sentinel`.
+- Overview 1440px verification reported `overviewFloorCount=1`; Classic
+  1440px reported no Spatial Lens floor.
+- Visual inspection of the 1220px Focused screenshot still shows the
+  previously reviewed hierarchy caveats: repeated `Owner approval required`
+  copy, heavy nested chrome, and context thumbnails below the first viewport.
+
+## Spatial Lens UI Architecture Rule Facts
+
+- `AGENTS.md` now contains a dedicated `Conitens UI Architecture Rules /
+  Spatial Lens` section.
+- The standing rule says Focused mode is not Floor Overview, must answer active
+  actor, blocked task, next handoff owner, and next operator action in under
+  three seconds, and must keep the Active Handoff Workbench as the primary
+  visual surface.
+- The same rule keeps the full pixel floor map owned by Floor Overview, hides
+  minimap from Focused, prevents critical task cards from floating over noisy
+  map art, and blocks duplicate phase/state surfaces.
+- Future Spatial Lens UI changes should preserve existing demo data shapes,
+  avoid new dependencies unless justified, and keep top navigation on one row
+  at 1220px.
+
+## Spatial Lens Focused Workbench IA Facts
+
+- The user-approved implementation scope was a Focused-mode information
+  architecture redesign, not visual polish: Focused must answer active actor,
+  blocked task, next handoff owner, and next operator action in under three
+  seconds.
+- `OfficeStage.tsx` no longer renders `FloorViewport` for Focused mode.
+  Focused renders `FocusedHandoffView`; Floor Overview remains the full
+  `FloorViewport viewMode="overview"` topology surface; Classic remains the
+  non-Spatial-Lens room scene.
+- `focusedHandoffModel.ts` is the pure derivation point for the Focused
+  workbench model. It uses existing `rooms`, `tasks`, and `handoffs` and keeps
+  the current fixture chain `architect->sentinel->owner`, blocked task
+  `q_184_owner_gate`, and review task `verify_append`.
+- `FocusedHandoffView.tsx` exposes `data-focused-handoff-view="true"` and
+  `data-active-handoff-workbench="true"` exactly once and renders four phase
+  steps: Plan/running architect, blocked owner gate, Validate/review sentinel,
+  and Approve/blocked owner.
+- The next action is text-first and explicit: `Owner approval required`, with
+  an approvals action link to `#/approvals`.
+- The blocked task card is the highest-emphasis object and carries the
+  model-derived line `verify_append handoff: architect -> sentinel`.
+- Focused retains pixel-art identity through a muted two-room spatial context
+  strip for Ops Control and Validation Office. Critical task cards are not
+  placed on top of detailed map art.
+- Focused no longer mounts the full floor map, route minimap, focused target
+  edge, focused corridor continuity layer, offscreen rail, old focused
+  handoff rail, or separate phase lane strip.
+- `PixelOffice.tsx` now owns `stageMode` and preserves the existing
+  `conitens.officeStageMode` session storage key. Focused compacts the summary
+  band so live metrics do not compete with the workbench.
+- `OfficeSidebar.tsx` accepts a mode prop so Focused rail content is
+  de-emphasized below the primary surface.
+- Browser evidence at `http://localhost:3003/#/office-preview` reports
+  Focused 1440 and 1220 with one Focused view, one workbench, zero Spatial
+  Lens floor mounts, zero minimaps, zero focused target edges, zero phase
+  rails, four steps, two context thumbnails, visible blocked task, visible
+  next action, visible handoff summary, one nav row, and no horizontal
+  overflow. Overview 1440 still mounts one floor map; Classic mounts none.
+- Verification passed targeted shell/Spatial Lens tests, TypeScript noEmit,
+  full dashboard tests with 138 tests, dashboard production build, browser
+  checks, and a dashboard-scoped repo-structure post-write gate with
+  `cycles=0`.
+- `.vibe/brain/precommit.py` was run and failed on existing command-center
+  typecheck baseline regressions; its smoke unittest passed and it reported no
+  staged/scannable files for this dashboard-focused change.
+
+## Spatial Lens Prompt 4.14 Sprite-gen Curation Facts
+
+- The user-requested reference repository was
+  `https://github.com/aldegad/sprite-gen`.
+- `sprite-gen` describes a component-row pipeline:
+  `sprite-request.json -> layout guides + prompts -> image-gen state rows ->
+  chroma alpha -> connected components -> transparent frames ->
+  sprite-sheet-alpha.png + manifest.json.frame_layout`.
+- The relevant design contract from `sprite-gen` is that runtime code should
+  consume manifest rectangles and curation metadata rather than guessing sheet
+  geometry from image alpha at render time.
+- The Spatial Lens implementation reused that contract without adding a new
+  runtime dependency: existing project-owned generated sheet files remain under
+  `packages/dashboard/public/assets/spatial-lens/generated/`.
+- `generatedAssetManifest.ts` now includes curation metadata for selected
+  generated frames and adds manifest rects for `prop.auditTicket`,
+  `prop.checkScanner`, and `character.ownerReviewing`.
+- `GeneratedSprite.tsx` now emits `data-generated-sprite-curation` and
+  curation offset CSS variables so generated frame provenance is inspectable in
+  browser evidence.
+- `generatedRoomBackdrops.ts` now declares component-row curation tile/anchor
+  metadata for Ops Control room usage, Validation Office room usage, and the
+  Validation target-edge usage.
+- `GeneratedRoomBackdropLayer.tsx` now emits
+  `data-generated-room-curation` plus curation tile variables for CSS room
+  material treatment.
+- `roomKit.ts` now gives every templated room at least three room-kit sprites,
+  with seven total curated office props across the six room templates.
+- `AgentSprite.tsx` now maps owner reviewing / handoff-receiving state to
+  `character.ownerReviewing`.
+- Browser evidence reports Focused 1440:
+  `cameraZoom: "3"`, `cameraTransform: matrix(3, 0, 0, 3, 0, 0)`, focused
+  room `ops-control`, target room `validation-office`, route framing
+  `source-corridor-target-edge`, 279 generated sprites, 7 curated generated
+  sprites, 6 room-kit layers, 20 room-kit sprites, 7 curated room-kit sprites,
+  3 component-row room backdrops, no console errors, and no horizontal
+  overflow.
+- Floor Overview remains `1x` topology with 0 generated room backdrops.
+  Classic mounts no Spatial Lens floor and reports 0 generated sprites.
+- Verification passed `pnpm.cmd --filter @conitens/dashboard test` with 133
+  tests, `pnpm.cmd --filter @conitens/dashboard build`, browser checks, and a
+  persisted visual verdict at 98/100.
 
 ## Spatial Lens Current Visual Audit Facts
 
@@ -2515,3 +2758,138 @@
 - Visual verdict is `pass`, score 98/100. Remaining visual gaps are exact-size
   room backdrop generation/slicing for all six rooms and reducing duplicated
   authored props once generated room art carries enough identity.
+
+## Spatial Lens Prompt 4.15 Operator Focus Map Facts
+
+- The Prompt 4.15 pass is VIEWPORT/UI-only and keeps canonical runtime truth,
+  `.notes`, `.agent`, provider, approval, bridge, scheduler, external fetch,
+  dependency, and task mutation surfaces unchanged.
+- The attached research compared AutoGen Studio, LangGraph/LangSmith,
+  CrewAI, Dify, Flowise, n8n, OpenHands, and AGDebugger patterns and concluded
+  that Spatial Lens should be an operator focus map while DAG / trace / queue /
+  workspace surfaces carry canonical structure.
+- This pass deliberately did not add Dagre, ELK, React Flow, a Topology Lens,
+  or a Run Lens. It implemented the fast focused-view cleanup on existing
+  Spatial Lens components.
+- `FloorViewport` exposes `data-operator-focus-map="true"` only in Focused
+  mode and sets `data-map-task-treatment="rail-only"` in Focused versus
+  `"room-nodes"` in Overview.
+- `RoomZone` now has a `showTaskNodes` prop and emits
+  `data-room-task-treatment`, so Focused suppresses room task dots while
+  Overview keeps task nodes as topology/debug context.
+- `shouldRenderAgentInOperatorFocusMap()` is the Focused-mode agent floor
+  predicate. It keeps running, working, reviewing, and handoff actors, but
+  excludes idle, assigned-only, and blocked-only agents from the floor.
+- In browser evidence, Focused mode floor agents are only `architect` and
+  `sentinel`; `owner` and `worker-1` remain in the Active Agents rail.
+- The phase lane indicator is present only in Focused mode. In the demo
+  route, `PLAN` is `focus`, `VALIDATE` is `target`, and `BUILD`/`APPROVE` are
+  quiet.
+- The route minimap is still present for orientation but has
+  `data-scene-dock-state="collapsed-reveal"` and its `.floor-minimap` body is
+  hidden by default (`visibility: hidden`, opacity `0`, max-height `0px`).
+- `HandoffOverlay` now renders exactly one `data-handoff-edge-label` and one
+  `data-handoff-route-pulse` for the demo route, without increasing route
+  guide tile count beyond the existing single guide tile.
+- Focused Validation target edge right gap increased to 46px at desktop and
+  36px at laptop width in the captured evidence.
+- Focused browser evidence reports 0 rail-only room task nodes, 0 horizontal
+  overflow, and 0 console/page errors at both desktop and laptop widths.
+- Floor Overview remains a 1x topology/debug mode with all four demo agents
+  and room task nodes. Classic remains isolated with no Spatial Lens floor.
+- Targeted Spatial Lens tests, TypeScript build mode, full dashboard tests
+  (136), dashboard production build, Playwright evidence, visual verdict, and
+  repo-structure post-write gate all passed.
+- Visual verdict is `pass`, score 94/100. Remaining UX work should create
+  separate Topology Lens and Run Lens surfaces rather than adding more
+  workflow text, route markers, or execution-card semantics to Spatial Lens.
+
+## Spatial Lens Prompt 4.16 Focused Handoff Rail Facts
+
+- The Prompt 4.16 pass is VIEWPORT/UI-only and keeps canonical runtime truth,
+  `.notes`, `.agent`, provider, approval, bridge, scheduler, external fetch,
+  dependency, and task mutation surfaces unchanged.
+- The latest attached critique said Focused still looked like Floor Overview:
+  the left Ops room, wide empty corridor, and right Validation room remained
+  the dominant structure, while `HANDOFF` text and the route minimap did not
+  answer which task was blocked or what the next action was.
+- `FloorViewport.tsx` now builds a focused handoff chain from existing
+  `rooms`, `tasks`, and `handoffs`, without adding a new data source. In demo
+  evidence the chain is `architect->sentinel->owner`.
+- Focused mode now renders exactly one `data-focused-handoff-rail="true"`
+  element with `data-handoff-chain-task="q_184_owner_gate"`,
+  `data-handoff-chain-state="blocked"`, and
+  `data-next-operator-action="owner-approval"`.
+- The handoff rail card displays `q_184_owner_gate`, `BLOCKED`, owner approval
+  requirement, and the supporting handoff task
+  `verify_append: architect -> sentinel`.
+- The phase lane indicator now carries agent and work-state hooks:
+  Plan `architect/RUNNING`, Build `worker-1/IDLE`,
+  Validate `sentinel/REVIEW`, and Approve `owner/BLOCKED`.
+- `RoomZone.tsx` now emits `data-room-focus-role` so Focused mode can dim
+  background rooms and keep source/target rooms as supporting context.
+- Focused mode no longer imports or renders `MinimapDock`; browser evidence
+  reports `minimapCount: 0`.
+- `HandoffOverlay.tsx` no longer renders `data-handoff-edge-label` or literal
+  `HANDOFF`; browser evidence reports `handoffLabelCount: 0` while retaining
+  one route pulse.
+- The top forward nav labels are shortened to `Approve`, `Workspace`, and
+  `Spatial`, and `shell.css` keeps desktop nav chips on one row. Browser
+  evidence reports `navRows: 1` at 1220px and 1440px with no horizontal
+  overflow.
+- Browser evidence at `http://localhost:3002/#/office-preview` reports
+  Focused 1440: `cameraZoom: "3"`, route framing
+  `source-corridor-target-edge`, floor agents `architect` and `sentinel`,
+  room focus roles `source:1/background:4/target:1`, central handoff rail
+  width 512px, 0 minimaps, 0 handoff labels, 0 console/page errors, and 0
+  horizontal overflow.
+- Laptop-width Focused reports the same handoff task, blocked state, route,
+  owner-approval next action, 0 minimaps, 0 handoff labels, 1 nav row, and 0
+  horizontal overflow.
+- Floor Overview remains `1x`, `mapTaskTreatment: room-nodes`, no focused
+  handoff rail, and all four demo agents. Classic remains isolated with no
+  Spatial Lens floor.
+- Verification passed targeted Spatial Lens tests, TypeScript noEmit, full
+  dashboard tests with 136 tests, dashboard production build, Playwright
+  checks, visual verdict, and repo-structure pre/post-write gates.
+## Frontend Design Architecture Improvement Facts
+
+- The executed slice is frontend-only. It adds no canonical runtime truth,
+  `.notes`, `.agent`, provider, approval, bridge, scheduler, external fetch,
+  dependency, backend route, or task mutation surface.
+- The Focused workbench CTA is no longer hardcoded in the component. The anchor
+  uses `model.nextActionHref`, `model.nextActionKind`, and
+  `model.nextActionCtaLabel`; the current demo state resolves to
+  `owner-approval`, `Open approvals`, and `#/approvals`.
+- `focusedNextAction.ts` owns CTA derivation. `focusedWorkbenchEvents.ts` owns
+  latest-event, blocked-age, and workbench-edge derivation. The public
+  `FocusedHandoffWorkbenchModel` shape remains stable.
+- `OfficeStage` now has one `role="tablist"`, three `role="tab"` buttons, and
+  one active `role="tabpanel"`. `aria-pressed` is no longer used for stage
+  modes.
+- Focused mode renders `FocusedHandoffView` directly and does not pass
+  `viewMode="focused"` to `FloorViewport`.
+- `FloorViewport` defaults to Overview semantics: `data-overview-role` is
+  topology, `data-map-task-treatment` is `room-nodes`, generated room
+  backdrops are disabled, and room task nodes remain enabled.
+- The dormant Focused-map component files
+  `FocusedRouteTargetEdge.tsx`, `FocusedCorridorContinuityLayer.tsx`, and
+  `MinimapDock.tsx` were deleted. `AgentOffscreenRail` was removed from
+  `AgentLayer.tsx` and the Spatial Lens index export.
+- Final source grep under `packages/dashboard/src` found no
+  `FocusedRouteTargetEdge`, `FocusedCorridorContinuityLayer`, `MinimapDock`,
+  `AgentOffscreenRail`, `viewMode="focused"`, or `data-operator-focus-map`
+  references.
+- Browser QA against `http://localhost:3004/#/office-preview` reports Focused
+  1220 and 1440 with one workbench, zero floor viewports, four workbench steps,
+  model-owned owner-approval CTA, one nav row, no horizontal overflow, and
+  muted spatial context visible in the first viewport.
+- Browser QA reports Overview 1440 with one floor viewport, topology role,
+  room-node task treatment, hidden dense dressing layers, no Focused workbench,
+  and no horizontal overflow. Classic 1440 reports no Focused workbench and no
+  Spatial Lens floor.
+- Post-review accessibility finding: a valid ARIA tabs implementation requires
+  every tab's `aria-controls` to resolve to an existing panel and arrow-key
+  navigation to move focus with selection. `OfficeStage` now renders all three
+  tabpanels with inactive panels hidden, and browser QA verifies ArrowRight
+  selects/focuses Floor Overview and ArrowLeft selects/focuses Focused.

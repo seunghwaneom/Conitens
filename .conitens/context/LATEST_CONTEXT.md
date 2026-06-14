@@ -4,7 +4,412 @@ Read this file before substantial work.
 
 ## Current State
 
-- Active batch: `Spatial Lens Prompt 4.13 visual polish pass`
+- Active batch: `Office component reposition fix`
+- Status: `complete` (2026-06-14)
+- User rejected the prior Floor Overview OSS UX reposition because the actual
+  office/floor components had not moved; the prior batch explicitly left
+  `FloorViewport` internals unchanged. The corrective pass now changes the
+  real room schema and topology, not just the preview shell/inspector rail.
+- `OFFICE_STAGE_ROOMS` now uses an operator-chain floor arrangement:
+  `ops-control` at `3/3/30/20`, `impl-office` at `3/27/30/31`,
+  `validation-office` at `61/3/30/22`, `review-office` at `61/29/30/23`,
+  `research-lab` at `61/58/30/22`, and `project-main` at `34/60/24/32`.
+  The right column now reads validation -> review -> research, while Central
+  Commons becomes the lower-center hub.
+- Supporting floor topology moved with the rooms:
+  `corridorGraph.ts` updates room stubs, nodes, route points, and blocked-lane
+  points; `floorLayout.ts` updates floorplate zones, wall seams, and columns.
+  Classic reads the shared room schema directly, so Classic and Overview now
+  share the same actual office placement.
+- `spatial-lens-floor-geometry.test.mjs` locks the operator-chain coordinates.
+  The test failed first against the unchanged room geometry, then passed after
+  the schema/topology move.
+- Browser QA now asserts `data-room-id` DOM placements for Overview 1440 and
+  1220, verifies validation -> review -> research stacking, preserves
+  Focused workbench/keyboard contracts, and includes Classic 1440 and 1220.
+  Evidence: `output/playwright/office-component-reposition-fix-results.json`
+  and screenshots under
+  `output/playwright/office-component-reposition-fix/`.
+- Verification passed: targeted floor geometry/layout tests, full dashboard
+  tests 144/144, dashboard production build, `git diff --check`, browser QA
+  across Focused 1220/1440, Overview 1440/1220, and Classic 1440/1220, plus
+  read-only visual/operator reviews with PASS verdicts. No new dependencies.
+
+- Active batch: `Floor Overview OSS UX reposition`
+- Status: `complete` (2026-06-14)
+- Repositioned Floor Overview into a map-first command-center layout based on
+  OSS agent-management UX benchmarks (LangSmith/LangGraph Studio, AutoGen
+  Studio, Flowise, Dify, Langfuse/AgentOps/Open WebUI patterns): the floor
+  topology stays primary, and operational detail now sits in an adjacent
+  overview inspector rail instead of reading as a detached generic sidebar.
+- `PixelOffice` now derives shell/sidebar modes with
+  `getOfficePreviewShellMode(stageMode)` and `getOfficeSidebarMode(stageMode)`.
+  Floor Overview uses `data-office-preview-shell="floor-command-center"` and
+  `data-office-sidebar-mode="overview"`. Focused remains
+  `workbench-dominant`; Classic remains `viewport-dominant`.
+- `OfficeSidebar` accepts `mode: "full" | "focused" | "overview"` and labels
+  the overview focus card as `overview inspector`. In overview mode, Task
+  Queue is ordered before Active Agents, the rail is scrollable, and agent meta
+  truncates via a CSS Module-safe `:global(.muted)` selector.
+- `office.module.css` keeps Overview as a two-column map+inspector frame at
+  1440px and 1220px, with a narrower 1220px rail so the map remains dominant.
+  Browser QA measured Overview 1220 floor width 869px vs inspector width
+  260px, with no horizontal overflow.
+- `FloorViewport` internals were intentionally not changed for this pass.
+- Verification passed: RED source contract first failed on missing
+  `floor-command-center`; targeted tests 31/31; full dashboard tests 143/143;
+  dashboard production build; browser QA for Focused 1220/1440, Overview
+  1440/1220, and Classic 1440. Evidence:
+  `output/playwright/floor-overview-oss-ux-results.json`,
+  `output/playwright/floor-overview-oss-ux/overview-1440.png`,
+  `output/playwright/floor-overview-oss-ux/overview-1220.png`, plus
+  `.omo/evidence/floor-overview-oss-ux-*.txt`.
+
+- Previous active batch: `Frontend design architecture improvement execution`
+- Status: `complete` (2026-06-14)
+- Executed the approved `.omo/plans/frontend-design-architecture-improvement.md`
+  slice for the dashboard Spatial Lens. Focused mode remains the Active
+  Handoff Workbench, while Floor Overview is now the only full floor topology
+  surface and Classic remains isolated.
+- `createFocusedHandoffWorkbenchModel` still owns the public workbench model,
+  but CTA derivation and event/edge derivation are split into
+  `focusedNextAction.ts` and `focusedWorkbenchEvents.ts` to keep the model file
+  under the 250 pure-LOC ceiling. The CTA is model-owned via
+  `nextActionKind`, `nextActionCtaLabel`, and `nextActionHref`.
+- `OfficeStage` stage controls now use real `tablist` / `tab` / `tabpanel`
+  semantics with ArrowLeft/ArrowRight keyboard switching. Focused never passes
+  `viewMode="focused"` into `FloorViewport`.
+- Removed dormant Focused-map surfaces:
+  `FocusedRouteTargetEdge.tsx`, `FocusedCorridorContinuityLayer.tsx`,
+  `MinimapDock.tsx`, and the `AgentOffscreenRail` export. Final source grep
+  found no active `FocusedRouteTargetEdge`, `FocusedCorridorContinuityLayer`,
+  `MinimapDock`, `AgentOffscreenRail`, `viewMode="focused"`, or
+  `data-operator-focus-map` references under `packages/dashboard/src`.
+- Browser QA uses `.omo/evidence/run-frontend-design-architecture-qa.mjs`,
+  a dependency-free Chrome/Edge CDP harness. Evidence:
+  `output/playwright/frontend-design-architecture-improvement-results.json`
+  plus screenshots under
+  `output/playwright/frontend-design-architecture-improvement/`.
+- Verification passed: `pnpm.cmd --filter @conitens/dashboard test`
+  (142/142), `pnpm.cmd --filter @conitens/dashboard build`, targeted Spatial
+  Lens tests, final browser QA for Focused 1220/1440, Overview 1440, and
+  Classic 1440, and model split LOC check (248/59/67).
+- Post-review fix: the first review pass found that inactive tabs pointed to
+  missing tabpanels and arrow-key switching did not move focus. `OfficeStage`
+  now keeps all three controlled tabpanels in the DOM, hides inactive panels,
+  and focuses the newly selected tab after ArrowLeft/ArrowRight. Browser QA now
+  records `tabpanelCount=3`, `activeTabpanelCount=1`,
+  `tabsControlExistingPanels=true`, and keyboard focus/selection transitions.
+  Re-review passed with no remaining blockers.
+
+- Latest review patch: `Focused workbench blocker fallback hardening`
+  (complete, 2026-06-12). Code-review follow-up fixed
+  `createFocusedHandoffWorkbenchModel` so the workbench no longer invents a
+  BLOCKED owner-gate step from `tasks[0]` when no task is blocked. The
+  owner-gate slot now renders `CLEAR`, headline `No blocked owner gate`, and
+  a model-derived `nextActionDetail` for review/monitoring states.
+- Blocked-age now starts from block-opening events (`question.opened`,
+  `approval.pending`, or `task.status_changed` to blocked), ignoring earlier
+  lifecycle events such as `task.created`. Regression coverage added for both
+  no-blocker fallback and age-event filtering.
+- Verification: targeted `spatial-lens-pixel-grammar.test.mjs` 22/22, full
+  dashboard tests 144/144, dashboard build passed, repo-structure post-write
+  tracked graph cycles=0. `--include-untracked` post-write scan timed out
+  twice due current large untracked workspace artifacts; tracked graph plus
+  real dashboard test/build covered the changed files.
+
+- Active batch: `Floor Overview declutter v2 (structural)`
+- Status: `complete` (2026-06-12)
+- User rejected the first declutter approach ("투명도 넣는다고 나아지진
+  않아") — opacity muting leaves shape clutter. v2 replaces it with
+  structural removal: in overview, `.room-dressing-layer`,
+  `.workstation-layer`, and `.wall-detail-layer` are `display: none` (no
+  half-opacity rules remain), the room-kit signature sprites and
+  operational-overlay task affordances render at full strength, and the six
+  `data-floor-style` floor colors are overridden to a unified dark
+  theme-tinted palette (`command-grid #203043`, `maker-plank #382c20`,
+  `quiet-lab #25302c`, `checkpoint-tile #26302b`, `quiet-review #25323e`,
+  `commons-stage #34291d`) killing the white/brown patchwork.
+- Browser verified: workstation/dressing/wall-detail all hidden, room-kit
+  opacity 1, six dark floor computed colors confirmed, route/packet/blocked
+  marker/agents/plaques crisp. Tests 142/142, build passed.
+- Evidence: `output/playwright/overview-declutter-v3.png` (final),
+  `overview-declutter-v2.png` (intermediate), alongside the v1
+  before/after pair.
+
+- Previous batch result (superseded): `Floor Overview declutter` (v1)
+- User feedback was that Floor Overview is messy. Root cause: the room
+  dressing density authored for the old 3x Focused camera renders as
+  sub-readable color noise at 1x, and FloorViewport now only ever renders in
+  Overview mode. Fix is overview-scoped CSS only (under
+  `.floor-viewport[data-viewport-mode="overview"]`): `.room-dressing-layer`
+  hidden, `.workstation-layer`/`.room-kit-layer` muted (opacity 0.5,
+  saturate 0.55), `.room-floor` calmed (saturate 0.7, brightness 0.92).
+  Signal layers (AgentLayer, HandoffOverlay route/packet, blocked marker,
+  door frames, room plaques) are siblings of `.room-floor` and stay at full
+  strength. No component, template, or data contract changed.
+- Browser verified at 1440x900: 0 visible dressing layers (6 mounted),
+  computed opacity/filter values confirmed, 4 agent stations, 1 packet,
+  1 blocked marker, no overflow. Tests 142/142 (1 new CSS-contract
+  assertion in spatial-lens-room-dressing.test.mjs), build passed.
+- Evidence: `output/playwright/overview-declutter-results.json` with
+  before/after screenshots `overview-declutter-{before,after}.png`.
+
+- Previous batch: `OSS agent-visualization research applied to Focused workbench`
+- Status: `complete` (2026-06-12)
+- Researched open-source agent-visualization patterns and applied three to
+  the Focused workbench: (1) **blocked-age chip** (Langfuse/AgentOps
+  duration-on-stuck-span pattern) — `blocked 11m` rendered on the blocked
+  card and next-action row, derived from the event log
+  (`question.opened` for `q_184_owner_gate` vs the latest event timestamp,
+  never `Date.now()`, replay-deterministic); (2) **semantic workbench
+  edges** (LangGraph Studio stateful-edge pattern) — connectors are now
+  model-derived `edges` (`plan-blocked=flow`, `blocked-validate=held`,
+  `validate-approve=held`) rendered as hard-pixel arrows with an
+  opacity-only pulse on the flow edge and `prefers-reduced-motion` support;
+  (3) **latest-event ticker** (AI Town/ChatDev live-stream pattern plus
+  Conitens I-1 event-first identity) — the posture strip shows
+  `08:14:52 worker-1 artifact.written` with `data-latest-event`.
+- `events` are threaded read-only `PixelOffice -> OfficeStage ->
+  FocusedHandoffView` as an optional prop defaulting to `[]`; the model
+  accepts optional `events` and stays pure. No canonical runtime, `.notes`,
+  `.agent`, provider, approval, bridge, scheduler, or task mutation surface
+  changed.
+- Verification: tests 141/141 (139 baseline + 2 new model tests), build
+  passed, browser evidence at
+  `output/playwright/ux-oss-workbench-upgrades-results.json` with
+  screenshot `ux-oss-workbench-upgrades.png`. All prior contracts held
+  (one `Owner approval required`, 1 workbench, 4 steps, no overflow).
+- A dev server was left running at `http://localhost:3003/#/office-preview`
+  for the user (ports 3000-3002 are held by a parallel session).
+
+- Previous batch: `Agent work-state vocabulary unification`
+- Status: `complete` (2026-06-12)
+- The ACTIVE AGENTS sidebar rail previously printed raw runtime
+  `resident.status` (sentinel=running, owner=idle) while the Focused
+  workbench derived work states (sentinel=REVIEW, owner=BLOCKED) — a
+  conflicting-state duplication AGENTS.md forbids. The derivation is now a
+  single exported pure function `getAgentWorkState(agentId, residents,
+  tasks, handoffs)` in `focusedHandoffModel.ts`; the workbench passes
+  `rooms.flatMap((room) => room.residents)` (behavior unchanged) and
+  `OfficeSidebar` badges print the shared state lowercased with
+  `getTaskTone` tones.
+- Browser-verified rail/workbench agreement: architect=running(success),
+  sentinel=review(info), owner=blocked(danger), worker-1=idle(neutral).
+- Tests 139/139 (one new regression test locks the shared vocabulary and
+  that the sidebar no longer prints `{resident.status}`); build passed.
+- Evidence: `output/playwright/ux-state-vocabulary-results.json`,
+  `output/playwright/ux-review-agent-rail-unified.png`.
+- Note: ports 3000/3001 were already occupied by a parallel session's dev
+  servers during verification; this batch verified on port 3002.
+
+- Previous batch: `Frontend GUI UX design review and improvement pass`
+- Status: `complete` (2026-06-12)
+- A live-browser UX review of `#/office-preview` found and fixed three
+  issues: (1) the Ops Control spatial-context thumbnail read as a broken
+  white box because the room backdrop was suppressed to opacity 0.34 while a
+  scale-2 white packet sprite covered the art — the backdrop is now the
+  protagonist (opacity 0.6, softer filter) with a scale-1 bottom-right sprite
+  accent; (2) workbench step cards carried ~60px of dead vertical space from
+  fixed min-heights and an internal 1fr spacer row — cards now hug content at
+  142px (1440) / 129px (1220), root min-height `clamp(380px, 34vw, 480px)`,
+  1220 override `clamp(340px, 38vw, 440px)`; (3) the duplicated
+  `Spatial Lens` kicker in the PixelOffice summary band was removed (the
+  page-header kicker is the single instance).
+- Verification: tests 138/138, build passed, browser evidence at
+  `output/playwright/ux-review-results.json` with before/after screenshots
+  `output/playwright/ux-review-*.png`. Focused contracts held: one
+  `Owner approval required`, 1 workbench, 4 steps, nav 34px one row, no
+  overflow; Overview keeps the floor map; Classic mounts no Spatial Lens
+  floor. Context strip top is now 675px (1440) / 657px (1220) at scroll 0.
+
+- Previous batch: `Spatial Lens Focused Workbench polish pass`
+- Status: `complete` (2026-06-12)
+- This pass resolved the three documented Focused-mode caveats from the IA
+  redesign: duplicated `Owner approval required` copy, heavy nested chrome,
+  and spatial context thumbnails below the first 1220x900 viewport.
+- Copy dedupe: `Owner approval required` now renders exactly once in Focused,
+  in the `Next operator action` row. The workbench h3 reads
+  `q_184_owner_gate blocked at owner gate` (new derived `headline` model
+  field), the CTA reads `Open approvals`, the blocked step meta reads
+  `waiting on owner`, the approve step detail reads
+  `gate opens after approval`, and the `PixelOffice` focused summary reason
+  reads `q_184_owner_gate is waiting at the owner gate.` The literal string
+  and `nextActionLabel` remain in `focusedHandoffModel.ts` per test contract.
+- Chrome flatten: `.focused-workbench-root` is now a borderless layout shell
+  (no border/box-shadow), posture metrics are divider-separated text instead
+  of four bordered cards, and `.focused-workbench-main` is the single framed
+  surface. All test-asserted class names and data hooks are unchanged.
+- Viewport fit: root min-height `clamp(440px, 40vw, 560px)`, tightened
+  paddings/gaps/h3 clamp; at scroll 0 the context strip top measured 756px at
+  1220x900 and 774px at 1440x900, inside the first viewport.
+- Verification: `pnpm --filter @conitens/dashboard test` 138/138,
+  `pnpm --filter @conitens/dashboard build` passed, browser evidence at
+  `output/playwright/spatial-lens-focused-polish-results.json` with
+  screenshots `spatial-lens-focused-polish-{1220,1440}.png`. Overview keeps
+  the full floor map; Classic mounts no Spatial Lens floor.
+- Note: the office-preview page can remount out of Focused mode after Vite
+  HMR; browser checks must re-select the `Focused` stage button first.
+  `ensemble verify` does not exist in the current ensemble CLI.
+
+- Verification refresh on 2026-06-11 passed dashboard tests
+  (`pnpm.cmd --filter @conitens/dashboard test`, 138 tests), dashboard
+  production build (`pnpm.cmd --filter @conitens/dashboard build`), and browser
+  verification for Focused 1440px, Focused 1220px, Overview 1440px, and
+  Classic 1440px.
+- Latest browser evidence lives at
+  `output/playwright/spatial-lens-verification-results.json` with screenshots
+  `output/playwright/spatial-lens-verification-focused-1220.png`,
+  `output/playwright/spatial-lens-verification-focused-1440.png`,
+  `output/playwright/spatial-lens-verification-overview-1440.png`, and
+  `output/playwright/spatial-lens-verification-classic-1440.png`.
+- Browser verification confirmed Focused has one `FocusedHandoffView`, one
+  active handoff workbench, no Spatial Lens floor map, no minimap, no phase
+  rail, visible `q_184_owner_gate`, visible `Owner approval required`, visible
+  `verify_append handoff: architect -> sentinel`, one nav row at 1220px, and
+  no horizontal overflow. Overview keeps the full floor map; Classic has no
+  Spatial Lens floor.
+- Remaining product/UI caveats are unchanged: repeated `Owner approval
+  required` copy, heavy nested chrome, and spatial context thumbnails below the
+  first 1220x900 viewport.
+
+- Active batch: `Spatial Lens Focused Workbench IA redesign`
+- Status: `complete`
+- Follow-up guidance from the latest attached prompt pack is now recorded in
+  `AGENTS.md` under `Conitens UI Architecture Rules / Spatial Lens`, so future
+  UI passes must treat Focused as an operator handoff workbench, keep Floor
+  Overview as the full spatial map, avoid duplicate phase/state surfaces, and
+  preserve the 1220px one-row nav constraint.
+- The latest user-approved plan replaced the map-dominant Focused mode with a
+  Workbench-first operator view. Focused no longer renders `FloorViewport`;
+  Floor Overview remains the only full pixel-map topology surface, and Classic
+  remains the legacy room-scene fallback.
+- `FocusedHandoffView` is now the single primary Focused tab body, with
+  `data-focused-handoff-view="true"`,
+  `data-active-handoff-workbench="true"`, and one left-to-right chain:
+  `architect / PLAN / RUNNING` ->
+  `q_184_owner_gate / BLOCKED / owner approval required` ->
+  `sentinel / VALIDATE / REVIEW` -> `owner / APPROVE / BLOCKED`.
+- The blocked task and next operator action are readable without inspecting
+  sprites. The blocked card carries the strongest emphasis, the handoff
+  summary reads `verify_append handoff: architect -> sentinel`, and the next
+  action row says `Owner approval required` with a link to `#/approvals`.
+- The Focused workbench has one compact status header for live rooms, blocked
+  lanes, handoffs, and current focus. Pixel-office identity is retained only
+  as a muted two-room spatial context strip for Ops Control and Validation
+  Office, not as the dominant floor map.
+- The Focused path no longer mounts the full floor map, route minimap,
+  focused route target edge, focused corridor continuity layer, agent offscreen
+  rail, old focused handoff rail, or separate phase lane strip.
+- `focusedHandoffModel.ts` now owns the pure derivation of the active
+  workbench model from existing `rooms`, `tasks`, and `handoffs`. The current
+  fixture behavior keeps `q_184_owner_gate` as the blocked owner gate,
+  `verify_append` as the review task, and `architect->sentinel->owner` as the
+  active route.
+- `PixelOffice` now owns `stageMode` while preserving
+  `conitens.officeStageMode`, and its Focused summary band is compact so
+  metrics do not compete with the workbench. `OfficeSidebar` accepts a mode
+  prop and de-emphasizes its rail content under Focused mode.
+- The pass is frontend/UI-only. It adds no canonical runtime truth, `.notes`,
+  `.agent`, provider, approval, bridge, scheduler, external fetch, dependency,
+  backend route, or task mutation surface.
+- Regression coverage now locks that Focused renders exactly one workbench,
+  does not mount a Focused floor viewport, has no minimap/target edge/phase
+  rail, exposes four phase steps, and keeps Overview as the full floor map.
+- Browser evidence at `http://localhost:3003/#/office-preview` reports
+  Focused 1440 and 1220: one `FocusedHandoffView`, one workbench, zero
+  Spatial Lens floor mounts, zero minimaps, zero focused target edges, zero
+  phase rails, four workbench steps, two context thumbnails, visible
+  `q_184_owner_gate`, visible `Owner approval required`, visible
+  `verify_append handoff: architect -> sentinel`, one nav row, and no
+  horizontal overflow. Overview 1440 keeps one floor map, while Classic mounts
+  no Spatial Lens floor.
+- Verification passed targeted Spatial Lens/shell tests, TypeScript noEmit,
+  full `pnpm.cmd --filter @conitens/dashboard test` with 138 tests,
+  `pnpm.cmd --filter @conitens/dashboard build`, browser evidence, and the
+  dashboard-scoped repo-structure post-write gate with `cycles=0`.
+  `.vibe/brain/precommit.py` was run and failed on existing
+  `@conitens/command-center` typecheck baseline regressions, with no staged or
+  scannable files in its report and smoke unittest passing.
+- Evidence lives at
+  `output/playwright/spatial-lens-focused-view-results.json`,
+  `output/playwright/spatial-lens-focused-view-focused-1440.png`,
+  `output/playwright/spatial-lens-focused-view-focused-1220.png`,
+  `output/playwright/spatial-lens-focused-view-overview-1440.png`,
+  `output/playwright/spatial-lens-focused-view-classic-1440.png`, and
+  `packages/dashboard/.audit/repo-structure-lens/audit-summary.latest.md`.
+
+- Previous active batch: `Spatial Lens Prompt 4.16 focused handoff rail pass`
+- Status: `complete`
+- The previous pass added a central handoff rail but still kept the full pixel
+  floor as Focused mode's protagonist. The Workbench redesign supersedes that
+  map-overlay hierarchy.
+
+- Previous active batch: `Spatial Lens Prompt 4.15 operator focus map pass`
+- Status: `complete`
+- The previous pass converted Focused into an operator focus map with rail-only
+  task treatment, active-only floor agents, phase lane strip, collapsed
+  minimap, and one labeled handoff edge. Prompt 4.16 supersedes its minimap and
+  literal `HANDOFF` label choices.
+
+- Previous active batch: `Spatial Lens Prompt 4.14 visual polish pass`
+- Status: `complete`
+- The latest user request asked to use or reference `aldegad/sprite-gen` to
+  improve the office designs.
+- Applied the `sprite-gen` component-row / manifest / curation idea to the
+  existing Spatial Lens pixel office without adding a new runtime dependency.
+- `generatedAssetManifest.ts` now carries curation metadata for selected
+  generated frames and exposes previously unused local sheet frames:
+  `prop.auditTicket`, `prop.checkScanner`, and `character.ownerReviewing`.
+- `GeneratedSprite` now exposes `data-generated-sprite-curation` and
+  curation offset CSS variables, so browser evidence can distinguish curated
+  generated frames from ordinary generated sprites.
+- `generatedRoomBackdrops.ts` now declares component-row curation tile and
+  anchor metadata for the Ops Control room, Validation Office room, and the
+  Validation target-edge backdrop.
+- `GeneratedRoomBackdropLayer` now emits `data-generated-room-curation` and
+  tile/anchor CSS variables used by the Spatial Lens room material styling.
+- `roomKit.ts` now adds curated office props to every templated room, raising
+  the generated room-kit contract from 13 to 20 sprites across six rooms.
+- Owner review / handoff-receiving visual state now resolves to
+  `character.ownerReviewing`.
+- Spatial Lens CSS adds subtle curation-grid room material and generated
+  sprite offset/drop-shadow handling while preserving hard-pixel integer-scale
+  grammar; no skew, perspective, fractional scale, or new write surface was
+  added.
+- The pass is visual-only and uses existing project-owned generated assets. It
+  adds no canonical runtime truth, `.notes`, `.agent`, provider, approval,
+  bridge, scheduler, external fetch, new dependency, or task mutation surface.
+- Regression coverage now locks sprite curation metadata, room backdrop
+  curation metadata, generated renderer hooks, curated room-kit counts, and the
+  owner reviewing sprite contract.
+- Browser evidence at `http://localhost:3000/#/office-preview` reported
+  Focused 1440: `cameraZoom: "3"`, camera stage transform
+  `matrix(3, 0, 0, 3, 0, 0)`, focused room `ops-control`, target room
+  `validation-office`, route framing `source-corridor-target-edge`,
+  279 generated sprites, 7 curated generated sprites, 6 room-kit layers,
+  20 room-kit sprites, 7 curated room-kit sprites, 3 component-row room
+  backdrops, 1 focused target-edge backdrop, 0 console/page errors, and
+  0 horizontal overflow.
+- Laptop-width Focused kept the same `3x` camera, 20 room-kit sprite, curated
+  sprite, and component-row backdrop contract with no horizontal overflow.
+  Floor Overview remains `1x` topology with 0 generated room backdrops.
+  Classic mounts no Spatial Lens floor and reports 0 generated sprites.
+- Verification passed full `pnpm.cmd --filter @conitens/dashboard test` with
+  133 tests and `pnpm.cmd --filter @conitens/dashboard build`.
+- Evidence lives at
+  `output/playwright/spatial-lens-spritegen-results.json`,
+  `output/playwright/spatial-lens-spritegen-focused-1440.png`,
+  `output/playwright/spatial-lens-spritegen-focused-1220.png`,
+  `output/playwright/spatial-lens-spritegen-overview-1440.png`,
+  `output/playwright/spatial-lens-spritegen-classic-1440.png`,
+  `.omx/state/spatial-lens-spritegen/ralph-progress.json`, and
+  `.audit/repo-structure-lens/audit-summary.latest.md`.
+- Visual verdict is `pass`, score 98/100. Further Pixel Agents parity should
+  generate or slice exact-size room backdrops for all six rooms and then
+  reduce duplicated authored props where the room art carries enough identity.
+
+- Previous active batch: `Spatial Lens Prompt 4.13 visual polish pass`
 - Status: `complete`
 - The latest "next step" request advanced from Prompt 4.12 generated room-kit
   signatures into Focused-mode generated room backdrops for the Spatial Lens

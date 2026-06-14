@@ -15,6 +15,9 @@ export function SceneDockOverlay({
       className={styles["scene-dock-overlay"]}
       data-scene-dock="minimap"
       data-scene-dock-role={role}
+      data-scene-dock-state={role === "route" ? "collapsed-reveal" : "persistent"}
+      aria-label={label}
+      tabIndex={role === "route" ? 0 : undefined}
     >
       <span className={styles["scene-dock-label"]}>{label}</span>
       {children}

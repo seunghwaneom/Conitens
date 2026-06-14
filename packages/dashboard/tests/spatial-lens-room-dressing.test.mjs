@@ -93,7 +93,7 @@ test("spatial lens room kit layer uses generated signature sprites", () => {
   );
 
   for (const roomId of ROOM_TEMPLATE_IDS) {
-    assert.ok(counts[roomId] >= 2, `${roomId} should have room-kit sprites`);
+    assert.ok(counts[roomId] >= 3, `${roomId} should have curated room-kit sprites`);
   }
 
   assert.match(roomZoneSource, /RoomKitLayer/);
@@ -103,9 +103,13 @@ test("spatial lens room kit layer uses generated signature sprites", () => {
   assert.match(cssSource, /\.room-kit-layer/);
   assert.match(cssSource, /\.room-kit-sprite/);
   assert.ok(kitSprites.includes("prop.archiveBox"));
+  assert.ok(kitSprites.includes("prop.auditTicket"));
+  assert.ok(kitSprites.includes("prop.checkScanner"));
   assert.ok(kitSprites.includes("prop.reagentBottleCluster"));
   assert.ok(kitSprites.includes("prop.greenStatusLight"));
   assert.ok(kitSprites.includes("prop.redStatusLight"));
+  assert.match(kitSource, /"curated-audit"/);
+  assert.match(kitSource, /"curated-scanner"/);
   assert.match(kitSource, /"ops-control"/);
   assert.match(kitSource, /"validation-office"/);
 });
@@ -113,17 +117,15 @@ test("spatial lens room kit layer uses generated signature sprites", () => {
 test("spatial lens generated room backdrops are focused-only room material", () => {
   const viewportSource = readSpatialLensSource("components/FloorViewport.tsx");
   const roomZoneSource = readSpatialLensSource("components/RoomZone.tsx");
-  const targetEdgeSource = readSpatialLensSource(
-    "components/FocusedRouteTargetEdge.tsx",
-  );
+  const focusedWorkbenchSource = readSpatialLensSource("components/FocusedHandoffView.tsx");
   const backdropLayerSource = readSpatialLensSource(
     "viewport/GeneratedRoomBackdropLayer.tsx",
   );
   const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
 
-  assert.match(viewportSource, /showGeneratedBackdrops={isFocusedMode}/);
+  assert.doesNotMatch(viewportSource, /showGeneratedBackdrops={isFocusedMode}/);
   assert.match(roomZoneSource, /GeneratedRoomBackdropLayer/);
-  assert.match(targetEdgeSource, /usage="target-edge"/);
+  assert.match(focusedWorkbenchSource, /GeneratedRoomBackdropLayer/);
   assert.match(backdropLayerSource, /data-generated-room-backdrop=/);
   assert.match(backdropLayerSource, /data-generated-room-backdrop-usage=/);
   assert.match(cssSource, /\.generated-room-backdrop-layer/);
@@ -150,6 +152,15 @@ test("spatial lens room dressing anchors operational affordances to props", () =
     getRoomTemplatePropSpecs("project-main").some((prop) => prop.kind === "inboxTray") &&
       getRoomTemplatePropSpecs("project-main").some((prop) => prop.kind === "outboxTray"),
     "central commons should expose shared pickup trays",
+  );
+});
+
+test("spatial lens overview declutter rules are present in the CSS", () => {
+  const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
+  assert.match(
+    cssSource,
+    /\[data-viewport-mode="overview"\][\s\S]*?room-dressing-layer/,
+    "CSS must contain an overview-scoped rule targeting room-dressing-layer",
   );
 });
 

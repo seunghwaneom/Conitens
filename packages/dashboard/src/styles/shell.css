@@ -63,6 +63,16 @@
   max-width: 100%;
 }
 
+.forward-chip-row-nav {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.forward-chip-row-nav .forward-chip-link {
+  padding-inline: 7px;
+  white-space: nowrap;
+}
+
 .forward-status-row {
   max-width: 100%;
   gap: 6px;
@@ -288,6 +298,10 @@
   .forward-chip-row,
   .forward-status-row {
     justify-content: flex-start;
+  }
+
+  .forward-chip-row-nav {
+    flex-wrap: wrap;
   }
 
   .forward-form {

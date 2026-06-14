@@ -1,0 +1,19 @@
+No commit was created for this work unit.
+
+Reason:
+- The user asked to run/fix the implementation, not to commit.
+- The workspace already contains a broad dirty worktree from prior/user work
+  across dashboard, AGENTS.md, .omo, and context files.
+- Staging only this unit would be possible after a deliberate commit request,
+  but committing now would mix with an active uncommitted workspace state and
+  exceed the requested action.
+
+Safe handoff:
+- Product files changed by this corrective unit are:
+  packages/dashboard/src/office-stage-schema.ts,
+  packages/dashboard/src/spatial-lens/viewport/corridorGraph.ts,
+  packages/dashboard/src/spatial-lens/viewport/floorLayout.ts,
+  packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs.
+- Evidence files changed/added by this unit are under .omo/evidence and
+  output/playwright/office-component-reposition-fix*.
+- Conitens context files were updated to record the batch.

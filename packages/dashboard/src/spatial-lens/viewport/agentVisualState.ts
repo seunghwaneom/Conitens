@@ -251,6 +251,28 @@ export function chooseAgentActivityCue(
     };
 }
 
+export function shouldRenderAgentInOperatorFocusMap(
+  agent: AgentVisualInput,
+  state: AgentVisualState,
+  cue: AgentActivityCue,
+): boolean {
+  if (agent.status === "running") return true;
+  if (
+    state === "working" ||
+    state === "reviewing" ||
+    state === "handoff_sending" ||
+    state === "handoff_receiving"
+  ) {
+    return true;
+  }
+  return (
+    cue.kind === "active" ||
+    cue.kind === "review" ||
+    cue.kind === "handoff_send" ||
+    cue.kind === "handoff_receive"
+  );
+}
+
 function scoreStationRole(stationRole: AgentVisualRole, visualRole: AgentVisualRole): number {
   if (stationRole === visualRole) return 0;
   if (visualRole === "reviewer" && stationRole === "sentinel") return 1;

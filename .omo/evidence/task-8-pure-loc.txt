@@ -1,0 +1,13 @@
+packages/dashboard/src/components/OfficeStage.tsx 216
+packages/dashboard/src/components/PixelOffice.tsx 214
+packages/dashboard/src/components/OfficeSidebar.tsx 199
+packages/dashboard/src/spatial-lens/components/FocusedHandoffView.tsx 211
+packages/dashboard/src/spatial-lens/components/FloorViewport.tsx 140
+packages/dashboard/src/spatial-lens/model/focusedHandoffModel.ts 298
+packages/dashboard/src/spatial-lens/viewport/AgentLayer.tsx 158
+packages/dashboard/src/spatial-lens/index.ts 279
+packages/dashboard/src/office-stage.module.css 612
+packages/dashboard/tests/office-preview-shell.test.mjs 59
+packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs 412
+packages/dashboard/tests/spatial-lens-room-dressing.test.mjs 151
+.omo/evidence/run-frontend-design-architecture-qa.mjs 345
