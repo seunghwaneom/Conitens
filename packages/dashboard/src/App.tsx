@@ -1664,11 +1664,11 @@ export function App() {
           <nav className="forward-chip-row forward-chip-row-nav" aria-label="Forward shell routes">
             <a className={`forward-chip forward-chip-link${route.screen === "overview" ? " active" : ""}`} aria-current={route.screen === "overview" ? "page" : undefined} href="#/overview">Overview</a>
             <a className={`forward-chip forward-chip-link${route.screen === "inbox" ? " active" : ""}`} aria-current={route.screen === "inbox" ? "page" : undefined} href="#/inbox">Inbox</a>
-            <a className={`forward-chip forward-chip-link${route.screen === "approvals" ? " active" : ""}`} aria-current={route.screen === "approvals" ? "page" : undefined} href="#/approvals">Approvals</a>
+            <a className={`forward-chip forward-chip-link${route.screen === "approvals" ? " active" : ""}`} aria-current={route.screen === "approvals" ? "page" : undefined} href="#/approvals">Approve</a>
             <a className={`forward-chip forward-chip-link${route.screen === "tasks" || route.screen === "task-detail" ? " active" : ""}`} aria-current={route.screen === "tasks" || route.screen === "task-detail" ? "page" : undefined} href="#/tasks">Tasks</a>
-            <a className={`forward-chip forward-chip-link${route.screen === "workspaces" || route.screen === "workspace-detail" ? " active" : ""}`} aria-current={route.screen === "workspaces" || route.screen === "workspace-detail" ? "page" : undefined} href="#/workspaces">Workspaces</a>
+            <a className={`forward-chip forward-chip-link${route.screen === "workspaces" || route.screen === "workspace-detail" ? " active" : ""}`} aria-current={route.screen === "workspaces" || route.screen === "workspace-detail" ? "page" : undefined} href="#/workspaces">Workspace</a>
             <a className={`forward-chip forward-chip-link${route.screen === "runs" || route.screen === "run-detail" ? " active" : ""}`} aria-current={route.screen === "runs" || route.screen === "run-detail" ? "page" : undefined} href="#/runs">Runs</a>
-            <a className={`forward-chip forward-chip-link${isOfficePreview ? " active" : ""}`} aria-current={isOfficePreview ? "page" : undefined} href="#/office-preview">Spatial Lens</a>
+            <a className={`forward-chip forward-chip-link${isOfficePreview ? " active" : ""}`} aria-current={isOfficePreview ? "page" : undefined} href="#/office-preview">Spatial</a>
             <a className={`forward-chip forward-chip-link${route.screen === "agents" || route.screen === "agent-detail" ? " active" : ""}`} aria-current={route.screen === "agents" || route.screen === "agent-detail" ? "page" : undefined} href="#/agents">Agents</a>
           </nav>
           <div className="forward-status-row forward-chip-row-status" aria-label="Bridge connection status">

@@ -21,8 +21,13 @@ export function GeneratedRoomBackdropLayer({
       data-generated-room-backdrop={backdrop.id}
       data-generated-room-backdrop-room={backdrop.roomId}
       data-generated-room-backdrop-usage={backdrop.usage}
+      data-generated-room-curation={backdrop.curation.source}
       style={{
         "--generated-room-backdrop-opacity": backdrop.opacity,
+        "--generated-room-curation-tile-w": `${backdrop.curation.tileW}px`,
+        "--generated-room-curation-tile-h": `${backdrop.curation.tileH}px`,
+        "--generated-room-anchor-x": backdrop.curation.anchorX,
+        "--generated-room-anchor-y": backdrop.curation.anchorY,
         backgroundImage: `url("${backdrop.src}")`,
         backgroundPosition: backdrop.backgroundPosition,
         backgroundSize: backdrop.backgroundSize,

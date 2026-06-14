@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "createdAt": "2026-06-13T17:34:26.371Z",
+  "updatedAt": "2026-06-13T17:50:57.996Z",
+  "briefPath": ".omo/ulw-loop/office-components-reposition-fix-20260614/brief.md",
+  "goalsPath": ".omo/ulw-loop/office-components-reposition-fix-20260614/goals.json",
+  "ledgerPath": ".omo/ulw-loop/office-components-reposition-fix-20260614/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-fix-rejected-floor-overview-office-c",
+      "title": "Fix rejected Floor Overview office-component repositioning. Prior imp...",
+      "objective": "Fix rejected Floor Overview office-component repositioning. Prior implementation only moved the preview shell and inspector rail; user says office component rearrangement was not done. Deliver an observable rearrangement of the actual FloorViewport office/floor map components/rooms, preserve Focused and Classic contracts, verify with failing-first placement tests plus browser screenshot evidence.",
+      "status": "blocked",
+      "successCriteria": [
+        {
+          "id": "C001",
+          "scenario": "Browser Overview 1440/1220 renders actual data-room-id room placements in the operator-chain office arrangement",
+          "userModel": "happy",
+          "expectedEvidence": "output/playwright/office-component-reposition-fix-results.json plus overview screenshots show ops/impl left, validation/review/research right stack, commons lower-center",
+          "capturedEvidence": "RED: pnpm dashboard floor-geometry test failed on old coords; GREEN: output/playwright/office-component-reposition-fix-results.json PASS with Overview 1440/1220 roomPlacements ops-control 3/3/30/20, impl-office 3/27/30/31, validation-office 61/3/30/22, review-office 61/29/30/23, research-lab 61/58/30/22, project-main 34/60/24/32; screenshots output/playwright/office-component-reposition-fix/overview-1440.png and overview-1220.png; cleanup: chrome 9233 and vite 3006 listeners closed",
+          "status": "pass",
+          "capturedAt": "2026-06-13T17:48:33.789Z"
+        },
+        {
+          "id": "C002",
+          "scenario": "Responsive boundary: Overview 1220 has no horizontal overflow, map/rail do not overlap, and right-column offices remain ordered validation -> review -> research",
+          "userModel": "edge",
+          "expectedEvidence": "output/playwright/office-component-reposition-fix-results.json overview-1220 result PASS and screenshot output/playwright/office-component-reposition-fix/overview-1220.png",
+          "capturedEvidence": "Browser QA PASS in output/playwright/office-component-reposition-fix-results.json for overview-1220: no horizontal overflow, map/rail separation preserved, right-side offices ordered validation -> review -> research; screenshot output/playwright/office-component-reposition-fix/overview-1220.png; cleanup: chrome 9233 and vite 3006 listeners closed",
+          "status": "pass",
+          "capturedAt": "2026-06-13T17:48:41.383Z"
+        },
+        {
+          "id": "C003",
+          "scenario": "Regression: Focused remains workbench-only and Classic renders safely at 1440 and 1220 after shared room geometry move",
+          "userModel": "regression",
+          "expectedEvidence": "pnpm dashboard tests/build pass plus browser QA focused-1220/focused-1440/classic-1440/classic-1220 PASS in output/playwright/office-component-reposition-fix-results.json",
+          "capturedEvidence": "Regression proof: pnpm.cmd --filter @conitens/dashboard test PASS 144/144; pnpm.cmd --filter @conitens/dashboard build PASS; browser QA PASS for focused-1220, focused-1440, classic-1440, classic-1220 in output/playwright/office-component-reposition-fix-results.json; read-only visual/operator reviewers PASS; cleanup: chrome 9233 and vite 3006 listeners closed",
+          "status": "pass",
+          "capturedAt": "2026-06-13T17:48:48.623Z"
+        }
+      ],
+      "attempt": 1,
+      "createdAt": "2026-06-13T17:34:26.371Z",
+      "updatedAt": "2026-06-13T17:50:57.996Z",
+      "startedAt": "2026-06-13T17:47:50.743Z",
+      "blockedReason": "Product work complete and criteria C001-C003 pass, but completed legacy Codex goal blocks final aggregate reconciliation in this thread; see .omo/evidence/office-component-reposition-fix-codex-goal-snapshot.json. Verification: tests 144/144, build pass, browser QA PASS, reviewers PASS."
+    }
+  ],
+  "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/office-components-reposition-fix-20260614/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/office-components-reposition-fix-20260614/ledger.jsonl as the audit trail."
+}

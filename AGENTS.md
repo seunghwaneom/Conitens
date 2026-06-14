@@ -46,3 +46,48 @@ task meaningfully changes, update `.conitens/context/task_plan.md`,
   handoffs.
 - When docs disagree, prefer `CONITENS.md` and
   `docs/adr-0001-control-plane.md` for current runtime behavior.
+
+## Conitens UI Architecture Rules
+
+### Spatial Lens
+
+Focused mode is not Floor Overview.
+
+Focused mode must answer these operator questions in under 3 seconds:
+
+1. Who is active?
+2. What is blocked?
+3. Who owns the next handoff?
+4. What should the operator do next?
+
+In Focused mode:
+
+- The Active Handoff Workbench is the primary visual surface.
+- The pixel floor map is secondary context only.
+- Do not place critical task cards on top of visually noisy pixel art.
+- Hide minimap unless the user is in Floor Overview.
+- Do not duplicate the same phase state in multiple competing components.
+- Blocked task and next operator action must be explicit text, not just sprite
+  position.
+- Floor Overview owns the full spatial map.
+- Classic owns dense dashboard/table views.
+
+Preferred Focused hierarchy:
+
+1. Compact posture metrics.
+2. Active handoff chain.
+3. Muted spatial context.
+
+Required handoff semantics:
+
+- PLAN / architect / Ops Control / running
+- BUILD / worker-1 / idle
+- VALIDATE / sentinel / Validation Office / review
+- APPROVE / owner / owner gate / blocked
+
+When changing UI:
+
+- Prefer structural hierarchy changes over cosmetic tweaks.
+- Keep top nav on one row at 1220px width.
+- Avoid new dependencies unless justified.
+- Preserve existing demo data shape where possible.

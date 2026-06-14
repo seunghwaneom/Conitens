@@ -1,0 +1,44 @@
+AI SLOP CLEANUP REPORT
+======================
+
+Scope:
+- packages/dashboard/src/office-stage-schema.ts
+- packages/dashboard/src/spatial-lens/viewport/corridorGraph.ts
+- packages/dashboard/src/spatial-lens/viewport/floorLayout.ts
+- packages/dashboard/tests/spatial-lens-floor-geometry.test.mjs
+- .omo/evidence/run-frontend-design-architecture-qa.mjs
+- .conitens/context/LATEST_CONTEXT.md
+- .conitens/context/task_plan.md
+- .conitens/context/findings.md
+- .conitens/context/progress.md
+
+Behavior Lock:
+- RED floor-geometry placement contract failed against old coordinates.
+- GREEN targeted floor geometry/layout tests passed.
+- Browser QA reads real [data-room-id] DOM placements in Overview 1440/1220.
+
+Cleanup Plan:
+- Dead code: inspect for unused helper/layer additions. No product helper was added.
+- Duplication: inspect repeated placement assertions. Browser expected placements are local to the QA harness; test contract keeps model-level coordinates.
+- Needless abstraction: no new product abstraction or dependency was introduced.
+- Test reinforcement: added Classic 1220 browser scenario after review noted that gap.
+
+Passes Completed:
+1. Dead code deletion - no-op; no dead product code introduced.
+2. Duplicate removal - no-op; coordinate contracts live in one model test and one real-browser harness.
+3. Naming/error handling cleanup - no-op; changed names are existing room/topology ids.
+4. Test reinforcement - added classic-1220 browser QA scenario.
+
+Quality Gates:
+- Regression tests: PASS, pnpm.cmd --filter @conitens/dashboard test 144/144.
+- Build/typecheck: PASS, pnpm.cmd --filter @conitens/dashboard build.
+- Browser/manual QA: PASS, output/playwright/office-component-reposition-fix-results.json.
+- Static whitespace: PASS, git diff --check.
+- Static/security scan: N/A for coordinate-only frontend layout change.
+
+Changed Files:
+- Product geometry moved actual office room/corridor/floorplate coordinates.
+- Test/QA now prove real rendered room placements and 1220px/classic regression.
+
+Remaining Risks:
+- Central Commons is partly below the first Overview viewport; reviewers accepted this for the operator-chain repositioning goal.

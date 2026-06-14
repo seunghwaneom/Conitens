@@ -1,0 +1,16 @@
+✔ spatial lens room dressing templates cover every office room (1.6842ms)
+✔ spatial lens room dressing satisfies room-level density requirements (9.1574ms)
+✔ spatial lens room dressing implements every required prop kind (0.4446ms)
+✔ spatial lens room depth layer gives rooms authored pixel depth (0.8292ms)
+✔ spatial lens room kit layer uses generated signature sprites (0.7065ms)
+✔ spatial lens generated room backdrops are focused-only room material (0.6394ms)
+✔ spatial lens room dressing anchors operational affordances to props (0.2599ms)
+✔ spatial lens overview declutter rules are present in the CSS (0.3532ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.6781
