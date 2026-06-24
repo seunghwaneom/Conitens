@@ -2,6 +2,31 @@
 
 ## Active Batch
 
+- Batch: `Ultrawork cleanup`
+- Status: `complete`
+- Date: 2026-06-14
+- Scope: Remove evidence-backed stale files and generated/local artifacts
+  without changing active Conitens behavior. Cleanup covered unused dashboard
+  UI modules, one unreferenced command-center visual layer, tracked root
+  screenshot artifacts, a tracked dashboard `tsconfig.tsbuildinfo`, duplicate
+  local dependency/cache folders, old `.tmp` browser/screenshot artifacts, and
+  ignored Playwright/Python cache output.
+- Acceptance: deleted source symbols must have no active production
+  references; dashboard tests/build must remain green; command-center cleanup
+  must not introduce missing-symbol errors; high-risk runtime/projection
+  surfaces such as `.notes/`, `.omx/`, `.conitens/runtime/`, and `.omo/evidence/`
+  must be preserved, along with nested repositories under temp directories.
+- Verified: baseline dashboard tests passed 144/144 before cleanup; post-cleanup
+  dashboard tests passed 144/144; dashboard production build passed; deleted
+  symbol grep found no active `AgentDetail`, `AgentStudio`, `ApprovalCenter`,
+  `HandoffLink`, `KanbanBoard`, `OverviewDashboard`, `TaskDetailModal`,
+  `ThreadBrowser`, `ThreadDetail`, `useWebSocket`, or
+  `HierarchyDepthLODLayer` references; `git diff --check` passed.
+  Command-center tests/build remain blocked by pre-existing unrelated failures
+  in YAML agent parsing plus `src/main.tsx`/`src/office/RoomMonitor.ts`.
+
+## Previous Batch
+
 - Batch: `Office component reposition fix`
 - Status: `complete`
 - Date: 2026-06-14
