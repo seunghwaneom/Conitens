@@ -4,6 +4,32 @@ Read this file before substantial work.
 
 ## Current State
 
+- Active batch: `Ultrawork cleanup`
+- Status: `complete` (2026-06-14)
+- Removed evidence-backed stale files and local generated artifacts without
+  changing active runtime behavior. Deleted unused dashboard modules:
+  `AgentDetail.tsx`, `AgentStudio.tsx`, `ApprovalCenter.tsx`,
+  `HandoffLink.tsx`, `KanbanBoard.tsx`, `OverviewDashboard.tsx`,
+  `TaskDetailModal.tsx`, `ThreadBrowser.tsx`, `ThreadDetail.tsx`,
+  `Timeline.tsx`, and `hooks/use-websocket.ts`; deleted unreferenced
+  command-center visual layer `HierarchyDepthLODLayer.tsx`.
+- Removed tracked artifact files: root `after-*.png`, root `screenshot-*.png`,
+  and generated `packages/dashboard/tsconfig.tsbuildinfo` (already covered by
+  `*.tsbuildinfo` ignore). Removed local ignored/untracked artifacts:
+  `spatial-lens-focused-polish-*.png`, old root office/forward screenshots,
+  duplicate `node_modules (1)`, `.pytest_cache`, Python `__pycache__`,
+  Playwright local caches, `.audit`, selected old `.tmp` Chrome/screenshot/log
+  artifacts, and `packages/dashboard/.audit`.
+- Preserved high-risk runtime/projection surfaces: `.notes/`, `.omx/`,
+  `.conitens/runtime/`, `.omo/evidence/`, cloned research repositories, and
+  active local config.
+- Verification passed: dashboard baseline tests 144/144 before cleanup,
+  post-cleanup dashboard tests 144/144, dashboard production build,
+  deleted-symbol grep (no active references), and `git diff --check`.
+  Command-center package-wide tests/build remain blocked by unrelated existing
+  failures: YAML agent extraction parses `undefined` entries, and build has
+  TypeScript errors in `src/main.tsx` plus `src/office/RoomMonitor.ts`.
+
 - Active batch: `Office component reposition fix`
 - Status: `complete` (2026-06-14)
 - User rejected the prior Floor Overview OSS UX reposition because the actual

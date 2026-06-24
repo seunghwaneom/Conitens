@@ -1,5 +1,33 @@
 # progress.md
 
+## Ultrawork Cleanup - 2026-06-14
+
+- [x] Started direct `$ultrawork` cleanup with LIGHT tier because the change
+      stayed inside existing layers and removed stale/generated files rather
+      than adding architecture.
+- [x] Ran parallel discovery for ignored artifacts, tracked root screenshots,
+      duplicate dependency folders, generated build info, and unused dashboard
+      or command-center source files.
+- [x] Preserved high-risk runtime/projection surfaces: `.notes/`, `.omx/`,
+      `.conitens/runtime/`, `.omo/evidence/`, and cloned research repositories.
+- [x] Removed unused dashboard components/hook, the unreferenced
+      command-center `HierarchyDepthLODLayer.tsx`, tracked root screenshot
+      artifacts, and tracked dashboard `tsconfig.tsbuildinfo`.
+- [x] Removed local generated artifacts/caches after workspace-bound path
+      validation: stale root screenshots, `node_modules (1)`, `.pytest_cache`,
+      Python `__pycache__` folders, Playwright local caches, and
+      `packages/dashboard/.audit`, `.audit`, plus selected old `.tmp`
+      Chrome/screenshot/log artifacts while preserving the nested
+      `.tmp/codex-push-spatial-lens` repository.
+- [x] Verified baseline dashboard tests 144/144 before cleanup and post-cleanup
+      dashboard tests 144/144 plus dashboard production build.
+- [x] Verified deleted-symbol grep found no active references and
+      `git diff --check` passed.
+- [ ] Command-center package-wide tests/build are not green in this workspace:
+      tests already fail in YAML agent extraction with `undefined` agent data;
+      build fails in existing `src/main.tsx` and `src/office/RoomMonitor.ts`
+      type errors unrelated to the deleted layer.
+
 ## Office Component Reposition Fix - 2026-06-14
 
 - [x] Ran Ouroboros fallback evaluation: prior work passed mechanical checks
