@@ -76,11 +76,11 @@ export class RoomMonitorManager {
       fill: 0x889999,
     });
 
-    const cpuLabel = new PixiText({ text: "CPU 0%", style: { ...tinyStyle } });
+    const cpuLabel = new PixiText({ text: "CPU 0%", style: tinyStyle });
     cpuLabel.position.set(4, 14);
     container.addChild(cpuLabel);
 
-    const memLabel = new PixiText({ text: "MEM 0%", style: { ...tinyStyle } });
+    const memLabel = new PixiText({ text: "MEM 0%", style: tinyStyle });
     memLabel.position.set(4, 26);
     container.addChild(memLabel);
 
