@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { OperatorTaskDetailViewModel } from "../operator-tasks-model.js";
 
 type PanelState = "idle" | "loading" | "ready" | "error";
@@ -58,6 +59,13 @@ export function OperatorTaskDetailPanel({
   onApprovalRationaleChange,
   approvalRequestedChanges = [],
 }: OperatorTaskDetailPanelProps) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Reset the delete confirmation whenever a different task is inspected so the
+  // armed state never carries over to another record.
+  useEffect(() => {
+    setConfirmingDelete(false);
+  }, [task?.taskId]);
+
   if (state === "loading") {
     return <p className="forward-empty">Loading operator task...</p>;
   }
@@ -253,9 +261,35 @@ export function OperatorTaskDetailPanel({
               </button>
             ) : null}
             {task.archivedAt && onDelete ? (
-              <button className="forward-chip-button" type="button" onClick={onDelete}>
-                Delete task
-              </button>
+              confirmingDelete ? (
+                <>
+                  <button
+                    className="forward-chip-button forward-chip-button--danger"
+                    type="button"
+                    onClick={() => {
+                      setConfirmingDelete(false);
+                      onDelete();
+                    }}
+                  >
+                    Confirm permanent delete
+                  </button>
+                  <button
+                    className="forward-chip-button"
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="forward-chip-button forward-chip-button--danger"
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  Delete task
+                </button>
+              )
             ) : null}
           </div>
           {archiveError ? <p className="forward-error">{archiveError}</p> : null}
