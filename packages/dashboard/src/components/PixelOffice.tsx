@@ -92,7 +92,6 @@ export function PixelOffice({
       }).length
     : 0;
   const surfacedTaskCount = queuedTasks.length;
-  const blockedFocusTask = queuedTasks.find((task) => task.state === "blocked");
   const activeThreadLabel = selectedResident?.taskCount === 1 ? "thread" : "threads";
   const focusSummary = selectedResident
     ? `${selectedResident.agentId} is in ${selectedResident.roomLabel}, carrying ${selectedResident.taskCount} active ${activeThreadLabel}.`
@@ -102,9 +101,6 @@ export function PixelOffice({
   const roomReason = selectedRoom
     ? `${selectedRoom.label}: ${selectedRoomRunningCount} running, ${selectedRoomTaskCount} tasks, ${selectedRoomHandoffCount} handoffs.`
     : "No room selected.";
-  const focusedReason = blockedFocusTask
-    ? `${blockedFocusTask.taskId} is waiting at the owner gate.`
-    : "No blocked owner gate.";
 
   const handleSelectRoom = (roomId: string) => {
     const room = office.rooms.find((entry) => entry.roomId === roomId);
@@ -124,30 +120,13 @@ export function PixelOffice({
       data-office-preview-shell={getOfficePreviewShellMode(stageMode)}
       data-office-stage-mode={stageMode}
     >
-      <section
-        className={layoutStyles["office-summary-band"]}
-        data-summary-mode={stageMode === "focused" ? "compact" : "full"}
-      >
-        <div className={layoutStyles["office-summary-copy"]}>
-          <h2 className={layoutStyles["office-summary-title"]}>
-            {stageMode === "focused" ? "Active handoff posture" : "Current floor posture"}
-          </h2>
-          {stageMode !== "focused" ? (
+      {stageMode !== "focused" ? (
+        <section className={layoutStyles["office-summary-band"]} data-summary-mode="full">
+          <div className={layoutStyles["office-summary-copy"]}>
+            <h2 className={layoutStyles["office-summary-title"]}>Current floor posture</h2>
             <p className={layoutStyles["office-summary-text"]}>{focusSummary}</p>
-          ) : null}
-          <p className={layoutStyles["office-summary-reason"]}>
-            {stageMode === "focused" ? focusedReason : roomReason}
-          </p>
-        </div>
-        {stageMode === "focused" ? (
-          <div className={layoutStyles["office-summary-mode-note"]}>
-            <span className={layoutStyles["office-focus-label"]}>Focus</span>
-            <strong>{selectedResident ? selectedResident.agentId : selectedRoom?.label ?? "No focus selected"}</strong>
-            <span className={layoutStyles["office-focus-meta"]}>
-              {selectedResident ? `${selectedResident.roomLabel} / ${selectedResident.status}` : "Room focus"}
-            </span>
+            <p className={layoutStyles["office-summary-reason"]}>{roomReason}</p>
           </div>
-        ) : (
           <div className={layoutStyles["office-summary-side"]}>
             <div className={layoutStyles["office-summary-grid"]}>
               <div className={layoutStyles["office-summary-item"]}>
@@ -183,8 +162,8 @@ export function PixelOffice({
               ) : null}
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
       <div className={layoutStyles["office-layout"]} data-stage-mode={stageMode}>
         {agents.length === 0 ? (
           <div className="empty-state animated">No agents online. Waiting for heartbeats...</div>

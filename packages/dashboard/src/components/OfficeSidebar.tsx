@@ -51,6 +51,10 @@ export function OfficeSidebar({
         : selectedRoom
           ? "room focus"
           : "preview";
+  // In Focused mode the Active Handoff Workbench is the single source of truth
+  // for queue and handoff state (AGENTS.md — no duplicated phase state across
+  // competing components), so the rail shows only the focus card and roster.
+  const showQueueAndHandoffs = mode !== "focused";
 
   return (
     <aside
@@ -136,6 +140,8 @@ export function OfficeSidebar({
         ) : null}
       </section>
 
+      {showQueueAndHandoffs ? (
+      <>
       <section className={`${sidebarStyles["office-rail-section"]} ${sidebarStyles.queue}`}>
         <div className="section-head">
           <p className="panel-kicker">TASK QUEUE</p>
@@ -207,6 +213,8 @@ export function OfficeSidebar({
           <div className={sidebarStyles["office-overflow-chip"]}>+{rail.hiddenHandoffCount} more handoffs in backlog</div>
         ) : null}
       </section>
+      </>
+      ) : null}
 
     </aside>
   );
