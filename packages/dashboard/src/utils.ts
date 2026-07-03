@@ -43,3 +43,8 @@ import { VALID_TRANSITIONS as PROTOCOL_VALID_TRANSITIONS } from "@conitens/proto
 export function isValidTransition(from: string, to: string): boolean {
   return (PROTOCOL_VALID_TRANSITIONS as Record<string, readonly string[]>)[from]?.includes(to) ?? false;
 }
+
+/** Normalize any thrown value to a user-facing message string. */
+export function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

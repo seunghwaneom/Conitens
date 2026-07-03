@@ -31,6 +31,8 @@ import {
   useRunsData,
   type LoadState,
 } from "./hooks/use-operator-screen-data.js";
+import { useRunDetailData } from "./hooks/use-run-detail-data.js";
+import { toErrorMessage } from "./utils.js";
 import {
   forwardArchiveOperatorTask,
   forwardCreateOperatorTask,
@@ -45,12 +47,6 @@ import {
   forwardRestoreOperatorTask,
   forwardUpdateOperatorTask,
   forwardUpdateOperatorWorkspace,
-  forwardGet,
-  parseContextLatestResponse,
-  parseReplayResponse,
-  parseRoomTimelineResponse,
-  parseRunDetailResponse,
-  parseStateDocsResponse,
   persistBridgeConfig,
   persistSavedTaskFilterPresets,
   persistTaskFilterState,
@@ -92,7 +88,6 @@ import {
 import { toOperatorWorkspaceDetail, toOperatorWorkspaceListItems } from "./operator-workspaces-model.js";
 import {
   extractRoomOptions,
-  pickNextRoomId,
   summarizeFindingsDocument,
   summarizeValidatorCorrelations,
   toInsightCardViewModels,
@@ -123,10 +118,6 @@ interface TaskBulkReport {
   failed: Array<{ taskId: string; error: string }>;
 }
 
-function toErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 export function App() {
   const initialTaskFilterState = readInitialTaskFilterState();
   const [config, setConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
@@ -135,23 +126,12 @@ export function App() {
   const [selectedTask, setSelectedTask] = useState<ForwardOperatorTaskDetailResponse | null>(null);
   const [operatorWorkspaces, setOperatorWorkspaces] = useState<ForwardOperatorWorkspacesResponse | null>(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState<ForwardOperatorWorkspaceDetailResponse | null>(null);
-  const [selectedRun, setSelectedRun] = useState<ForwardRunDetailResponse | null>(null);
-  const [replay, setReplay] = useState<ForwardReplayResponse | null>(null);
-  const [stateDocs, setStateDocs] = useState<ForwardStateDocsResponse | null>(null);
-  const [contextLatest, setContextLatest] = useState<ForwardContextLatestResponse | null>(null);
-  const [roomTimeline, setRoomTimeline] = useState<ForwardRoomTimelineResponse | null>(null);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [tasksState, setTasksState] = useState<LoadState>("idle");
   const [taskDetailState, setTaskDetailState] = useState<LoadState>("idle");
   const [workspacesState, setWorkspacesState] = useState<LoadState>("idle");
   const [workspaceDetailState, setWorkspaceDetailState] = useState<LoadState>("idle");
   const [workspaceMutationState, setWorkspaceMutationState] = useState<LoadState>("idle");
   const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
-  const [detailState, setDetailState] = useState<LoadState>("idle");
-  const [replayState, setReplayState] = useState<LoadState>("idle");
-  const [stateDocsState, setStateDocsState] = useState<LoadState>("idle");
-  const [contextState, setContextState] = useState<LoadState>("idle");
-  const [roomState, setRoomState] = useState<LoadState>("idle");
   const [taskMutationState, setTaskMutationState] = useState<LoadState>("idle");
   const [taskArchiveState, setTaskArchiveState] = useState<LoadState>("idle");
   const [taskDeleteState, setTaskDeleteState] = useState<LoadState>("idle");
@@ -180,11 +160,6 @@ export function App() {
   const [taskApprovalRequestError, setTaskApprovalRequestError] = useState<string | null>(null);
   const [taskPresetError, setTaskPresetError] = useState<string | null>(null);
   const [taskBulkError, setTaskBulkError] = useState<string | null>(null);
-  const [detailError, setDetailError] = useState<string | null>(null);
-  const [replayError, setReplayError] = useState<string | null>(null);
-  const [stateDocsError, setStateDocsError] = useState<string | null>(null);
-  const [contextError, setContextError] = useState<string | null>(null);
-  const [roomError, setRoomError] = useState<string | null>(null);
   const [taskBulkMessage, setTaskBulkMessage] = useState<string | null>(null);
   const [taskBulkReport, setTaskBulkReport] = useState<TaskBulkReport | null>(null);
   const [route, setRoute] = useState(() => parseForwardRoute(window.location.hash));
@@ -243,6 +218,25 @@ export function App() {
     useOperatorWorkspaceLinkedTasksData({ config, isOfficePreview, screen: route.screen, workspaceId: route.workspaceId ?? null, liveRevision });
   const { data: runs, state: runsState, error: runsError } =
     useRunsData({ config, isOfficePreview, liveRevision });
+  const {
+    selectedRun,
+    replay,
+    stateDocs,
+    contextLatest,
+    roomTimeline,
+    selectedRoomId,
+    setSelectedRoomId,
+    detailState,
+    replayState,
+    stateDocsState,
+    contextState,
+    roomState,
+    detailError,
+    replayError,
+    stateDocsError,
+    contextError,
+    roomError,
+  } = useRunDetailData({ config, isOfficePreview, activeLinkedRunId, liveRevision, streamRevision });
 
   const shellCopy = useMemo(() => {
     if (isOfficePreview) {
@@ -470,129 +464,6 @@ export function App() {
       cancelled = true;
     };
   }, [config, isOfficePreview, route.screen, route.workspaceId]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || !activeLinkedRunId) {
-      setSelectedRun(null);
-      setReplay(null);
-      setStateDocs(null);
-      setContextLatest(null);
-      setRoomTimeline(null);
-      setSelectedRoomId(null);
-      setDetailState("idle");
-      setReplayState("idle");
-      setStateDocsState("idle");
-      setContextState("idle");
-      setRoomState("idle");
-      setDetailError(null);
-      setReplayError(null);
-      setStateDocsError(null);
-      setContextError(null);
-      setRoomError(null);
-      return;
-    }
-    let cancelled = false;
-    setDetailState("loading");
-    setReplayState("loading");
-    setStateDocsState("loading");
-    setContextState("loading");
-    setRoomState("idle");
-    setDetailError(null);
-    setReplayError(null);
-    setStateDocsError(null);
-    setContextError(null);
-    setRoomError(null);
-    Promise.allSettled([
-      forwardGet(config, `/runs/${encodeURIComponent(activeLinkedRunId)}`, parseRunDetailResponse),
-      forwardGet(config, `/runs/${encodeURIComponent(activeLinkedRunId)}/replay`, parseReplayResponse),
-      forwardGet(config, `/runs/${encodeURIComponent(activeLinkedRunId)}/state-docs`, parseStateDocsResponse),
-      forwardGet(config, `/runs/${encodeURIComponent(activeLinkedRunId)}/context-latest`, parseContextLatestResponse),
-    ])
-      .then(([detailResult, replayResult, stateDocsResult, contextResult]) => {
-        if (cancelled) {
-          return;
-        }
-        if (detailResult.status === "fulfilled") {
-          setSelectedRun(detailResult.value);
-          setDetailState("ready");
-          setDetailError(null);
-        } else {
-          setSelectedRun(null);
-          setDetailState("error");
-          setDetailError(toErrorMessage(detailResult.reason));
-        }
-
-        if (replayResult.status === "fulfilled") {
-          setReplay(replayResult.value);
-          setReplayState("ready");
-          setReplayError(null);
-          const roomOptions = extractRoomOptions(replayResult.value);
-          setSelectedRoomId((current) => pickNextRoomId(current, roomOptions));
-        } else {
-          setReplay(null);
-          setReplayState("error");
-          setReplayError(toErrorMessage(replayResult.reason));
-          setRoomTimeline(null);
-          setSelectedRoomId(null);
-          setRoomState("idle");
-          setRoomError(null);
-        }
-
-        if (stateDocsResult.status === "fulfilled") {
-          setStateDocs(stateDocsResult.value);
-          setStateDocsState("ready");
-          setStateDocsError(null);
-        } else {
-          setStateDocs(null);
-          setStateDocsState("error");
-          setStateDocsError(toErrorMessage(stateDocsResult.reason));
-        }
-
-        if (contextResult.status === "fulfilled") {
-          setContextLatest(contextResult.value);
-          setContextState("ready");
-          setContextError(null);
-        } else {
-          setContextLatest(null);
-          setContextState("error");
-          setContextError(toErrorMessage(contextResult.reason));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeLinkedRunId, config, liveRevision, streamRevision, isOfficePreview]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || !selectedRoomId) {
-      setRoomTimeline(null);
-      setRoomState("idle");
-      setRoomError(null);
-      return;
-    }
-    let cancelled = false;
-    setRoomState("loading");
-    setRoomError(null);
-    forwardGet(config, `/rooms/${encodeURIComponent(selectedRoomId)}/timeline`, parseRoomTimelineResponse)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setRoomTimeline(payload);
-        setRoomState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setRoomTimeline(null);
-        setRoomState("error");
-        setRoomError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, selectedRoomId, isOfficePreview, liveRevision, streamRevision]);
 
   const liveAgentProfiles = useMemo(
     () => (operatorAgents ? toOperatorAgentProfiles(operatorAgents) : []),
