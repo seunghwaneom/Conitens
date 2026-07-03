@@ -33,6 +33,8 @@ import {
 } from "./hooks/use-operator-screen-data.js";
 import { useRunDetailData } from "./hooks/use-run-detail-data.js";
 import {
+  useOperatorTasksData,
+  useOperatorTaskDetailData,
   useOperatorWorkspacesData,
   useOperatorWorkspaceDetailData,
 } from "./hooks/use-operator-mutable-data.js";
@@ -126,10 +128,6 @@ export function App() {
   const initialTaskFilterState = readInitialTaskFilterState();
   const [config, setConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
   const [draftConfig, setDraftConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
-  const [operatorTasks, setOperatorTasks] = useState<ForwardOperatorTasksResponse | null>(null);
-  const [selectedTask, setSelectedTask] = useState<ForwardOperatorTaskDetailResponse | null>(null);
-  const [tasksState, setTasksState] = useState<LoadState>("idle");
-  const [taskDetailState, setTaskDetailState] = useState<LoadState>("idle");
   const [workspaceMutationState, setWorkspaceMutationState] = useState<LoadState>("idle");
   const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
   const [taskMutationState, setTaskMutationState] = useState<LoadState>("idle");
@@ -147,8 +145,6 @@ export function App() {
   const [taskArchiveRationale, setTaskArchiveRationale] = useState("");
   const [taskBulkArchiveRationale, setTaskBulkArchiveRationale] = useState("");
   const [taskApprovalRationale, setTaskApprovalRationale] = useState("");
-  const [tasksError, setTasksError] = useState<string | null>(null);
-  const [taskDetailError, setTaskDetailError] = useState<string | null>(null);
   const [workspaceMutationError, setWorkspaceMutationError] = useState<string | null>(null);
   const [workspaceTaskActionError, setWorkspaceTaskActionError] = useState<string | null>(null);
   const [workspaceTaskActionMessage, setWorkspaceTaskActionMessage] = useState<string | null>(null);
@@ -190,6 +186,10 @@ export function App() {
     notes: "",
   });
   const isOfficePreview = route.screen === "office-preview";
+  const { data: operatorTasks, state: tasksState, error: tasksError, setData: setOperatorTasks } =
+    useOperatorTasksData({ config, isOfficePreview, screen: route.screen, liveRevision, taskFilterStatus, taskFilterOwner, taskIncludeArchived });
+  const { data: selectedTask, state: taskDetailState, error: taskDetailError, setData: setSelectedTask } =
+    useOperatorTaskDetailData({ config, isOfficePreview, screen: route.screen, taskId: route.taskId });
   const activeLinkedRunId =
     route.screen === "run-detail"
       ? route.runId
@@ -329,72 +329,6 @@ export function App() {
     }
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || (route.screen !== "tasks" && route.screen !== "task-detail")) {
-      setOperatorTasks(null);
-      setTasksState("idle");
-      setTasksError(null);
-      return;
-    }
-    let cancelled = false;
-    setTasksState("loading");
-    setTasksError(null);
-    forwardGetOperatorTasks(config, {
-      status: taskFilterStatus !== "all" ? taskFilterStatus : undefined,
-      ownerAgentId: taskFilterOwner.trim() || undefined,
-      includeArchived: taskIncludeArchived,
-    })
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorTasks(payload);
-        setTasksState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorTasks(null);
-        setTasksState("error");
-        setTasksError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision, taskFilterOwner, taskFilterStatus, taskIncludeArchived]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "task-detail" || !route.taskId) {
-      setSelectedTask(null);
-      setTaskDetailState("idle");
-      setTaskDetailError(null);
-      return;
-    }
-    let cancelled = false;
-    setTaskDetailState("loading");
-    setTaskDetailError(null);
-    forwardGetOperatorTask(config, route.taskId)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedTask(payload);
-        setTaskDetailState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedTask(null);
-        setTaskDetailState("error");
-        setTaskDetailError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.taskId]);
 
   const liveAgentProfiles = useMemo(
     () => (operatorAgents ? toOperatorAgentProfiles(operatorAgents) : []),

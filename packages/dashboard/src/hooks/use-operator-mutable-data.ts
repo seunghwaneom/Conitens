@@ -1,8 +1,12 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import {
+  forwardGetOperatorTask,
+  forwardGetOperatorTasks,
   forwardGetOperatorWorkspace,
   forwardGetOperatorWorkspaces,
   type ForwardBridgeConfig,
+  type ForwardOperatorTaskDetailResponse,
+  type ForwardOperatorTasksResponse,
   type ForwardOperatorWorkspaceDetailResponse,
   type ForwardOperatorWorkspacesResponse,
 } from "../forward-bridge.js";
@@ -133,6 +137,90 @@ export function useOperatorWorkspaceDetailData({
       cancelled = true;
     };
   }, [config, isOfficePreview, screen, workspaceId]);
+
+  return { data, state, error, setData };
+}
+
+interface TasksDataDeps {
+  config: ForwardBridgeConfig;
+  isOfficePreview: boolean;
+  screen: string;
+  liveRevision: number;
+  taskFilterStatus: string;
+  taskFilterOwner: string;
+  taskIncludeArchived: boolean;
+}
+
+export function useOperatorTasksData({
+  config,
+  isOfficePreview,
+  screen,
+  liveRevision,
+  taskFilterStatus,
+  taskFilterOwner,
+  taskIncludeArchived,
+}: TasksDataDeps): {
+  data: ForwardOperatorTasksResponse | null;
+  state: LoadState;
+  error: string | null;
+  setData: Dispatch<SetStateAction<ForwardOperatorTasksResponse | null>>;
+} {
+  const [data, setData] = useState<ForwardOperatorTasksResponse | null>(null);
+  const [state, setState] = useState<LoadState>("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOfficePreview || !config.token.trim() || (screen !== "tasks" && screen !== "task-detail")) {
+      setData(null); setState("idle"); setError(null); return;
+    }
+    let cancelled = false;
+    setState("loading"); setError(null);
+    forwardGetOperatorTasks(config, {
+      status: taskFilterStatus !== "all" ? taskFilterStatus : undefined,
+      ownerAgentId: taskFilterOwner.trim() || undefined,
+      includeArchived: taskIncludeArchived,
+    })
+      .then((payload) => { if (cancelled) return; setData(payload); setState("ready"); })
+      .catch((err: Error) => { if (cancelled) return; setData(null); setState("error"); setError(err.message); });
+    return () => { cancelled = true; };
+  }, [config, isOfficePreview, screen, liveRevision, taskFilterOwner, taskFilterStatus, taskIncludeArchived]);
+
+  return { data, state, error, setData };
+}
+
+interface TaskDetailDataDeps {
+  config: ForwardBridgeConfig;
+  isOfficePreview: boolean;
+  screen: string;
+  taskId: string | null;
+}
+
+export function useOperatorTaskDetailData({
+  config,
+  isOfficePreview,
+  screen,
+  taskId,
+}: TaskDetailDataDeps): {
+  data: ForwardOperatorTaskDetailResponse | null;
+  state: LoadState;
+  error: string | null;
+  setData: Dispatch<SetStateAction<ForwardOperatorTaskDetailResponse | null>>;
+} {
+  const [data, setData] = useState<ForwardOperatorTaskDetailResponse | null>(null);
+  const [state, setState] = useState<LoadState>("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOfficePreview || !config.token.trim() || screen !== "task-detail" || !taskId) {
+      setData(null); setState("idle"); setError(null); return;
+    }
+    let cancelled = false;
+    setState("loading"); setError(null);
+    forwardGetOperatorTask(config, taskId)
+      .then((payload) => { if (cancelled) return; setData(payload); setState("ready"); })
+      .catch((err: Error) => { if (cancelled) return; setData(null); setState("error"); setError(err.message); });
+    return () => { cancelled = true; };
+  }, [config, isOfficePreview, screen, taskId]);
 
   return { data, state, error, setData };
 }
