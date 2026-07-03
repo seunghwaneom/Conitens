@@ -32,6 +32,10 @@ import {
   type LoadState,
 } from "./hooks/use-operator-screen-data.js";
 import { useRunDetailData } from "./hooks/use-run-detail-data.js";
+import {
+  useOperatorWorkspacesData,
+  useOperatorWorkspaceDetailData,
+} from "./hooks/use-operator-mutable-data.js";
 import { toErrorMessage } from "./utils.js";
 import {
   forwardArchiveOperatorTask,
@@ -124,12 +128,8 @@ export function App() {
   const [draftConfig, setDraftConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
   const [operatorTasks, setOperatorTasks] = useState<ForwardOperatorTasksResponse | null>(null);
   const [selectedTask, setSelectedTask] = useState<ForwardOperatorTaskDetailResponse | null>(null);
-  const [operatorWorkspaces, setOperatorWorkspaces] = useState<ForwardOperatorWorkspacesResponse | null>(null);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<ForwardOperatorWorkspaceDetailResponse | null>(null);
   const [tasksState, setTasksState] = useState<LoadState>("idle");
   const [taskDetailState, setTaskDetailState] = useState<LoadState>("idle");
-  const [workspacesState, setWorkspacesState] = useState<LoadState>("idle");
-  const [workspaceDetailState, setWorkspaceDetailState] = useState<LoadState>("idle");
   const [workspaceMutationState, setWorkspaceMutationState] = useState<LoadState>("idle");
   const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
   const [taskMutationState, setTaskMutationState] = useState<LoadState>("idle");
@@ -149,8 +149,6 @@ export function App() {
   const [taskApprovalRationale, setTaskApprovalRationale] = useState("");
   const [tasksError, setTasksError] = useState<string | null>(null);
   const [taskDetailError, setTaskDetailError] = useState<string | null>(null);
-  const [workspacesError, setWorkspacesError] = useState<string | null>(null);
-  const [workspaceDetailError, setWorkspaceDetailError] = useState<string | null>(null);
   const [workspaceMutationError, setWorkspaceMutationError] = useState<string | null>(null);
   const [workspaceTaskActionError, setWorkspaceTaskActionError] = useState<string | null>(null);
   const [workspaceTaskActionMessage, setWorkspaceTaskActionMessage] = useState<string | null>(null);
@@ -218,6 +216,10 @@ export function App() {
     useOperatorWorkspaceLinkedTasksData({ config, isOfficePreview, screen: route.screen, workspaceId: route.workspaceId ?? null, liveRevision });
   const { data: runs, state: runsState, error: runsError } =
     useRunsData({ config, isOfficePreview, liveRevision });
+  const { data: operatorWorkspaces, state: workspacesState, error: workspacesError, setData: setOperatorWorkspaces } =
+    useOperatorWorkspacesData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: selectedWorkspace, state: workspaceDetailState, error: workspaceDetailError, setData: setSelectedWorkspace } =
+    useOperatorWorkspaceDetailData({ config, isOfficePreview, screen: route.screen, workspaceId: route.workspaceId ?? null });
   const {
     selectedRun,
     replay,
@@ -364,46 +366,6 @@ export function App() {
   }, [config, isOfficePreview, route.screen, liveRevision, taskFilterOwner, taskFilterStatus, taskIncludeArchived]);
 
   useEffect(() => {
-    if (
-      isOfficePreview ||
-      !config.token.trim() ||
-      (
-        route.screen !== "workspaces" &&
-        route.screen !== "workspace-detail" &&
-        route.screen !== "tasks" &&
-        route.screen !== "task-detail"
-      )
-    ) {
-      setOperatorWorkspaces(null);
-      setWorkspacesState("idle");
-      setWorkspacesError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspacesState("loading");
-    setWorkspacesError(null);
-    forwardGetOperatorWorkspaces(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWorkspaces(payload);
-        setWorkspacesState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWorkspaces(null);
-        setWorkspacesState("error");
-        setWorkspacesError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
     if (isOfficePreview || !config.token.trim() || route.screen !== "task-detail" || !route.taskId) {
       setSelectedTask(null);
       setTaskDetailState("idle");
@@ -433,37 +395,6 @@ export function App() {
       cancelled = true;
     };
   }, [config, isOfficePreview, route.screen, route.taskId]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      setSelectedWorkspace(null);
-      setWorkspaceDetailState("idle");
-      setWorkspaceDetailError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspaceDetailState("loading");
-    setWorkspaceDetailError(null);
-    forwardGetOperatorWorkspace(config, route.workspaceId)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedWorkspace(payload);
-        setWorkspaceDetailState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedWorkspace(null);
-        setWorkspaceDetailState("error");
-        setWorkspaceDetailError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.workspaceId]);
 
   const liveAgentProfiles = useMemo(
     () => (operatorAgents ? toOperatorAgentProfiles(operatorAgents) : []),
