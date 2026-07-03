@@ -26,6 +26,9 @@ import {
   useOperatorInboxData,
   useOperatorSummaryData,
   useOperatorWakeReadinessData,
+  useOperatorTaskReconcileData,
+  useOperatorWorkspaceLinkedTasksData,
+  useRunsData,
   type LoadState,
 } from "./hooks/use-operator-screen-data.js";
 import {
@@ -38,7 +41,6 @@ import {
   forwardGetOperatorTasks,
   forwardGetOperatorWorkspace,
   forwardGetOperatorWorkspaces,
-  forwardGetOperatorTaskReconcilePreview,
   forwardRequestOperatorTaskApproval,
   forwardRestoreOperatorTask,
   forwardUpdateOperatorTask,
@@ -48,7 +50,6 @@ import {
   parseReplayResponse,
   parseRoomTimelineResponse,
   parseRunDetailResponse,
-  parseRunsResponse,
   parseStateDocsResponse,
   persistBridgeConfig,
   persistSavedTaskFilterPresets,
@@ -132,11 +133,8 @@ export function App() {
   const [draftConfig, setDraftConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
   const [operatorTasks, setOperatorTasks] = useState<ForwardOperatorTasksResponse | null>(null);
   const [selectedTask, setSelectedTask] = useState<ForwardOperatorTaskDetailResponse | null>(null);
-  const [taskReconcilePreview, setTaskReconcilePreview] = useState<ForwardOperatorTaskReconcilePreviewResponse | null>(null);
   const [operatorWorkspaces, setOperatorWorkspaces] = useState<ForwardOperatorWorkspacesResponse | null>(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState<ForwardOperatorWorkspaceDetailResponse | null>(null);
-  const [workspaceLinkedTasks, setWorkspaceLinkedTasks] = useState<ForwardOperatorTasksResponse | null>(null);
-  const [runs, setRuns] = useState<ForwardRunSummary[]>([]);
   const [selectedRun, setSelectedRun] = useState<ForwardRunDetailResponse | null>(null);
   const [replay, setReplay] = useState<ForwardReplayResponse | null>(null);
   const [stateDocs, setStateDocs] = useState<ForwardStateDocsResponse | null>(null);
@@ -145,13 +143,10 @@ export function App() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [tasksState, setTasksState] = useState<LoadState>("idle");
   const [taskDetailState, setTaskDetailState] = useState<LoadState>("idle");
-  const [taskReconcileState, setTaskReconcileState] = useState<LoadState>("idle");
   const [workspacesState, setWorkspacesState] = useState<LoadState>("idle");
   const [workspaceDetailState, setWorkspaceDetailState] = useState<LoadState>("idle");
   const [workspaceMutationState, setWorkspaceMutationState] = useState<LoadState>("idle");
-  const [workspaceLinkedTasksState, setWorkspaceLinkedTasksState] = useState<LoadState>("idle");
   const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
-  const [runsState, setRunsState] = useState<LoadState>("idle");
   const [detailState, setDetailState] = useState<LoadState>("idle");
   const [replayState, setReplayState] = useState<LoadState>("idle");
   const [stateDocsState, setStateDocsState] = useState<LoadState>("idle");
@@ -174,11 +169,9 @@ export function App() {
   const [taskApprovalRationale, setTaskApprovalRationale] = useState("");
   const [tasksError, setTasksError] = useState<string | null>(null);
   const [taskDetailError, setTaskDetailError] = useState<string | null>(null);
-  const [taskReconcileError, setTaskReconcileError] = useState<string | null>(null);
   const [workspacesError, setWorkspacesError] = useState<string | null>(null);
   const [workspaceDetailError, setWorkspaceDetailError] = useState<string | null>(null);
   const [workspaceMutationError, setWorkspaceMutationError] = useState<string | null>(null);
-  const [workspaceLinkedTasksError, setWorkspaceLinkedTasksError] = useState<string | null>(null);
   const [workspaceTaskActionError, setWorkspaceTaskActionError] = useState<string | null>(null);
   const [workspaceTaskActionMessage, setWorkspaceTaskActionMessage] = useState<string | null>(null);
   const [taskMutationError, setTaskMutationError] = useState<string | null>(null);
@@ -187,7 +180,6 @@ export function App() {
   const [taskApprovalRequestError, setTaskApprovalRequestError] = useState<string | null>(null);
   const [taskPresetError, setTaskPresetError] = useState<string | null>(null);
   const [taskBulkError, setTaskBulkError] = useState<string | null>(null);
-  const [runsError, setRunsError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [replayError, setReplayError] = useState<string | null>(null);
   const [stateDocsError, setStateDocsError] = useState<string | null>(null);
@@ -245,6 +237,12 @@ export function App() {
     useOperatorAgentsData({ config, isOfficePreview, screen: route.screen, liveRevision });
   const { data: operatorInbox, state: inboxState, error: inboxError } =
     useOperatorInboxData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: taskReconcilePreview, state: taskReconcileState, error: taskReconcileError } =
+    useOperatorTaskReconcileData({ config, isOfficePreview, screen: route.screen, taskId: route.taskId, liveRevision });
+  const { data: workspaceLinkedTasks, state: workspaceLinkedTasksState, error: workspaceLinkedTasksError } =
+    useOperatorWorkspaceLinkedTasksData({ config, isOfficePreview, screen: route.screen, workspaceId: route.workspaceId ?? null, liveRevision });
+  const { data: runs, state: runsState, error: runsError } =
+    useRunsData({ config, isOfficePreview, liveRevision });
 
   const shellCopy = useMemo(() => {
     if (isOfficePreview) {
@@ -443,38 +441,6 @@ export function App() {
   }, [config, isOfficePreview, route.screen, route.taskId]);
 
   useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "task-detail" || !route.taskId) {
-      setTaskReconcilePreview(null);
-      setTaskReconcileState("idle");
-      setTaskReconcileError(null);
-      return;
-    }
-    const activeTaskId = route.taskId;
-    let cancelled = false;
-    setTaskReconcileState("loading");
-    setTaskReconcileError(null);
-    forwardGetOperatorTaskReconcilePreview(config, activeTaskId)
-      .then((payload) => {
-        if (cancelled || payload.task_id !== activeTaskId) {
-          return;
-        }
-        setTaskReconcilePreview(payload);
-        setTaskReconcileState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setTaskReconcilePreview(null);
-        setTaskReconcileState("error");
-        setTaskReconcileError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.taskId, liveRevision]);
-
-  useEffect(() => {
     if (isOfficePreview || !config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
       setSelectedWorkspace(null);
       setWorkspaceDetailState("idle");
@@ -504,67 +470,6 @@ export function App() {
       cancelled = true;
     };
   }, [config, isOfficePreview, route.screen, route.workspaceId]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      setWorkspaceLinkedTasks(null);
-      setWorkspaceLinkedTasksState("idle");
-      setWorkspaceLinkedTasksError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspaceLinkedTasksState("loading");
-    setWorkspaceLinkedTasksError(null);
-    forwardGetOperatorTasks(config, { workspaceRef: route.workspaceId, includeArchived: true })
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setWorkspaceLinkedTasks(payload);
-        setWorkspaceLinkedTasksState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setWorkspaceLinkedTasks(null);
-        setWorkspaceLinkedTasksState("error");
-        setWorkspaceLinkedTasksError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.workspaceId, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim()) {
-      setRuns([]);
-      setRunsState("idle");
-      setRunsError(null);
-      return;
-    }
-    let cancelled = false;
-    setRunsState("loading");
-    setRunsError(null);
-    forwardGet(config, "/runs", parseRunsResponse)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setRuns(payload.runs);
-        setRunsState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setRunsState("error");
-        setRunsError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, liveRevision]);
 
   useEffect(() => {
     if (isOfficePreview || !config.token.trim() || !activeLinkedRunId) {
