@@ -102,16 +102,15 @@ import {
 } from "./forward-view-model.js";
 import { OnboardingOverlay } from "./components/OnboardingOverlay.js";
 import { demoAgents, demoEvents, demoTasks } from "./demo-data.js";
-import { AgentFleetOverview } from "./components/AgentFleetOverview.js";
-import { AgentProfilePanel } from "./components/AgentProfilePanel.js";
-import { AgentRelationshipGraph } from "./components/AgentRelationshipGraph.js";
-import { ProposalQueuePanel } from "./components/ProposalQueuePanel.js";
 import { compareAgentAttention, demoFleet } from "./agent-fleet-model.js";
-import { demoProposals, demoEvolution, demoLearningMetrics } from "./evolution-model.js";
+import { demoProposals } from "./evolution-model.js";
 import {
   buildOperatorTaskDraftMutationBody,
   buildOperatorTaskStatusMutationBody,
 } from "./operator-task-actions.js";
+import { AgentsScreen } from "./screens/AgentsScreen.js";
+import { ApprovalsScreen } from "./screens/ApprovalsScreen.js";
+import { DeferredRouteScreen } from "./screens/DeferredRouteScreen.js";
 
 type DetailTab = "operations" | "intelligence" | "data";
 type TaskBulkAction = "archive" | "restore";
@@ -1214,129 +1213,32 @@ export function App() {
           <PixelOffice agents={demoAgents} tasks={demoTasks} events={demoEvents} onOpenAgent={openAgent} />
         </main>
       ) : route.screen === "agents" ? (
-        <main className="forward-main">
-          <div className="forward-tab-bar" role="tablist" aria-label="Agent view">
-            <button
-              className={`forward-tab${agentView === "fleet" ? " active" : ""}`}
-              type="button"
-              role="tab"
-              id="agent-tab-fleet"
-              aria-selected={agentView === "fleet"}
-              aria-controls="agent-panel-fleet"
-              tabIndex={agentView === "fleet" ? 0 : -1}
-              onClick={() => setAgentView("fleet")}
-              onKeyDown={handleAgentTabKeyDown}
-            >
-              Fleet
-            </button>
-            <button
-              className={`forward-tab${agentView === "graph" ? " active" : ""}`}
-              type="button"
-              role="tab"
-              id="agent-tab-graph"
-              aria-selected={agentView === "graph"}
-              aria-controls="agent-panel-graph"
-              tabIndex={agentView === "graph" ? 0 : -1}
-              onClick={() => setAgentView("graph")}
-              onKeyDown={handleAgentTabKeyDown}
-              disabled={!isDemo}
-            >
-              Relationships
-            </button>
-          </div>
-          {!isDemo && agentsState === "loading" ? <p className="forward-empty">Loading agent roster...</p> : null}
-          {!isDemo && agentsState === "error" ? <p className="forward-error">{agentsError}</p> : null}
-          {!isDemo && agentsState === "ready" && agentProfiles.length === 0 ? (
-            <div className="forward-placeholder">
-              <h3>No operator agents projected</h3>
-              <p>No agent identifiers have been derived from the current forward state yet.</p>
-            </div>
-          ) : null}
-          {(isDemo || (agentsState === "ready" && agentProfiles.length > 0)) && (agentView === "fleet" || !isDemo) ? (
-            <div className="agent-fleet-layout" role="tabpanel" id="agent-panel-fleet" aria-labelledby="agent-tab-fleet">
-              <AgentFleetOverview agents={orderedAgentProfiles} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
-              <AgentProfilePanel
-                agent={activeAgent}
-                evolution={isDemo ? demoEvolution.filter(e => e.agentId === selectedAgentId) : []}
-                metrics={isDemo ? (demoLearningMetrics.find(m => m.agentId === selectedAgentId) ?? null) : null}
-                onOpenRoom={openSpatialRoom}
-              />
-            </div>
-          ) : null}
-          {isDemo && agentView === "graph" ? (
-            <div role="tabpanel" id="agent-panel-graph" aria-labelledby="agent-tab-graph">
-              <AgentRelationshipGraph agents={demoFleet} />
-            </div>
-          ) : null}
-          {isDemo ? (
-            <ProposalQueuePanel proposals={demoProposals} agents={demoFleet} />
-          ) : agentsState === "ready" && agentProfiles.length > 0 ? (
-            <div className="forward-placeholder">
-              <h3>Live relationship graph and proposal queue are still deferred</h3>
-              <p>The roster is now live. Graph and proposal/evolution projections will follow in a later slice.</p>
-            </div>
-          ) : null}
-        </main>
+        <AgentsScreen
+          agentView={agentView}
+          setAgentView={setAgentView}
+          handleAgentTabKeyDown={handleAgentTabKeyDown}
+          isDemo={isDemo}
+          agentsState={agentsState}
+          agentsError={agentsError}
+          agentProfiles={agentProfiles}
+          orderedAgentProfiles={orderedAgentProfiles}
+          selectedAgentId={selectedAgentId}
+          setSelectedAgentId={setSelectedAgentId}
+          activeAgent={activeAgent}
+          openSpatialRoom={openSpatialRoom}
+        />
       ) : route.screen === "approvals" ? (
-        <main className="forward-main">
-          {isDemo ? (
-            <div className="forward-demo-banner">
-              <span>Connect to a live bridge to review approval records.</span>
-              <button type="button" onClick={() => setShowConnectForm((v) => !v)}>
-                {showConnectForm ? "Hide form" : "Connect to live bridge"}
-              </button>
-            </div>
-          ) : null}
-          {showConnectForm ? (
-            <section className="forward-setup">
-              <form className="forward-form" onSubmit={connect}>
-                <label>
-                  <span>API root</span>
-                  <input
-                    value={draftConfig.apiRoot}
-                    onChange={(event) => setDraftConfig((current) => ({ ...current, apiRoot: event.target.value }))}
-                    placeholder="http://127.0.0.1:8785/api"
-                  />
-                </label>
-                <label>
-                  <span>Bearer token</span>
-                  <input
-                    type="password"
-                    autoComplete="off"
-                    value={draftConfig.token}
-                    onChange={(event) => setDraftConfig((current) => ({ ...current, token: event.target.value }))}
-                    placeholder="Paste token from `ensemble forward serve`"
-                  />
-                </label>
-                <button type="submit">Connect</button>
-              </form>
-            </section>
-          ) : null}
-          {!isDemo ? (
-            <ForwardApprovalCenterPanel config={config} heading="All approvals" />
-          ) : (
-            <div className="forward-placeholder">
-              <h3>Approval queue requires a live bridge</h3>
-              <p>Approval records are sensitive operational data, so the global queue appears only after a bearer token is loaded.</p>
-            </div>
-          )}
-        </main>
+        <ApprovalsScreen
+          isDemo={isDemo}
+          showConnectForm={showConnectForm}
+          setShowConnectForm={setShowConnectForm}
+          draftConfig={draftConfig}
+          setDraftConfig={setDraftConfig}
+          connect={connect}
+          config={config}
+        />
       ) : route.screen === "threads" || route.screen === "thread-detail" || route.screen === "agent-detail" ? (
-        <main className="forward-main">
-          <div className="forward-placeholder">
-            <h3>{route.screen === "agent-detail" ? "Agent detail route is deferred" : "Thread route is deferred"}</h3>
-            <p>
-              {route.screen === "agent-detail"
-                ? "Use the live Agents route for the current roster. Dedicated agent detail records will be wired in a later projection slice."
-                : "Thread browser and thread detail routes are reserved for a later replay conversation surface."}
-            </p>
-            <div className="forward-approval-actions">
-              <a className="forward-chip-button active" href={route.screen === "agent-detail" ? "#/agents" : "#/runs"}>
-                {route.screen === "agent-detail" ? "Back to agents" : "Back to runs"}
-              </a>
-            </div>
-          </div>
-        </main>
+        <DeferredRouteScreen screen={route.screen} />
       ) : (
       <main className="forward-main">
         {showOnboarding ? <OnboardingOverlay /> : null}
