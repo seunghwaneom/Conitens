@@ -22,20 +22,23 @@ import { OperatorWorkspaceDetailPanel } from "./components/OperatorWorkspaceDeta
 import { OperatorWorkspaceEditorPanel } from "./components/OperatorWorkspaceEditorPanel.js";
 import { useForwardStream } from "./hooks/use-forward-stream.js";
 import {
+  useOperatorAgentsData,
+  useOperatorInboxData,
+  useOperatorSummaryData,
+  useOperatorWakeReadinessData,
+  type LoadState,
+} from "./hooks/use-operator-screen-data.js";
+import {
   forwardArchiveOperatorTask,
-  forwardGetOperatorAgents,
   forwardCreateOperatorTask,
   forwardCreateOperatorWorkspace,
   forwardDetachOperatorTaskWorkspace,
   forwardDeleteOperatorTask,
-  forwardGetOperatorInbox,
   forwardGetOperatorTask,
   forwardGetOperatorTasks,
   forwardGetOperatorWorkspace,
   forwardGetOperatorWorkspaces,
-  forwardGetOperatorSummary,
   forwardGetOperatorTaskReconcilePreview,
-  forwardGetOperatorWakeReadiness,
   forwardRequestOperatorTaskApproval,
   forwardRestoreOperatorTask,
   forwardUpdateOperatorTask,
@@ -108,7 +111,6 @@ import {
   buildOperatorTaskStatusMutationBody,
 } from "./operator-task-actions.js";
 
-type LoadState = "idle" | "loading" | "ready" | "error";
 type DetailTab = "operations" | "intelligence" | "data";
 type TaskBulkAction = "archive" | "restore";
 
@@ -128,7 +130,6 @@ export function App() {
   const initialTaskFilterState = readInitialTaskFilterState();
   const [config, setConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
   const [draftConfig, setDraftConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
-  const [operatorAgents, setOperatorAgents] = useState<ForwardOperatorAgentsResponse | null>(null);
   const [operatorTasks, setOperatorTasks] = useState<ForwardOperatorTasksResponse | null>(null);
   const [selectedTask, setSelectedTask] = useState<ForwardOperatorTaskDetailResponse | null>(null);
   const [taskReconcilePreview, setTaskReconcilePreview] = useState<ForwardOperatorTaskReconcilePreviewResponse | null>(null);
@@ -136,17 +137,12 @@ export function App() {
   const [selectedWorkspace, setSelectedWorkspace] = useState<ForwardOperatorWorkspaceDetailResponse | null>(null);
   const [workspaceLinkedTasks, setWorkspaceLinkedTasks] = useState<ForwardOperatorTasksResponse | null>(null);
   const [runs, setRuns] = useState<ForwardRunSummary[]>([]);
-  const [operatorInbox, setOperatorInbox] = useState<ForwardOperatorInboxResponse | null>(null);
-  const [operatorSummary, setOperatorSummary] = useState<ForwardOperatorSummaryResponse | null>(null);
-  const [operatorWakeReadiness, setOperatorWakeReadiness] = useState<ForwardOperatorWakeReadinessResponse | null>(null);
   const [selectedRun, setSelectedRun] = useState<ForwardRunDetailResponse | null>(null);
   const [replay, setReplay] = useState<ForwardReplayResponse | null>(null);
   const [stateDocs, setStateDocs] = useState<ForwardStateDocsResponse | null>(null);
   const [contextLatest, setContextLatest] = useState<ForwardContextLatestResponse | null>(null);
   const [roomTimeline, setRoomTimeline] = useState<ForwardRoomTimelineResponse | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [agentsState, setAgentsState] = useState<LoadState>("idle");
-  const [inboxState, setInboxState] = useState<LoadState>("idle");
   const [tasksState, setTasksState] = useState<LoadState>("idle");
   const [taskDetailState, setTaskDetailState] = useState<LoadState>("idle");
   const [taskReconcileState, setTaskReconcileState] = useState<LoadState>("idle");
@@ -156,8 +152,6 @@ export function App() {
   const [workspaceLinkedTasksState, setWorkspaceLinkedTasksState] = useState<LoadState>("idle");
   const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
   const [runsState, setRunsState] = useState<LoadState>("idle");
-  const [overviewState, setOverviewState] = useState<LoadState>("idle");
-  const [wakeReadinessState, setWakeReadinessState] = useState<LoadState>("idle");
   const [detailState, setDetailState] = useState<LoadState>("idle");
   const [replayState, setReplayState] = useState<LoadState>("idle");
   const [stateDocsState, setStateDocsState] = useState<LoadState>("idle");
@@ -178,8 +172,6 @@ export function App() {
   const [taskArchiveRationale, setTaskArchiveRationale] = useState("");
   const [taskBulkArchiveRationale, setTaskBulkArchiveRationale] = useState("");
   const [taskApprovalRationale, setTaskApprovalRationale] = useState("");
-  const [agentsError, setAgentsError] = useState<string | null>(null);
-  const [inboxError, setInboxError] = useState<string | null>(null);
   const [tasksError, setTasksError] = useState<string | null>(null);
   const [taskDetailError, setTaskDetailError] = useState<string | null>(null);
   const [taskReconcileError, setTaskReconcileError] = useState<string | null>(null);
@@ -196,8 +188,6 @@ export function App() {
   const [taskPresetError, setTaskPresetError] = useState<string | null>(null);
   const [taskBulkError, setTaskBulkError] = useState<string | null>(null);
   const [runsError, setRunsError] = useState<string | null>(null);
-  const [overviewError, setOverviewError] = useState<string | null>(null);
-  const [wakeReadinessError, setWakeReadinessError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [replayError, setReplayError] = useState<string | null>(null);
   const [stateDocsError, setStateDocsError] = useState<string | null>(null);
@@ -246,6 +236,15 @@ export function App() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [agentView, setAgentView] = useState<"fleet" | "graph">("fleet");
   const showOnboarding = (route.screen === "overview" || route.screen === "runs") && isDemo;
+
+  const { data: operatorSummary, state: overviewState, error: overviewError } =
+    useOperatorSummaryData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: operatorWakeReadiness, state: wakeReadinessState, error: wakeReadinessError } =
+    useOperatorWakeReadinessData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: operatorAgents, state: agentsState, error: agentsError } =
+    useOperatorAgentsData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: operatorInbox, state: inboxState, error: inboxError } =
+    useOperatorInboxData({ config, isOfficePreview, screen: route.screen, liveRevision });
 
   const shellCopy = useMemo(() => {
     if (isOfficePreview) {
@@ -336,130 +335,6 @@ export function App() {
     }
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
-
-  useEffect(() => {
-    if (isOfficePreview || route.screen !== "overview" || !config.token.trim()) {
-      setOperatorSummary(null);
-      setOverviewState("idle");
-      setOverviewError(null);
-      return;
-    }
-    let cancelled = false;
-    setOverviewState("loading");
-    setOverviewError(null);
-    forwardGetOperatorSummary(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorSummary(payload);
-        setOverviewState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorSummary(null);
-        setOverviewState("error");
-        setOverviewError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || route.screen !== "overview" || !config.token.trim()) {
-      setOperatorWakeReadiness(null);
-      setWakeReadinessState("idle");
-      setWakeReadinessError(null);
-      return;
-    }
-    let cancelled = false;
-    setWakeReadinessState("loading");
-    setWakeReadinessError(null);
-    forwardGetOperatorWakeReadiness(config, { limit: 12 })
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWakeReadiness(payload);
-        setWakeReadinessState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWakeReadiness(null);
-        setWakeReadinessState("error");
-        setWakeReadinessError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || route.screen !== "agents" || !config.token.trim()) {
-      setOperatorAgents(null);
-      setAgentsState("idle");
-      setAgentsError(null);
-      return;
-    }
-    let cancelled = false;
-    setAgentsState("loading");
-    setAgentsError(null);
-    forwardGetOperatorAgents(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorAgents(payload);
-        setAgentsState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorAgents(null);
-        setAgentsState("error");
-        setAgentsError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || route.screen !== "inbox" || !config.token.trim()) {
-      setOperatorInbox(null);
-      setInboxState("idle");
-      setInboxError(null);
-      return;
-    }
-    let cancelled = false;
-    setInboxState("loading");
-    setInboxError(null);
-    forwardGetOperatorInbox(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorInbox(payload);
-        setInboxState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorInbox(null);
-        setInboxState("error");
-        setInboxError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
 
   useEffect(() => {
     if (isOfficePreview || !config.token.trim() || (route.screen !== "tasks" && route.screen !== "task-detail")) {
