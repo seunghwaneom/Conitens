@@ -11,10 +11,12 @@
 - Acceptance: README must identify `packages/dashboard` and the read-only
   Forward Bridge as current forward surfaces; Office Preview docs must separate
   Focused large portrait assets from Topology 64px sprite atlases; stale
-  Spatial Lens asset-registry language must be removed; no code/runtime assets
-  should be changed by this documentation-only pass.
-- Verified: reviewed edited Markdown, searched for removed stale phrases, and
-  inspected the documentation diff.
+  Spatial Lens asset-registry language must be removed; contributor identity
+  must not show a stale `Seung Hwan Lee` alias for the repo owner; no
+  code/runtime assets should be changed by this documentation-only pass.
+- Verified: reviewed edited Markdown, searched for removed stale phrases,
+  inspected the documentation diff, checked GitHub contributors/commit search,
+  and verified `.mailmap` canonicalization with `git check-mailmap`.
 
 ## Previous Batch
 
