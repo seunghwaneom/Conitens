@@ -8,6 +8,10 @@
       to `Seunghwan Eom` for the repo owner's noreply address.
 - [x] Verified the alias with `git check-mailmap`, confirmed `git shortlog`
       remains canonical, and kept the change on the existing docs PR branch.
+- [x] Traced the remaining contributors-graph entry to commit `02a1795`'s
+      `Co-authored-by: Codex <noreply@openai.com>` trailer.
+- [x] Extended `.mailmap` to fold the Codex co-author email and possible
+      `Seung Hwan Lee <noreply@openai.com>` stale alias into `Seunghwan Eom`.
 
 ## README And Office Preview Documentation Sync - 2026-07-04
 

@@ -16,7 +16,9 @@
   code/runtime assets should be changed by this documentation-only pass.
 - Verified: reviewed edited Markdown, searched for removed stale phrases,
   inspected the documentation diff, checked GitHub contributors/commit search,
-  and verified `.mailmap` canonicalization with `git check-mailmap`.
+  verified `.mailmap` canonicalization with `git check-mailmap`, and traced the
+  remaining contributors-graph bucket to the `Codex <noreply@openai.com>`
+  co-author trailer in commit `02a1795`.
 
 ## Previous Batch
 

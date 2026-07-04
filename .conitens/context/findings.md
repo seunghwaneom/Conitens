@@ -10,6 +10,12 @@
   returns no matches. The repo-level correction available without history
   rewriting is a `.mailmap` alias that canonicalizes the stale owner-name form
   to `Seunghwan Eom`.
+- GitHub's contributors stats endpoint still contained one `codex` bucket.
+  Commit API author fields did not show `codex`; the source is commit
+  `02a1795`, whose message contains `Co-authored-by: Codex
+  <noreply@openai.com>`. Because GitHub contributor graphs can count
+  co-author trailers, the mailmap must cover the co-author email as well as
+  direct author names.
 
 ## README And Office Preview Documentation Sync Findings - 2026-07-04
 
