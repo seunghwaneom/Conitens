@@ -1,5 +1,21 @@
 # findings.md
 
+## README And Office Preview Documentation Sync Findings - 2026-07-04
+
+- The root README still described the dashboard as secondary and kept older
+  Command Center-centered framing. The current forward operator UI is
+  `packages/dashboard`, backed by the read-only Forward Bridge, while most
+  remaining `packages/*` surfaces stay reference/parity material.
+- Office Preview documentation needs to distinguish two asset contracts:
+  Focused `Agents` cards use large `288x512` imagegen portrait PNGs from
+  `public/agent-portraits/generated`, while `Topology` uses generated `64x64`
+  sprite-gen atlases from `public/agent-sprites/generated`.
+- `packages/dashboard/src/spatial-lens/assets/README.md` was stale: it still
+  described the registry as placeholder-only and referenced an older generated
+  manifest/sheet path. The actual registry now slices `office-fixtures.png`,
+  references `office-floor-*.png`, and resolves generated local role sprite
+  atlases.
+
 ## Ultrawork Cleanup Findings - 2026-06-14
 
 - The safest cleanup split was generated/local artifacts first, tracked stale

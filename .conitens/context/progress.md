@@ -1,5 +1,18 @@
 # progress.md
 
+## README And Office Preview Documentation Sync - 2026-07-04
+
+- [x] Updated `README.md` with the current forward dashboard/Forward Bridge
+      surface, Office Preview mode contract, asset pipeline split, Vite/test
+      stack details, and dashboard/bridge development commands.
+- [x] Updated `CONITENS.md` so `packages/dashboard` is documented as the active
+      browser-facing operator UI without promoting dashboard state to runtime
+      source-of-truth status.
+- [x] Added `docs/frontend/OFFICE_PREVIEW_CHARACTER_FIRST_REDESIGN.md` to
+      describe the large portrait integration and canonical role names.
+- [x] Updated `packages/dashboard/src/spatial-lens/assets/README.md` to match
+      the mounted Topology asset registry and generated static asset roots.
+
 ## Ultrawork Cleanup - 2026-06-14
 
 - [x] Started direct `$ultrawork` cleanup with LIGHT tier because the change
