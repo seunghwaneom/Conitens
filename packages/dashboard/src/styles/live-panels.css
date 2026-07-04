@@ -108,6 +108,17 @@
   cursor: not-allowed;
 }
 
+/* Destructive variant — used for irreversible actions (permanent delete). */
+.forward-chip-button--danger {
+  color: var(--shell-danger);
+  border-color: rgba(235, 87, 87, 0.45);
+}
+
+.forward-chip-button--danger:hover {
+  background: rgba(235, 87, 87, 0.12);
+  border-color: var(--shell-danger);
+}
+
 .forward-chip-button,
 .approve-button,
 .deny-button,

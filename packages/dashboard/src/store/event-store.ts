@@ -38,37 +38,40 @@ export const useEventStore = create<EventStoreState>((set) => ({
     set((state) => {
       const events = [...state.events, event].slice(-200); // Keep last 200
 
-      // Update tasks from task events
-      const tasks = [...state.tasks];
+      // Update tasks from task events (immutable: replace matched entry, never mutate in place)
+      let tasks = state.tasks;
       if (event.type.startsWith("task.")) {
         const taskId = event.task_id ?? (event.payload.task_id as string);
         if (taskId) {
           const existing = tasks.find((t) => t.taskId === taskId);
+          const patchTask = (patch: Partial<TaskState>): TaskState[] =>
+            tasks.map((t) => (t.taskId === taskId ? { ...t, ...patch } : t));
           if (event.type === "task.created") {
-            if (!existing) tasks.push({ taskId, state: "draft" });
+            if (!existing) tasks = [...tasks, { taskId, state: "draft" }];
           } else if (event.type === "task.assigned" && existing) {
-            existing.assignee = event.payload.assignee as string;
-            existing.state = "assigned";
+            tasks = patchTask({ assignee: event.payload.assignee as string, state: "assigned" });
           } else if (event.type === "task.status_changed" && existing) {
-            existing.state = event.payload.to as string;
+            tasks = patchTask({ state: event.payload.to as string });
           } else if (event.type === "task.completed" && existing) {
-            existing.state = "done";
+            tasks = patchTask({ state: "done" });
           }
         }
       }
 
-      // Update agents from agent events
-      const agents = [...state.agents];
+      // Update agents from agent events (immutable: replace matched entry, never mutate in place)
+      let agents = state.agents;
       if (event.type.startsWith("agent.")) {
         const agentId = event.actor.id;
         const existing = agents.find((a) => a.agentId === agentId);
+        const patchAgent = (status: AgentState["status"]): AgentState[] =>
+          agents.map((a) => (a.agentId === agentId ? { ...a, status } : a));
         if (event.type === "agent.spawned") {
-          if (!existing) agents.push({ agentId, status: "running" });
-          else existing.status = "running";
+          if (!existing) agents = [...agents, { agentId, status: "running" }];
+          else agents = patchAgent("running");
         } else if (event.type === "agent.terminated" && existing) {
-          existing.status = "terminated";
+          agents = patchAgent("terminated");
         } else if (event.type === "agent.error" && existing) {
-          existing.status = "error";
+          agents = patchAgent("error");
         }
       }
 

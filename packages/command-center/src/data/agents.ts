@@ -11,6 +11,13 @@
  * In production, loaded dynamically from YAML; embedded here for fast iteration.
  */
 
+import {
+  type AgentLifecycleState,
+  VALID_AGENT_LIFECYCLE_TRANSITIONS,
+  canAgentLifecycleTransition,
+  isTerminalLifecycleState,
+} from "@conitens/protocol";
+
 // ── Types ──────────────────────────────────────────────────────────
 
 export type AgentRole =
@@ -29,55 +36,40 @@ export type AgentStatus =
   | "terminated" // Shut down
   ;
 
-/**
- * Coarse-grained lifecycle state for the agent state machine.
- * Mirrors RFC-1.0.1 §4 AgentLifecycleState from @conitens/protocol.
- * Used for per-agent lifecycle tracking in the 3D command center.
- *
- * State machine:
- *   initializing → [ready, crashed]
- *   ready        → [active, paused, terminating, crashed]
- *   active       → [paused, suspended, migrating, terminating, crashed]
- *   paused       → [active, terminating, crashed]
- *   suspended    → [active, paused, terminating, crashed]
- *   migrating    → [terminated, crashed]
- *   terminating  → [terminated, crashed]
- *   terminated, crashed → [] (terminal states)
- */
-export type AgentLifecycleState =
-  | "initializing"  // Agent persona loading / setup
-  | "ready"         // Persona loaded, waiting for first task
-  | "active"        // Executing a task
-  | "paused"        // Execution suspended (user or system hold)
-  | "suspended"     // Long-term hold, resources released
-  | "migrating"     // State transfer in progress
-  | "terminating"   // Graceful shutdown in progress
-  | "terminated"    // Agent process has ended gracefully
-  | "crashed";      // Agent ended unexpectedly
+// Coarse-grained lifecycle state for the agent state machine.
+// The canonical FSM (RFC-1.0.1 §4) lives in @conitens/protocol
+// (agent-lifecycle.ts) and is re-exported here under the command-center's local
+// names so per-agent lifecycle tracking shares one source of truth. A local
+// copy of the transition table would silently drift from the protocol source
+// and break event-log replay determinism (I-2).
+//
+//   initializing → [ready, crashed]
+//   ready        → [active, paused, terminating, crashed]
+//   active       → [paused, suspended, migrating, terminating, crashed]
+//   paused       → [active, terminating, crashed]
+//   suspended    → [active, paused, terminating, crashed]
+//   migrating    → [terminated, crashed]
+//   terminating  → [terminated, crashed]
+//   terminated, crashed → [] (terminal states)
 
-/** Valid lifecycle state transitions. */
-export const AGENT_LIFECYCLE_TRANSITIONS: Record<AgentLifecycleState, readonly AgentLifecycleState[]> = {
-  initializing: ["ready", "crashed"],
-  ready:        ["active", "paused", "terminating", "crashed"],
-  active:       ["paused", "suspended", "migrating", "terminating", "crashed"],
-  paused:       ["active", "terminating", "crashed"],
-  suspended:    ["active", "paused", "terminating", "crashed"],
-  migrating:    ["terminated", "crashed"],
-  terminating:  ["terminated", "crashed"],
-  terminated:   [],
-  crashed:      [],
-};
+export type { AgentLifecycleState };
+
+/** Valid lifecycle state transitions (protocol source of truth). */
+export const AGENT_LIFECYCLE_TRANSITIONS: Record<AgentLifecycleState, readonly AgentLifecycleState[]> =
+  VALID_AGENT_LIFECYCLE_TRANSITIONS;
 
 /** Returns true if the lifecycle transition prev → next is valid. */
-export function isValidLifecycleTransition(
+export const isValidLifecycleTransition: (
   prev: AgentLifecycleState,
   next: AgentLifecycleState,
-): boolean {
-  return (AGENT_LIFECYCLE_TRANSITIONS[prev] as readonly AgentLifecycleState[]).includes(next);
-}
+) => boolean = canAgentLifecycleTransition;
 
-/** Terminal lifecycle states — no transitions possible. */
-export const TERMINAL_LIFECYCLE_STATES = new Set<AgentLifecycleState>(["terminated", "crashed"]);
+/** Terminal lifecycle states — derived from the protocol FSM (no outgoing edges). */
+export const TERMINAL_LIFECYCLE_STATES: ReadonlySet<AgentLifecycleState> = new Set(
+  (Object.keys(VALID_AGENT_LIFECYCLE_TRANSITIONS) as AgentLifecycleState[]).filter(
+    isTerminalLifecycleState,
+  ),
+);
 
 export type RiskClass = "low" | "medium" | "high";
 

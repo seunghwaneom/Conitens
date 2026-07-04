@@ -26,21 +26,25 @@ export function getTaskTone(state: string): string {
 }
 
 /**
- * Minimal valid-transition map mirroring the protocol's VALID_TRANSITIONS.
- * Used for client-side validation before emitting drag events.
+ * Canonical task transition table — the single source of truth is
+ * @conitens/protocol (task-state.ts, RFC-1.0.1 §5). Re-exported so the
+ * dashboard's client-side validation cannot drift from the protocol machine.
  */
-export const VALID_TRANSITIONS: Record<string, string[]> = {
-  draft: ["planned", "cancelled"],
-  planned: ["assigned", "cancelled"],
-  assigned: ["active", "cancelled"],
-  active: ["blocked", "review", "cancelled"],
-  blocked: ["active", "cancelled"],
-  review: ["active", "done", "failed"],
-  done: [],
-  failed: ["assigned", "cancelled"],
-  cancelled: [],
-};
+export { VALID_TRANSITIONS } from "@conitens/protocol";
 
+import { VALID_TRANSITIONS as PROTOCOL_VALID_TRANSITIONS } from "@conitens/protocol";
+
+/**
+ * Validate a transition before emitting a drag event. Drag source/target come
+ * from untrusted UI state and may be any string, so — unlike the protocol's
+ * canTransition — this tolerates unknown states and returns false rather than
+ * throwing.
+ */
 export function isValidTransition(from: string, to: string): boolean {
-  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+  return (PROTOCOL_VALID_TRANSITIONS as Record<string, readonly string[]>)[from]?.includes(to) ?? false;
+}
+
+/** Normalize any thrown value to a user-facing message string. */
+export function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

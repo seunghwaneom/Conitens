@@ -116,13 +116,16 @@ function probeWebGL2(): WebGL2ProbeResult {
 function probeWebGPU(): void {
   // GPURequestAdapterOptions is only available when "WebGPU" is in tsconfig lib.
   // Use `object` as the opts type to stay compatible with ES2022+DOM lib.
-  interface NavigatorWithGPU extends Navigator {
+  // Cast through `unknown` rather than extending Navigator: recent DOM libs
+  // already declare `Navigator.gpu: GPU`, so an `extends Navigator` interface
+  // with a narrower `gpu?` shape conflicts with the built-in type.
+  type NavigatorWithGPU = {
     gpu?: {
       requestAdapter(opts?: object): Promise<unknown>;
     };
-  }
+  };
 
-  const nav = navigator as NavigatorWithGPU;
+  const nav = navigator as unknown as NavigatorWithGPU;
 
   if (!nav.gpu) {
     window.__WEBGPU_AVAILABLE__ = false;
