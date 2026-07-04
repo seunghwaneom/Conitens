@@ -16,6 +16,10 @@ Read this file before substantial work.
   `Seunghwan Eom`. Local `git shortlog -sne --all`, unique author/committer
   inspection, GitHub contributor API, and GitHub commit search did not find a
   remaining `Seung Hwan Lee` author string after this correction.
+- Follow-up 2: GitHub contributor stats still showed one `codex` contributor
+  bucket from commit `02a1795`'s `Co-authored-by: Codex <noreply@openai.com>`
+  trailer. `.mailmap` now also folds that co-author identity, plus a possible
+  `Seung Hwan Lee <noreply@openai.com>` stale form, into `Seunghwan Eom`.
 - README and `CONITENS.md` now document Office Preview as an operator
   visualization with `Agents`, `Topology`, and `Classic` modes. Focused
   `Agents` uses large `288x512` imagegen portrait PNGs from
