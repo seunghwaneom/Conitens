@@ -2,6 +2,22 @@
 
 ## Active Batch
 
+- Batch: `README and Office Preview documentation sync`
+- Status: `complete`
+- Date: 2026-07-04
+- Scope: Refresh top-level and frontend asset documentation so README,
+  `CONITENS.md`, Office Preview guidance, and the Spatial Lens asset README
+  match the current dashboard/Forward Bridge/agent portrait architecture.
+- Acceptance: README must identify `packages/dashboard` and the read-only
+  Forward Bridge as current forward surfaces; Office Preview docs must separate
+  Focused large portrait assets from Topology 64px sprite atlases; stale
+  Spatial Lens asset-registry language must be removed; no code/runtime assets
+  should be changed by this documentation-only pass.
+- Verified: reviewed edited Markdown, searched for removed stale phrases, and
+  inspected the documentation diff.
+
+## Previous Batch
+
 - Batch: `Ultrawork cleanup`
 - Status: `complete`
 - Date: 2026-06-14

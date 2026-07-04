@@ -52,6 +52,7 @@ Implemented extension modules:
 - [ensemble_hooks.py](scripts/ensemble_hooks.py)
 - [ensemble_mcp_server.py](scripts/ensemble_mcp_server.py)
 - [ensemble_telegram.py](scripts/ensemble_telegram.py)
+- [ensemble_forward_bridge.py](scripts/ensemble_forward_bridge.py)
 
 The guiding rule is simple:
 
@@ -66,9 +67,29 @@ Current control-plane decision:
 - canonical agent/skill/gate metadata = `.agent/agents/`, `.agent/skills/`, `.agent/policies/`
 - lowercase canonical extension paths = `.notes/workflows/`, `.notes/events/`, `.notes/meetings/`, `.notes/office/`, `.notes/artifacts/`, `.notes/handoffs/`, `.notes/gates/`
 - legacy uppercase aliases remain readable and writable during the transition
-- reference/parity surfaces only = `packages/*`, RFC-era `.conitens` material, older roadmap documents
+- current forward operator UI = `packages/dashboard`, backed by the read-only Forward Bridge
+- reference/parity surfaces only = remaining `packages/*`, RFC-era `.conitens` material, older roadmap documents
 
 See [docs/adr-0001-control-plane.md](docs/adr-0001-control-plane.md) and [docs/control-plane-compatibility.md](docs/control-plane-compatibility.md).
+
+### Forward Dashboard Surface
+
+`packages/dashboard` is the active browser-facing operator UI for the forward
+surface. It reads runtime projections through
+[scripts/ensemble_forward_bridge.py](scripts/ensemble_forward_bridge.py) and
+does not become the operational source of truth.
+
+The Office Preview route is maintained as an operator visualization:
+
+- `Agents` is the Focused mode and renders the current handoff cast with large
+  role portrait PNGs from `packages/dashboard/public/agent-portraits/generated`.
+- `Topology` is the whole-floor Spatial Lens/debug view using generated local
+  floor, fixture, and `64x64` role sprite assets.
+- `Classic` preserves the older room scene for compatibility and comparison.
+
+Sprite generation and image generation are design/build-time asset pipelines.
+The dashboard runtime serves static local assets and must not require generator
+services to render the operator surface.
 
 ### CLI Surface
 

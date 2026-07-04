@@ -1,8 +1,9 @@
 # Spatial Lens Assets
 
-This folder owns the optional Spatial Lens asset registry. It is not mounted
-into the current dashboard route yet; Prompt 2 only establishes the manifest
-contract and safe local placeholders.
+This folder owns the Spatial Lens asset registry used by the dashboard Office
+Preview `Topology` mode. Focused `Agents` mode uses large portrait cutouts from
+`public/agent-portraits/generated`; this registry stays responsible for floor,
+wall, fixture, and compact map-character assets.
 
 Manual imports should live under:
 
@@ -14,29 +15,37 @@ packages/dashboard/public/spatial-lens/
   characters/
 ```
 
-Generated Spatial Lens references and sprite sheets live under:
+Current generated/static assets live under:
 
 ```text
-packages/dashboard/public/assets/spatial-lens/generated/
+packages/dashboard/public/
+  office-floor-*.png
+  office-fixtures.png
+  agent-sprites/generated/
+  agent-portraits/generated/
 ```
 
-The generated sheet is sliced manually by
-`packages/dashboard/src/spatial-lens/assets/generatedAssetManifest.ts`.
-Use `pixel-office-asset-sheet-1x.png` for frontend sprites; keep the full source
-sheet only as generated reference/source material.
+`assetRegistry.ts` slices `office-fixtures.png`, references the seven generated
+floor tiles directly, and points character entries at the generated `64x64`
+role sprite atlases under `agent-sprites/generated`. The large `288x512`
+portrait PNGs are intentionally resolved outside this registry by
+`agent-character-portraits.ts` because they belong to the Focused agent deck,
+not the topology map.
 
 Rules for adding assets:
 
 - Do not download or vendor third-party assets until license, attribution, and
   redistribution rights are reviewed.
-- Prefer existing local dashboard assets while the registry is experimental.
+- Prefer existing local dashboard assets and generated static PNGs.
 - Every registry entry must declare `id`, `kind`, `src`, `tileSize`, `anchor`,
   `rotationGroup`, `stateGroup`, and `animationFrames`.
 - Use `src: null` plus a CSS fallback for placeholders or future manual-import
   slots.
 - Keep read-only preview work separate from task mutation, provider auth, or
   approval flows.
+- Do not route Focused portrait cards through this registry unless the map and
+  card asset contracts are intentionally merged.
 
-The current registry references existing local floor tiles, the existing local
-fixture sprite sheet, existing local command-center agent sprites, and CSS
-placeholders for wall and missing-asset cases.
+The current registry references generated local floor tiles, the generated
+fixture sprite sheet, generated local agent sprite atlases, and CSS placeholders
+for wall and missing-asset cases. It must not reference remote URLs.
