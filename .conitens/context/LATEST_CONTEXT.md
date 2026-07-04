@@ -11,6 +11,11 @@ Read this file before substantial work.
   operator UI, with `scripts/ensemble_forward_bridge.py` as the read-only data
   bridge, while keeping `scripts/ensemble.py` + `.notes/` + `.agent/` as
   runtime truth.
+- Follow-up: added `.mailmap` so a stale `Seung Hwan Lee` contributor/author
+  alias using the repo owner's GitHub noreply address canonicalizes to
+  `Seunghwan Eom`. Local `git shortlog -sne --all`, unique author/committer
+  inspection, GitHub contributor API, and GitHub commit search did not find a
+  remaining `Seung Hwan Lee` author string after this correction.
 - README and `CONITENS.md` now document Office Preview as an operator
   visualization with `Agents`, `Topology`, and `Classic` modes. Focused
   `Agents` uses large `288x512` imagegen portrait PNGs from
