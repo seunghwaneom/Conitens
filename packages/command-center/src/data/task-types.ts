@@ -10,6 +10,15 @@
  * Sub-AC 5.1: Task-agent mapping data model.
  */
 
+import {
+  TASK_STATES,
+  TERMINAL_STATES,
+  VALID_TRANSITIONS,
+  canTransition,
+  isTerminal,
+  type TaskState,
+} from "@conitens/protocol";
+
 // ── Task Priority ──────────────────────────────────────────────────────────
 
 /**
@@ -43,48 +52,30 @@ export const TASK_PRIORITY_COLOR: Readonly<Record<TaskPriority, string>> = {
 };
 
 // ── Task State ─────────────────────────────────────────────────────────────
-// Mirror of @conitens/protocol task-state.ts — re-defined here so the
-// command-center data layer can be used without a hard runtime dependency on
-// the protocol package (browser bundle is type-only for that package).
+// The canonical task state machine lives in @conitens/protocol (task-state.ts).
+// It is re-exported here under the command-center's local names so the data
+// layer keeps a single source of truth — a local copy would silently drift from
+// the protocol source and break event-log replay determinism (I-2).
 
-export const TASK_STATES = [
-  "draft", "planned", "assigned", "active",
-  "blocked", "review", "done", "failed", "cancelled",
-] as const;
+export { TASK_STATES };
 
-export type TaskStatus = (typeof TASK_STATES)[number];
+/** Command-center-local alias for the protocol `TaskState` union. */
+export type TaskStatus = TaskState;
 
-export const TERMINAL_TASK_STATES: ReadonlySet<TaskStatus> = new Set([
-  "done", "cancelled",
-] as TaskStatus[]);
+export const TERMINAL_TASK_STATES: ReadonlySet<TaskStatus> = TERMINAL_STATES;
+export const VALID_TASK_TRANSITIONS: Readonly<Record<TaskStatus, readonly TaskStatus[]>> =
+  VALID_TRANSITIONS;
 
+/** Returns true if transitioning from `from` → `to` is a valid move. */
+export const canTaskTransition: (from: TaskStatus, to: TaskStatus) => boolean = canTransition;
+
+export const isTaskTerminal: (status: TaskStatus) => boolean = isTerminal;
+
+// Active (in-flight) task states — a command-center UI concept with no protocol
+// equivalent, so it stays local.
 export const ACTIVE_TASK_STATES: ReadonlySet<TaskStatus> = new Set([
   "assigned", "active", "blocked", "review",
 ] as TaskStatus[]);
-
-export const VALID_TASK_TRANSITIONS: Readonly<Record<TaskStatus, readonly TaskStatus[]>> = {
-  draft:     ["planned", "cancelled"],
-  planned:   ["assigned", "cancelled"],
-  assigned:  ["active", "cancelled"],
-  active:    ["blocked", "review", "failed", "cancelled"],
-  blocked:   ["active", "failed", "cancelled"],
-  review:    ["done", "active", "failed", "cancelled"],
-  done:      [],
-  failed:    ["assigned"],
-  cancelled: [],
-};
-
-/**
- * Returns true if transitioning from `from` → `to` is a valid move.
- * Mirrors the protocol-level `canTransition` function.
- */
-export function canTaskTransition(from: TaskStatus, to: TaskStatus): boolean {
-  return VALID_TASK_TRANSITIONS[from].includes(to);
-}
-
-export function isTaskTerminal(status: TaskStatus): boolean {
-  return TERMINAL_TASK_STATES.has(status);
-}
 
 export function isTaskActive(status: TaskStatus): boolean {
   return ACTIVE_TASK_STATES.has(status);

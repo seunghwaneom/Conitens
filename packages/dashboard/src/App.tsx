@@ -1,52 +1,42 @@
 import React, { useEffect, useEffectEvent, useMemo, useState } from "react";
 import { PixelOffice } from "./components/PixelOffice.js";
-import { ErrorBoundary } from "./components/ErrorBoundary.js";
-import { ForwardApprovalCenterPanel } from "./components/ForwardApprovalCenterPanel.js";
-import { ForwardContextPanel } from "./components/ForwardContextPanel.js";
-import { ForwardGraphPanel } from "./components/ForwardGraphPanel.js";
-import { ForwardInsightsPanel } from "./components/ForwardInsightsPanel.js";
-import { ForwardReplayPanel } from "./components/ForwardReplayPanel.js";
-import { ForwardRoomPanel } from "./components/ForwardRoomPanel.js";
-import { ForwardStateDocsPanel } from "./components/ForwardStateDocsPanel.js";
-import { OperatorInboxPanel } from "./components/OperatorInboxPanel.js";
-import { OperatorSummaryPanel } from "./components/OperatorSummaryPanel.js";
-import { OperatorTaskDetailPanel } from "./components/OperatorTaskDetailPanel.js";
-import { OperatorTaskReconcilePreviewPanel } from "./components/OperatorTaskReconcilePreviewPanel.js";
-import { OperatorWakeReadinessPanel } from "./components/OperatorWakeReadinessPanel.js";
 import {
-  OperatorTaskEditorPanel,
   type OperatorTaskDraft,
   type OperatorTaskWorkspaceOption,
 } from "./components/OperatorTaskEditorPanel.js";
-import { OperatorWorkspaceDetailPanel } from "./components/OperatorWorkspaceDetailPanel.js";
-import { OperatorWorkspaceEditorPanel } from "./components/OperatorWorkspaceEditorPanel.js";
 import { useForwardStream } from "./hooks/use-forward-stream.js";
 import {
+  useOperatorAgentsData,
+  useOperatorInboxData,
+  useOperatorSummaryData,
+  useOperatorWakeReadinessData,
+  useOperatorTaskReconcileData,
+  useOperatorWorkspaceLinkedTasksData,
+  useRunsData,
+  type LoadState,
+} from "./hooks/use-operator-screen-data.js";
+import { useRunDetailData } from "./hooks/use-run-detail-data.js";
+import {
+  useOperatorTasksData,
+  useOperatorTaskDetailData,
+  useOperatorWorkspacesData,
+  useOperatorWorkspaceDetailData,
+} from "./hooks/use-operator-mutable-data.js";
+import { toErrorMessage } from "./utils.js";
+import {
   forwardArchiveOperatorTask,
-  forwardGetOperatorAgents,
   forwardCreateOperatorTask,
   forwardCreateOperatorWorkspace,
   forwardDetachOperatorTaskWorkspace,
   forwardDeleteOperatorTask,
-  forwardGetOperatorInbox,
   forwardGetOperatorTask,
   forwardGetOperatorTasks,
   forwardGetOperatorWorkspace,
   forwardGetOperatorWorkspaces,
-  forwardGetOperatorSummary,
-  forwardGetOperatorTaskReconcilePreview,
-  forwardGetOperatorWakeReadiness,
   forwardRequestOperatorTaskApproval,
   forwardRestoreOperatorTask,
   forwardUpdateOperatorTask,
   forwardUpdateOperatorWorkspace,
-  forwardGet,
-  parseContextLatestResponse,
-  parseReplayResponse,
-  parseRoomTimelineResponse,
-  parseRunDetailResponse,
-  parseRunsResponse,
-  parseStateDocsResponse,
   persistBridgeConfig,
   persistSavedTaskFilterPresets,
   persistTaskFilterState,
@@ -88,27 +78,23 @@ import {
 import { toOperatorWorkspaceDetail, toOperatorWorkspaceListItems } from "./operator-workspaces-model.js";
 import {
   extractRoomOptions,
-  pickNextRoomId,
   summarizeFindingsDocument,
   summarizeValidatorCorrelations,
   toInsightCardViewModels,
   toRunDetailViewModel,
   toRunListItemViewModel,
 } from "./forward-view-model.js";
-import { OnboardingOverlay } from "./components/OnboardingOverlay.js";
 import { demoAgents, demoEvents, demoTasks } from "./demo-data.js";
-import { AgentFleetOverview } from "./components/AgentFleetOverview.js";
-import { AgentProfilePanel } from "./components/AgentProfilePanel.js";
-import { AgentRelationshipGraph } from "./components/AgentRelationshipGraph.js";
-import { ProposalQueuePanel } from "./components/ProposalQueuePanel.js";
 import { compareAgentAttention, demoFleet } from "./agent-fleet-model.js";
-import { demoProposals, demoEvolution, demoLearningMetrics } from "./evolution-model.js";
 import {
   buildOperatorTaskDraftMutationBody,
   buildOperatorTaskStatusMutationBody,
 } from "./operator-task-actions.js";
+import { AgentsScreen } from "./screens/AgentsScreen.js";
+import { ApprovalsScreen } from "./screens/ApprovalsScreen.js";
+import { DeferredRouteScreen } from "./screens/DeferredRouteScreen.js";
+import { OperatorWorkbenchScreen } from "./screens/OperatorWorkbenchScreen.js";
 
-type LoadState = "idle" | "loading" | "ready" | "error";
 type DetailTab = "operations" | "intelligence" | "data";
 type TaskBulkAction = "archive" | "restore";
 
@@ -120,49 +106,12 @@ interface TaskBulkReport {
   failed: Array<{ taskId: string; error: string }>;
 }
 
-function toErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 export function App() {
   const initialTaskFilterState = readInitialTaskFilterState();
   const [config, setConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
   const [draftConfig, setDraftConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
-  const [operatorAgents, setOperatorAgents] = useState<ForwardOperatorAgentsResponse | null>(null);
-  const [operatorTasks, setOperatorTasks] = useState<ForwardOperatorTasksResponse | null>(null);
-  const [selectedTask, setSelectedTask] = useState<ForwardOperatorTaskDetailResponse | null>(null);
-  const [taskReconcilePreview, setTaskReconcilePreview] = useState<ForwardOperatorTaskReconcilePreviewResponse | null>(null);
-  const [operatorWorkspaces, setOperatorWorkspaces] = useState<ForwardOperatorWorkspacesResponse | null>(null);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<ForwardOperatorWorkspaceDetailResponse | null>(null);
-  const [workspaceLinkedTasks, setWorkspaceLinkedTasks] = useState<ForwardOperatorTasksResponse | null>(null);
-  const [runs, setRuns] = useState<ForwardRunSummary[]>([]);
-  const [operatorInbox, setOperatorInbox] = useState<ForwardOperatorInboxResponse | null>(null);
-  const [operatorSummary, setOperatorSummary] = useState<ForwardOperatorSummaryResponse | null>(null);
-  const [operatorWakeReadiness, setOperatorWakeReadiness] = useState<ForwardOperatorWakeReadinessResponse | null>(null);
-  const [selectedRun, setSelectedRun] = useState<ForwardRunDetailResponse | null>(null);
-  const [replay, setReplay] = useState<ForwardReplayResponse | null>(null);
-  const [stateDocs, setStateDocs] = useState<ForwardStateDocsResponse | null>(null);
-  const [contextLatest, setContextLatest] = useState<ForwardContextLatestResponse | null>(null);
-  const [roomTimeline, setRoomTimeline] = useState<ForwardRoomTimelineResponse | null>(null);
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  const [agentsState, setAgentsState] = useState<LoadState>("idle");
-  const [inboxState, setInboxState] = useState<LoadState>("idle");
-  const [tasksState, setTasksState] = useState<LoadState>("idle");
-  const [taskDetailState, setTaskDetailState] = useState<LoadState>("idle");
-  const [taskReconcileState, setTaskReconcileState] = useState<LoadState>("idle");
-  const [workspacesState, setWorkspacesState] = useState<LoadState>("idle");
-  const [workspaceDetailState, setWorkspaceDetailState] = useState<LoadState>("idle");
   const [workspaceMutationState, setWorkspaceMutationState] = useState<LoadState>("idle");
-  const [workspaceLinkedTasksState, setWorkspaceLinkedTasksState] = useState<LoadState>("idle");
   const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
-  const [runsState, setRunsState] = useState<LoadState>("idle");
-  const [overviewState, setOverviewState] = useState<LoadState>("idle");
-  const [wakeReadinessState, setWakeReadinessState] = useState<LoadState>("idle");
-  const [detailState, setDetailState] = useState<LoadState>("idle");
-  const [replayState, setReplayState] = useState<LoadState>("idle");
-  const [stateDocsState, setStateDocsState] = useState<LoadState>("idle");
-  const [contextState, setContextState] = useState<LoadState>("idle");
-  const [roomState, setRoomState] = useState<LoadState>("idle");
   const [taskMutationState, setTaskMutationState] = useState<LoadState>("idle");
   const [taskArchiveState, setTaskArchiveState] = useState<LoadState>("idle");
   const [taskDeleteState, setTaskDeleteState] = useState<LoadState>("idle");
@@ -178,15 +127,7 @@ export function App() {
   const [taskArchiveRationale, setTaskArchiveRationale] = useState("");
   const [taskBulkArchiveRationale, setTaskBulkArchiveRationale] = useState("");
   const [taskApprovalRationale, setTaskApprovalRationale] = useState("");
-  const [agentsError, setAgentsError] = useState<string | null>(null);
-  const [inboxError, setInboxError] = useState<string | null>(null);
-  const [tasksError, setTasksError] = useState<string | null>(null);
-  const [taskDetailError, setTaskDetailError] = useState<string | null>(null);
-  const [taskReconcileError, setTaskReconcileError] = useState<string | null>(null);
-  const [workspacesError, setWorkspacesError] = useState<string | null>(null);
-  const [workspaceDetailError, setWorkspaceDetailError] = useState<string | null>(null);
   const [workspaceMutationError, setWorkspaceMutationError] = useState<string | null>(null);
-  const [workspaceLinkedTasksError, setWorkspaceLinkedTasksError] = useState<string | null>(null);
   const [workspaceTaskActionError, setWorkspaceTaskActionError] = useState<string | null>(null);
   const [workspaceTaskActionMessage, setWorkspaceTaskActionMessage] = useState<string | null>(null);
   const [taskMutationError, setTaskMutationError] = useState<string | null>(null);
@@ -195,14 +136,6 @@ export function App() {
   const [taskApprovalRequestError, setTaskApprovalRequestError] = useState<string | null>(null);
   const [taskPresetError, setTaskPresetError] = useState<string | null>(null);
   const [taskBulkError, setTaskBulkError] = useState<string | null>(null);
-  const [runsError, setRunsError] = useState<string | null>(null);
-  const [overviewError, setOverviewError] = useState<string | null>(null);
-  const [wakeReadinessError, setWakeReadinessError] = useState<string | null>(null);
-  const [detailError, setDetailError] = useState<string | null>(null);
-  const [replayError, setReplayError] = useState<string | null>(null);
-  const [stateDocsError, setStateDocsError] = useState<string | null>(null);
-  const [contextError, setContextError] = useState<string | null>(null);
-  const [roomError, setRoomError] = useState<string | null>(null);
   const [taskBulkMessage, setTaskBulkMessage] = useState<string | null>(null);
   const [taskBulkReport, setTaskBulkReport] = useState<TaskBulkReport | null>(null);
   const [route, setRoute] = useState(() => parseForwardRoute(window.location.hash));
@@ -235,6 +168,10 @@ export function App() {
     notes: "",
   });
   const isOfficePreview = route.screen === "office-preview";
+  const { data: operatorTasks, state: tasksState, error: tasksError, setData: setOperatorTasks } =
+    useOperatorTasksData({ config, isOfficePreview, screen: route.screen, liveRevision, taskFilterStatus, taskFilterOwner, taskIncludeArchived });
+  const { data: selectedTask, state: taskDetailState, error: taskDetailError, setData: setSelectedTask } =
+    useOperatorTaskDetailData({ config, isOfficePreview, screen: route.screen, taskId: route.taskId });
   const activeLinkedRunId =
     route.screen === "run-detail"
       ? route.runId
@@ -246,6 +183,44 @@ export function App() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [agentView, setAgentView] = useState<"fleet" | "graph">("fleet");
   const showOnboarding = (route.screen === "overview" || route.screen === "runs") && isDemo;
+
+  const { data: operatorSummary, state: overviewState, error: overviewError } =
+    useOperatorSummaryData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: operatorWakeReadiness, state: wakeReadinessState, error: wakeReadinessError } =
+    useOperatorWakeReadinessData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: operatorAgents, state: agentsState, error: agentsError } =
+    useOperatorAgentsData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: operatorInbox, state: inboxState, error: inboxError } =
+    useOperatorInboxData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: taskReconcilePreview, state: taskReconcileState, error: taskReconcileError } =
+    useOperatorTaskReconcileData({ config, isOfficePreview, screen: route.screen, taskId: route.taskId, liveRevision });
+  const { data: workspaceLinkedTasks, state: workspaceLinkedTasksState, error: workspaceLinkedTasksError } =
+    useOperatorWorkspaceLinkedTasksData({ config, isOfficePreview, screen: route.screen, workspaceId: route.workspaceId ?? null, liveRevision });
+  const { data: runs, state: runsState, error: runsError } =
+    useRunsData({ config, isOfficePreview, liveRevision });
+  const { data: operatorWorkspaces, state: workspacesState, error: workspacesError, setData: setOperatorWorkspaces } =
+    useOperatorWorkspacesData({ config, isOfficePreview, screen: route.screen, liveRevision });
+  const { data: selectedWorkspace, state: workspaceDetailState, error: workspaceDetailError, setData: setSelectedWorkspace } =
+    useOperatorWorkspaceDetailData({ config, isOfficePreview, screen: route.screen, workspaceId: route.workspaceId ?? null });
+  const {
+    selectedRun,
+    replay,
+    stateDocs,
+    contextLatest,
+    roomTimeline,
+    selectedRoomId,
+    setSelectedRoomId,
+    detailState,
+    replayState,
+    stateDocsState,
+    contextState,
+    roomState,
+    detailError,
+    replayError,
+    stateDocsError,
+    contextError,
+    roomError,
+  } = useRunDetailData({ config, isOfficePreview, activeLinkedRunId, liveRevision, streamRevision });
 
   const shellCopy = useMemo(() => {
     if (isOfficePreview) {
@@ -336,483 +311,6 @@ export function App() {
     }
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
-
-  useEffect(() => {
-    if (isOfficePreview || route.screen !== "overview" || !config.token.trim()) {
-      setOperatorSummary(null);
-      setOverviewState("idle");
-      setOverviewError(null);
-      return;
-    }
-    let cancelled = false;
-    setOverviewState("loading");
-    setOverviewError(null);
-    forwardGetOperatorSummary(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorSummary(payload);
-        setOverviewState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorSummary(null);
-        setOverviewState("error");
-        setOverviewError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || route.screen !== "overview" || !config.token.trim()) {
-      setOperatorWakeReadiness(null);
-      setWakeReadinessState("idle");
-      setWakeReadinessError(null);
-      return;
-    }
-    let cancelled = false;
-    setWakeReadinessState("loading");
-    setWakeReadinessError(null);
-    forwardGetOperatorWakeReadiness(config, { limit: 12 })
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWakeReadiness(payload);
-        setWakeReadinessState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWakeReadiness(null);
-        setWakeReadinessState("error");
-        setWakeReadinessError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || route.screen !== "agents" || !config.token.trim()) {
-      setOperatorAgents(null);
-      setAgentsState("idle");
-      setAgentsError(null);
-      return;
-    }
-    let cancelled = false;
-    setAgentsState("loading");
-    setAgentsError(null);
-    forwardGetOperatorAgents(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorAgents(payload);
-        setAgentsState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorAgents(null);
-        setAgentsState("error");
-        setAgentsError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || route.screen !== "inbox" || !config.token.trim()) {
-      setOperatorInbox(null);
-      setInboxState("idle");
-      setInboxError(null);
-      return;
-    }
-    let cancelled = false;
-    setInboxState("loading");
-    setInboxError(null);
-    forwardGetOperatorInbox(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorInbox(payload);
-        setInboxState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorInbox(null);
-        setInboxState("error");
-        setInboxError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || (route.screen !== "tasks" && route.screen !== "task-detail")) {
-      setOperatorTasks(null);
-      setTasksState("idle");
-      setTasksError(null);
-      return;
-    }
-    let cancelled = false;
-    setTasksState("loading");
-    setTasksError(null);
-    forwardGetOperatorTasks(config, {
-      status: taskFilterStatus !== "all" ? taskFilterStatus : undefined,
-      ownerAgentId: taskFilterOwner.trim() || undefined,
-      includeArchived: taskIncludeArchived,
-    })
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorTasks(payload);
-        setTasksState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorTasks(null);
-        setTasksState("error");
-        setTasksError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision, taskFilterOwner, taskFilterStatus, taskIncludeArchived]);
-
-  useEffect(() => {
-    if (
-      isOfficePreview ||
-      !config.token.trim() ||
-      (
-        route.screen !== "workspaces" &&
-        route.screen !== "workspace-detail" &&
-        route.screen !== "tasks" &&
-        route.screen !== "task-detail"
-      )
-    ) {
-      setOperatorWorkspaces(null);
-      setWorkspacesState("idle");
-      setWorkspacesError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspacesState("loading");
-    setWorkspacesError(null);
-    forwardGetOperatorWorkspaces(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWorkspaces(payload);
-        setWorkspacesState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWorkspaces(null);
-        setWorkspacesState("error");
-        setWorkspacesError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "task-detail" || !route.taskId) {
-      setSelectedTask(null);
-      setTaskDetailState("idle");
-      setTaskDetailError(null);
-      return;
-    }
-    let cancelled = false;
-    setTaskDetailState("loading");
-    setTaskDetailError(null);
-    forwardGetOperatorTask(config, route.taskId)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedTask(payload);
-        setTaskDetailState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedTask(null);
-        setTaskDetailState("error");
-        setTaskDetailError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.taskId]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "task-detail" || !route.taskId) {
-      setTaskReconcilePreview(null);
-      setTaskReconcileState("idle");
-      setTaskReconcileError(null);
-      return;
-    }
-    const activeTaskId = route.taskId;
-    let cancelled = false;
-    setTaskReconcileState("loading");
-    setTaskReconcileError(null);
-    forwardGetOperatorTaskReconcilePreview(config, activeTaskId)
-      .then((payload) => {
-        if (cancelled || payload.task_id !== activeTaskId) {
-          return;
-        }
-        setTaskReconcilePreview(payload);
-        setTaskReconcileState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setTaskReconcilePreview(null);
-        setTaskReconcileState("error");
-        setTaskReconcileError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.taskId, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      setSelectedWorkspace(null);
-      setWorkspaceDetailState("idle");
-      setWorkspaceDetailError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspaceDetailState("loading");
-    setWorkspaceDetailError(null);
-    forwardGetOperatorWorkspace(config, route.workspaceId)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedWorkspace(payload);
-        setWorkspaceDetailState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedWorkspace(null);
-        setWorkspaceDetailState("error");
-        setWorkspaceDetailError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.workspaceId]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      setWorkspaceLinkedTasks(null);
-      setWorkspaceLinkedTasksState("idle");
-      setWorkspaceLinkedTasksError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspaceLinkedTasksState("loading");
-    setWorkspaceLinkedTasksError(null);
-    forwardGetOperatorTasks(config, { workspaceRef: route.workspaceId, includeArchived: true })
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setWorkspaceLinkedTasks(payload);
-        setWorkspaceLinkedTasksState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setWorkspaceLinkedTasks(null);
-        setWorkspaceLinkedTasksState("error");
-        setWorkspaceLinkedTasksError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.workspaceId, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim()) {
-      setRuns([]);
-      setRunsState("idle");
-      setRunsError(null);
-      return;
-    }
-    let cancelled = false;
-    setRunsState("loading");
-    setRunsError(null);
-    forwardGet(config, "/runs", parseRunsResponse)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setRuns(payload.runs);
-        setRunsState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setRunsState("error");
-        setRunsError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || !activeLinkedRunId) {
-      setSelectedRun(null);
-      setReplay(null);
-      setStateDocs(null);
-      setContextLatest(null);
-      setRoomTimeline(null);
-      setSelectedRoomId(null);
-      setDetailState("idle");
-      setReplayState("idle");
-      setStateDocsState("idle");
-      setContextState("idle");
-      setRoomState("idle");
-      setDetailError(null);
-      setReplayError(null);
-      setStateDocsError(null);
-      setContextError(null);
-      setRoomError(null);
-      return;
-    }
-    let cancelled = false;
-    setDetailState("loading");
-    setReplayState("loading");
-    setStateDocsState("loading");
-    setContextState("loading");
-    setRoomState("idle");
-    setDetailError(null);
-    setReplayError(null);
-    setStateDocsError(null);
-    setContextError(null);
-    setRoomError(null);
-    Promise.allSettled([
-      forwardGet(config, `/runs/${encodeURIComponent(activeLinkedRunId)}`, parseRunDetailResponse),
-      forwardGet(config, `/runs/${encodeURIComponent(activeLinkedRunId)}/replay`, parseReplayResponse),
-      forwardGet(config, `/runs/${encodeURIComponent(activeLinkedRunId)}/state-docs`, parseStateDocsResponse),
-      forwardGet(config, `/runs/${encodeURIComponent(activeLinkedRunId)}/context-latest`, parseContextLatestResponse),
-    ])
-      .then(([detailResult, replayResult, stateDocsResult, contextResult]) => {
-        if (cancelled) {
-          return;
-        }
-        if (detailResult.status === "fulfilled") {
-          setSelectedRun(detailResult.value);
-          setDetailState("ready");
-          setDetailError(null);
-        } else {
-          setSelectedRun(null);
-          setDetailState("error");
-          setDetailError(toErrorMessage(detailResult.reason));
-        }
-
-        if (replayResult.status === "fulfilled") {
-          setReplay(replayResult.value);
-          setReplayState("ready");
-          setReplayError(null);
-          const roomOptions = extractRoomOptions(replayResult.value);
-          setSelectedRoomId((current) => pickNextRoomId(current, roomOptions));
-        } else {
-          setReplay(null);
-          setReplayState("error");
-          setReplayError(toErrorMessage(replayResult.reason));
-          setRoomTimeline(null);
-          setSelectedRoomId(null);
-          setRoomState("idle");
-          setRoomError(null);
-        }
-
-        if (stateDocsResult.status === "fulfilled") {
-          setStateDocs(stateDocsResult.value);
-          setStateDocsState("ready");
-          setStateDocsError(null);
-        } else {
-          setStateDocs(null);
-          setStateDocsState("error");
-          setStateDocsError(toErrorMessage(stateDocsResult.reason));
-        }
-
-        if (contextResult.status === "fulfilled") {
-          setContextLatest(contextResult.value);
-          setContextState("ready");
-          setContextError(null);
-        } else {
-          setContextLatest(null);
-          setContextState("error");
-          setContextError(toErrorMessage(contextResult.reason));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeLinkedRunId, config, liveRevision, streamRevision, isOfficePreview]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || !selectedRoomId) {
-      setRoomTimeline(null);
-      setRoomState("idle");
-      setRoomError(null);
-      return;
-    }
-    let cancelled = false;
-    setRoomState("loading");
-    setRoomError(null);
-    forwardGet(config, `/rooms/${encodeURIComponent(selectedRoomId)}/timeline`, parseRoomTimelineResponse)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setRoomTimeline(payload);
-        setRoomState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setRoomTimeline(null);
-        setRoomState("error");
-        setRoomError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, selectedRoomId, isOfficePreview, liveRevision, streamRevision]);
 
   const liveAgentProfiles = useMemo(
     () => (operatorAgents ? toOperatorAgentProfiles(operatorAgents) : []),
@@ -1698,1048 +1196,171 @@ export function App() {
           <PixelOffice agents={demoAgents} tasks={demoTasks} events={demoEvents} onOpenAgent={openAgent} />
         </main>
       ) : route.screen === "agents" ? (
-        <main className="forward-main">
-          <div className="forward-tab-bar" role="tablist" aria-label="Agent view">
-            <button
-              className={`forward-tab${agentView === "fleet" ? " active" : ""}`}
-              type="button"
-              role="tab"
-              id="agent-tab-fleet"
-              aria-selected={agentView === "fleet"}
-              aria-controls="agent-panel-fleet"
-              tabIndex={agentView === "fleet" ? 0 : -1}
-              onClick={() => setAgentView("fleet")}
-              onKeyDown={handleAgentTabKeyDown}
-            >
-              Fleet
-            </button>
-            <button
-              className={`forward-tab${agentView === "graph" ? " active" : ""}`}
-              type="button"
-              role="tab"
-              id="agent-tab-graph"
-              aria-selected={agentView === "graph"}
-              aria-controls="agent-panel-graph"
-              tabIndex={agentView === "graph" ? 0 : -1}
-              onClick={() => setAgentView("graph")}
-              onKeyDown={handleAgentTabKeyDown}
-              disabled={!isDemo}
-            >
-              Relationships
-            </button>
-          </div>
-          {!isDemo && agentsState === "loading" ? <p className="forward-empty">Loading agent roster...</p> : null}
-          {!isDemo && agentsState === "error" ? <p className="forward-error">{agentsError}</p> : null}
-          {!isDemo && agentsState === "ready" && agentProfiles.length === 0 ? (
-            <div className="forward-placeholder">
-              <h3>No operator agents projected</h3>
-              <p>No agent identifiers have been derived from the current forward state yet.</p>
-            </div>
-          ) : null}
-          {(isDemo || (agentsState === "ready" && agentProfiles.length > 0)) && (agentView === "fleet" || !isDemo) ? (
-            <div className="agent-fleet-layout" role="tabpanel" id="agent-panel-fleet" aria-labelledby="agent-tab-fleet">
-              <AgentFleetOverview agents={orderedAgentProfiles} selectedAgentId={selectedAgentId} onSelectAgent={setSelectedAgentId} />
-              <AgentProfilePanel
-                agent={activeAgent}
-                evolution={isDemo ? demoEvolution.filter(e => e.agentId === selectedAgentId) : []}
-                metrics={isDemo ? (demoLearningMetrics.find(m => m.agentId === selectedAgentId) ?? null) : null}
-                onOpenRoom={openSpatialRoom}
-              />
-            </div>
-          ) : null}
-          {isDemo && agentView === "graph" ? (
-            <div role="tabpanel" id="agent-panel-graph" aria-labelledby="agent-tab-graph">
-              <AgentRelationshipGraph agents={demoFleet} />
-            </div>
-          ) : null}
-          {isDemo ? (
-            <ProposalQueuePanel proposals={demoProposals} agents={demoFleet} />
-          ) : agentsState === "ready" && agentProfiles.length > 0 ? (
-            <div className="forward-placeholder">
-              <h3>Live relationship graph and proposal queue are still deferred</h3>
-              <p>The roster is now live. Graph and proposal/evolution projections will follow in a later slice.</p>
-            </div>
-          ) : null}
-        </main>
+        <AgentsScreen
+          agentView={agentView}
+          setAgentView={setAgentView}
+          handleAgentTabKeyDown={handleAgentTabKeyDown}
+          isDemo={isDemo}
+          agentsState={agentsState}
+          agentsError={agentsError}
+          agentProfiles={agentProfiles}
+          orderedAgentProfiles={orderedAgentProfiles}
+          selectedAgentId={selectedAgentId}
+          setSelectedAgentId={setSelectedAgentId}
+          activeAgent={activeAgent}
+          openSpatialRoom={openSpatialRoom}
+        />
       ) : route.screen === "approvals" ? (
-        <main className="forward-main">
-          {isDemo ? (
-            <div className="forward-demo-banner">
-              <span>Connect to a live bridge to review approval records.</span>
-              <button type="button" onClick={() => setShowConnectForm((v) => !v)}>
-                {showConnectForm ? "Hide form" : "Connect to live bridge"}
-              </button>
-            </div>
-          ) : null}
-          {showConnectForm ? (
-            <section className="forward-setup">
-              <form className="forward-form" onSubmit={connect}>
-                <label>
-                  <span>API root</span>
-                  <input
-                    value={draftConfig.apiRoot}
-                    onChange={(event) => setDraftConfig((current) => ({ ...current, apiRoot: event.target.value }))}
-                    placeholder="http://127.0.0.1:8785/api"
-                  />
-                </label>
-                <label>
-                  <span>Bearer token</span>
-                  <input
-                    type="password"
-                    autoComplete="off"
-                    value={draftConfig.token}
-                    onChange={(event) => setDraftConfig((current) => ({ ...current, token: event.target.value }))}
-                    placeholder="Paste token from `ensemble forward serve`"
-                  />
-                </label>
-                <button type="submit">Connect</button>
-              </form>
-            </section>
-          ) : null}
-          {!isDemo ? (
-            <ForwardApprovalCenterPanel config={config} heading="All approvals" />
-          ) : (
-            <div className="forward-placeholder">
-              <h3>Approval queue requires a live bridge</h3>
-              <p>Approval records are sensitive operational data, so the global queue appears only after a bearer token is loaded.</p>
-            </div>
-          )}
-        </main>
+        <ApprovalsScreen
+          isDemo={isDemo}
+          showConnectForm={showConnectForm}
+          setShowConnectForm={setShowConnectForm}
+          draftConfig={draftConfig}
+          setDraftConfig={setDraftConfig}
+          connect={connect}
+          config={config}
+        />
       ) : route.screen === "threads" || route.screen === "thread-detail" || route.screen === "agent-detail" ? (
-        <main className="forward-main">
-          <div className="forward-placeholder">
-            <h3>{route.screen === "agent-detail" ? "Agent detail route is deferred" : "Thread route is deferred"}</h3>
-            <p>
-              {route.screen === "agent-detail"
-                ? "Use the live Agents route for the current roster. Dedicated agent detail records will be wired in a later projection slice."
-                : "Thread browser and thread detail routes are reserved for a later replay conversation surface."}
-            </p>
-            <div className="forward-approval-actions">
-              <a className="forward-chip-button active" href={route.screen === "agent-detail" ? "#/agents" : "#/runs"}>
-                {route.screen === "agent-detail" ? "Back to agents" : "Back to runs"}
-              </a>
-            </div>
-          </div>
-        </main>
+        <DeferredRouteScreen screen={route.screen} />
       ) : (
-      <main className="forward-main">
-        {showOnboarding ? <OnboardingOverlay /> : null}
-        {isDemo ? (
-          <div className="forward-demo-banner">
-            <span>Demo mode — showing sample data. Connect to a live bridge to see real runs.</span>
-            <button type="button" onClick={() => setShowConnectForm((v) => !v)}>
-              {showConnectForm ? "Hide form" : "Connect to live bridge"}
-            </button>
-          </div>
-        ) : null}
-        {showConnectForm ? (
-          <section className="forward-setup">
-            <form className="forward-form" onSubmit={connect}>
-              <label>
-                <span>API root</span>
-                <input
-                  value={draftConfig.apiRoot}
-                  onChange={(event) => setDraftConfig((current) => ({ ...current, apiRoot: event.target.value }))}
-                  placeholder="http://127.0.0.1:8785/api"
-                />
-              </label>
-              <label>
-                <span>Bearer token</span>
-                <input
-                  type="password"
-                  autoComplete="off"
-                  value={draftConfig.token}
-                  onChange={(event) => setDraftConfig((current) => ({ ...current, token: event.target.value }))}
-                  placeholder="Paste token from `ensemble forward serve`"
-                />
-              </label>
-              <button type="submit">Connect</button>
-            </form>
-            <p className="forward-help">
-              Launch the bridge with <code>python scripts/ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8785</code>
-            </p>
-            <p className="forward-help">The bearer token is kept in-memory only and is not persisted across reloads.</p>
-          </section>
-        ) : null}
-
-        <section className="forward-grid">
-          <aside className="forward-sidebar">
-            <div className="forward-panel-header">
-              <div>
-                <p className="forward-panel-label">
-                  {route.screen === "tasks" || route.screen === "task-detail"
-                    ? "Tasks"
-                    : route.screen === "workspaces" || route.screen === "workspace-detail"
-                      ? "Workspaces"
-                      : "Execution"}
-                </p>
-                <h2>
-                  {route.screen === "tasks" || route.screen === "task-detail"
-                    ? "Operator task list"
-                    : route.screen === "workspaces" || route.screen === "workspace-detail"
-                      ? "Operator workspace list"
-                      : "Forward run list"}
-                </h2>
-              </div>
-              <span className={`forward-state state-${isDemo ? "ready" : route.screen === "tasks" || route.screen === "task-detail" ? tasksState : route.screen === "workspaces" || route.screen === "workspace-detail" ? workspacesState : runsState}`}>
-                {isDemo ? "demo" : route.screen === "tasks" || route.screen === "task-detail" ? tasksState : route.screen === "workspaces" || route.screen === "workspace-detail" ? workspacesState : runsState}
-              </span>
-            </div>
-            {route.screen === "tasks" || route.screen === "task-detail" ? (
-              <>
-                {!isDemo && tasksState === "idle" ? <p className="forward-empty">Connect to a live bridge to load operator tasks.</p> : null}
-                {!isDemo && tasksState === "loading" ? <p className="forward-empty">Loading operator tasks...</p> : null}
-                {!isDemo && tasksState === "error" ? <p className="forward-error">{tasksError}</p> : null}
-                {!isDemo ? (
-                  <>
-                    <div className="forward-form">
-                      <label>
-                        <span>Status filter</span>
-                        <select value={taskFilterStatus} onChange={(event) => setTaskFilterStatus(event.target.value)}>
-                          {["all", "backlog", "todo", "in_progress", "blocked", "in_review", "done", "cancelled"].map((item) => (
-                            <option key={item} value={item}>{item}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        <span>Owner filter</span>
-                        <input
-                          value={taskFilterOwner}
-                          onChange={(event) => setTaskFilterOwner(event.target.value)}
-                          placeholder="agent id"
-                        />
-                      </label>
-                      <label>
-                        <span>Archived</span>
-                        <select
-                          value={taskIncludeArchived ? "show" : "hide"}
-                          onChange={(event) => setTaskIncludeArchived(event.target.value === "show")}
-                        >
-                          <option value="hide">Hide archived</option>
-                          <option value="show">Show archived</option>
-                        </select>
-                      </label>
-                    </div>
-                    <section className="forward-section">
-                      <div className="forward-section-header">
-                        <div>
-                          <p className="forward-panel-label">Saved filters</p>
-                          <h3>Reuse task queue views</h3>
-                        </div>
-                        <span className={`forward-state state-${taskPresetState}`}>{taskPresetState}</span>
-                      </div>
-                      <div className="forward-form">
-                        <label>
-                          <span>Preset name</span>
-                          <input
-                            value={taskFilterPresetName}
-                            onChange={(event) => setTaskFilterPresetName(event.target.value)}
-                            placeholder="e.g. Review queue"
-                          />
-                        </label>
-                      </div>
-                      <div className="forward-approval-actions">
-                        <button className="forward-chip-button" type="button" onClick={handleSaveTaskFilterPreset}>
-                          Save current filter
-                        </button>
-                      </div>
-                      {taskPresetError ? <p className="forward-error">{taskPresetError}</p> : null}
-                      {savedTaskFilterPresets.length > 0 ? (
-                        <ul className="forward-timeline">
-                          {savedTaskFilterPresets.map((preset) => (
-                            <li key={preset.id}>
-                              <div className="forward-timeline-topline">
-                                <strong>{preset.name}</strong>
-                                <span>{preset.includeArchived ? "show archived" : "active only"}</span>
-                              </div>
-                              <p>{[preset.status, preset.ownerAgentId || "any owner"].join(" | ")}</p>
-                              <div className="forward-approval-actions">
-                                <button className="forward-chip-button" type="button" onClick={() => applySavedTaskFilterPreset(preset)}>
-                                  Apply
-                                </button>
-                                <button className="forward-chip-button" type="button" onClick={() => handleDeleteTaskFilterPreset(preset.id)}>
-                                  Delete
-                                </button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="forward-help">No saved task filters yet.</p>
-                      )}
-                    </section>
-                    <section className="forward-section">
-                      <div className="forward-section-header">
-                        <div>
-                          <p className="forward-panel-label">Bulk lifecycle</p>
-                          <h3>Act on the current filtered queue</h3>
-                        </div>
-                        <span className={`forward-state state-${taskBulkState}`}>{taskBulkState}</span>
-                      </div>
-                      <ul className="forward-timeline">
-                        <li>
-                          <div className="forward-timeline-topline">
-                            <strong>Visible active tasks</strong>
-                          </div>
-                          <p>{bulkArchivableTasks.length}</p>
-                        </li>
-                        <li>
-                          <div className="forward-timeline-topline">
-                            <strong>Visible archived tasks</strong>
-                          </div>
-                          <p>{bulkRestorableTasks.length}</p>
-                        </li>
-                        <li>
-                          <div className="forward-timeline-topline">
-                            <strong>Selected tasks</strong>
-                          </div>
-                          <p>{selectedVisibleTaskRecords.length}</p>
-                        </li>
-                      </ul>
-                      <div className="forward-approval-actions">
-                        <button
-                          className="forward-chip-button"
-                          type="button"
-                          onClick={() => replaceTaskSelection(visibleTaskRecords.map((task) => task.task_id))}
-                        >
-                          Select visible
-                        </button>
-                        <button
-                          className="forward-chip-button"
-                          type="button"
-                          onClick={() => replaceTaskSelection(bulkArchivableTasks.map((task) => task.task_id))}
-                        >
-                          Select active
-                        </button>
-                        <button
-                          className="forward-chip-button"
-                          type="button"
-                          onClick={() => replaceTaskSelection(bulkRestorableTasks.map((task) => task.task_id))}
-                        >
-                          Select archived
-                        </button>
-                        <button className="forward-chip-button" type="button" onClick={() => setSelectedTaskIds([])}>
-                          Clear selection
-                        </button>
-                      </div>
-                      <p className="forward-help">
-                        Bulk actions target selected tasks first. If nothing is selected, they fall back to the current filtered queue.
-                      </p>
-                      {bulkArchivableTasks.length > 0 ? (
-                        <label className="forward-approval-note">
-                          <span>Bulk archive rationale</span>
-                          <textarea
-                            value={taskBulkArchiveRationale}
-                            onChange={(event) => setTaskBulkArchiveRationale(event.target.value)}
-                            rows={2}
-                            placeholder="Explain why these filtered tasks should leave the active queue."
-                          />
-                        </label>
-                      ) : null}
-                      <div className="forward-approval-actions">
-                        {bulkArchivableTasks.length > 0 ? (
-                          <button className="forward-chip-button" type="button" onClick={() => handleBulkTaskLifecycle("archive")}>
-                            Archive visible
-                          </button>
-                        ) : null}
-                        {bulkRestorableTasks.length > 0 ? (
-                          <button className="forward-chip-button" type="button" onClick={() => handleBulkTaskLifecycle("restore")}>
-                            Restore visible
-                          </button>
-                        ) : null}
-                      </div>
-                      {taskBulkMessage ? <p className="forward-help">{taskBulkMessage}</p> : null}
-                      {taskBulkError ? <p className="forward-error">{taskBulkError}</p> : null}
-                      {taskBulkReport ? (
-                        <ul className="forward-timeline">
-                          <li>
-                            <div className="forward-timeline-topline">
-                              <strong>Latest bulk report</strong>
-                              <span>{taskBulkReport.targetScope}</span>
-                            </div>
-                            <p>
-                              {taskBulkReport.action} attempted {taskBulkReport.attempted} | success {taskBulkReport.succeeded.length} | failed {taskBulkReport.failed.length}
-                            </p>
-                          </li>
-                          {taskBulkReport.succeeded.length > 0 ? (
-                            <li>
-                              <div className="forward-timeline-topline">
-                                <strong>Succeeded</strong>
-                              </div>
-                              <p>{taskBulkReport.succeeded.join(" | ")}</p>
-                            </li>
-                          ) : null}
-                          {taskBulkReport.failed.length > 0 ? (
-                            <li>
-                              <div className="forward-timeline-topline">
-                                <strong>Failed</strong>
-                              </div>
-                              <p>{taskBulkReport.failed.map((failure) => `${failure.taskId}: ${failure.error}`).join(" | ")}</p>
-                            </li>
-                          ) : null}
-                        </ul>
-                      ) : null}
-                    </section>
-                  </>
-                ) : null}
-                {((isDemo && demoTasks.length === 0) || (!isDemo && tasksState === "ready" && taskItems.length === 0)) ? (
-                  <p className="forward-empty">No operator tasks yet.</p>
-                ) : null}
-                <div className="forward-run-list">
-                  {(isDemo
-                    ? demoTasks.map((task) => ({
-                        taskId: task.taskId,
-                        title: task.taskId,
-                        status: task.state,
-                        subtitle: task.assignee,
-                        metrics: [task.assignee, task.state],
-                      }))
-                    : taskItems
-                  ).map((item) => (
-                    <div key={item.taskId} className="forward-run-row" role="group" aria-label={`Task ${item.title}`}>
-                      {!isDemo ? (
-                        <label className="forward-task-select">
-                          <input
-                            type="checkbox"
-                            aria-label={`Select task ${item.title}`}
-                            checked={selectedTaskIds.includes(item.taskId)}
-                            onChange={() => toggleTaskSelection(item.taskId)}
-                          />
-                          <span>Select</span>
-                        </label>
-                      ) : null}
-                      <button
-                        className={`forward-run-item${route.taskId === item.taskId ? " active" : ""}${item.status === "in_progress" ? " running" : ""}`}
-                        type="button"
-                        onClick={() => openTask(item.taskId)}
-                      >
-                        <div className="forward-run-topline">
-                          <strong>{item.title}</strong>
-                          <span>{item.status}</span>
-                        </div>
-                        <p>{item.subtitle}</p>
-                        <div className="forward-metric-row">
-                          {item.metrics.map((metric) => (
-                            <span key={metric}>{metric}</span>
-                          ))}
-                        </div>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : route.screen === "workspaces" || route.screen === "workspace-detail" ? (
-              <>
-                {!isDemo && workspacesState === "idle" ? <p className="forward-empty">Connect to a live bridge to load operator workspaces.</p> : null}
-                {!isDemo && workspacesState === "loading" ? <p className="forward-empty">Loading operator workspaces...</p> : null}
-                {!isDemo && workspacesState === "error" ? <p className="forward-error">{workspacesError}</p> : null}
-                {!isDemo && workspacesState === "ready" && workspaceItems.length === 0 ? (
-                  <p className="forward-empty">No operator workspaces yet.</p>
-                ) : null}
-                <div className="forward-run-list">
-                  {(isDemo
-                    ? [
-                        {
-                          workspaceId: "demo-workspace",
-                          label: "Demo workspace",
-                          status: "active",
-                          subtitle: "sample-agent | repo | active",
-                          metrics: ["packages/dashboard", "run demo-run-001", "1 task refs"],
-                        },
-                      ]
-                    : workspaceItems
-                  ).map((item) => (
-                    <button
-                      key={item.workspaceId}
-                      className={`forward-run-item${route.workspaceId === item.workspaceId ? " active" : ""}`}
-                      onClick={() => openWorkspace(item.workspaceId)}
-                    >
-                      <div className="forward-run-topline">
-                        <strong>{item.label}</strong>
-                        <span>{item.status}</span>
-                      </div>
-                      <p>{item.subtitle}</p>
-                      <div className="forward-metric-row">
-                        {item.metrics.map((metric) => (
-                          <span key={metric}>{metric}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : isDemo ? (
-              <div className="forward-run-list">
-                {demoTasks.map((task) => (
-                  <button key={task.taskId} className={`forward-run-item${task.state === "active" ? " running" : ""}`}>
-                    <div className="forward-run-topline">
-                      <strong>{task.taskId}</strong>
-                      <span>{task.state}</span>
-                    </div>
-                    <p>{task.assignee}</p>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <>
-                {runsState === "idle" ? (
-                  <p className="forward-empty">Enter bridge connection details to load forward runs.</p>
-                ) : null}
-                {runsState === "loading" ? <p className="forward-empty">Loading runs...</p> : null}
-                {runsState === "error" ? <p className="forward-error">{runsError}</p> : null}
-                {runsState === "ready" && runItems.length === 0 ? (
-                  <p className="forward-empty">No forward runs yet.</p>
-                ) : null}
-                <div className="forward-run-list">
-                  {runItems.map((item) => (
-                    <button
-                      key={item.runId}
-                      className={`forward-run-item${route.runId === item.runId ? " active" : ""}${item.status === "running" ? " running" : ""}`}
-                      onClick={() => openRun(item.runId)}
-                    >
-                      <div className="forward-run-topline">
-                        <strong>{item.title}</strong>
-                        <span>{item.status}</span>
-                      </div>
-                      <p>{item.subtitle}</p>
-                      <div className="forward-metric-row">
-                        {item.metrics.map((metric) => (
-                          <span key={metric}>{metric}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </aside>
-
-          <section className="forward-detail">
-            <div className="forward-panel-header">
-              <div>
-                <p className="forward-panel-label">Detail</p>
-                <h2>
-                  {route.screen === "overview"
-                    ? "Operator overview"
-                    : route.screen === "inbox"
-                      ? "Operator inbox"
-                    : route.screen === "tasks" || route.screen === "task-detail"
-                      ? "Operator task detail"
-                      : route.screen === "workspaces" || route.screen === "workspace-detail"
-                        ? "Operator workspace detail"
-                      : isDemo
-                        ? demoTasks[0]?.taskId ?? "Demo run"
-                        : runDetail
-                          ? runDetail.title
-                          : "Select a run"}
-                </h2>
-              </div>
-              <span className={`forward-state state-${isDemo ? "ready" : route.screen === "overview" ? overviewState : route.screen === "inbox" ? inboxState : route.screen === "tasks" ? tasksState : route.screen === "task-detail" ? taskDetailState : route.screen === "workspaces" ? workspacesState : route.screen === "workspace-detail" ? workspaceDetailState : detailState}`}>
-                {isDemo ? "demo" : route.screen === "overview" ? overviewState : route.screen === "inbox" ? inboxState : route.screen === "tasks" ? tasksState : route.screen === "task-detail" ? taskDetailState : route.screen === "workspaces" ? workspacesState : route.screen === "workspace-detail" ? workspaceDetailState : detailState}
-              </span>
-            </div>
-            {route.screen === "overview" ? (
-              <>
-                <OperatorSummaryPanel
-                  summary={
-                    isDemo
-                      ? {
-                          postureLabel: "demo",
-                          latestRunLabel: "demo-run-001 | active",
-                          metrics: [
-                            { id: "demo-runs", label: "Active runs", value: "1", detail: `${demoTasks.length} demo tasks visible` },
-                            { id: "demo-approvals", label: "Pending approvals", value: String(demoProposals.length), detail: "Demo proposal queue is standing in for operator attention." },
-                            { id: "demo-rooms", label: "Active rooms", value: "6", detail: `${demoAgents.length} agents distributed across the office lens` },
-                            { id: "demo-events", label: "Failing runs", value: "0", detail: `${demoEvents.length} demo events in the current feed` },
-                            { id: "demo-handoffs", label: "Open handoffs", value: "2", detail: "Sample coordination load from the office demo." },
-                          ],
-                          attention: [
-                            {
-                              id: "demo-attention",
-                              tone: "info",
-                              title: "Demo mode is showing sample operator posture",
-                              detail: "Connect to a live forward bridge to replace these sample signals with real runtime projections.",
-                            },
-                          ],
-                          evidence: null,
-                          doctor: null,
-                          runtimeRoster: null,
-                        }
-                      : overview
-                  }
-                  state={isDemo ? "ready" : overviewState}
-                  error={overviewError}
-                />
-                <OperatorWakeReadinessPanel
-                  readiness={isDemo ? null : wakeReadiness}
-                  state={isDemo ? "idle" : wakeReadinessState}
-                  error={wakeReadinessError}
-                />
-              </>
-            ) : route.screen === "inbox" ? (
-              <OperatorInboxPanel
-                items={
-                  isDemo
-                    ? [
-                        {
-                          id: "demo-approval",
-                          tone: "warning",
-                          title: "Review proposal queue before resuming the run",
-                          detail: "The demo proposal queue is standing in for pending operator approvals.",
-                          meta: "demo-run-001 | review-room",
-                          actionLabel: "Inspect run",
-                          targetHash: "#/runs/demo-run-001",
-                        },
-                        {
-                          id: "demo-validation",
-                          tone: "danger",
-                          title: "Replay evidence needs a validator pass",
-                          detail: "Sample failure lane for the demo shell. Connect a live bridge to replace this with real validator output.",
-                          meta: "demo-run-001 | iter-1",
-                          actionLabel: "Inspect run",
-                          targetHash: "#/runs/demo-run-001",
-                        },
-                      ]
-                    : inboxItems
-                }
-                state={isDemo ? "ready" : inboxState}
-                error={inboxError}
-              />
-            ) : route.screen === "tasks" || route.screen === "task-detail" ? (
-              <>
-                <OperatorTaskDetailPanel
-                  task={
-                    isDemo
-                      ? {
-                          taskId: demoTasks[0]?.taskId ?? "demo-task",
-                          title: demoTasks[0]?.taskId ?? "Demo operator task",
-                          status: demoTasks[0]?.state ?? "todo",
-                          objective: "Sample canonical operator task record for the demo shell.",
-                          owner: demoTasks[0]?.assignee ?? "unassigned",
-                          archivedAt: null,
-                          archivedBy: null,
-                          archiveNote: null,
-                          linkedRunId: "demo-run-001",
-                          linkedIterationId: "iter-1",
-                          linkedRoomIds: ["review-room"],
-                          blockedReason: null,
-                          acceptance: ["Connect a live bridge to replace this with canonical operator tasks."],
-                          stats: [
-                            { label: "Priority", value: "medium" },
-                            { label: "Run", value: "demo-run-001" },
-                            { label: "Iteration", value: "iter-1" },
-                            { label: "Rooms", value: "1" },
-                            { label: "Workspace", value: "none" },
-                          ],
-                          prCiEvidence: {
-                            posture: "ok",
-                            metrics: [
-                              { label: "PRs", value: "0" },
-                              { label: "CI", value: "0" },
-                              { label: "Failing", value: "0" },
-                              { label: "Pending", value: "0" },
-                            ],
-                            suggestions: ["Connect a live bridge to show task-linked PR and CI evidence."],
-                            privacyNote: "Demo mode does not fetch external PR or CI data.",
-                            items: [],
-                          },
-                        }
-                      : taskDetail
-                  }
-                  state={isDemo ? "ready" : route.screen === "tasks" ? tasksState : taskDetailState}
-                  error={taskDetailError}
-                  mutationState={isDemo ? "ready" : taskMutationState}
-                  mutationError={taskMutationError}
-                  onQuickStatus={!isDemo && route.screen === "task-detail" && !taskDetail?.archivedAt ? handleTaskQuickStatus : undefined}
-                  archiveState={isDemo ? "ready" : taskArchiveState}
-                  archiveError={taskArchiveError}
-                  onArchive={!isDemo && route.screen === "task-detail" && !taskDetail?.archivedAt ? handleTaskArchive : undefined}
-                  onRestore={!isDemo && route.screen === "task-detail" && Boolean(taskDetail?.archivedAt) ? handleTaskRestore : undefined}
-                  archiveRationale={taskArchiveRationale}
-                  onArchiveRationaleChange={setTaskArchiveRationale}
-                  deleteState={isDemo ? "ready" : taskDeleteState}
-                  deleteError={taskDeleteError}
-                  onDelete={!isDemo && route.screen === "task-detail" && Boolean(taskDetail?.archivedAt) ? handleTaskDelete : undefined}
-                  approvalRequestState={isDemo ? "ready" : taskApprovalRequestState}
-                  approvalRequestError={taskApprovalRequestError}
-                  onRequestApproval={!isDemo && route.screen === "task-detail" && !taskDetail?.archivedAt ? handleTaskRequestApproval : undefined}
-                  approvalRationale={taskApprovalRationale}
-                  onApprovalRationaleChange={setTaskApprovalRationale}
-                  approvalRequestedChanges={taskChangedFields}
-                />
-                {route.screen === "task-detail" ? (
-                  <OperatorTaskReconcilePreviewPanel
-                    preview={
-                      isDemo
-                          ? {
-                            taskId: "demo-task",
-                            decisionId: "demo-reconcile-preview",
-                            generatedAt: "demo",
-                            currentStatus: "todo",
-                            recommendedStatus: "in review",
-                            confidence: "medium",
-                            tone: "info",
-                            summary: "Demo preview: live reconcile decisions appear here when connected to a forward bridge.",
-                            requiresApproval: false,
-                            blockers: [],
-                            suggestedActions: ["Connect a live bridge to replace this sample with projected task evidence."],
-                            evidenceRefs: ["demo:operator-task"],
-                          }
-                        : reconcilePreview
-                    }
-                    state={isDemo ? "ready" : taskReconcileState}
-                    error={taskReconcileError}
-                  />
-                ) : null}
-                {!isDemo && (route.screen !== "task-detail" || !taskDetail?.archivedAt) ? (
-                  <OperatorTaskEditorPanel
-                    mode={route.screen === "task-detail" ? "edit" : "create"}
-                    draft={taskDraft}
-                    state={taskMutationState}
-                    error={taskMutationError}
-                    workspaceOptions={workspaceOptions}
-                    selectedWorkspaceOption={selectedDraftWorkspaceOption}
-                    changePreview={route.screen === "task-detail" ? taskChangedFields : []}
-                    sensitiveChangePreview={route.screen === "task-detail" ? taskSensitiveFields : []}
-                    approvalHint={route.screen === "task-detail" ? taskApprovalHint : null}
-                    onChange={setTaskDraft}
-                    onSubmit={handleTaskSubmit}
-                  />
-                ) : !isDemo && route.screen === "task-detail" ? (
-                  <section className="forward-section">
-                    <div className="forward-section-header">
-                      <div>
-                        <p className="forward-panel-label">Task editor</p>
-                        <h3>Archived task is read-only</h3>
-                      </div>
-                    </div>
-                    <p className="forward-help">
-                      Restore this task before editing fields or requesting a new approval from the task shell.
-                    </p>
-                  </section>
-                ) : null}
-                {!isDemo && route.screen === "task-detail" && linkedWorkspaceOption ? (
-                  <section className="forward-section">
-                    <div className="forward-section-header">
-                      <div>
-                        <p className="forward-panel-label">Canonical workspace</p>
-                        <h3>Workspace linkage</h3>
-                      </div>
-                    </div>
-                    <div className="forward-approval-actions">
-                      <a
-                        className="forward-chip-button active"
-                        href={buildForwardRoute({
-                          screen: "workspace-detail",
-                          runId: null,
-                          taskId: null,
-                          workspaceId: linkedWorkspaceOption.id,
-                          threadId: null,
-                          agentId: null,
-                        })}
-                      >
-                        Open workspace
-                      </a>
-                    </div>
-                  </section>
-                ) : !isDemo && route.screen === "task-detail" && unresolvedTaskWorkspaceRef ? (
-                  <section className="forward-section">
-                    <div className="forward-section-header">
-                      <div>
-                        <p className="forward-panel-label">Canonical workspace</p>
-                        <h3>Workspace linkage unresolved</h3>
-                      </div>
-                    </div>
-                    <p className="forward-help">
-                      This task still references a workspace id that is not present in the canonical workspace registry.
-                    </p>
-                    {workspaceOptions.filter((option) => !option.unresolved).length > 0 ? (
-                      <>
-                        <div className="forward-approval-actions">
-                          {workspaceOptions
-                            .filter((option) => !option.unresolved)
-                            .slice(0, 4)
-                            .map((option) => (
-                              <button
-                                key={option.id}
-                                className={`forward-chip-button${taskDraft.workspaceRef === option.id ? " active" : ""}`}
-                                type="button"
-                                onClick={() => setTaskDraft((current) => ({ ...current, workspaceRef: option.id }))}
-                              >
-                                Use {option.label}
-                              </button>
-                            ))}
-                        </div>
-                        {selectedDraftWorkspaceOption && !selectedDraftWorkspaceOption.unresolved && taskDraft.workspaceRef !== unresolvedTaskWorkspaceRef ? (
-                          <div className="forward-approval-actions">
-                            <button className="approve-button" type="button" onClick={handleTaskSubmit}>
-                              Save workspace migration
-                            </button>
-                          </div>
-                        ) : null}
-                      </>
-                    ) : (
-                      <p className="forward-help">Create a canonical workspace first, then come back to resolve this ref.</p>
-                    )}
-                  </section>
-                ) : null}
-                {route.screen === "task-detail" ? (
-                  isDemo ? (
-                    <>
-                      <section className="forward-section">
-                        <div className="forward-section-header">
-                          <div>
-                            <p className="forward-panel-label">Linked execution</p>
-                            <h3>Execution trace linkage</h3>
-                          </div>
-                        </div>
-                        <ul className="forward-timeline">
-                          <li>
-                            <div className="forward-timeline-topline">
-                              <strong>Linked run</strong>
-                              <span>demo</span>
-                            </div>
-                            <p>demo-run-001 | replay and approvals would render here when connected to a live bridge.</p>
-                          </li>
-                        </ul>
-                      </section>
-                    </>
-                  ) : taskDetail?.linkedRunId ? (
-                    <>
-                      <section className="forward-section">
-                        <div className="forward-section-header">
-                          <div>
-                            <p className="forward-panel-label">Linked execution</p>
-                            <h3>Execution trace linkage</h3>
-                          </div>
-                        </div>
-                        <ul className="forward-timeline">
-                          <li>
-                            <div className="forward-timeline-topline">
-                              <strong>Linked run</strong>
-                              <span>{taskDetail.linkedRunId}</span>
-                            </div>
-                            <p>
-                              {taskDetail.linkedIterationId
-                                ? `Linked iteration ${taskDetail.linkedIterationId}`
-                                : "No linked iteration recorded."}
-                            </p>
-                          </li>
-                        </ul>
-                      </section>
-                      <ForwardApprovalCenterPanel
-                        config={config}
-                        runId={taskDetail.linkedRunId}
-                        taskId={taskDetail.taskId}
-                        heading="Task approvals"
-                      />
-                      <ForwardReplayPanel replay={replay} state={replayState} error={replayError} />
-                      <ForwardStateDocsPanel stateDocs={stateDocs} state={stateDocsState} error={stateDocsError} />
-                      <ForwardContextPanel contextLatest={contextLatest} state={contextState} error={contextError} />
-                      <ForwardRoomPanel
-                        roomOptions={taskRoomOptions}
-                        selectedRoomId={selectedRoomId}
-                        onSelectRoom={setSelectedRoomId}
-                        roomTimeline={roomTimeline}
-                        state={roomState}
-                        error={roomError}
-                      />
-                    </>
-                  ) : (
-                    <section className="forward-section">
-                      <div className="forward-section-header">
-                        <div>
-                          <p className="forward-panel-label">Linked execution</p>
-                          <h3>No execution trace linked</h3>
-                        </div>
-                      </div>
-                      <p className="forward-empty">This operator task has no linked run yet.</p>
-                    </section>
-                  )
-                ) : null}
-              </>
-            ) : route.screen === "workspaces" || route.screen === "workspace-detail" ? (
-              <>
-                <OperatorWorkspaceDetailPanel
-                  workspace={
-                    isDemo
-                      ? {
-                          workspaceId: "demo-workspace",
-                          label: "Demo workspace",
-                          path: "packages/dashboard",
-                          kind: "repo",
-                          status: "active",
-                          owner: "sample-agent",
-                          archivedAt: null,
-                          archivedBy: null,
-                          archiveNote: null,
-                          linkedRunId: "demo-run-001",
-                          linkedIterationId: "iter-1",
-                          taskIds: ["demo-task"],
-                          notes: "Sample canonical workspace record for the demo shell.",
-                          stats: [
-                            { label: "Kind", value: "repo" },
-                            { label: "Status", value: "active" },
-                            { label: "Run", value: "demo-run-001" },
-                            { label: "Iteration", value: "iter-1" },
-                            { label: "Tasks", value: "1" },
-                          ],
-                        }
-                      : workspaceDetail
-                  }
-                  state={isDemo ? "ready" : route.screen === "workspaces" ? workspacesState : workspaceDetailState}
-                  error={workspaceDetailError}
-                  mutationState={isDemo ? "ready" : workspaceMutationState}
-                  mutationError={workspaceMutationError}
-                  onQuickStatus={!isDemo && route.screen === "workspace-detail" ? handleWorkspaceQuickStatus : undefined}
-                  quickStatusActions={!isDemo && route.screen === "workspace-detail" ? workspaceQuickStatusActions : undefined}
-                  linkedTasks={isDemo ? [] : workspaceLinkedTaskItems}
-                  linkedTasksState={isDemo ? "ready" : workspaceLinkedTasksState}
-                  linkedTasksError={workspaceLinkedTasksError}
-                  taskActionState={isDemo ? "ready" : workspaceTaskActionState}
-                  taskActionError={workspaceTaskActionError}
-                  taskActionMessage={workspaceTaskActionMessage}
-                  onOpenTask={!isDemo ? openTask : undefined}
-                  onDetachTask={!isDemo ? handleWorkspaceDetachTask : undefined}
-                  onArchiveTask={!isDemo ? handleWorkspaceArchiveTask : undefined}
-                />
-                {!isDemo && (route.screen !== "workspace-detail" || workspaceDetail?.status !== "archived") ? (
-                  <OperatorWorkspaceEditorPanel
-                    mode={route.screen === "workspace-detail" ? "edit" : "create"}
-                    draft={workspaceDraft}
-                    state={workspaceMutationState}
-                    error={workspaceMutationError}
-                    onChange={setWorkspaceDraft}
-                    onSubmit={handleWorkspaceSubmit}
-                  />
-                ) : !isDemo && route.screen === "workspace-detail" ? (
-                  <section className="forward-section">
-                    <div className="forward-section-header">
-                      <div>
-                        <p className="forward-panel-label">Workspace editor</p>
-                        <h3>Archived workspace is read-only</h3>
-                      </div>
-                    </div>
-                    <p className="forward-help">
-                      Reactivate this workspace before editing its fields or reassigning ownership.
-                    </p>
-                  </section>
-                ) : null}
-              </>
-            ) : isDemo ? (
-              <div className="forward-detail-body">
-                <div className="forward-detail-hero">
-                  <div>
-                    <p className="forward-detail-label">demo-run-001</p>
-                    <h3>{demoTasks[0]?.taskId ?? "Sample objective"}</h3>
-                    <p>Sample data — connect to a live bridge to see real run details.</p>
-                  </div>
-                  <span className="forward-status-pill">{demoTasks[0]?.state ?? "idle"}</span>
-                </div>
-                <div className="forward-stats">
-                  <div><span>Agents</span><strong>{demoAgents.length}</strong></div>
-                  <div><span>Tasks</span><strong>{demoTasks.length}</strong></div>
-                  <div><span>Events</span><strong>{demoEvents.length}</strong></div>
-                </div>
-              </div>
-            ) : null}
-            {!isDemo && route.screen !== "run-detail" && route.screen !== "overview" && route.screen !== "inbox" && route.screen !== "tasks" && route.screen !== "task-detail" && route.screen !== "workspaces" && route.screen !== "workspace-detail" ? (
-              <div className="forward-placeholder">
-                <h3>Run detail placeholder</h3>
-                <p>Select a run to inspect replay, state docs, context digests, and room timeline.</p>
-              </div>
-            ) : null}
-            {!isDemo && route.screen === "run-detail" && detailState === "loading" ? (
-              <p className="forward-empty">Loading run detail...</p>
-            ) : null}
-            {!isDemo && route.screen === "run-detail" && detailState === "error" ? (
-              <p className="forward-error">{detailError}</p>
-            ) : null}
-            {!isDemo && route.screen === "run-detail" && runDetail ? (
-              <ErrorBoundary>
-                <div className="forward-detail-body">
-                  <div className="forward-detail-hero">
-                    <div>
-                      <p className="forward-detail-label">{runDetail.runId}</p>
-                      <h3>{runDetail.objective}</h3>
-                      <p>{runDetail.latestIteration}</p>
-                    </div>
-                    <span className="forward-status-pill">{runDetail.status}</span>
-                  </div>
-                  <div className="forward-stats">
-                    {runDetail.stats.map((item) => (
-                      <div key={item.label}>
-                        <span>{item.label}</span>
-                        <strong>{item.value}</strong>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="forward-acceptance">
-                    <p className="forward-panel-label">Acceptance</p>
-                    {runDetail.acceptance.length === 0 ? (
-                      <p className="forward-empty">No acceptance criteria recorded.</p>
-                    ) : (
-                      <ul>
-                        {runDetail.acceptance.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <div className="forward-tab-bar" role="tablist" aria-label="Run detail sections">
-                    {(["operations", "intelligence", "data"] as const).map((tab) => (
-                      <button
-                        key={tab}
-                        className={`forward-tab${detailTab === tab ? " active" : ""}`}
-                        type="button"
-                        role="tab"
-                        id={`run-detail-tab-${tab}`}
-                        aria-selected={detailTab === tab}
-                        aria-controls={`run-detail-panel-${tab}`}
-                        tabIndex={detailTab === tab ? 0 : -1}
-                        onClick={() => setDetailTab(tab)}
-                        onKeyDown={handleRunDetailTabKeyDown}
-                      >
-                        {tab === "operations" ? "Operations" : tab === "intelligence" ? "Intelligence" : "Data"}
-                      </button>
-                    ))}
-                  </div>
-                  {detailTab === "operations" && (
-                    <div role="tabpanel" id="run-detail-panel-operations" aria-labelledby="run-detail-tab-operations">
-                      <ForwardApprovalCenterPanel config={config} runId={runDetail.runId} />
-                      <ForwardReplayPanel replay={replay} state={replayState} error={replayError} />
-                    </div>
-                  )}
-                  {detailTab === "intelligence" && (
-                    <div role="tabpanel" id="run-detail-panel-intelligence" aria-labelledby="run-detail-tab-intelligence">
-                      <ForwardGraphPanel model={graphModel} />
-                      <ForwardInsightsPanel
-                        insights={insightCards}
-                        findingsSummary={findingsSummary}
-                        validatorCorrelations={validatorCorrelations}
-                      />
-                    </div>
-                  )}
-                  {detailTab === "data" && (
-                    <div role="tabpanel" id="run-detail-panel-data" aria-labelledby="run-detail-tab-data">
-                      <ForwardStateDocsPanel stateDocs={stateDocs} state={stateDocsState} error={stateDocsError} />
-                      <ForwardContextPanel contextLatest={contextLatest} state={contextState} error={contextError} />
-                      <ForwardRoomPanel
-                        roomOptions={roomOptions}
-                        selectedRoomId={selectedRoomId}
-                        onSelectRoom={setSelectedRoomId}
-                        roomTimeline={roomTimeline}
-                        state={roomState}
-                        error={roomError}
-                      />
-                    </div>
-                  )}
-                </div>
-              </ErrorBoundary>
-            ) : null}
-          </section>
-        </section>
-      </main>
+        <OperatorWorkbenchScreen
+          route={route}
+          isDemo={isDemo}
+          config={config}
+          showOnboarding={showOnboarding}
+          showConnectForm={showConnectForm}
+          setShowConnectForm={setShowConnectForm}
+          draftConfig={draftConfig}
+          setDraftConfig={setDraftConfig}
+          connect={connect}
+          tasksState={tasksState}
+          tasksError={tasksError}
+          taskItems={taskItems}
+          visibleTaskRecords={visibleTaskRecords}
+          taskFilterStatus={taskFilterStatus}
+          setTaskFilterStatus={setTaskFilterStatus}
+          taskFilterOwner={taskFilterOwner}
+          setTaskFilterOwner={setTaskFilterOwner}
+          taskIncludeArchived={taskIncludeArchived}
+          setTaskIncludeArchived={setTaskIncludeArchived}
+          taskFilterPresetName={taskFilterPresetName}
+          setTaskFilterPresetName={setTaskFilterPresetName}
+          savedTaskFilterPresets={savedTaskFilterPresets}
+          taskPresetState={taskPresetState}
+          taskPresetError={taskPresetError}
+          handleSaveTaskFilterPreset={handleSaveTaskFilterPreset}
+          applySavedTaskFilterPreset={applySavedTaskFilterPreset}
+          handleDeleteTaskFilterPreset={handleDeleteTaskFilterPreset}
+          taskBulkState={taskBulkState}
+          bulkArchivableTasks={bulkArchivableTasks}
+          bulkRestorableTasks={bulkRestorableTasks}
+          selectedVisibleTaskRecords={selectedVisibleTaskRecords}
+          taskBulkArchiveRationale={taskBulkArchiveRationale}
+          setTaskBulkArchiveRationale={setTaskBulkArchiveRationale}
+          taskBulkMessage={taskBulkMessage}
+          taskBulkError={taskBulkError}
+          taskBulkReport={taskBulkReport}
+          handleBulkTaskLifecycle={handleBulkTaskLifecycle}
+          selectedTaskIds={selectedTaskIds}
+          setSelectedTaskIds={setSelectedTaskIds}
+          replaceTaskSelection={replaceTaskSelection}
+          toggleTaskSelection={toggleTaskSelection}
+          openTask={openTask}
+          openWorkspace={openWorkspace}
+          openRun={openRun}
+          workspacesState={workspacesState}
+          workspacesError={workspacesError}
+          workspaceItems={workspaceItems}
+          runsState={runsState}
+          runsError={runsError}
+          runItems={runItems}
+          overviewState={overviewState}
+          inboxState={inboxState}
+          taskDetailState={taskDetailState}
+          workspaceDetailState={workspaceDetailState}
+          detailState={detailState}
+          runDetail={runDetail}
+          overview={overview}
+          overviewError={overviewError}
+          wakeReadiness={wakeReadiness}
+          wakeReadinessState={wakeReadinessState}
+          wakeReadinessError={wakeReadinessError}
+          inboxItems={inboxItems}
+          inboxError={inboxError}
+          taskDetail={taskDetail}
+          taskDetailError={taskDetailError}
+          taskMutationState={taskMutationState}
+          taskMutationError={taskMutationError}
+          taskArchiveState={taskArchiveState}
+          taskArchiveError={taskArchiveError}
+          taskArchiveRationale={taskArchiveRationale}
+          setTaskArchiveRationale={setTaskArchiveRationale}
+          taskDeleteState={taskDeleteState}
+          taskDeleteError={taskDeleteError}
+          taskApprovalRequestState={taskApprovalRequestState}
+          taskApprovalRequestError={taskApprovalRequestError}
+          taskApprovalRationale={taskApprovalRationale}
+          setTaskApprovalRationale={setTaskApprovalRationale}
+          taskChangedFields={taskChangedFields}
+          taskSensitiveFields={taskSensitiveFields}
+          taskApprovalHint={taskApprovalHint}
+          handleTaskQuickStatus={handleTaskQuickStatus}
+          handleTaskArchive={handleTaskArchive}
+          handleTaskRestore={handleTaskRestore}
+          handleTaskDelete={handleTaskDelete}
+          handleTaskRequestApproval={handleTaskRequestApproval}
+          handleTaskSubmit={handleTaskSubmit}
+          reconcilePreview={reconcilePreview}
+          taskReconcileState={taskReconcileState}
+          taskReconcileError={taskReconcileError}
+          taskDraft={taskDraft}
+          setTaskDraft={setTaskDraft}
+          workspaceOptions={workspaceOptions}
+          selectedDraftWorkspaceOption={selectedDraftWorkspaceOption}
+          linkedWorkspaceOption={linkedWorkspaceOption}
+          unresolvedTaskWorkspaceRef={unresolvedTaskWorkspaceRef}
+          workspaceDetail={workspaceDetail}
+          workspaceDetailError={workspaceDetailError}
+          workspaceMutationState={workspaceMutationState}
+          workspaceMutationError={workspaceMutationError}
+          workspaceQuickStatusActions={workspaceQuickStatusActions}
+          workspaceLinkedTaskItems={workspaceLinkedTaskItems}
+          workspaceLinkedTasksState={workspaceLinkedTasksState}
+          workspaceLinkedTasksError={workspaceLinkedTasksError}
+          workspaceTaskActionState={workspaceTaskActionState}
+          workspaceTaskActionError={workspaceTaskActionError}
+          workspaceTaskActionMessage={workspaceTaskActionMessage}
+          handleWorkspaceQuickStatus={handleWorkspaceQuickStatus}
+          handleWorkspaceDetachTask={handleWorkspaceDetachTask}
+          handleWorkspaceArchiveTask={handleWorkspaceArchiveTask}
+          handleWorkspaceSubmit={handleWorkspaceSubmit}
+          workspaceDraft={workspaceDraft}
+          setWorkspaceDraft={setWorkspaceDraft}
+          detailError={detailError}
+          detailTab={detailTab}
+          setDetailTab={setDetailTab}
+          handleRunDetailTabKeyDown={handleRunDetailTabKeyDown}
+          replay={replay}
+          replayState={replayState}
+          replayError={replayError}
+          stateDocs={stateDocs}
+          stateDocsState={stateDocsState}
+          stateDocsError={stateDocsError}
+          contextLatest={contextLatest}
+          contextState={contextState}
+          contextError={contextError}
+          roomTimeline={roomTimeline}
+          roomState={roomState}
+          roomError={roomError}
+          selectedRoomId={selectedRoomId}
+          setSelectedRoomId={setSelectedRoomId}
+          roomOptions={roomOptions}
+          taskRoomOptions={taskRoomOptions}
+          graphModel={graphModel}
+          insightCards={insightCards}
+          findingsSummary={findingsSummary}
+          validatorCorrelations={validatorCorrelations}
+        />
       )}
     </div>
   );

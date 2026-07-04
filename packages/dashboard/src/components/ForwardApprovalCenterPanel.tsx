@@ -94,6 +94,7 @@ export function ForwardApprovalCenterPanel({
         .catch((err: Error) => {
           if (cancelled) return;
           setListState("error");
+          setError(err.message);
         });
     }, 5000);
     return () => {
