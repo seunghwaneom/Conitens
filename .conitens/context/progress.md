@@ -1,5 +1,14 @@
 # progress.md
 
+## Contributor Identity Correction - 2026-07-04
+
+- [x] Checked repository text, local Git authors/committers, GitHub contributors
+      API, and GitHub commit search for `Seung Hwan Lee`.
+- [x] Added `.mailmap` to canonicalize the stale `Seung Hwan Lee` owner alias
+      to `Seunghwan Eom` for the repo owner's noreply address.
+- [x] Verified the alias with `git check-mailmap`, confirmed `git shortlog`
+      remains canonical, and kept the change on the existing docs PR branch.
+
 ## README And Office Preview Documentation Sync - 2026-07-04
 
 - [x] Updated `README.md` with the current forward dashboard/Forward Bridge

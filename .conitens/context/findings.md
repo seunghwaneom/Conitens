@@ -1,5 +1,16 @@
 # findings.md
 
+## Contributor Identity Correction Findings - 2026-07-04
+
+- The repository text search contains no literal `Seung Hwan Lee` contributor
+  entry, and local author identity inspection only reports `Seunghwan Eom`
+  plus `Claude` in the fetched refs.
+- GitHub's contributors API currently reports contributor logins
+  `seunghwaneom` and `claude`; GitHub commit search for `Seung Hwan Lee`
+  returns no matches. The repo-level correction available without history
+  rewriting is a `.mailmap` alias that canonicalizes the stale owner-name form
+  to `Seunghwan Eom`.
+
 ## README And Office Preview Documentation Sync Findings - 2026-07-04
 
 - The root README still described the dashboard as secondary and kept older
