@@ -1,5 +1,309 @@
 # findings.md
 
+## Episode Closure Attempt Public Artifact Slice Findings - 2026-07-05
+
+- The interview seed is best implemented as a new leaf module rather than by
+  changing task close semantics. Existing `ensemble close` still owns legacy
+  task archival, while `ensemble episode close <episode_id>` creates a closure
+  attempt artifact for agent-improvement review.
+- `task.artifact_added` was already allow-listed and `artifact.generated` was
+  already aliased to it, but no existing code path emitted it directly. The
+  closure attempt slice now uses it as the authoritative event for
+  `episode_closure_bundle` artifacts without introducing `episode.*` events in
+  PR1.
+- Episode existence is intentionally minimal and event-sourced: an episode id
+  exists if prior events mention it as `episode_id`, `task_id`, or `run_id` in
+  scope/payload. Missing ids fail before any artifact, index, or projection is
+  written.
+- Deterministic closure rules are enough for PR1. Required summary fields or
+  validation missing/failing produce `blocked`; low confidence or review
+  ambiguity produces `needs_review`; only required fields plus validation pass
+  and no blockers/review reasons produce `closed`.
+- The public artifact store follows the L0/L1 boundary:
+  `.notes/artifacts/agent-improvement/public/index.jsonl` and
+  `public/digests/*.md` are default-readable, while
+  `evidence/*.closure.json` holds the structured L2 evidence bundle. No L3 raw
+  store, export command, approval escalation, RBAC, or provider raw I/O was
+  added in this slice.
+- The episode state file under `public/episodes/*.state.json` is a derived read
+  model. It records the event id only for successful close, and leaves blocked
+  attempts open or review-pending rather than making artifact state a second
+  source of truth.
+- Review found two important boundary risks and both were fixed before commit:
+  CLI validation flags would have bypassed the verification event gate, so
+  closure now derives validation only from prior event log entries; and `.notes`
+  artifacts needed replayable event payload data, so `task.artifact_added` now
+  carries the closure bundle and index record used to materialize the public
+  projection files.
+- Public L0/L1 closure text is not a raw log channel. Token/path-like content is
+  redacted before append/projection, and raw transcript/provider prompt,
+  provider completion, scratchpad, chain-of-thought, and private raw markers are
+  rejected before any closure artifact or event is written.
+- Episode ids are also treated as untrusted public text. Closure artifact ids,
+  filenames, and projection filenames use opaque hash slugs, while the
+  `task.artifact_added` scope records only the public surface and the payload
+  stores a hash reference instead of the raw episode id.
+- The closure implementation was split by responsibility so new closure source
+  files stay within the OMO 250 pure-LOC ceiling: model types, artifact
+  projection, and closure scoring/event append are separate modules.
+- Full Forward Bridge HTTP regression remains unreliable on this Windows host
+  because the tests bind fixed loopback ports and fail with `PermissionError:
+  [WinError 10013]`, even after elevated retry. Non-server regression targets
+  remain usable for this slice.
+
+## Gajae-Code Harness Adapter Integration Findings - 2026-07-04
+
+- Upstream tag verification via Git showed `v0.8.1` exists, even though a
+  GitHub release search snippet still surfaced `v0.7.10` first. The installed
+  sidecar and Codex plugin are pinned to `0.8.1`.
+- GJC standalone installation required Bun `>=1.3.14`; the existing Bun was
+  `1.3.7`, so the Windows Bun installer was rerun and the final checks reported
+  `bun --version` as `1.3.14`, `gjc --version` as `gjc/0.8.1`, and
+  `gjc --smoke-test` as `smoke-test: ok`.
+- Codex remote sparse marketplace registration failed because the sparse root
+  did not expose a supported marketplace manifest. The working fallback is a
+  local pinned clone at `.omx/vendor/gajae-code-v0.8.1` registered as
+  `gajae-code-local`, with `gajae-code@gajae-code-local` installed/enabled.
+- The safe Conitens integration point is a metadata-only harness evidence
+  event. `harness.evidence_observed` reuses the PR/CI raw-content rejection
+  pattern and adds transcript/stdout/stderr/output/command rejection so GJC
+  cannot become a hidden task or approval state writer.
+- The Forward Bridge can show GJC in runtime roster and evidence health without
+  exposing raw transcript text. Absolute local evidence paths are dropped from
+  harness refs, and the dashboard presents harness evidence as a secondary
+  evidence signal beside provider telemetry.
+- The final adapter phase is intentionally a leaf script:
+  `scripts/ensemble_gjc_adapter.py` accepts only the established harness
+  evidence fields, turns relative evidence paths into `artifact:` refs, rejects
+  absolute or traversal refs, and appends through `append_event()` only.
+- Cleanup review found a real edge in the first adapter implementation:
+  `artifact:`-prefixed refs still needed suffix validation. A failing test now
+  covers `artifact:../...` and `artifact:C:/...`, and the normalizer rejects
+  those before append.
+- The fixed-port Forward Bridge HTTP regression bundle is not a reliable proof
+  target on this Windows host right now: it fails during local loopback port
+  binding with `PermissionError: [WinError 10013]`, including after elevated
+  retry. Focused bridge tests that do not bind those ports pass, as do the
+  approval/loop-state regressions and dashboard test/build gates.
+
+## README And Office Preview Documentation Sync Findings - 2026-07-04
+
+- The root README still described the dashboard as secondary and kept older
+  Command Center-centered framing. The current forward operator UI is
+  `packages/dashboard`, backed by the read-only Forward Bridge, while most
+  remaining `packages/*` surfaces stay reference/parity material.
+- Office Preview documentation needs to distinguish two asset contracts:
+  Focused `Agents` cards use large `288x512` imagegen portrait PNGs from
+  `public/agent-portraits/generated`, while `Topology` uses generated `64x64`
+  sprite-gen atlases from `public/agent-sprites/generated`.
+- `packages/dashboard/src/spatial-lens/assets/README.md` was stale: it still
+  described the registry as placeholder-only and referenced an older generated
+  manifest/sheet path. The actual registry now slices `office-fixtures.png`,
+  references `office-floor-*.png`, and resolves generated local role sprite
+  atlases.
+
+## Large Imagegen Pixel Portrait Agent Integration Findings - 2026-06-30
+
+- The generated avatar set is a different UI surface from the sprite-gen atlas:
+  the approved images are large standalone full-body portraits, while the
+  existing atlas is still useful for compact room/spatial avatar contexts.
+- A small `agent-character-portraits.ts` registry is the lowest-risk runtime
+  contract. It keeps role-to-PNG provenance explicit without changing the
+  existing `agent-character-stage-model.ts` card semantics or sprite-gen
+  manifest contract.
+- The first browser pass proved that natural image dimensions alone are not
+  enough visual proof. The portraits loaded as `288x512`, but CSS clipped them
+  to upper-body/head views because the figure only had `min-height`.
+- The corrected CSS gives the card figure a definite portrait viewport and sets
+  the image height relative to that viewport. Browser QA now records rendered
+  client rectangles and rejects clipped head-only thumbnails.
+- The current demo cast renders four active cards; researcher is still
+  registered and available through the portrait registry, but it will only
+  appear in the Agent stage when a researcher resident/card is present.
+
+## Front-Facing Pixel Portrait Agent Redesign Findings - 2026-06-28
+
+- The user's attached references corrected the art direction: the target is a
+  front-facing, full-body pixel human character lineup, not top-view office
+  operators. The relevant signals are large readable heads/eyes, highlighted
+  hair, clear torso/arm/hand/leg/shoe separation, and costume/prop
+  differentiation.
+- A 64px sprite-gen cell is the better source contract for this direction.
+  It gives enough vertical room for full-body human proportions while the
+  Agent stage can still render at 2x to keep four cards readable at 1220px
+  and 1440px.
+- The regression test needs to reject the old direction at the request level.
+  It now checks for front-facing full-body language, user-supplied reference
+  provenance, 64px `cellSize`, and absence of top-view/paper-doll/mascot
+  wording in generated `sprite-request.json`.
+- `OfficeAvatar` reused the generic `.selected` class, which applied a
+  room-tile inset ring around the 128px selected sprite frame. The correct
+  selection affordance belongs to the card and figure, not the sprite frame
+  itself, so `.office-pixel-avatar.selected` clears that inherited ring.
+- Read-only visual review accepted the corrected category but found weak cast
+  differentiation. The follow-up sprite primitive pass increased eye contrast,
+  enlarged role props, gave the researcher a longer coat silhouette, and added
+  subtle non-active card floor light so the lineup reads less flat.
+- Read-only UI review found the desktop evidence adequate but flagged missing
+  820px and keyboard-focus proof. The browser QA harness now captures
+  `agents-820.png` and records a focus sequence from the next-action CTA into
+  the four card buttons with visible outlines.
+- Visible magenta checks are still required after atlas regeneration because
+  the sprite-gen workflow uses chroma-key extraction. Both Agents screenshots
+  reported zero visible magenta pixels after the front-facing regeneration.
+
+## Reference-Informed Pixel Office Agent Redesign Findings - 2026-06-28
+
+- Firecrawl search found three useful art-direction anchors rather than a
+  single asset to copy: SLYNYRD's top-down character process and animation
+  catalogue, Masalimov Ilnur's Pixel Office 32x32 office pack, and Pixeline's
+  32px top-down paper-doll character base. The right implementation is to
+  extract silhouette and layering rules, not to import source art.
+- The strongest transferable pattern is paper-doll readability: hair/head,
+  chest/jacket, legs/boots, and tool/prop layers must stay visually separate.
+  This matters more than adding tiny texture because dashboard-scale texture
+  becomes noise.
+- Top-down office references generally keep compact bodies anchored at the
+  feet with a readable head/crown and shoulder block. Conitens can keep a
+  48px production cell for clarity, but the figure should behave like a
+  compact top-down office RPG character inside that cell.
+- The Agent stage benefits from rendering the 48px generated cell at 3x. At
+  1220px the cards still stay in one row, and the characters become a true
+  first-read cast rather than small badges inside cards.
+- Provenance needs to be machine-checked. Adding `referenceSources` to the
+  generated manifest and `reference_sources` to each `sprite-request.json`
+  prevents future runs from losing the search-derived design direction.
+
+## Frontend-Skill 2D Human Sprite-Gen Redesign Findings - 2026-06-28
+
+- The direct sprite-gen pipeline solved provenance, but the 32px human-like
+  pass still read too close to simplified symbolic avatars at dashboard scale.
+  Moving to 48px cells gives enough room for readable face details, hair,
+  shoulders, clothing layers, hands, separated legs, boots, and role props
+  without adding runtime dependencies.
+- The Agent stage should display 48px sprites at 2x, not 3x or 4x. That keeps
+  the visible card footprint close to the prior presentation while allowing the
+  source art to carry more human anatomy and clothing detail.
+- `prepare_sprite_run.py` injects default style text that includes
+  simplified/chibi/mascot-friendly language. Since this batch explicitly
+  rejects simplified characters, the generator must rewrite both
+  `sprite-request.json` and generated prompts after prepare so future
+  provenance matches the detailed 2D human character intent.
+- The useful regression test is not just "atlas exists." It must also assert
+  48px `cellSize`, generated QA notes, and request text preserve the detailed
+  2D human, non-simple art direction.
+- Windows reruns can hit stale generated QA folders. The asset generator needs
+  `copytree(..., dirs_exist_ok=True)` so repeated sprite-gen regeneration is
+  idempotent in this workspace.
+- A second leftover source path existed outside the Agent stage:
+  `spatial-lens/assets/assetRegistry.ts` still listed command-center agent PNGs.
+  Even though the active viewport sprite component uses generated assets, the
+  registry/API surface should not advertise the old source.
+
+## Direct Sprite-Gen Agent Character Generation Findings - 2026-06-28
+
+- The prior agent generator still had a provenance problem: it imported
+  command-center sprite PNGs before sending them through sprite-gen extraction
+  and composition. That kept the UI functional, but it did not satisfy the
+  requirement to directly generate the agent designs through sprite-gen.
+- The safer path is to make each role a local sprite-gen request with its own
+  deterministic component row, then use the sprite-gen extraction, preview, and
+  atlas composition scripts as the asset pipeline. This removes the
+  command-center/Claude/imported-sheet dependency while preserving the public
+  runtime contract.
+- Splitting `agent_sprite_design.py` from `generate_agent_sprite_assets.py`
+  keeps role art direction and pipeline orchestration reviewable. Both files
+  stay under the OMO 250 pure-LOC ceiling after the direct-generation rewrite.
+- Generated 24px characters need a larger product-stage presentation than the
+  earlier imported sheets. The Agent stage now uses 4x display scale for
+  character cards while preserving the smaller default avatar scale elsewhere.
+- No `kuma:image-gen` surface was available in this session, so the
+  implementation uses direct local sprite-gen component-row generation rather
+  than an external image-model pass. The generated QA notes record the
+  no-import provenance explicitly.
+
+## LazyCodex Frontend Character-Stage Polish Findings - 2026-06-28
+
+- The sprite-gen Agent stage was functionally correct, but its visible notes
+  still leaked implementation ids such as `command-pulse`. Keeping those ids
+  in `data-motion-profile` while rendering operator-facing labels improves
+  readability without weakening QA hooks or animation routing.
+- The 1220px and 1440px screenshots need one dominant visual subject. A
+  slightly wider, stronger selected-agent card creates that anchor while the
+  remaining cards still fit in one comparison row.
+- Blocked/review emphasis is safest as a secondary chip treatment. The
+  semantic text remains the primary accessibility and operator signal, and
+  reduced-motion mode continues to remove card transforms and sprite motion.
+
+## Sprite-gen Agent Character Stage Findings - 2026-06-27
+
+- The weakest remaining office-preview read was the Focused mode visual
+  subject: floor/room staging still implied that the office was the product.
+  Replacing Focused's floor surface with an Agent deck makes the characters,
+  current handoff, blocked owner, and next action the first read.
+- `sprite-gen` works best as an offline/public-asset pipeline for this app.
+  The generated `public/agent-sprites/generated` atlases, role manifests, QA
+  GIFs, and contact sheets keep provenance inspectable without adding a
+  runtime dependency.
+- The demo has two operationally distinct non-worker participants that would
+  otherwise share an orchestrator visual profile: architect and owner. The
+  character stage keeps the underlying task/room data unchanged but gives
+  owner a reviewer-style approval visual profile so visible cards resolve to
+  four distinct role/motion profiles: `command-pulse`, `verify-brace`,
+  `review-scan`, and `build-shift`.
+- The role-motion implementation keeps atlas frame changes as opacity-cycled
+  stacked spans and applies role personality through transform/filter
+  keyframes. This preserves GPU-friendly animation and reduced-motion
+  fallback while avoiding canvas-only avatar rendering.
+- 1220px is the important visual breakpoint for this pass. Keeping four agent
+  cards on one row at 1060-1220px makes character comparison visible in the
+  first viewport while preserving the one-row top nav contract.
+
+## Office-Preview Character-First Redesign Guidance Findings - 2026-06-27
+
+- The current `#/office-preview` structure already preserves the most
+  important semantic split: `Focused` is workbench-first, `Overview` is
+  topology-first, and `Classic` is scenic-room-first. The redesign should not
+  collapse those roles; it should shift visual emphasis inside each mode.
+- The strongest remaining office bias is not layout. It is visual weight:
+  room fixtures, backdrop detail, and scenic thumbnails often compete with the
+  agents/operators the user is meant to track.
+- The safest leverage point is character readability, not topology surgery.
+  Distinct silhouettes, restrained per-role motion, and lower-detail room
+  dressing can materially improve scan speed without changing semantics,
+  runtime contracts, or the asset pipeline.
+- `FocusedHandoffView` already satisfies the rule that the active workbench is
+  primary. The redesign target there is to make participant identity outrank
+  room context, especially in the muted context strip.
+- `Overview` already hides some clutter structurally, but the whole-floor read
+  still leans office-first because room furniture remains more visually unique
+  than some characters. Character silhouette and local contrast should carry
+  more of the differentiation burden.
+- `Classic` can remain the richest environmental mode, but it should read as
+  "crew in rooms" rather than "rooms with tiny crew." That is a prop-density
+  and camera-emphasis problem, not a data-model problem.
+
+## Sprite-gen Office Visual Overhaul Findings - 2026-06-27
+
+- `aldegad/sprite-gen` is most useful here as an asset-generation skill, not
+  as an app runtime dependency. The safe path is: generate loose 24px fixture
+  PNGs, import them through sprite-gen's curator-ready run format, export the
+  curated PNGs, then compose the existing `office-fixtures.png` atlas contract.
+- The runtime contract remains intentionally unchanged: `office-fixtures.png`
+  stays `600x24`, fixture cells stay `24x24`, and registry ordering still
+  matches `OFFICE_FIXTURE_REGISTRY`. The new
+  `office-fixtures.meta.json` records the sprite-gen provenance and source
+  rectangles so future visual swaps are testable.
+- Replacing the fixture/floor art with a darker signal-first palette required
+  retuning Classic room text, badge, window, and waiting-label contrast.
+  Overview floor colors were moved onto the same office token family so Floor
+  Overview no longer mixes bright lab/workshop patches with a dark topology
+  shell.
+- Browser QA is still the required final proof for office visual work. Static
+  tests/build caught the atlas contract; the CDP QA proved Focused/Overview/
+  Classic mode behavior, no horizontal overflow, tab keyboard behavior, and
+  Overview map/inspector separation across 1220px and 1440px.
+
 ## Ultrawork Cleanup Findings - 2026-06-14
 
 - The safest cleanup split was generated/local artifacts first, tracked stale
@@ -2916,3 +3220,21 @@
   navigation to move focus with selection. `OfficeStage` now renders all three
   tabpanels with inactive panels hidden, and browser QA verifies ArrowRight
   selects/focuses Floor Overview and ArrowLeft selects/focuses Focused.
+
+## Gajae-Code Final Adapter Findings
+
+- The original control-plane plan remains sound: GJC should be an external
+  terminal harness, not an authoritative task/approval/projection writer.
+- The final missing implementation surface was a real adapter that converts a
+  redacted GJC run metadata file into one append-only
+  `harness.evidence_observed` event.
+- Raw harness bodies remain outside Conitens state. The adapter rejects raw
+  prompt/completion/stdout/stderr/transcript/log/body/diff/patch/comment/
+  command/token/secret fields recursively before appending.
+- Review found that validating only `artifact:` refs was too loose: symbolic
+  refs such as `gjc:` and `event:` could smuggle path-looking values. The fix
+  treats symbolic refs as opaque IDs and rejects slash, backslash, traversal,
+  and drive-letter syntax.
+- Review also found that unsafe-ref errors leaked the original rejected path in
+  CLI stderr. The fix returns generic classifications such as absolute path,
+  traversal, symbolic id, or control character without echoing the ref.

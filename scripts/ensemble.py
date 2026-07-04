@@ -4694,6 +4694,96 @@ def cmd_forward(args):
     )
 
 
+def cmd_episode(args):
+    try:
+        from ensemble_episode_closure import ClosureRequest, EpisodeClosureError, close_episode
+    except ImportError:
+        print("Episode closure module not found. Ensure ensemble_episode_closure.py is in the same directory.")
+        raise SystemExit(1)
+
+    if args.action != "close":
+        print(f"Unknown episode action: {args.action}")
+        raise SystemExit(1)
+
+    request = ClosureRequest(
+        episode_id=args.episode_id,
+        actor=args.actor,
+        summary=args.summary,
+        goal=args.goal,
+        outcome=args.outcome,
+        goal_satisfied=not getattr(args, "goal_unsatisfied", False),
+        confidence=args.confidence,
+        risk=args.risk,
+        risks_remaining=tuple(args.risk_remaining or []),
+        blocking_reasons=tuple(args.blocking_reason or []),
+        review_reasons=tuple(args.review_reason or []),
+        next_recommendation=args.next_recommendation,
+        next_reason=args.next_reason,
+    )
+    try:
+        result = close_episode(WORKSPACE, request)
+    except EpisodeClosureError as exc:
+        print(f"Episode closure failed: {exc}")
+        raise SystemExit(1)
+
+    print(f"Closure attempt created: {result.artifact_id}")
+    print(f"Status: {result.status}")
+    print(f"Episode: {result.episode_id}")
+    print(f"Event: {result.event_id}")
+    print(f"Digest: {result.digest_path}")
+    print(f"Evidence: {result.evidence_path}")
+    if result.status == "closed":
+        print("Episode projection: closed")
+    else:
+        print("Episode remains open or review-pending.")
+
+
+def _public_table_cell(value):
+    return " ".join(str(value or "").split())
+
+
+def cmd_improvement(args):
+    try:
+        from ensemble_episode_closure import EpisodeClosureError, list_improvements, show_improvement_digest
+    except ImportError:
+        print("Episode closure module not found. Ensure ensemble_episode_closure.py is in the same directory.")
+        raise SystemExit(1)
+
+    if args.action == "list":
+        rows = list_improvements(WORKSPACE, limit=args.limit)
+        if not rows:
+            print("No agent improvement artifacts found.")
+            return
+        print("artifact_id\tepisode_id\tstatus\trisk\tsummary")
+        for row in rows:
+            print(
+                "\t".join(
+                    [
+                        _public_table_cell(row.get("artifact_id", "")),
+                        _public_table_cell(row.get("episode_id", "")),
+                        _public_table_cell(row.get("status", "")),
+                        _public_table_cell(row.get("risk", "")),
+                        _public_table_cell(row.get("summary", "")),
+                    ]
+                )
+            )
+        return
+
+    if args.action == "show":
+        if not args.artifact_id:
+            print("improvement show requires <artifact_id>")
+            raise SystemExit(1)
+        try:
+            print(show_improvement_digest(WORKSPACE, args.artifact_id), end="")
+        except EpisodeClosureError as exc:
+            print(f"Improvement lookup failed: {exc}")
+            raise SystemExit(1)
+        return
+
+    print(f"Unknown improvement action: {args.action}")
+    raise SystemExit(1)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # v4.2 UPGRADE SYSTEM
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -5487,7 +5577,28 @@ def main():
     p_forward.add_argument("--workflow", dest="workflow_ref", help="Optional workflow slug or file stem for workflow-contracts")
     p_forward.add_argument("--limit", type=int, help="Optional row limit for bounded forward projections")
     p_forward.add_argument("--repository", help="Optional repository override for PR/CI evidence import")
-    
+
+    p_episode = subparsers.add_parser("episode", help="Manage episode closure attempts")
+    p_episode.add_argument("action", choices=["close"], help="Episode action")
+    p_episode.add_argument("episode_id", help="Existing episode id")
+    p_episode.add_argument("--actor", default="supervisor")
+    p_episode.add_argument("--summary")
+    p_episode.add_argument("--goal")
+    p_episode.add_argument("--outcome", default="completed")
+    p_episode.add_argument("--goal-unsatisfied", action="store_true")
+    p_episode.add_argument("--confidence", choices=["low", "medium", "high"], default="medium")
+    p_episode.add_argument("--risk", choices=["low", "medium", "high"], default="low")
+    p_episode.add_argument("--risk-remaining", action="append", default=[])
+    p_episode.add_argument("--blocking-reason", action="append", default=[])
+    p_episode.add_argument("--review-reason", action="append", default=[])
+    p_episode.add_argument("--next", dest="next_recommendation")
+    p_episode.add_argument("--next-reason")
+
+    p_improvement = subparsers.add_parser("improvement", help="Read public agent-improvement artifacts")
+    p_improvement.add_argument("action", choices=["list", "show"], help="Improvement action")
+    p_improvement.add_argument("artifact_id", nargs="?")
+    p_improvement.add_argument("--limit", type=int, default=20)
+
     # v4.2 Upgrade System
     p_upgrade_scan = subparsers.add_parser("upgrade-scan", help="Scan journals for upgrade candidates (v4.2)")
     p_upgrade_scan.add_argument("--since", "-s", help="Scan from date (YYYY-MM-DD)")
@@ -5552,6 +5663,8 @@ def main():
         "room": cmd_room,
         "ui": cmd_ui,
         "forward": cmd_forward,
+        "episode": cmd_episode,
+        "improvement": cmd_improvement,
         # v4.2 upgrade system
         "upgrade-scan": cmd_upgrade_scan,
         "upgrade-setup": cmd_upgrade_setup,

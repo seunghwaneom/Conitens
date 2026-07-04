@@ -1,5 +1,314 @@
 # progress.md
 
+## Episode Closure Attempt Public Artifact Slice - 2026-07-05
+
+- [x] Captured the implementation seed in
+      `.omx/plans/prometheus-strict/episode-closure-attempt-seed.md` with the
+      final interview boundaries: existing episode ids only, deterministic
+      scorecard rules, and fixed blocked vs needs_review criteria.
+- [x] Added `scripts/ensemble_episode_model.py`,
+      `scripts/ensemble_episode_artifacts.py`, and
+      `scripts/ensemble_episode_closure.py` as a split closure slice. The core
+      evaluates closure requests, appends `task.artifact_added` first with the
+      closure bundle and index record in the event payload, and materializes
+      evidence JSON, public digest Markdown, public index JSONL, and derived
+      episode state projection from that event payload.
+- [x] Added `ensemble episode close <episode_id>` CLI routing with flags for
+      actor, goal, summary, goal satisfaction, confidence, risk,
+      blocking/review reasons, and next workflow recommendation. Validation is
+      intentionally event-derived only; there is no CLI validation bypass.
+- [x] Added `ensemble improvement list` and `ensemble improvement show
+      <artifact_id>` for L0/L1 artifact lookup.
+- [x] Added `tests/test_episode_closure.py` and
+      `tests/test_episode_closure_cli_security.py` covering closed, blocked,
+      needs_review, required-field blocking, unknown episode rejection,
+      raw_access_audit empty default, event append, event-payload projection
+      replay, public index/digest, derived projection, CLI list/show, path
+      safety, public text redaction, private raw marker rejection, and CLI
+      missing-validation blocking.
+- [x] Fixed review-found sensitive episode-id leakage by switching closure
+      artifact IDs and filenames to opaque hash slugs and keeping raw episode
+      ids out of `task.artifact_added` scope.
+- [x] Verified `python -m py_compile scripts/ensemble_episode_model.py
+      scripts/ensemble_episode_artifacts.py scripts/ensemble_episode_closure.py
+      scripts/ensemble.py tests/test_episode_closure.py
+      tests/test_episode_closure_cli_security.py`.
+- [x] Verified `python -m unittest tests.test_episode_closure
+      tests.test_episode_closure_cli_security` passed 13 tests.
+- [x] Verified one non-server Forward Bridge projection regression:
+      `tests.test_forward_bridge.ForwardBridgeTests.test_operator_runtime_roster_projects_gjc_harness_evidence_without_mutation`.
+- [x] Ran the requested full Forward Bridge/operator regression bundle; it is
+      still blocked by Windows loopback port binding with `PermissionError:
+      [WinError 10013]`, including after elevated retry.
+- [x] Verified scoped `git diff --check` for the changed files; only the
+      existing Windows LF/CRLF warning for `scripts/ensemble.py` appeared.
+
+## Gajae-Code Harness Adapter Integration - 2026-07-04
+
+- [x] Verified upstream tags and pinned the install to `v0.8.1`.
+- [x] Installed `gajae-code@0.8.1` globally through Bun.
+- [x] Upgraded Bun from `1.3.7` to `1.3.14` to satisfy GJC runtime
+      requirements.
+- [x] Verified `gjc --version` and `gjc --smoke-test`.
+- [x] Registered the local pinned Gajae-Code plugin marketplace at
+      `.omx/vendor/gajae-code-v0.8.1/plugins` as `gajae-code-local`.
+- [x] Installed `gajae-code@gajae-code-local` into Codex and confirmed the
+      installed cache contains `.codex.mcp.json` for `gjc mcp-serve
+      coordinator`.
+- [x] Added the `harness.evidence_observed` event type, Python raw-content
+      rejection gates, and read-only bridge harness projection.
+- [x] Added GJC to runtime CLI checks and runtime roster as an agent runtime.
+- [x] Updated dashboard parser/types/model/UI copy so harness evidence appears
+      as metadata-only evidence health, not a control-plane state owner.
+- [x] Added `docs/gjc-harness-adapter.md` with authority boundary, log
+      taxonomy, accepted payload, rejected payload, and threat model gates.
+- [x] Added `scripts/ensemble_gjc_adapter.py` as the final-phase leaf adapter
+      for importing redacted GJC run metadata into `harness.evidence_observed`.
+- [x] Added `tests/test_gjc_adapter.py` with RED -> GREEN coverage for metadata
+      import, raw-field rejection, unsafe path rejection, and CLI output.
+- [x] Added a cleanup-found regression for unsafe `artifact:` evidence refs;
+      the test failed first, then passed after the adapter started validating
+      prefixed artifact paths with the same traversal/absolute-path rules.
+- [x] Drove the adapter through the CLI surface with
+      `.omo/evidence/gjc-adapter-manual-fixture.json`; the observed report had
+      `event_type=harness.evidence_observed`, `event_count=1`,
+      `runtime=gjc`, `redaction_status=metadata_only`, and no raw terms or
+      workspace path exposure.
+- [x] Verified Python syntax, focused backend harness tests, GJC adapter tests
+      5/5, approval and loop-state regression tests, full dashboard tests
+      150/150, dashboard production build, and `git diff --check`.
+- [x] Re-ran the planned fixed-port Forward Bridge HTTP regression bundle; it
+      remains blocked by Windows `PermissionError: [WinError 10013]` while
+      binding local loopback test ports, including after elevated retry.
+
+## README And Office Preview Documentation Sync - 2026-07-04
+
+- [x] Updated `README.md` with the current forward dashboard/Forward Bridge
+      surface, Office Preview mode contract, asset pipeline split, Vite/test
+      stack details, and dashboard/bridge development commands.
+- [x] Updated `CONITENS.md` so `packages/dashboard` is documented as the active
+      browser-facing operator UI without promoting dashboard state to runtime
+      source-of-truth status.
+- [x] Updated `docs/frontend/OFFICE_PREVIEW_CHARACTER_FIRST_REDESIGN.md` to
+      describe the large portrait integration and canonical role names.
+- [x] Updated `packages/dashboard/src/spatial-lens/assets/README.md` to match
+      the mounted Topology asset registry and generated static asset roots.
+
+## Large Imagegen Pixel Portrait Agent Integration - 2026-06-30
+
+- [x] Copied the five approved large role avatars into
+      `packages/dashboard/public/agent-portraits/generated` as transparent
+      `288x512` PNG runtime assets.
+- [x] Added `agent-character-portraits.ts` to map orchestrator, implementer,
+      researcher, reviewer, and validator to their generated portrait sources
+      and `imagegen-large-pixel-avatar` provenance.
+- [x] Replaced the Agent-stage card visual from compact `OfficeAvatar` sprite
+      cells to role-specific full-body portrait `<img>` elements while keeping
+      existing card selection, work-state, motion-profile, and next-action
+      semantics intact.
+- [x] Updated `office-stage.module.css` so character cards have a definite
+      large portrait viewport and the images render as full-body figures rather
+      than clipped head-only thumbnails.
+- [x] Updated the browser QA harness to assert generated portrait paths,
+      natural size, provenance, reduced-motion behavior, and rendered portrait
+      client size.
+- [x] Verified RED -> GREEN targeted tests, full dashboard tests 150/150,
+      dashboard production build, browser QA PASS, asset dimensions, and visual
+      screenshot inspection at
+      `output/playwright/agent-character-stage/agents-1220.png`.
+
+## Front-Facing Pixel Portrait Agent Redesign - 2026-06-28
+
+- [x] Inspected the three user-supplied reference images and reset the visual
+      contract to front-facing full-body pixel human character lineup.
+- [x] Added RED tests requiring 64px agent cell size, 2x Agent-stage display,
+      user-supplied front-facing reference provenance, and request text that
+      rejects the old top-view/paper-doll direction.
+- [x] Reworked `agent_sprite_design.py` to generate 64px front-facing human
+      sprites with large heads/eyes, highlighted hair, torso/arms/hands,
+      separated legs/shoes, clothing layers, and role props.
+- [x] Updated `generate_agent_sprite_assets.py` so generated requests,
+      manifests, prompts, and QA notes carry the new front-facing reference
+      contract.
+- [x] Regenerated all five public sprite-gen agent atlases and refreshed the
+      generated TypeScript runtime manifest.
+- [x] Updated Agent-stage display scale to 2x for the 64px source art,
+      Spatial Lens character source rects to 64x64, and Agent-stage CSS for
+      portrait figures.
+- [x] Removed the inherited selected-avatar inset ring so selected characters
+      do not look boxed by a sprite-frame outline.
+- [x] Responded to read-only visual critique by increasing eye contrast,
+      enlarging role props, adding stronger researcher coat silhouette, and
+      adding subtle non-active card floor light.
+- [x] Extended browser QA to include 820px Agents layout and keyboard focus
+      sequence from `Open approvals` through the four character card buttons.
+- [x] Verified targeted RED -> GREEN tests, full dashboard tests 149/149,
+      `tsc -b`, Vite build, browser QA PASS, visual contact/screenshot
+      inspection, and visible magenta checks with zero leaked pixels.
+
+## Reference-Informed Pixel Office Agent Redesign - 2026-06-28
+
+- [x] Used Firecrawl web/image search and focused page extraction for pixel
+      office / top-down character references.
+- [x] Recorded the source-derived, no-copy art direction in
+      `.omo/evidence/pixel-office-character-reference-notes.md`.
+- [x] Added a RED test requiring generated `referenceSources`,
+      `reference_sources`, and reference-informed top-down pixel office
+      provenance in generated sprite artifacts.
+- [x] Updated `agent_sprite_design.py` so role sprites use compact top-down
+      office proportions, paper-doll-readable clothing layers, anchored boots,
+      and stronger role props.
+- [x] Updated `generate_agent_sprite_assets.py` so generated manifests,
+      requests, and QA notes include reference URLs and a no-copy
+      art-direction note.
+- [x] Regenerated all five sprite-gen agent atlases and refreshed the
+      TypeScript runtime manifest.
+- [x] Increased Agent-stage character display from 2x to 3x while keeping
+      room/classic defaults smaller.
+- [x] Verified targeted RED -> GREEN tests, full dashboard tests 149/149,
+      `tsc -b`, Vite build, browser QA PASS, visual screenshots/contact sheet,
+      and exact/near magenta check.
+
+## Frontend-Skill 2D Human Sprite-Gen Redesign - 2026-06-28
+
+- [x] Loaded the Conitens frontend skill and used its visual/content/
+      interaction thesis to make agent characters the dominant 2D cast read.
+- [x] Added a RED provenance and cell-size test that failed against the old
+      generated `sprite-request.json` and 32px manifest.
+- [x] Reworked `agent_sprite_design.py` from simplified symbolic avatars to
+      48px detailed 2D cel-shaded human operator sprites with visible face,
+      hair, clothing, arms/hands, separated legs, boots, and role props.
+- [x] Updated `generate_agent_sprite_assets.py` so prepared sprite-gen requests
+      and prompts are rewritten with a detailed 2D human character style
+      contract before extraction/preview/atlas composition, and fixed repeated
+      reruns with `dirs_exist_ok=True` for copied QA folders.
+- [x] Regenerated public agent sprite assets and refreshed the runtime
+      generated manifest at 48px cell size.
+- [x] Adjusted the Agent stage display scale from 3x to 2x for the larger
+      source sprites.
+- [x] Removed the remaining dashboard source references to command-center
+      agent PNGs by pointing Spatial Lens character asset registry entries at
+      the generated sprite-gen atlases.
+- [x] Verified targeted RED -> GREEN test, full dashboard tests 149/149,
+      `tsc -b`, Vite production build, browser QA PASS, `git diff --check`,
+      and visual contact sheet inspection at
+      `output/playwright/agent-character-stage/2d-human-sprite-gen-contact.png`.
+
+## Direct Sprite-Gen Agent Character Generation - 2026-06-28
+
+- [x] Replaced the imported command-center sprite source path in
+      `generate_agent_sprite_assets.py` with direct sprite-gen run generation:
+      request, raw component rows, frame extraction, motion preview, atlas
+      composition, manifest export, and QA notes.
+- [x] Added `agent_sprite_design.py` so role-specific silhouettes, palettes,
+      props, and motion offsets live outside the orchestration script.
+- [x] Regenerated public agent sprite outputs for orchestrator, implementer,
+      researcher, reviewer, and validator under
+      `packages/dashboard/public/agent-sprites/generated`.
+- [x] Updated the generated TypeScript sprite manifest and the
+      character-stage regression test to lock the direct-generation pipeline
+      and no command-center/Claude/imported-sheet provenance.
+- [x] Increased Agent-stage character display to 4x integer scale while
+      preserving the default avatar scale for room/classic contexts.
+- [x] Verified direct generation, dashboard tests 149/149, `tsc -b`, Vite
+      production build, browser QA PASS for Agents 1220/1440 plus reduced
+      motion and Topology 1220, and `git diff --check`. Evidence lives under
+      `.omo/evidence/*direct-sprite*.txt` and refreshed screenshots under
+      `output/playwright/agent-character-stage/`.
+
+## LazyCodex Frontend Character-Stage Polish - 2026-06-28
+
+- [x] Loaded the Conitens frontend skill, OMO frontend/design/perfection
+      guidance, visual QA guidance, and programming guidance for this UI pass.
+- [x] Kept the existing sprite-gen asset/runtime path intact while refining
+      only `AgentCharacterStage`, its view model, CSS hierarchy, and focused
+      regression coverage.
+- [x] Added readable motion/trait labels to the character-stage model so the
+      UI shows `Command pulse`, `Build cadence`, and `gate review` instead of
+      raw kebab-case internals.
+- [x] Changed the stage title to `Active agent cast`, strengthened the selected
+      agent card, clarified the next-action link affordance, and added subtle
+      blocked/review chip emphasis.
+- [x] Verified dashboard tests 149/149, `tsc -b`, Vite production build,
+      `git diff --check`, and browser QA PASS for Agents 1220/1440, reduced
+      motion, and Topology 1220. Screenshots refreshed under
+      `output/playwright/agent-character-stage/`.
+
+## Sprite-gen Agent Character Stage Implementation - 2026-06-27
+
+- [x] Added a RED character-stage test that failed first on the missing
+      `agent-character-stage-model.ts` module.
+- [x] Generated sprite-gen-backed role atlases and QA artifacts under
+      `packages/dashboard/public/agent-sprites/generated` for orchestrator,
+      implementer, researcher, reviewer, and validator.
+- [x] Added `generate_agent_sprite_assets.py` and the generated compact
+      TypeScript manifest used by runtime code.
+- [x] Replaced canvas avatar rendering with static atlas-frame rendering in
+      `OfficeAvatar`, including sprite-gen provenance attributes and
+      reduced-motion-safe frame stacks.
+- [x] Added the character-first `AgentCharacterStage` and model, wired
+      Focused/Agents mode to it, and renamed the stage tabs to
+      `Agents / Topology / Classic`.
+- [x] Diversified visible demo motion profiles by giving owner-gate approval a
+      reviewer-style approval visual profile while preserving the underlying
+      owner task and room semantics.
+- [x] Restored the actionable next-operator CTA after review: Agents mode now
+      links `Open approvals` to `#/approvals` with
+      `data-next-action-kind="owner-approval"`.
+- [x] Increased character-stage avatars to integer 3x scale and kept four
+      cards visible in one row through the 1220px breakpoint.
+- [x] Verified final dashboard tests 149/149, `tsc -b`, Vite production build,
+      and browser QA PASS for Agents 1220/1440, reduced motion, and Topology
+      1220. Evidence: `output/playwright/agent-character-stage-results.json`
+      and screenshots under `output/playwright/agent-character-stage/`.
+
+## Office-Preview Character-First Redesign Guidance - 2026-06-27
+
+- [x] Read current runtime and repo intelligence digests before substantial
+      work.
+- [x] Routed the task through the frontend redesign guidance references and
+      reviewed the current dashboard design contract.
+- [x] Audited the active `#/office-preview` surfaces in source:
+      `PixelOffice.tsx`, `OfficeStage.tsx`, `FocusedHandoffView.tsx`,
+      `OfficeSidebar.tsx`, and `AgentSprite.tsx`.
+- [x] Reviewed latest visual evidence for Focused, Overview, and Classic from
+      `output/playwright/sprite-gen-office-overhaul/`.
+- [x] Updated `DESIGN.md` from office-first language toward a character-first
+      control-plane contract while preserving existing shell/status/runtime
+      constraints.
+- [x] Added
+      `docs/frontend/OFFICE_PREVIEW_CHARACTER_FIRST_REDESIGN.md` with
+      principles, mode intent, motion taxonomy, guardrails, success criteria,
+      and binary QA scenarios.
+- [x] Refreshed `.conitens/context/` files so a follow-on implementation pass
+      has an explicit scope and acceptance bar.
+- [ ] No code/test/build changes were made in this batch; verification stayed
+      at source review, design-contract review, and screenshot inspection.
+
+## Sprite-gen Office Visual Overhaul - 2026-06-27
+
+- [x] Installed `aldegad/sprite-gen` as the local Codex skill
+      `C:\Users\eomsh\.codex\skills\sprite-gen`.
+- [x] Added `DESIGN.md` to document the dashboard office design contract:
+      signal-first pixel office, dark operator shell, Focused workbench
+      hierarchy, topology-first Overview, and runtime dependency-free assets.
+- [x] Added a RED provenance/atlas test for `office-fixtures.meta.json` and
+      `office-fixtures.png`; it failed first on the missing metadata file.
+- [x] Added `packages/dashboard/scripts/generate_office_sprite_assets.py`,
+      which writes loose fixture PNGs, runs sprite-gen
+      `unpack_atlas_run.py` and `export_curated_pngs.py`, then composes the
+      existing 25-cell atlas plus provenance metadata.
+- [x] Regenerated `office-fixtures.png`, added
+      `office-fixtures.meta.json`, and regenerated the seven
+      `office-floor-*.png` repeat tiles around the new office palette.
+- [x] Retuned office tokens, Classic stage styling, and Spatial Lens Overview
+      floor/label colors to match the new generated art while preserving
+      Focused and Overview hierarchy rules.
+- [x] Verified targeted tests 17/17, full dashboard tests 145/145, dashboard
+      production build, and browser QA 6/6. Evidence:
+      `output/playwright/sprite-gen-office-overhaul-results.json` and
+      screenshots under `output/playwright/sprite-gen-office-overhaul/`.
+
 ## Ultrawork Cleanup - 2026-06-14
 
 - [x] Started direct `$ultrawork` cleanup with LIGHT tier because the change
@@ -3432,6 +3741,23 @@ chain instead of the whole floor: the central rail answers who is working
 (`architect`), which task is blocked (`q_184_owner_gate`), where the handoff
 goes (`sentinel`), and what the next operator action is (`owner-approval`).
 Floor Overview remains the topology view, and Classic remains isolated.
+
+## Gajae-Code Final Adapter Status
+
+- [x] reviewed the GJC/Conitens plan; no major boundary flaw found
+- [x] implemented `scripts/ensemble_gjc_adapter.py` as a leaf metadata import
+      adapter
+- [x] added adapter contract tests in `tests/test_gjc_adapter.py`
+- [x] fixed review finding: symbolic refs are opaque IDs and cannot carry path
+      traversal, slashes, backslashes, or drive-letter syntax
+- [x] fixed review finding: unsafe ref rejection messages no longer echo the
+      original unsafe ref/path
+- [x] updated `docs/gjc-harness-adapter.md` and Ralph/Ultrawork evidence logs
+- [x] verified `gjc/0.8.1` and `gjc --smoke-test`
+- [x] Python adapter/regression tests, focused bridge tests, dashboard tests,
+      dashboard build, and diff whitespace check passed
+- [x] architect rereview approved the final adapter after symbolic-ref and
+      stderr-redaction fixes
 
 ## Frontend Design Architecture Improvement Execution
 
