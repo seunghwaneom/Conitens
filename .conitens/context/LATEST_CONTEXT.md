@@ -4,7 +4,28 @@ Read this file before substantial work.
 
 ## Current State
 
-- Active batch: `Ultrawork cleanup`
+- Active batch: `README and Office Preview documentation sync`
+- Status: `complete` (2026-07-04)
+- User asked to update README and related docs, then publish the result to
+  GitHub. The docs now identify `packages/dashboard` as the active forward
+  operator UI, with `scripts/ensemble_forward_bridge.py` as the read-only data
+  bridge, while keeping `scripts/ensemble.py` + `.notes/` + `.agent/` as
+  runtime truth.
+- README and `CONITENS.md` now document Office Preview as an operator
+  visualization with `Agents`, `Topology`, and `Classic` modes. Focused
+  `Agents` uses large `288x512` imagegen portrait PNGs from
+  `packages/dashboard/public/agent-portraits/generated`; `Topology` uses the
+  Spatial Lens floor/fixture assets and `64x64` generated sprite-gen role
+  atlases from `packages/dashboard/public/agent-sprites/generated`.
+- `docs/frontend/OFFICE_PREVIEW_CHARACTER_FIRST_REDESIGN.md` records the
+  portrait/sprite split and canonical roles. The Spatial Lens asset README now
+  matches the mounted registry instead of the old placeholder-era text.
+- Verification: reviewed edited Markdown, searched the user-facing docs for
+  old placeholder wording, retired manifest names, old sprite source text, old
+  Vite version text, and the old README date, then inspected the resulting doc
+  diff.
+
+- Previous active batch: `Ultrawork cleanup`
 - Status: `complete` (2026-06-14)
 - Removed evidence-backed stale files and local generated artifacts without
   changing active runtime behavior. Deleted unused dashboard modules:
