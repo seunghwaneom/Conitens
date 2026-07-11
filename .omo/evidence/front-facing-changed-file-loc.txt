@@ -1,0 +1,5 @@
+packages/dashboard/scripts/agent_sprite_design.py 248
+packages/dashboard/scripts/generate_agent_sprite_assets.py 230
+packages/dashboard/src/components/AgentCharacterStage.tsx 100
+packages/dashboard/tests/agent-character-stage.test.mjs 119
+packages/dashboard/tests/spatial-lens-asset-registry.test.mjs 108

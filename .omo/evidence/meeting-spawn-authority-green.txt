@@ -1,0 +1,40 @@
+Meeting / spawn authority GREEN evidence
+Date: 2026-07-10
+
+Focused Python verification
+Command scope:
+- tests.test_meeting_spawn_authority
+- meeting flow operations pin
+- approval-then-launch operations pin
+- room replay timeline ordering pin
+Result: 34 tests passed in 5.498s.
+
+Focused protocol verification
+Filter: HandoffState | resolves obsolete aliases to canonical types
+Result: 6 tests passed; 844 skipped.
+
+Static and build verification
+- Python compile: passed for meeting, spawn, handoff, generated allow-list,
+  and authority tests.
+- Event type synchronization: 146 canonical event types and 32 aliases;
+  generated allow-list is current.
+- @conitens/protocol build: passed.
+- Scoped git diff check: passed; Windows line-ending warnings only.
+
+Full-suite baseline comparison
+- tests.test_operations_layer: 23 tests, 2 failures, 9 errors. The remaining
+  classes are the known TEST_EVENT / WORKFLOW_RUN_STARTED / HOOK_RESULT
+  allow-list debt, registry metadata debt, and provider return-code mismatch.
+- @conitens/protocol full suite: 846 passed, 4 failed. The four known failures
+  are stale agent registry subset/count expectations and ThreadReducer ownership
+  of .notes/40_Comms/**/*.md.
+
+Manual CLI QA
+- Started a meeting in an isolated temporary workspace.
+- Sent a message containing a secret marker; terminal output and transcript
+  projection contained the redacted marker, and the canonical event contained
+  metadata/hash/ref fields rather than raw text.
+- Verified nonexistent meeting say/end commands fail before event or projection.
+- Ended the valid meeting and observed the event-first summary projection.
+
+Result: GREEN for the scoped authority/lifecycle slice.

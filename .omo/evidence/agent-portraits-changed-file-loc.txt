@@ -1,0 +1,6 @@
+   55 packages/dashboard/src/agent-character-portraits.ts
+  110 packages/dashboard/src/components/AgentCharacterStage.tsx
+ 1093 packages/dashboard/src/office-stage.module.css
+  154 packages/dashboard/tests/agent-character-stage.test.mjs
+  431 .omo/evidence/run-agent-character-stage-qa.mjs
+ 1843 total

@@ -1,0 +1,55 @@
+Wave 3 Forward Bridge boundary refactor — final GREEN evidence
+Date: 2026-07-11 (Asia/Seoul)
+
+Focused boundary regression
+- Command: python -m unittest tests.test_forward_bridge_architecture tests.test_forward_public_context tests.test_conversation_read_service tests.test_forward_patch_commands tests.test_forward_bridge_commands tests.test_forward_bridge_http tests.test_forward_bridge_boundary tests.test_approval_controls
+- Result after final privacy, public-label, route-inventory, explicit-query-boundary, review-cleanup, and HTTP body-limit repairs: Ran 67 tests in 9.826s — OK
+
+Complete Wave 3 regression
+- Command: python -m unittest tests.test_forward_bridge_architecture tests.test_forward_public_context tests.test_conversation_read_service tests.test_forward_patch_commands tests.test_forward_bridge_commands tests.test_forward_bridge_http tests.test_forward_bridge_boundary tests.test_forward_live_approval tests.test_forward_bridge tests.test_forward_operator_flow tests.test_forward_runtime_mode tests.test_room_replay tests.test_candidate_patch_hardening tests.test_approval_controls
+- Result after all review repairs: Ran 158 tests in 94.117s — OK
+
+Targeted state-machine regression
+- Command: python -m unittest tests.test_candidate_patch_hardening tests.test_forward_patch_commands
+- Result: Ran 13 tests in 0.175s — OK
+
+HTTP body-limit stability
+- Command: extreme-content-length unit test plus ten consecutive live oversized-body requests
+- Result: 11 tests — OK; every live request returned 413 without a Windows connection-abort reset
+
+Live public-boundary privacy probe
+- Raw private message search: total 0
+- Public thread metadata search: total 1
+- Private seeded values absent from serialized public payloads
+- Unsafe approval actor projected as `agent`
+- Direct handoff projection sanitized both actors and summary and returned `packet_json={}`
+- Unsafe workspace owner projected as `null`; SSE approval actor projected as `agent`
+- Root route lists all 13 operator mutation surfaces
+- A 1,100,000-byte request returned 413; a subsequent authenticated GET returned
+  200 with parseable JSON, and the server thread shut down cleanly
+
+Dashboard
+- Command: pnpm.cmd --filter @conitens/dashboard test
+- Result: 154 passed, 0 failed
+- Command: pnpm.cmd --filter @conitens/dashboard build
+- Result: TypeScript and Vite production build passed
+
+Static quality
+- No-excuse checker: no violations in 37 Wave 3 Python files
+- Python compile: passed for all Wave 3 leaves plus changed repository, registry, and approval modules
+- git diff --check: exit 0; only existing Windows LF-to-CRLF notices
+
+Adjacent regression audit
+- Command: python -m unittest tests.test_context_markdown tests.test_loop_state tests.test_execution_loop tests.test_operations_layer
+- Result: Ran 51 tests; 2 failures and 9 errors
+- Classification: unchanged pre-existing contract drift, outside Wave 3. Nine errors are legacy uppercase event names rejected by the canonical event registry. The two failures are the dependent provider-workflow return-code assertion and three legacy persona-core manifests missing schema_v/agent_id/runtime. No Forward Bridge module participates in those failing paths.
+
+Runtime invariants
+- forward status reports default_runtime=legacy
+- legacy --forward start exits 2 and remains status-only
+- Forward remains a quarantined loopback sidecar; command projection debt is catalogued in docs/frontend/BRIDGE_BOUNDARY.md
+- Direct Forward-only SQLite projections and approval reviewer semantics remain promotion debt; this refactor does not claim those gates are solved
+
+Independent gates
+- Settled code-quality review: CLEAR / APPROVE; no findings or blockers
+- Final LazyCodex gate: APPROVE; blockers none

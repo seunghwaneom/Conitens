@@ -1,0 +1,44 @@
+Conitens authority repair — broader pre-change PIN
+Date: 2026-07-10
+
+Command: python -m unittest tests.test_operations_layer tests.test_loop_state
+Exit code: 1
+Result: Ran 39 tests in 7.575s; failures=2, errors=11.
+
+Pre-existing operations-layer failures recorded before production edits:
+
+- test_blocking_hook_and_spawn_flow_require_approval_then_launch
+  ValueError: Unknown event type: HANDOFF_STARTED
+- test_event_append_redacts_sensitive_values
+  ValueError: Unknown event type: TEST_EVENT
+- test_manager_owned_agent_step_does_not_force_typed_handoff
+  ValueError: Unknown event type: WORKFLOW_RUN_STARTED
+- test_meeting_flow_creates_append_only_transcript_and_summary
+  ValueError: Unknown event type: MEETING_STARTED
+- test_office_report_hooks_and_mcp_smoke
+  ValueError: Unknown event type: HOOK_RESULT
+- test_parallel_workcell_fails_on_lease_conflict
+  ValueError: Unknown event type: WORKFLOW_RUN_STARTED
+- test_parallel_workcell_is_reserved_without_feature_flag
+  ValueError: Unknown event type: WORKFLOW_RUN_STARTED
+- test_parallel_workcell_runs_when_feature_flag_is_enabled
+  ValueError: Unknown event type: WORKFLOW_RUN_STARTED
+- test_workflow_dry_run_returns_preview_without_step_execution
+  ValueError: Unknown event type: WORKFLOW_RUN_STARTED
+- test_workflow_pause_resume_creates_handoff_and_office_visibility
+  ValueError: Unknown event type: WORKFLOW_RUN_STARTED
+- test_workflow_verify_close_smoke
+  ValueError: Unknown event type: WORKFLOW_RUN_STARTED
+- test_provider_workflow_waits_for_spawn_approval
+  AssertionError: returncode 1 != expected 2
+- test_registry_summary_reads_control_plane_metadata
+  AssertionError: current improver/recorder/supervisor YAML files lack required
+  agent_id/runtime/schema_v fields.
+
+Isolation command: python -m unittest tests.test_loop_state
+Exit code: 0
+Result: Ran 16 tests in 1.013s; OK.
+
+Interpretation: these failures predate the authority-repair production patch.
+The room slice must keep `tests.test_room_replay` and `tests.test_loop_state`
+green and must not increase or change this operations-layer failure set.

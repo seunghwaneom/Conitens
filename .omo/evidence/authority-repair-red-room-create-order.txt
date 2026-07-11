@@ -1,0 +1,17 @@
+Conitens authority repair — RED: room create authority ordering
+Date: 2026-07-10
+
+Command subset:
+python -m unittest
+  tests.test_room_replay.RoomReplayTests.test_room_create_event_is_appended_before_projection_writes
+  tests.test_room_replay.RoomReplayTests.test_room_create_append_failure_does_not_project_room_state
+
+Both requirements failed before production edits:
+
+1. `test_room_create_event_is_appended_before_projection_writes`
+   AssertionError: `meta_exists` was True inside the patched append_event call.
+2. `test_room_create_append_failure_does_not_project_room_state`
+   AssertionError: `.notes/rooms/R-20260710-001.json` survived the simulated
+   event append failure.
+
+Interpretation: the current create path commits projections before the event.

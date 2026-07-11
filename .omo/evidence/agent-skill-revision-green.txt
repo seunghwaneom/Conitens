@@ -1,0 +1,55 @@
+Agent skill revision apply/rollback - final GREEN evidence
+Date: 2026-07-10
+
+IMPLEMENTED CONTRACT
+- approved `skill_patch` candidate -> digest-bound structured revision
+- exact revision-scoped owner request/grant -> terminal authority event
+- event-first atomic `.agent/skills/<skill>.yaml` materialization
+- owner-gated rollback and owner-gated deterministic rebuild
+- target active-stack replay, strict envelope/order validation, and stale checks
+- metadata-only, ASCII-safe CLI output with generic failure messages
+
+PYTHON
+- `python -m unittest tests.test_agent_revision_application tests.test_owner_auth_compatibility`
+  Result: 46 tests, OK (21.739s)
+- `python -m unittest tests.test_improvement_candidates tests.test_episode_closure tests.test_episode_closure_cli_security tests.test_candidate_patch_hardening tests.test_approval_controls tests.test_event_authority tests.test_agent_revision_application tests.test_owner_auth_compatibility`
+  Result: 104 tests, OK (37.858s)
+- `python -m py_compile scripts/ensemble_agent_revisions.py scripts/ensemble_owner_auth.py scripts/ensemble.py tests/test_agent_revision_application.py tests/test_owner_auth_compatibility.py`
+  Result: exit 0
+- canonical skill registry validation
+  Result: 8 manifests, 0 errors, 0 warnings
+
+PROTOCOL
+- `python scripts/sync_event_types.py`
+  Result: 150 event types and 32 aliases generated
+- `npm --prefix packages/protocol test -- improvement-event.test.ts`
+  Result: 1 test, OK
+- `npm --prefix packages/protocol run build`
+  Result: TypeScript build exit 0
+- full `npm --prefix packages/protocol test`
+  Result: 847 passed, 4 known baseline failures. The same four pre-existing
+  failures remain in agent lifecycle/extended-event membership counts and the
+  protocol reducer owned-path expectation; the revision event test passes.
+
+STRUCTURE AND DIFF
+- scoped `git diff --check`: exit 0; only existing LF/CRLF conversion warnings
+- repo-structure post-write quick gate with untracked sources: 0 dependency cycles
+- artifact: `.audit/repo-structure-lens/audit-summary.latest.md`
+- `.vibe` repo-intelligence refresh: 758 source files indexed, 0 parse errors
+- `python -m unittest tests.test_context_markdown tests.test_vibe_brain`
+  Result: 11 tests, OK
+
+REVIEW
+- independent code review: APPROVE, 0 findings
+- independent state-machine audit: APPROVE
+- independent architecture/scope review: APPROVE / CLEAR
+- independent completion verifier: PASS
+- security review found an ownerless rebuild gap; a RED test reproduced it,
+  the rebuild owner gate fixed it, and security rereview returned APPROVE
+
+LIMITATIONS
+- Python/TypeScript LSP servers were unavailable and installation was declined;
+  compile, TypeScript build, focused tests, regression tests, manual CLI QA, and
+  independent static review are the verification channels.
+- The worktree was already broadly dirty. No files were staged or committed and
+  unrelated changes were preserved.

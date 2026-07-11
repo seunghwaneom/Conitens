@@ -1,0 +1,35 @@
+Dashboard thin-shell workspace controller GREEN evidence
+Date: 2026-07-10
+
+Targeted behavior test
+- Command: node --experimental-strip-types --test packages/dashboard/tests/dashboard-thin-shell.test.mjs
+- Result: 4 passed, 0 failed.
+- Coverage: create/update bridge call ordering, archive-rationale guard, detach/archive task ordering, feedback transitions, refresh ordering, thin App composition, route-aware list error, and selected-state ARIA contract.
+
+Full dashboard regression
+- Command: pnpm --filter @conitens/dashboard test
+- Result: 154 passed, 0 failed.
+
+Type safety
+- Command: pnpm --filter @conitens/dashboard exec tsc -p tsconfig.json --noEmit
+- Result: pass, exit 0.
+
+Production build
+- Command: pnpm --filter @conitens/dashboard build
+- Result: pass; 146 Vite modules transformed.
+
+Structure and integrity
+- operator-workspace-command-service.ts: 133 pure LOC.
+- use-operator-workspace-resources.ts: 178 pure LOC.
+- use-operator-workspace-controller.ts: 154 pure LOC.
+- Scoped git diff check: pass; only the existing Windows LF/CRLF warning for App.tsx.
+- Repo Structure Lens post-write quick profile: 0 dependency cycles.
+- The lens omits untracked feature files from its changed-source ripple table; a manual reference scan confirmed App -> controller -> resources/service and the runtime test -> injectable command service dependents.
+
+Browser QA
+- 1220px nav remained on one row.
+- 1220px and 820px had no horizontal overflow.
+- Selected workspace exposed aria-pressed and shared the active visual predicate.
+- Actual workspace button click navigated to the detail route.
+- Console warnings/errors: none.
+- Details: .omo/evidence/dashboard-thin-shell-final-browser-qa.md

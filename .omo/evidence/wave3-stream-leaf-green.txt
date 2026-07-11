@@ -1,0 +1,30 @@
+Wave 3 stream leaf verification
+
+Changed file:
+- scripts/ensemble_forward_bridge_stream.py
+
+Public API:
+- _stream_snapshot_payload(workspace, *, run_id=None, room_id=None) -> dict
+- serialize_sse_event(*, event, data, event_id=None) -> bytes
+- stream_snapshot_events(workspace, *, run_id=None, room_id=None, config=None) -> Iterator[StreamEvent]
+- StreamPollConfig(interval_seconds=1.0, max_events=None)
+- StreamEvent(event, data, event_id)
+
+Boundary:
+- Imports LoopStateRepository and ConversationReadService for read paths.
+- Does not import HTTP/server classes, ReplayService, RoomService, orchestration runtime, approval adapter, append_event, or bridge facade leaves.
+- Public snapshot rows omit approval payloads, reviewer notes, validator details, room transcript text, raw event payloads, absolute paths, and local usernames.
+
+Verification:
+- python -m py_compile scripts/ensemble_forward_bridge_stream.py -> PASS
+- python -m py_compile scripts/ensemble_forward_bridge_stream.py scripts/ensemble_conversation_read_service.py scripts/ensemble_loop_repository.py -> PASS
+- python C:\Users\eomsh\.codex\plugins\cache\sisyphuslabs\omo\4.16.1\skills\programming\scripts\python\check-no-excuse-rules.py scripts/ensemble_forward_bridge_stream.py -> PASS, no violations
+- python -m unittest tests.test_forward_bridge_boundary.ForwardBridgeBoundaryTests.test_public_approval_validator_and_stream_views_omit_private_values -> PASS
+- python -m unittest tests.test_forward_live_approval.ForwardLiveApprovalTests.test_sse_serializer_round_trip_shape -> PASS
+- Direct stream smoke -> PASS: private approval token, transcript text, private-owner username, and action_payload_json absent; bounded iterator produced snapshot plus follow-up event.
+- AST forbidden import/name audit -> PASS: no forbidden imports or names.
+- git diff --check -- scripts/ensemble_forward_bridge_stream.py -> PASS
+- Pure LOC -> 142
+
+Known external blockers:
+- python -m unittest tests.test_forward_bridge_architecture.ForwardBridgeArchitectureTests.test_prescribed_leaf_modules_import_successfully fails outside this leaf because ensemble_forward_bridge_commands imports missing ensemble_forward._looks_like_absolute_path and ensemble_forward_bridge_http is absent.

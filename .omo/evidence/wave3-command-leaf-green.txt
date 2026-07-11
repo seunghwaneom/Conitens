@@ -1,0 +1,33 @@
+Wave 3 command leaf evidence
+
+Changed file:
+- scripts/ensemble_forward_bridge_commands.py
+
+Dispatch API:
+- dispatch_command(method: str, path: str, payload: JsonPayload, *, workspace: str | Path, reviewer_identity: str) -> CommandResult | None
+
+Result shape:
+- CommandResult(status: int, payload: JsonPayload | str, content_type: str = "application/json; charset=utf-8")
+
+Public exports:
+- CommandBadRequest
+- CommandConflict
+- CommandResult
+- dispatch_command
+
+Verification:
+- python -m py_compile scripts/ensemble_forward_bridge_commands.py -> pass
+- python C:/Users/eomsh/.codex/plugins/cache/sisyphuslabs/omo/4.16.1/skills/programming/scripts/python/check-no-excuse-rules.py scripts/ensemble_forward_bridge_commands.py -> no violations in 1 file(s)
+- direct command smoke -> command smoke ok
+- full command smoke -> command full smoke ok
+- boundary grep for http.server, BaseHTTPRequest, _forward_json_response, _forward_text_response, ensemble_forward_bridge, agent_apply_patch -> no matches
+- git diff --no-index --check -- NUL scripts/ensemble_forward_bridge_commands.py -> no whitespace/conflict output; git returned 1 because --no-index reports differences and emitted the existing CRLF warning
+
+Focused old-bridge test status:
+- python -m unittest tests.test_forward_patch_commands -> 4/6 pass, 2 fail because tests inspect the existing dirty scripts/ensemble_forward_bridge.py DELETE handler, which this leaf was instructed not to edit.
+
+Integration requirements:
+- The Forward Bridge HTTP handlers should parse/authenticate request bodies as they do today, call dispatch_command(method, path, payload, workspace=workspace_root, reviewer_identity=reviewer_identity), and if the result is not None write result.status/result.payload/result.content_type through the existing response helpers.
+- POST/PATCH/DELETE handlers should keep their current malformed JSON/body-size handling before dispatch.
+- Unmatched dispatch_command result None should fall through to the current 404 text response.
+- Patch approve/reject should be routed through dispatch_command so approve uses ensemble_agent_patch_service.decide_agent_patch and reject consumes the parsed DELETE payload reason while staying non-durable.

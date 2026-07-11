@@ -1,0 +1,35 @@
+Improvement effect observation — RED evidence
+Captured: 2026-07-11T00:18:25+09:00
+
+1. Closure comparison identity
+Command: python -m unittest tests.test_episode_closure tests.test_episode_closure_cli_security
+Result: EXPECTED RED (exit 1; 15 tests, 1 failure, 2 errors)
+- ClosureRequest rejects the planned comparison_key keyword.
+- episode close does not recognize --comparison-key.
+- argparse echoes the unsafe rejected key while the option is unknown.
+
+2. Effect observation service
+Command: python -m unittest tests.test_improvement_effect_measurement
+Result: EXPECTED RED (exit 1)
+- Import fails because ensemble_improvement_effects does not exist.
+
+3. Protocol registry
+Command: pnpm --filter @conitens/protocol test -- improvement-event
+Result: EXPECTED RED (exit 1; 1 failed test)
+- EVENT_TYPES does not include improvement.effect_observed.
+
+The failures are confined to the planned missing comparison, effect-service,
+and event-registry surfaces. Adjacent suites were green in
+.omo/evidence/improvement-effect-pin.txt before these tests were added.
+
+4. Replay-integrity RED after the first minimum implementation
+Command: python -m unittest tests.test_improvement_effect_measurement
+Result: EXPECTED RED (exit 1; 11 tests, 2 failures, 2 errors)
+- Metrics omitted the required numeric `delta` record.
+- Removing apply approval request/grant events was incorrectly accepted.
+- Mutating the effect event actor name was incorrectly accepted by replay.
+- An identical duplicate effect event was treated as malformed instead of
+  collapsing idempotently.
+
+These failures isolate the remaining GREEN work to revision replay integrity,
+effect-envelope binding, derived deltas, and exact-duplicate replay semantics.

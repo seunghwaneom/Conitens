@@ -1,0 +1,12 @@
+✔ agent character stage model exposes sprite-gen backed role motion (12.6494ms)
+✔ agent role motion profiles stay unique across canonical roles (0.258ms)
+✔ office preview focused stage is character-first and sprite-gen sourced (0.8109ms)
+✔ sprite-gen character atlas manifest is auditable (2.0896ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 160.2388

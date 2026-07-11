@@ -1,0 +1,177 @@
+Wave 3 Forward Bridge hands-on QA
+Date: 2026-07-11
+Workspace: D:/Google/.Conitens
+Scope: CLI plus a real ephemeral loopback ThreadingHTTPServer launched from the
+facade/HTTP leaf. No production or test files were edited.
+
+Overall verdict: PASS (with a non-blocking fixture limitation noted below).
+
+Scenario brainstorming and priority
+P0-01 forward status remains legacy/default-runtime-safe.
+P0-02 context-latest envelope is public/allowlisted and repo_latest is null.
+P0-03 legacy --forward start rejects as status-only alias.
+P0-04 API read without bearer token is denied.
+P0-05 API read with bearer token succeeds.
+P0-06 non-loopback host launch is rejected.
+P0-07 valid loopback CORS preflight succeeds.
+P0-08 non-loopback Origin preflight is rejected.
+P0-09 malformed JSON write returns a bounded 400 before command execution.
+P0-10 declared body over 1 MiB returns 413 before command execution.
+P0-11 unexpected handler failure returns sanitized 500 only.
+P0-12 authenticated command route delegates and validates input (no mutation).
+P0-13 authenticated SSE emits initial snapshot and one-second heartbeat.
+P1-14 threads query returns the compatibility envelope and remains private.
+P1-15 operator summary is CORS-enabled only for loopback and private.
+P1-16 unknown room timeline returns bounded 404 rather than a raw exception.
+P1-17 populated repository room timeline takes the primary read service.
+P1-18 legacy-only thread fallback has explicit degraded metadata.
+P1-19 patch reject parses a reason but does not fabricate durability.
+P1-20 facade monkeypatch/re-export compatibility is retained.
+
+surfaceEvidence
+- scenarioId: P0-01
+  criterion: AC9 runtime quarantine
+  surface: real CLI
+  exactInvocation: python scripts/ensemble.py forward status --format json
+  verdict: PASS; entry_contract.default_runtime was "legacy".
+  artifactRefs: [qa-log]
+- scenarioId: P0-02
+  criterion: AC5 allowlisted public context
+  surface: real CLI
+  exactInvocation: python scripts/ensemble.py forward context-latest --format json
+  verdict: PASS; returned public runtime_latest placeholder and repo_latest null.
+  artifactRefs: [qa-log]
+- scenarioId: P0-03
+  criterion: AC9 legacy selector compatibility
+  surface: real CLI
+  exactInvocation: python scripts/ensemble.py --forward start
+  verdict: PASS; nonzero argparse error says only read-only status is supported.
+  artifactRefs: [qa-log]
+- scenarioId: P0-04/P0-05
+  criterion: HTTP auth/loopback compatibility
+  surface: real ephemeral loopback HTTP server + curl.exe -i
+  exactInvocation: python -c launches ensemble_forward_bridge.launch_forward_bridge('.', host='127.0.0.1', port=0), then curl.exe -sS -i --max-time 3 /api/runs with and without Authorization: Bearer [REDACTED_TOKEN].
+  verdict: PASS; unauthenticated request 403 "Missing or invalid forward bridge token.", authenticated request 200 {"runs": [], "count": 0}.
+  artifactRefs: [qa-log]
+- scenarioId: P0-06
+  criterion: loopback-only transport
+  surface: facade launcher
+  exactInvocation: python -c calls launch_forward_bridge('.',host='0.0.0.0',port=0)
+  verdict: PASS; ValueError states host must be loopback-only.
+  artifactRefs: [qa-log]
+- scenarioId: P0-07/P0-08
+  criterion: auth/CORS
+  surface: real loopback HTTP server + curl.exe -i
+  exactInvocation: curl.exe -sS -i --max-time 3 -X OPTIONS -H "Origin: http://127.0.0.1:5173" /api/runs; repeated with Origin: https://evil.example.
+  verdict: PASS; loopback origin 204 with Access-Control-Allow-Origin and allowed headers/methods, external origin 403.
+  artifactRefs: [qa-log]
+- scenarioId: P0-09
+  criterion: malformed request handling
+  surface: real loopback HTTP server + curl.exe -i
+  exactInvocation: curl.exe -sS -i --max-time 3 -X POST -H "Authorization: Bearer [REDACTED_TOKEN]" -H "Content-Type: application/json" --data-binary "{bad" /api/operator/tasks
+  verdict: PASS; 400 {"error":"Malformed JSON body"}.
+  artifactRefs: [qa-log]
+- scenarioId: P0-10
+  criterion: 1 MiB body limit
+  surface: real loopback HTTP server + curl.exe -i
+  exactInvocation: curl.exe -sS -i --max-time 5 -X POST -H "Authorization: Bearer [REDACTED_TOKEN]" -H "Content-Length: 1000001" --data-binary @- /api/operator/tasks (1,000,001-byte stdin).
+  verdict: PASS; 413 {"error":"Request body too large"}.
+  artifactRefs: [qa-log]
+- scenarioId: P0-11
+  criterion: sanitized unexpected errors
+  surface: real loopback HTTP server + curl.exe -i
+  exactInvocation: python -c launches ensemble_forward_bridge_http.launch_forward_bridge with a build_runs_payload binding that raises an internal marker, then curl.exe -sS -i /api/runs.
+  verdict: PASS; 500 body was only {"error":"Internal forward bridge error."}; internal marker absent from client response.
+  artifactRefs: [qa-log]
+- scenarioId: P0-12
+  criterion: command transport delegation/status mapping
+  surface: real loopback HTTP server + curl.exe -i
+  exactInvocation: curl.exe -sS -i --max-time 3 -X POST -H "Authorization: Bearer [REDACTED_TOKEN]" -H "Content-Type: application/json" --data "{}" /api/operator/tasks
+  verdict: PASS; 400 {"error":"Operator task title is required."}; unknown write route returned 404; unauthorized write returned 403.
+  artifactRefs: [qa-log]
+- scenarioId: P0-13
+  criterion: SSE compatibility
+  surface: real loopback HTTP server + curl.exe -i
+  exactInvocation: curl.exe -sS -i --max-time 3 -H "Authorization: Bearer [REDACTED_TOKEN]" /api/events/stream
+  verdict: PASS; 200 text/event-stream emitted id 0/event snapshot followed by id 1 and id 2 heartbeat approximately one second apart. curl exit 28 is expected because the intentional max-time closed an open SSE stream.
+  artifactRefs: [qa-log]
+- scenarioId: P1-14/P1-15
+  criterion: query and public payload privacy
+  surface: real loopback HTTP server + response regex scan
+  exactInvocation: authenticated curl.exe requests for /api/runs, /api/threads, and /api/operator/summary; Python regex scan for bearer/token/secret and Windows/POSIX absolute-path patterns.
+  verdict: PASS; all three scans found no forbidden token/secret/absolute-path pattern. /api/threads was 200 {"threads": [], "total": 0}; summary exposed loopback CORS headers only.
+  artifactRefs: [qa-log]
+- scenarioId: P1-16
+  criterion: collaboration reads fail boundedly
+  surface: real loopback HTTP server + curl.exe -i
+  exactInvocation: authenticated curl.exe -sS -i --max-time 3 /api/rooms/not-a-room/timeline
+  verdict: PASS; 404 {"error":"Room not found: not-a-room"}.
+  artifactRefs: [qa-log]
+- scenarioId: P1-17/P1-18
+  criterion: AC6 primary room/thread service and explicit legacy fallback
+  surface: focused real test fixtures
+  exactInvocation: python -m unittest tests.test_conversation_read_service tests.test_room_replay
+  verdict: PASS in the complete focused Wave 3 regression bundle (exit 0). Current shared workspace has zero rooms/messages, so a populated live-room curl scenario could not be performed without creating shared persistent data; this is a fixture limitation, not a product failure.
+  artifactRefs: [qa-log]
+- scenarioId: P1-19/P1-20
+  criterion: AC1/AC7 facade and patch-command compatibility
+  surface: focused real test fixtures
+  exactInvocation: python -m unittest tests.test_forward_bridge_architecture tests.test_forward_patch_commands tests.test_forward_bridge_http
+  verdict: PASS; isolated HTTP leaf suite: 6 tests, OK; complete focused bundle exit 0.
+  artifactRefs: [qa-log]
+
+adversarialCases
+- scenarioId: A1
+  criterion: HTTP authorization
+  adversarialClass: missing bearer token
+  expectedBehavior: 403 without route payload.
+  verdict: PASS
+  artifactRefs: [qa-log]
+- scenarioId: A2
+  criterion: CORS boundary
+  adversarialClass: non-loopback Origin
+  expectedBehavior: 403 and no permissive CORS header.
+  verdict: PASS
+  artifactRefs: [qa-log]
+- scenarioId: A3
+  criterion: body decoder
+  adversarialClass: malformed JSON
+  expectedBehavior: sanitized 400 before command dispatch.
+  verdict: PASS
+  artifactRefs: [qa-log]
+- scenarioId: A4
+  criterion: body limit
+  adversarialClass: declared 1,000,001-byte body
+  expectedBehavior: 413 before command dispatch.
+  verdict: PASS
+  artifactRefs: [qa-log]
+- scenarioId: A5
+  criterion: host boundary
+  adversarialClass: 0.0.0.0 bind request
+  expectedBehavior: launcher ValueError, no server.
+  verdict: PASS
+  artifactRefs: [qa-log]
+- scenarioId: A6
+  criterion: error redaction
+  adversarialClass: forced internal query exception
+  expectedBehavior: generic 500 with no internal marker.
+  verdict: PASS
+  artifactRefs: [qa-log]
+- scenarioId: A7
+  criterion: route validation
+  adversarialClass: nonexistent room and nonexistent write route
+  expectedBehavior: bounded 404 JSON/text response, no traceback.
+  verdict: PASS
+  artifactRefs: [qa-log]
+
+Focused regression invocation
+python -m unittest tests.test_forward_bridge_architecture tests.test_forward_public_context tests.test_conversation_read_service tests.test_forward_patch_commands tests.test_forward_bridge_commands tests.test_forward_bridge_http tests.test_forward_bridge_boundary tests.test_forward_live_approval tests.test_forward_bridge tests.test_forward_operator_flow tests.test_forward_runtime_mode tests.test_room_replay tests.test_candidate_patch_hardening tests.test_approval_controls
+Result: exit 0. Isolated `python -m unittest tests.test_forward_bridge_http -v`: 6 tests, OK.
+
+artifactRefs
+- id: qa-log
+  kind: manual QA matrix and safe command/output summary
+  description: This file; tokens and internal error markers are redacted or omitted.
+  path: .omo/evidence/wave3-review-qa.txt
+
+Blocking issues: none. The only coverage limit is that the shared workspace currently has no populated room/message records; the populated-room and legacy-fallback behavior was executed via the focused fixture suites rather than creating persistent QA data in the shared workspace.

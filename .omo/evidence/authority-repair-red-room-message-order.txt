@@ -1,0 +1,19 @@
+Conitens authority repair — RED: room message authority ordering
+Date: 2026-07-10
+
+Command subset:
+python -m unittest
+  tests.test_room_replay.RoomReplayTests.test_room_message_event_is_appended_before_projection_writes
+  tests.test_room_replay.RoomReplayTests.test_room_message_append_failure_does_not_project_message_state
+
+Both requirements failed before production edits:
+
+1. `test_room_message_event_is_appended_before_projection_writes`
+   AssertionError: the JSONL room log already contained the new message inside
+   the patched append_event call; the baseline log was empty.
+2. `test_room_message_append_failure_does_not_project_message_state`
+   AssertionError: the JSONL log line survived the simulated event append
+   failure.
+
+Interpretation: the current message path commits file/SQLite projections before
+the authority event.

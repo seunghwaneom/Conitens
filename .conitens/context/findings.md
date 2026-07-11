@@ -1,5 +1,130 @@
 # findings.md
 
+## Unified Authority Repair Findings - 2026-07-10
+
+- ADR-0004 now resolves the apparent dual ownership: the event ledger is
+  durable workspace truth, Forward SQLite is a bounded operational
+  owner/index, and no default-runtime promotion occurs without explicit replay,
+  parity, privacy, failure-recovery, and operator-command gates.
+- Room create/message/tool-event paths all had the same authority inversion:
+  projection or SQLite mutation preceded append_event. Failure-first tests
+  reproduced each path before repair; all three now append first and project
+  only from the returned redacted event payload.
+- Room message authority identity must exist before projection. New messages
+  use stable msg:<room_id>:<uuid> identities in the event/log/return shape while
+  the existing SQLite auto-increment remains the projection id under id.
+  Repository callers in this codebase already consume the integer id, so no
+  in-repo integer message_id dependency was found.
+- Projection failure after a successful event is intentionally asymmetric:
+  the exception propagates and the authority event remains for replay/rebuild.
+  Tests now lock this behavior for room creation and messages instead of
+  pretending the file and SQLite projections are a cross-store transaction.
+- The first Windows path fix was too narrow: its username class treated the
+  letter s as excluded and leaked common names such as eomsh/sam. Behavior
+  locks now cover normal and duplicated backslashes plus POSIX home paths.
+- Obsidian rebuild nondeterminism came from project_thread using wall-clock
+  updated_at. Rebuild now carries the latest relevant event timestamp into the
+  projection, and the test injects divergent clocks without sleeping.
+- Legacy room resynchronization must prefer explicit evidence_refs over its
+  attachment fallback and read the new content field before the text alias.
+- Meeting start/say/end now commit canonical events before transcript or
+  summary projection. Deliberation events carry stable message identity,
+  content hashes, participant/room metadata, and a relative transcript ref;
+  raw meeting text remains in the redacted evidence projection rather than the
+  domain event. Missing meeting ids are rejected before either surface changes.
+- Handoff create/transition now append before file, loop-state, or SQLite
+  projection. Canonical events contain hashes, counts, safe file refs, and a
+  handoff ref instead of raw summary/detail/result/worktree/lease values.
+  Artifact-manifest failure is a secondary fixed warning and cannot invalidate
+  a committed handoff.
+- Spawn request is committed before workspace, memory, log, or process side
+  effects. A clean short-lived provider is represented as requested, spawned,
+  then terminated/completed; a pre-observation nonzero exit produces a
+  recoverable error without a spawned record; all post-workspace failure phases
+  clean a newly created worktree.
+- Stop uses a distinct command lifecycle: command.issued precedes process
+  termination, agent.terminated records observed success, and command.completed
+  closes the request. If completion append fails after termination, a
+  command.failed event and terminal stopped projection preserve the observed
+  truth instead of leaving an active zombie record.
+- The operations-layer suite remains pre-existing debt rather than a regression:
+  the post-repair result is 2 failures and 9 errors across 23 tests, with the
+  two removed errors attributable to the repaired lifecycle aliases. Remaining
+  failures are unknown fixture/workflow/hook aliases, incomplete legacy
+  registry metadata, and one provider workflow return-code mismatch.
+- The full protocol suite remains at four known baseline failures: stale
+  agent-event registry counts/subset assertions and the ThreadReducer ownership
+  invariant for `.notes/40_Comms/**/*.md`. Focused handoff state/alias tests and
+  the protocol build are green.
+- Forward query privacy required a public projection layer rather than storage
+  mutation. Repository rows retain internal paths, approval payloads, reviewer
+  notes, and actors, while browser-visible builders now return exact whitelists
+  with relative paths or `[REDACTED]`, metadata-only approval/SSE records, fixed
+  validator summaries, and `local-operator` actor labels.
+- Path normalization must fail closed: an absolute path outside the workspace
+  cannot safely degrade to its basename, because that basename may itself be a
+  local username. Outside absolute, UNC, and traversal-only values are opaque;
+  safe in-workspace paths remain relative.
+- Public query builders are now locked as non-mutating. Workspace task IDs are
+  derived in memory and stale membership repair is not triggered by list/detail
+  reads. Internal command behavior remains separate and is the later extraction
+  target; the HTTP routes and current dashboard data shapes remain compatible.
+- Windows CP949 exposed a transport boundary independent of content privacy.
+  Forward JSON now uses ASCII escapes so valid Unicode survives parsing without
+  requiring a UTF-8 console or corrupting the stored context text.
+
+## Architecture Direction And Refactor Planning Findings - 2026-07-10
+
+- Stable product identity across session history is a self-improving,
+  event-sourced agent control center: Conitens supervises heterogeneous agent
+  harnesses, owns approval/verification/evidence, and turns closed episodes into
+  versioned skill, workflow, and agent-topology proposals. It is not another
+  provider runtime or a raw transcript warehouse.
+- The main architecture problem is boundary drift rather than missing features.
+  The active default remains `scripts/ensemble.py + .notes + .agent`, while the
+  additive forward status surface reports SQLite-owned authoritative state for
+  runs, iterations, rooms/messages, approvals, tasks, and workspaces. A new
+  ADR-0004 must define the relation and promotion gate before forward becomes a
+  default runtime.
+- Confirmed event-first violations include room, meeting-state, and spawn paths
+  that write files or SQLite before appending the corresponding event. This is
+  a known list, not a complete inventory.
+- The Forward Bridge is not read-only in reality. It implements task/workspace
+  CRUD, approval decision/resume, and a patch-approval shortcut; handlers call
+  repositories/runtime services directly, and the bridge file has no
+  `append_event()` call. Query, command, transport, and storage responsibilities
+  must be characterized before extraction.
+- Current room events are not yet sufficient for a deterministic room-log
+  projector: `ROOM_MESSAGE` omits the message/evidence material needed to
+  reconstruct the current log. Payload sufficiency is a P0 test gate before the
+  first event-before-projection conversion.
+- Meeting transcript JSONL remains the canonical append-only transcript/evidence
+  ledger under redaction policy, but is not domain state authority. Unredacted
+  private raw content must not enter events/operator payloads. The current
+  `MEETING_MSG` masked-text contract needs an explicit privacy and replay decision
+  rather than an implicit rewrite.
+- Browser-visible payload safety is not fully established. The live forward
+  status response and operator workspace model can expose absolute local paths.
+  Existing payload shapes are therefore not preservation targets until a
+  leakage characterization test is green.
+- The largest active structural hotspots are `scripts/ensemble.py` (~5,683 LOC),
+  `scripts/ensemble_forward_bridge.py` (~4,137 LOC), and dashboard `App.tsx`
+  (~2,746 LOC, audit complexity 685). File size is secondary to their multiple
+  reasons to change. The generated audit found no relative import cycles, so
+  facade-preserving leaf extraction is feasible.
+- `packages/command-center` is reference/parity, not an active refactor target.
+  Its large files should not distort the backlog unless a later ADR promotes the
+  surface.
+- Recommended first implementation sequence is: authority/promotion ADR and
+  bridge boundary correction; direct event/rebuild/bridge leakage and mutation
+  characterization; room payload sufficiency; then the room event-first slice.
+  Bridge and dashboard decomposition may proceed in parallel only after those
+  contracts are locked.
+- Three audit hypotheses were confirmed with observed evidence: legacy default
+  and forward SQLite owners coexist; bridge mutations lack a bridge-level event
+  append; and current payloads are both replay-insufficient (room message) and
+  potentially path-leaking (forward/operator responses).
+
 ## Episode Closure Attempt Public Artifact Slice Findings - 2026-07-05
 
 - The interview seed is best implemented as a new leaf module rather than by
@@ -3238,3 +3363,142 @@
 - Review also found that unsafe-ref errors leaked the original rejected path in
   CLI stderr. The fix returns generic classifications such as absolute path,
   traversal, symbolic id, or control character without echoing the ref.
+
+## Wave 5 Improvement Candidate Findings - 2026-07-10
+
+- The safe authority split is candidate/approval events now, `.agent`
+  projection later. Existing `scripts/ensemble_approval.py` and
+  `LoopStateRepository` remain SQLite-first and are not valid authorities for
+  this pipeline.
+- Candidate identity is closure/kind/target-derived; proposal digests use
+  canonical JSON so structured field boundaries cannot collide.
+- Replay must validate the full identity, digest, deterministic risk, exact
+  closure provenance, request metadata/scope, actor type, event order, and
+  terminal decision agreement before a record can render or affect versioning.
+- Permissive scalar-to-string coercion is unsafe at replay boundaries. A forged
+  numeric target/summary record passed the first review and advanced a version;
+  strict string validation now rejects it and its version is ignored.
+- Approval actor validation is currently structural, not cryptographic. The
+  future apply boundary must enforce real owner permission rather than treating
+  a well-shaped event actor as sufficient authorization.
+- The current candidate carries bounded metadata summaries, not executable or
+  materializable config content. Apply logic must not synthesize a patch from
+  those summaries.
+- Full-ledger replay and concurrent version allocation remain future scale/
+  concurrency concerns; neither justifies SQLite authority in this phase.
+- Final isolated QA showed candidate actions mutate only
+  `.notes/events/events.jsonl`; `.agent` and SQLite snapshots are unchanged.
+
+## Wave 5 Agent Skill Revision Findings - 2026-07-10
+
+- Candidate summaries remain metadata only. Materialization begins from a
+  separately supplied, schema-v1 structured manifest and binds the exact
+  candidate proposal digest into revision identity and every authorization/
+  terminal event.
+- `.agent/skills` is the canonical configuration surface, but every mutation in
+  this flow is an event-authorized materialization. Proposal, apply, rollback,
+  and rebuild never create a second SQLite or Forward authority.
+- Candidate-review approval is necessary but insufficient. Apply, rollback, and
+  rebuild perform a live match against the existing `.notes/OWNER.json` contract.
+- Replay correctness depends on full envelopes and order, not payload shape
+  alone. Proposal actor/scope, candidate approval precedence, exact requests and
+  owner grants, terminal reasons, duplicate events, and the target active stack
+  are all validated before materialization.
+- Retry must distinguish expected recovery from external drift. A committed
+  terminal can repair only missing/expected prior bytes; arbitrary target edits
+  fail closed and require an explicit owner-authorized rebuild.
+- Path safety covers `.agent`, `.agent/skills`, the target parent, and the target
+  itself against symlinks/junctions and resolution outside the workspace.
+- Security review found that ownerless rebuild initially trusted well-shaped
+  owner events. A failure-first test reproduced it; rebuild now verifies the live
+  project owner before replay or any `.agent` creation.
+- The current leaf service intentionally concentrates validation, replay,
+  authorization, and materialization. Split it only when additional target
+  families or richer semantics justify a stable reducer/materializer boundary.
+- Residual local-model risks are the preserved git-email owner fallback, tempdir
+  lock divergence for deliberately different environments, and global event-log
+  crash durability. None is promoted as solved by this slice.
+
+## Wave 5 Effect Observation And Wave 6 Quarantine Findings - 2026-07-11
+
+- Comparable work cannot be inferred safely from prose. The minimum trustworthy
+  identity is an explicit bounded `comparison_key` copied into both closure
+  artifacts and compared by exact equality.
+- Effect records are observations, not causal proof. The event stores only
+  closure/revision/candidate references, bounded metrics, deltas, classifications,
+  and `causal_attribution=not_claimed`.
+- Historical replay must evaluate authority as of the effect event. Using final
+  revision state made a later valid rollback erase the readability of an earlier
+  valid observation; prefix replay fixes that temporal category error.
+- Command-level read/check/append transactions need a shared cross-process lock.
+  A process-local lock allowed two different actors to append conflicting events
+  for one deterministic observation identity.
+- Python equality is not an exact JSON type check because booleans compare equal
+  to integers. Replay now compares recursive type identity and value, including
+  envelope `event_v`, scope, and redaction fields.
+- Closure replay must validate nested schemas and public values before trusting
+  recomputed hashes. A forged nested prompt/path/secret can otherwise be rehashed,
+  while digest rendering may ignore the injected field.
+- Candidate provenance intentionally bounds `source_event_ids` to 50. Effect
+  linkage compares that prefix while still computing metrics from the complete,
+  independently validated closure source set.
+- Provider totals are exact only when every referenced provider call carries the
+  relevant telemetry; partial telemetry remains unknown instead of becoming a
+  misleading partial sum.
+- Forward promotion gate 6 fails. Arbitrary context Markdown can preserve raw
+  prompt/transcript/stdout/stderr bodies, common secret shapes, and absolute POSIX
+  paths. A blacklist sanitizer cannot replace an allowlisted public projection.
+- Forward remains an explicit, loopback-authenticated but quarantined sidecar.
+  No authority-bearing command handler or runtime default was promoted.
+- Closure creation and effect replay initially disagreed about absolute POSIX
+  paths. Creation now applies the shared public-text policy before append, while
+  unsafe episode IDs retain compatibility through deterministic opaque refs.
+- Runtime-roster default version probing exceeded the 10-second client timeout
+  on a reproducible host path. The HTTP read now defaults probes off and preserves
+  `probe_versions=1` as explicit diagnostics; this is bounded-read reliability,
+  not Forward promotion.
+- Final evidence is 26/26 focused effect, 19/19 closure security, 121/121
+  adjacent, 54/54 Forward, protocol focused/build/compile/sync green, and the
+  unchanged full-protocol 847-pass/4-known-failure baseline.
+- Independent goal/scope, QA, code, security, context/history, and replay/state
+  reviews all returned PASS on the settled slice.
+
+## Wave 3 Forward Bridge Boundary Findings - 2026-07-11
+
+- A compatibility facade can preserve dashboard, CLI, and monkeypatch behavior
+  while ownership moves into small query, command, stream, HTTP, public-context,
+  collaboration-read, and patch-decision leaves.
+- Read-only SQLite means both logical and physical non-mutation. Missing databases
+  must not be created; existing WAL databases cannot be opened immutable without
+  accounting for live WAL/SHM sidecars.
+- Public output allowlists are necessary but not sufficient if search still reads
+  private bodies. A boolean match on a raw message is a presence oracle, so thread
+  search now matches only structural/public metadata.
+- Actor labels, reviewer labels, handoff blocked reasons, summaries, and fallback
+  error strings are all public data once they cross the bridge. They require the
+  same strict sanitizer and neutral fallback policy as context projections.
+- Approval correctness needs two distinct guarantees: the event ledger precedes
+  SQLite projection, and a partial approved-but-not-applied patch remains safely
+  retryable with workspace/actor/reason intact.
+- On Windows, replying 413 before consuming a slightly over-limit request can
+  reset the connection. A strictly bounded drain stabilizes normal overflow while
+  extreme declared lengths remain undrained and rejected.
+- Split quality must be measured on the new boundary leaves. The 37 Wave 3 files
+  have zero no-excuse violations; four older large modules still carry documented
+  legacy violations and were not widened into this refactor.
+- Public projection logic must not be independently reimplemented per transport.
+  Approval, actor, and handoff records now share one allowlisted projection used
+  by query, command, and SSE paths; handoff packet bodies never cross the boundary.
+- Explicit file splits are insufficient when wildcard imports recreate a hidden
+  monolith. The 19 query modules now import their real owners directly, the facade
+  re-exports a fixed 27-name contract, and architecture tests reject wildcard or
+  dynamic-global exports.
+- Route inventory is an executable contract: the root page is tested against all
+  13 authenticated operator mutations, not a representative subset.
+- Forward remains quarantined. Direct Forward-only SQLite projections and approval
+  reviewer semantics are promotion debt; neither became event-ledger authority.
+- The adjacent 2-failure/9-error baseline is causally isolated to legacy uppercase
+  event names and three legacy persona manifests. It requires a separate semantic
+  migration and explicit persona-core authorization.
+- Independent settled review found no remaining scoped code-quality issue
+  (`CLEAR / APPROVE`), and the final gate approved the refactor with no blockers.

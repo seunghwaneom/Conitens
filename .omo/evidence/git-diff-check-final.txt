@@ -1,0 +1,12 @@
+warning: in the working copy of '.conitens/context/LATEST_CONTEXT.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.conitens/context/findings.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.conitens/context/progress.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.conitens/context/task_plan.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/dashboard/src/components/OfficeAvatar.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/dashboard/src/components/OfficeStage.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/dashboard/src/office-avatar-sprites.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/dashboard/src/office-stage.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/dashboard/src/spatial-lens/styles/spatial-lens.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/dashboard/src/styles/tokens.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/dashboard/tests/office-preview-shell.test.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/dashboard/tests/spatial-lens-pixel-grammar.test.mjs', LF will be replaced by CRLF the next time Git touches it

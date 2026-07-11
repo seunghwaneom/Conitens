@@ -1,0 +1,35 @@
+Wave 3 HTTP leaf evidence
+Date: 2026-07-11
+
+Owned file:
+- scripts/ensemble_forward_bridge_http.py
+
+Direct verification:
+- python -m py_compile scripts/ensemble_forward_bridge_http.py
+- AST forbidden-name check for HTTP leaf returned []
+- python -m unittest tests.test_forward_bridge_architecture.ForwardBridgeArchitectureTests.test_prescribed_leaf_modules_import_successfully tests.test_forward_bridge_architecture.ForwardBridgeArchitectureTests.test_http_module_excludes_repository_and_domain_mutators
+- Result: 2 tests run, 2 pass
+- direct launch smoke against ensemble_forward_bridge_http.launch_forward_bridge:
+  - unauthorized POST /api/operator/tasks -> 403 before dispatch
+  - authorized POST/PATCH/DELETE operator task routes -> delegated through dispatch_command
+  - DELETE /api/approvals/patch-003/reject parsed JSON body and forwarded {"reason": "..."}
+  - GET /api/threads, /api/threads/search, /api/threads/<id> resolved through build_threads_payload, build_thread_search_payload, build_thread_detail_payload
+  - GET /api/rooms/<room_id>/timeline resolved through build_room_timeline_payload
+  - OPTIONS /api/runs with loopback Origin -> 204 and Access-Control-Allow-Origin echoed
+  - GET /api/runs resolved through late-bound bindings object
+  - dispatch exception -> sanitized 500 body {"error": "Internal forward bridge error."}
+
+Focused repo tests:
+- python -m unittest tests.test_forward_bridge_architecture tests.test_forward_bridge_http tests.test_forward_live_approval
+- Result: 21 tests run, 16 pass, 5 fail in facade-owned paths
+- Failing facade/integration cases:
+  - facade still contains legacy HTTP route tree and does not re-export _stream_snapshot_payload
+  - facade launch path still hits legacy POST validation before dispatch
+  - facade DELETE /api/approvals/<id>/reject still references undefined payload
+
+Facade integration required:
+- import/re-export launch_forward_bridge and run_forward_bridge from ensemble_forward_bridge_http
+- either pass bindings=ensemble_forward_bridge or rely on the leaf default binding resolver
+- re-export _stream_snapshot_payload from ensemble_forward_bridge_stream
+- keep facade builder names stable so request-time monkeypatching of build_run_detail_payload and build_runtime_cli_checks remains effective
+- expose build_threads_payload, build_thread_search_payload, build_thread_detail_payload, and build_room_timeline_payload on the facade/query binding surface

@@ -1,0 +1,18 @@
+Conitens authority repair — RED: room message replay sufficiency
+Date: 2026-07-10
+
+Command:
+python -m unittest tests.test_room_replay.RoomReplayTests.test_room_message_event_payload_is_replay_sufficient
+
+Failure before production edits:
+
+AssertionError: `room_id` was absent. The canonical
+`thread.message_appended` payload contained only:
+
+`message_type`, `attachments`, `sender_kind`
+
+It also lacked stable `message_id`, sender, content, created_at, evidence_refs,
+metadata, and iteration data required to replay the message projection.
+
+Compatibility PIN:
+`test_legacy_room_file_import_remains_supported` passed (1/1 in 0.190s).

@@ -1,0 +1,19 @@
+Meeting/spawn authority PIN - 2026-07-10
+
+Command:
+python -m unittest tests.test_operations_layer.OperationsLayerTests.test_meeting_flow_creates_append_only_transcript_and_summary tests.test_operations_layer.OperationsLayerTests.test_blocking_hook_and_spawn_flow_require_approval_then_launch
+
+Pre-repair result:
+- Ran 2 tests in 4.184s.
+- 2 errors.
+- Meeting stopped at `Unknown event type: MEETING_STARTED` after transcript and
+  active-meeting projections had already been written.
+- Spawn stopped at `Unknown event type: HANDOFF_STARTED` after the provider
+  process had already launched and handoff projections had already changed.
+
+Interpretation:
+- Existing caller-visible flows are the compatibility PIN, but they cannot be
+  treated as green until legacy event aliases are restored from the canonical
+  TypeScript protocol source.
+- The errors independently demonstrate that current write/side-effect ordering
+  crosses the event commit boundary before validation succeeds.

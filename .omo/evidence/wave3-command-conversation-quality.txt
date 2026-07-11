@@ -1,0 +1,35 @@
+Wave 3 command/conversation/patch quality repair
+Date: 2026-07-11
+
+Owned source and pure LOC
+- scripts/ensemble_forward_bridge_commands.py: 100
+- scripts/ensemble_forward_bridge_command_support.py: 31
+- scripts/ensemble_forward_bridge_command_tasks.py: 190
+- scripts/ensemble_forward_bridge_command_workspaces.py: 159
+- scripts/ensemble_forward_bridge_command_approvals.py: 69
+- scripts/ensemble_conversation_read_service.py: 207
+- scripts/ensemble_conversation_legacy_reader.py: 156
+- scripts/ensemble_agent_patch_service.py: 49
+
+Static verification
+- Invocation: python -m py_compile <all eight modules>
+- Observable: exit code 0, no syntax errors.
+- Invocation: check-no-excuse-rules.py <all eight modules>
+- Observable: no violations in 8 file(s).
+
+Focused regression verification
+- Invocation: python -m unittest tests.test_forward_bridge_commands tests.test_conversation_read_service tests.test_forward_patch_commands
+- Observable: Ran 22 tests in 0.637s, OK.
+- Covered behavior: command route/status/response compatibility; repository-primary and legacy-compatible conversation reads; legacy thread list/search merge; strict traversal rejection; patch workspace/actor/reason propagation; approval retry after terminal append failure; CLI routing through the common patch service.
+
+Manual command and patch surface QA
+- Scenario: create, archive, and delete qa-task through dispatch_command; reject qa-patch through decide_agent_patch.
+- Observable: create=201, archive=200, delete={'deleted_task_id': 'qa-task'}, patch status=rejected with durable=False and compatibility=non_durable.
+
+Manual legacy symlink containment QA
+- Scenario: place escaped.md in .notes/40_Comms as a real symlink to markdown outside the compatibility root, then call thread_list and legacy thread_show.
+- Observable: link=True, listed=[], shown=None.
+- Guard: compatibility discovery skips symlinked files/directories and accepts only resolved candidates contained by the resolved .notes/40_Comms root.
+
+Cross-lane compatibility
+- The HTTP leaf's concurrent compatibility repair restored _handle_write_request. The final full command/conversation/patch suite includes the DELETE-body assertion and is fully green.

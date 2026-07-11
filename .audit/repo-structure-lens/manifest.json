@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-07-10T14:34:37+00:00",
+  "root": "D:\\Google\\.Conitens",
+  "mode": "post-write",
+  "profile": "quick",
+  "source_files": 670,
+  "artifacts": {
+    "facts": "checklist-facts.json",
+    "summary": "audit-summary.latest.md",
+    "topology": "topology.mmd"
+  },
+  "upstream_lumin_reference": "https://github.com/annyeong844/lumin-repo-lens",
+  "optional_upstream_wrapper": "C:\\Users\\eomsh\\.codex\\lumin-repo-lens\\skills\\lumin-repo-lens\\scripts\\audit-repo.mjs"
+}

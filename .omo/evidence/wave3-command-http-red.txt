@@ -1,0 +1,47 @@
+Wave 3 command/HTTP boundary RED evidence
+Date: 2026-07-11
+
+Command:
+python -m py_compile tests/test_forward_bridge_commands.py tests/test_forward_bridge_http.py
+
+Result:
+PASS
+
+Command:
+python -m unittest tests.test_forward_bridge_commands
+
+Result:
+FAIL - 7 tests run, 1 failure.
+
+Failure:
+test_patch_reject_uses_common_patch_service_without_echoing_unsafe_reason
+
+Reason:
+The command dispatcher calls the common patch service, but the reject response
+adds the raw reject reason back into the public payload. The payload echoed:
+sk-test-123
+C:/Users/example
+
+Command:
+python -m unittest tests.test_forward_bridge_http
+
+Result:
+FAIL - 6 tests run, 1 failure, 3 errors.
+
+Failures/errors:
+- test_http_leaf_module_exists_for_transport_boundary:
+  ModuleNotFoundError: No module named 'ensemble_forward_bridge_http'
+- test_authorized_create_update_and_delete_routes_delegate_to_command_dispatcher:
+  current monolith handled POST /api/operator/tasks directly and returned 400
+  instead of routing to the patched command dispatcher.
+- test_delete_patch_reject_parses_body_and_forwards_reason:
+  current DELETE reject path returned 500 with internal error
+  name 'payload' is not defined.
+- test_unexpected_command_error_returns_sanitized_500:
+  current route returned 400 before reaching the patched command dispatcher,
+  so command-dispatch error sanitization is not yet exercised by HTTP.
+
+Passing boundary observations:
+- Unauthorized POST /api/operator/tasks returned 403 and did not invoke command
+  dispatch.
+- Oversized POST body returned 413 and did not invoke command dispatch.

@@ -126,6 +126,10 @@ shortcut for `--category agent_runtime`. The JSON includes `ux_summary` and
 missing CLI runtimes without launching provider auth commands or dumping the
 environment. The bridge equivalent is
 `GET /api/operator/runtime-roster?runtime=codex&category=agent_runtime&probe_versions=0`.
+The HTTP route defaults `probe_versions` to `0` so normal operator reads do not
+block on host-dependent external version commands. Use `probe_versions=1` only
+when bounded first-line version diagnostics are explicitly needed. The CLI keeps
+its existing `--no-version-probe` opt-out contract.
 
 Turn records can also be checked without starting the bridge:
 

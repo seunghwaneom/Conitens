@@ -1,6 +1,6 @@
 # Conitens
 
-> Last updated: 2026-04-07
+> Last updated: 2026-07-11
 
 > **Conitens는 외부 CLI 에이전트를 위한 verify-gated operations/control plane이다.**
 
@@ -12,10 +12,19 @@ The active control plane in this repository is:
 
 - Core CLI: [scripts/ensemble.py](scripts/ensemble.py)
 - Additive extensions: `scripts/ensemble_*.py`
-- Event log (sole commit point): `.notes/EVENTS/events.jsonl`
+- Event log (sole commit point): `.notes/events/events.jsonl`
 - Obsidian-compatible projections: `.notes/` (numbered vault: `00_Inbox/` through `80_Archive/`)
 - Canonical agent config: `.agent/`
 - Compatibility skills: `.agents/skills/`
+- Forward dashboard: `packages/dashboard`
+- Forward Bridge sidecar: `scripts/ensemble_forward_bridge.py`
+
+Forward is explicitly quarantined. It failed promotion as of 2026-07-11:
+gates 1, 6, and 7 are contradicted by current bridge behavior, and gates 2, 3,
+4, 5, and 8 remain unproven. Treat it as an additive
+operator/read-model sidecar with a bounded authenticated command surface.
+Current runtime authority remains `scripts/ensemble.py` plus `.notes/`,
+`.agent/`, and the event ledger; `default_runtime=legacy` remains unchanged.
 
 ### Priority: Persistent Agents & Communication Records
 
@@ -27,7 +36,7 @@ Per [ADR-0002](docs/adr-0002-product-surface-persistent-agents.md), the current 
 4. **CLI-first background operation** — detach/attach agent sessions without GUI
 5. **Token optimization** — L0/L1/L2 compression tiers, budget enforcement
 
-Office metaphor (Pixel Office, 3D Command Center) is maintained but deprioritized for new investment.
+Office metaphor (Pixel Office, 3D Command Center) is maintained but deprioritized for new runtime investment. The active dashboard keeps Office Preview as an operator surface: Focused mode is character-first (`Agents`), Floor Overview is topology/debug context (`Topology`), and the older room scene remains available as `Classic`.
 
 Architecture rule: `events/*.jsonl` is the sole commit point (I-1). `.notes/` Markdown files are **projections** regenerable from event replay (I-2). See [ADR-0001](docs/adr-0001-control-plane.md), [ADR-0002](docs/adr-0002-product-surface-persistent-agents.md).
 
@@ -36,7 +45,7 @@ Architecture rule: `events/*.jsonl` is the sole commit point (I-1). `.notes/` Ma
 ### Active Runtime
 
 - `.notes/` — Obsidian Vault (projections from events). Numbered structure: `00_Inbox/` through `80_Archive/`, with `.index/` for SQLite FTS.
-- `.notes/EVENTS/events.jsonl` — append-only event log, sole commit point (I-1).
+- `.notes/events/events.jsonl` — append-only event log, sole commit point (I-1).
 - `.agent/` — canonical agent config (manifests, policies, skills, workflows, providers, rooms).
 - `scripts/ensemble.py` — existing operations core (preserved, never replaced).
 - Extension modules (additive, event-first):
@@ -51,7 +60,9 @@ Architecture rule: `events/*.jsonl` is the sole commit point (I-1). `.notes/` Ma
 
 ### Command Center (`packages/command-center`)
 
-Visual interface for monitoring and controlling AI agents. Two view modes:
+Reference visual interface for monitoring and controlling AI agents. This package remains useful as a parity/reference surface, but the current forward operator UI lives in `packages/dashboard`.
+
+Two view modes:
 
 **2D Pixel Office (Default)** — PixiJS 8 top-down pixel-art office, inspired by [Claw Empire](https://github.com/GreenSheep01201/claw-empire):
 
@@ -87,9 +98,22 @@ Operational dashboard for persistent agents and communication threads. Screens:
 - **Threads** — communication ledger browser with search
 - **Agents** — agent studio (list, detail, pending patches)
 - **Approvals** — approval center for pending patches and gate decisions
-- **Office Preview** — pixel office visualization (secondary)
+- **Office Preview** — agent-first operator stage with `Agents`, `Topology`, and `Classic` modes
 
-Data source: Forward Bridge API (`scripts/ensemble_forward_bridge.py`) serving `/api/agents`, `/api/threads`, `/api/approvals`, `/api/runs`.
+Office Preview asset model:
+
+- Focused `Agents` mode renders the active cast through large `288x512` transparent portrait PNGs from `packages/dashboard/public/agent-portraits/generated`, resolved by `packages/dashboard/src/agent-character-portraits.ts`.
+- `Topology` uses the Spatial Lens floor and generated `64x64` role sprite atlases from `packages/dashboard/public/agent-sprites/generated`.
+- `Classic` preserves the existing room scene and compact office avatars.
+- Sprite-gen and image generation are build/design-time inputs only; the dashboard runtime serves static assets and does not depend on those generators.
+
+Data source: Forward Bridge API (`scripts/ensemble_forward_bridge.py`) serving `/api/agents`, `/api/threads`, `/api/approvals`, `/api/runs`, and bounded authenticated operator command routes. It does not promote Forward to default runtime authority.
+
+```bash
+pnpm --filter @conitens/dashboard dev
+python scripts/ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8785
+# Open the Vite URL printed by the command
+```
 
 ### Reference / Parity Surfaces
 
@@ -228,8 +252,8 @@ ensemble workflow run --workflow wf.parallel-workcell --set task_id=TASK-... --s
 | 3D Rendering | Three.js 0.175 + React Three Fiber v9 |
 | UI Framework | React 19 |
 | State Management | Zustand 5 |
-| Build | Vite 7 |
-| Testing | Vitest |
+| Build | Vite 6 |
+| Testing | Vitest for core/protocol/command-center, Node test runner for dashboard |
 | Package Manager | pnpm (monorepo workspaces) |
 | Runtime | Node.js 22+ |
 | Operations CLI | Python (ensemble.py) |
@@ -249,10 +273,16 @@ pnpm test
 # Command Center dev server
 cd packages/command-center && pnpm dev
 
+# Forward dashboard dev server
+pnpm --filter @conitens/dashboard dev
+
+# Forward Bridge sidecar for dashboard data and bounded operator commands
+python scripts/ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8785
+
 # Generate sprite assets
-cd packages/command-center
-pnpm generate:sprites    # Agent sprite sheet PNGs
-pnpm generate:tiles      # Room floor tileset PNG
+cd packages/dashboard
+python scripts/generate_agent_sprite_assets.py    # Agent role sprite atlases
+python scripts/generate_office_sprite_assets.py   # Office floor and fixture PNGs
 
 # Operations CLI
 python -m unittest tests.test_operations_layer

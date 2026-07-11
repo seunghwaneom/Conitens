@@ -1,0 +1,560 @@
+{
+  "layout_source": "grid-explicit",
+  "states": [
+    "row-0",
+    "row-1",
+    "row-2",
+    "row-3",
+    "row-4",
+    "row-5",
+    "row-6",
+    "row-7",
+    "row-8",
+    "row-9"
+  ],
+  "cell": [
+    24,
+    24
+  ],
+  "ok": true,
+  "out_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator"
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator\\qa",
+  "states": [
+    {
+      "state": "row-0",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-1",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-2",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-3",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-4",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-5",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-6",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-7",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-8",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-9",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator\\manifest.json"
+}
+{
+  "layout_source": "grid-explicit",
+  "states": [
+    "row-0",
+    "row-1",
+    "row-2",
+    "row-3",
+    "row-4",
+    "row-5",
+    "row-6",
+    "row-7",
+    "row-8",
+    "row-9"
+  ],
+  "cell": [
+    24,
+    24
+  ],
+  "ok": true,
+  "out_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer"
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer\\qa",
+  "states": [
+    {
+      "state": "row-0",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-1",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-2",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-3",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-4",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-5",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-6",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-7",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-8",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-9",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer\\manifest.json"
+}
+{
+  "layout_source": "grid-explicit",
+  "states": [
+    "row-0",
+    "row-1",
+    "row-2",
+    "row-3",
+    "row-4",
+    "row-5",
+    "row-6",
+    "row-7",
+    "row-8",
+    "row-9"
+  ],
+  "cell": [
+    24,
+    24
+  ],
+  "ok": true,
+  "out_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher"
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher\\qa",
+  "states": [
+    {
+      "state": "row-0",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-1",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-2",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-3",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-4",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-5",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-6",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-7",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-8",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-9",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher\\manifest.json"
+}
+{
+  "layout_source": "grid-explicit",
+  "states": [
+    "row-0",
+    "row-1",
+    "row-2",
+    "row-3",
+    "row-4",
+    "row-5",
+    "row-6",
+    "row-7",
+    "row-8",
+    "row-9"
+  ],
+  "cell": [
+    24,
+    24
+  ],
+  "ok": true,
+  "out_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer"
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer\\qa",
+  "states": [
+    {
+      "state": "row-0",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-1",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-2",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-3",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-4",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-5",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-6",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-7",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-8",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-9",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer\\manifest.json"
+}
+{
+  "layout_source": "grid-explicit",
+  "states": [
+    "row-0",
+    "row-1",
+    "row-2",
+    "row-3",
+    "row-4",
+    "row-5",
+    "row-6",
+    "row-7",
+    "row-8",
+    "row-9"
+  ],
+  "cell": [
+    24,
+    24
+  ],
+  "ok": true,
+  "out_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator"
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator\\qa",
+  "states": [
+    {
+      "state": "row-0",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-1",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-2",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-3",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-4",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-5",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-6",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-7",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-8",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    },
+    {
+      "state": "row-9",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator\\manifest.json"
+}

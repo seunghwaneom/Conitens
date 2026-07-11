@@ -1,0 +1,17 @@
+✔ agent character stage model exposes sprite-gen backed role motion (13.3964ms)
+✔ agent role motion profiles stay unique across canonical roles (0.1745ms)
+✔ office preview focused stage is character-first and sprite-gen sourced (0.6317ms)
+✔ sprite-gen character atlas manifest is auditable (6.9725ms)
+✔ spatial lens asset registry covers the required manifest groups (1.7722ms)
+✔ spatial lens asset manifest stays local and structurally valid (0.745ms)
+✔ spatial lens registry references existing local asset files (1.7828ms)
+✔ spatial lens registry resolves existing local assets and placeholders (0.2617ms)
+✔ spatial lens manual-import root documents the future public asset slot (0.0986ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 179.3671

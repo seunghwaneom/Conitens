@@ -1,0 +1,32 @@
+Wave 3 RED capture
+Captured: 2026-07-11T10:44:15+09:00
+Command: python -m unittest tests.test_forward_bridge_architecture tests.test_forward_public_context tests.test_forward_patch_commands
+Exit code: 1
+Result: Ran 14 tests in 0.965s - FAILED (failures=11, errors=5)
+
+Intended missing-boundary errors:
+- ModuleNotFoundError: ensemble_forward_public_context
+- ModuleNotFoundError: ensemble_agent_patch_service (4 tests)
+- Missing prescribed Forward Bridge leaf: ensemble_forward_bridge_query
+- Missing prescribed Forward Bridge leaf: ensemble_forward_bridge_commands
+- Missing prescribed Forward Bridge leaf: ensemble_forward_bridge_stream
+- Missing prescribed Forward Bridge leaf: ensemble_forward_bridge_http
+
+Intended current-behavior failures:
+- Facade still contains BaseHTTPRequestHandler, ThreadingHTTPServer, do_GET,
+  do_POST, do_PATCH, do_DELETE, LoopStateRepository, and direct repository
+  mutation calls.
+- Facade __all__ omits the compatibility-observed _stream_snapshot_payload.
+- context-latest still returns repo_latest from arbitrary
+  .vibe/context/LATEST_CONTEXT.md content rather than null.
+- DELETE patch approve still imports and calls agent_apply_patch directly.
+- DELETE patch reject uses payload without calling _read_json_body.
+
+Control observation:
+- The non-fixed-port facade monkeypatch compatibility test passed on port 0,
+  proving the RED suite itself can exercise launch behavior without a fixed-port
+  dependency.
+
+RED verdict: valid. Failures are caused by the missing Wave 3 seams and the two
+known unsafe behaviors, not by syntax errors, broken fixtures, or environment
+binding failures.

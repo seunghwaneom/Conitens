@@ -1,0 +1,75 @@
+Wave 3 first query slice GREEN evidence
+Captured: 2026-07-11T10:51+09:00
+Owned production files:
+- scripts/ensemble_forward_bridge_query.py
+- scripts/ensemble_forward_bridge.py (narrow import + two facade wrappers only)
+
+SCENARIO: Query leaf architecture and facade runtime patch interception
+INVOCATION: python -m unittest -v tests.test_forward_bridge_architecture.ForwardBridgeArchitectureTests.test_query_module_excludes_http_command_and_mutation_boundaries tests.test_forward_bridge_architecture.ForwardBridgeArchitectureTests.test_launched_handler_uses_facade_run_detail_monkeypatch tests.test_forward_bridge.ForwardBridgeTests.test_runs_endpoint_requires_auth_and_returns_run_list tests.test_forward_bridge.ForwardBridgeTests.test_run_detail_and_replay_endpoints_return_forward_data
+EXIT: 0
+BINARY OBSERVABLE: Ran 4 tests in 2.541s; OK.
+OBSERVED ROUTES: unauthorized GET /api/runs -> 403; authorized GET /api/runs -> 200; GET /api/runs/<run_id> -> 200; GET /api/runs/<run_id>/replay -> 200.
+OBSERVED COMPATIBILITY: patch("ensemble_forward_bridge.build_run_detail_payload") changed the launched handler response and returned HTTP 200.
+
+SCENARIO: Existing Forward Bridge regression suite
+INVOCATION: python -m unittest -v tests.test_forward_bridge
+EXIT: 0
+BINARY OBSERVABLE: Ran 35 tests in 33.772s; OK.
+
+SCENARIO: Full Wave 3 architecture test after first query slice
+INVOCATION: python -m unittest -v tests.test_forward_bridge_architecture
+EXIT: 1 (expected incomplete-Wave state)
+BINARY OBSERVABLE: query-module boundary test passed; launched-handler facade monkeypatch test passed; suite ran 6 tests and retained 6 full-Wave failures.
+REMAINING REDS:
+- ensemble_forward_bridge_commands.py is missing.
+- ensemble_forward_bridge_stream.py is missing.
+- ensemble_forward_bridge_http.py is missing, including its transport-only AST check.
+- facade still owns HTTP/server/routes/repository mutations and therefore is not yet reduced.
+- facade __all__ does not yet include the compatibility-observed _stream_snapshot_payload binding.
+The query leaf itself imports successfully inside the prescribed-leaf subtest; that aggregate test remains failed only for the other three missing leaves.
+
+SCENARIO: Python compile
+INVOCATION: python -m py_compile scripts/ensemble_forward_bridge.py scripts/ensemble_forward_bridge_query.py
+EXIT: 0
+BINARY OBSERVABLE: empty stderr.
+
+SCENARIO: Public signature and facade export parity
+INVOCATION: python -c signature/export inspection for facade and query leaf
+EXIT: 0
+BINARY OBSERVABLE:
+FACADE_RUNS_SIGNATURE=(workspace: 'str | Path') -> 'dict[str, Any]'
+LEAF_RUNS_SIGNATURE=(workspace: 'str | Path') -> 'dict[str, Any]'
+FACADE_DETAIL_SIGNATURE=(workspace: 'str | Path', run_id: 'str') -> 'dict[str, Any]'
+LEAF_DETAIL_SIGNATURE=(workspace: 'str | Path', run_id: 'str') -> 'dict[str, Any]'
+FACADE_EXPORTS_RUNS=True
+FACADE_EXPORTS_DETAIL=True
+
+SCENARIO: Missing-run exception parity
+INVOCATION: inline Python driver calling facade and leaf build_run_detail_payload against an empty temporary workspace
+EXIT: 0
+BINARY OBSERVABLE:
+FACADE_MISSING=FileNotFoundError:Unknown run_id: missing-run
+LEAF_MISSING=FileNotFoundError:Unknown run_id: missing-run
+NOTE: The first inline probe attempt exited 1 due PowerShell stripping quotes in the command string; no product code was reached. The quoting-safe retry above exited 0.
+
+SCENARIO: Programming-rule audit
+INVOCATION: python C:/Users/eomsh/.codex/plugins/cache/sisyphuslabs/omo/4.16.1/skills/programming/scripts/python/check-no-excuse-rules.py scripts/ensemble_forward_bridge_query.py
+EXIT: 0
+BINARY OBSERVABLE: no violations in 1 file(s).
+
+SCENARIO: Size gate
+INVOCATION: PowerShell count of nonblank, non-comment lines in scripts/ensemble_forward_bridge_query.py
+EXIT: 0
+BINARY OBSERVABLE: QUERY_TOTAL_LINES=59; QUERY_PURE_LINES=48.
+
+SCENARIO: Scoped diff check
+INVOCATION: git diff --check -- scripts/ensemble_forward_bridge.py scripts/ensemble_forward_bridge_query.py
+EXIT: 0
+BINARY OBSERVABLE: no whitespace errors; only the existing Windows LF-to-CRLF warning for scripts/ensemble_forward_bridge.py.
+
+SCENARIO: New untracked leaf whitespace check
+INVOCATION: git diff --no-index --check -- NUL scripts/ensemble_forward_bridge_query.py
+EXIT: 1 (expected because the compared files differ; exit values above 1 are errors)
+BINARY OBSERVABLE: no whitespace-error lines; only the Windows LF-to-CRLF warning for the new leaf.
+
+VERDICT: FIRST QUERY SLICE GREEN. Full Wave 3 remains intentionally RED on the command, stream, HTTP, facade-reduction, and private stream-export requirements listed above.

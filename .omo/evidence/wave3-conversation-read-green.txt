@@ -1,0 +1,29 @@
+Wave 3 conversation read service evidence
+
+Changed files:
+- scripts/ensemble_conversation_read_service.py
+
+Focused test:
+- python -m unittest tests.test_conversation_read_service
+- Result: OK, Ran 6 tests in 0.448s
+
+Compile:
+- python -m py_compile scripts/ensemble_conversation_read_service.py
+- Result: exit 0
+
+Pure LOC:
+- awk '!/^[[:space:]]*$/ && !/^[[:space:]]*#/' scripts/ensemble_conversation_read_service.py | wc -l
+- Result: 234
+
+Scoped diff check:
+- git diff --check -- scripts/ensemble_conversation_read_service.py
+- Result: exit 0
+
+Read-only grep:
+- rg -n "write_text|open\(.*w|append_event|ensure_notes_dir|ensemble_comms|upsert_|append_room_message|append_tool_event|append_insight|upsert_handoff_packet" scripts/ensemble_conversation_read_service.py || true
+- Result: no matches
+
+Notes:
+- Repository-backed room snapshots, timelines, messages, and handoff reads are primary.
+- Legacy room and thread reads require source="legacy_compatibility".
+- Thread list/show/search reduce events from the explicit workspace .notes/events/events*.jsonl path and do not call ensemble_comms.

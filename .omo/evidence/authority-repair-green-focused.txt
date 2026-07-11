@@ -1,0 +1,14 @@
+Command:
+python -m unittest tests.test_event_authority tests.test_room_replay.RoomReplayTests.test_legacy_room_file_import_remains_supported tests.test_room_replay.RoomReplayTests.test_room_create_projection_failure_keeps_committed_event tests.test_room_replay.RoomReplayTests.test_room_message_projection_failure_keeps_committed_event tests.test_room_replay.RoomReplayTests.test_room_message_returns_authority_and_projection_ids tests.test_room_replay.RoomReplayTests.test_room_tool_event_is_appended_before_projection tests.test_room_replay.RoomReplayTests.test_room_tool_event_append_failure_does_not_project_state
+
+Post-repair result:
+OK, 9 tests in 0.946s.
+
+Covered contracts:
+- normal and duplicated Windows user-path redaction, including usernames with s
+- deterministic event-derived Obsidian thread updated_at
+- legacy evidence_refs import
+- committed event retention after projection failure
+- stable authority message id plus integer projection id
+- tool-event event-before-projection ordering
+- no tool projection when event append fails

@@ -1,0 +1,17 @@
+{
+  "harness": "gajae-code",
+  "runtime": "gjc",
+  "harness_version": "0.8.1",
+  "run_id": "manual-gjc-run-001",
+  "iteration_id": "manual-iter-001",
+  "task_id": "manual-task-001",
+  "status": "completed",
+  "observed_at": "2026-07-04T14:50:00Z",
+  "redaction_status": "metadata_only",
+  "transcript_ref": "artifact:gjc/manual-gjc-run-001.transcript.redacted.jsonl",
+  "summary": "Manual QA import observed metadata-only GJC evidence.",
+  "evidence_refs": [
+    "gjc:run:manual-gjc-run-001",
+    ".omx/artifacts/gjc/manual-gjc-run-001.metadata.json"
+  ]
+}

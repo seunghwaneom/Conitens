@@ -1,5 +1,77 @@
 # progress.md
 
+## Unified Authority Repair Execution - 2026-07-10
+
+- [x] Created Ralph-gated PRD and test-spec artifacts for the first authority
+      repair slice.
+- [x] Added ADR-0004, corrected the Forward Bridge boundary documentation, and
+      recorded a 13-entry direct-write inventory with exact test references.
+- [x] Locked append aliases/redaction/partial-write behavior and deterministic
+      Obsidian rebuild output in tests/test_event_authority.py.
+- [x] Captured pre-change room behavior, then added RED contracts for
+      event-before-projection, append-failure atomicity, replay-sufficient
+      payloads, stable identity, and legacy room import.
+- [x] Converted room creation and messages to append_event first, then
+      materialize .notes and SQLite projections from the returned redacted
+      payload.
+- [x] Reproduced and repaired the same authority bypass in
+      RoomService.append_tool_event.
+- [x] Added projection-failure recovery contracts proving committed events
+      survive later room/message projection errors.
+- [x] Fixed Windows/POSIX user-path redaction edge cases and removed the
+      wall-clock sleep from the deterministic rebuild test.
+- [x] Verified 56 related tests, Python compile, inventory JSON, and scoped
+      diff integrity.
+- [x] Re-ran tests.test_operations_layer and confirmed the exact pre-existing
+      2-failure/11-error baseline with no new failure class.
+- [x] Locked and repaired Forward Bridge public projections: context content,
+      workspace paths, approval details, validator feedback, local actors, and
+      SSE snapshots now expose only redacted/relative/opaque metadata, while
+      query builders leave repository storage unchanged.
+- [x] Verified the boundary through 65 combined Python tests, 150 dashboard
+      tests, Windows CP949 CLI probes, compile/diff checks, and independent
+      goal, code, security, compatibility, and manual-QA review lanes.
+- [ ] Convert meeting and spawn lifecycle paths after dedicated RED contracts.
+- [ ] Extract bridge query/command modules only after the meeting/spawn
+      authority repair, preserving the locked routes and public data shapes.
+- [ ] Continue dashboard thin-shell and improvement-loop waves only after the
+      backend authority gates are green.
+
+## Architecture Direction And Refactor Planning - 2026-07-10
+
+- [x] Read the current Conitens and `.vibe` context, runtime/control-plane ADRs,
+      frontend boundary decisions, forward architecture reports, interview seed,
+      and improvement-plan history.
+- [x] Recovered the main project conversation direction from local Codex/Claude
+      session records: self-improving supervisor, dynamic agent hierarchy,
+      cross-model collaboration, metadata-only harness evidence, and gated
+      skill/workflow/topology improvement.
+- [x] Mapped the active Python/event/projection path, forward SQLite path,
+      Forward Bridge, dashboard, and reference/parity surfaces with independent
+      architecture and code-review agents.
+- [x] Ran the full repository structure lens in refactor-plan mode and retained
+      generated evidence under `.audit/repo-structure-lens/`.
+- [x] Confirmed direct pre-event room/meeting/spawn writes, mixed bridge
+      query/command behavior, absent bridge-level `append_event()`, room payload
+      insufficiency, browser-visible path exposure risk, and the active
+      `App.tsx` orchestration hotspot.
+- [x] Wrote
+      `docs/conitens-architecture-direction-refactor-plan-2026-07-10.md` with
+      current and target diagrams, five architecture planes, state authority
+      table, common vocabulary, architecture decisions, forward promotion gate,
+      six refactor waves, PR-sized slices, tests, metrics, and risks.
+- [x] Ran architecture critic, fact-check, security, goal/constraint, and manual
+      artifact QA lanes. Incorporated findings for payload sufficiency, meeting
+      transcript evidence semantics, path leakage, patch-approval routing,
+      phase-scoped metrics, generated audit status, and the ADR number collision.
+- [x] Exercised `ensemble.py --help`, `ensemble.py forward --help`, and read-only
+      forward status JSON to confirm the current facade, additive forward entry,
+      legacy default, and forward SQLite owner map.
+- [x] Recorded goal traceability, semantic cleanup review, three confirmed audit
+      hypotheses, and manual QA references in
+      `.omo/evidence/conitens-architecture-direction-refactor-plan-review.md`.
+- [x] Preserved the pre-existing dirty worktree and made no runtime code change.
+
 ## Episode Closure Attempt Public Artifact Slice - 2026-07-05
 
 - [x] Captured the implementation seed in
@@ -3800,3 +3872,166 @@ Floor Overview remains the topology view, and Classic remains isolated.
 - `output/playwright/frontend-design-architecture-improvement/focused-1440.png`
 - `output/playwright/frontend-design-architecture-improvement/overview-1440.png`
 - `output/playwright/frontend-design-architecture-improvement/classic-1440.png`
+
+## Unified Authority Repair: Meeting/Spawn Lifecycle - 2026-07-10
+
+- [x] meeting start/say/end append canonical events before transcript or
+      summary projection
+- [x] missing meeting ids are rejected before event/projection mutation
+- [x] handoff create/transition append before file, loop-state, or SQLite
+      projection and expose metadata-only canonical events
+- [x] spawn request commits before workspace, memory, log, or process side
+      effects
+- [x] long-running, immediate nonzero, and clean short-lived provider outcomes
+      have explicit lifecycle records
+- [x] all post-workspace failure phases clean newly created worktrees
+- [x] stop records command intent, observed termination, and command closure in
+      order; completion-event failure preserves a terminal stopped projection
+- [x] focused Python authority verification passed 34/34
+- [x] focused protocol verification passed 6/6 and protocol build passed
+- [x] Python compile, event-type synchronization, and scoped diff checks passed
+- [x] manual CLI meeting QA passed after the missing-id RED regression repair
+- [x] code, test, security, and compatibility review lanes returned scoped PASS
+
+### Evidence
+
+- `.omo/evidence/meeting-spawn-authority-green.txt`
+- `.omo/evidence/meeting-spawn-authority-review-work.md`
+
+## Wave 5 Improvement Candidate Approval - 2026-07-10
+
+- [x] created Ralph PRD and test specification for the approval-only slice
+- [x] added typed candidate model, deterministic risk, stable lineage/version,
+      and canonical proposal digest
+- [x] added event-only propose/list/show/decide replay service
+- [x] registered `improvement.candidate_proposed` in TypeScript and regenerated
+      the Python event allow-list
+- [x] added candidate CLI actions without changing legacy improvement actions
+- [x] closed review findings for actor spoofing, exact request correlation,
+      forged provenance, malformed replay, and numeric type coercion
+- [x] passed candidate 27/27, compatibility 55/55, and authority integration
+      58/58 test bundles
+- [x] passed focused protocol test, protocol TypeScript build, Python compile,
+      scoped diff, and zero-cycle post-write structure gate
+- [x] confirmed the full protocol baseline remains 847 passed with four known
+      unrelated failures
+- [x] passed isolated CLI manual QA with only event-ledger mutation and no
+      `.agent`/SQLite change
+- [x] final code review returned APPROVE; final scoped security review returned
+      unconditional PASS
+- [x] defined, Ralph-gated, implemented, and verified the separate materializable
+      `.agent` revision apply/rollback slice
+
+### Evidence
+
+- `.omo/evidence/improvement-candidate-green.txt`
+- `.omo/evidence/improvement-candidate-debugging-audit.md`
+- `.omo/evidence/improvement-candidate-review-work.md`
+
+## Wave 5 Agent Skill Revision Apply/Rollback - 2026-07-10
+
+- [x] created and approved paired PRD/test-spec artifacts
+- [x] added `scripts/ensemble_agent_revisions.py` and owner compatibility leaf
+- [x] added candidate-digest-bound proposal and exact authorization events
+- [x] added event-first atomic apply, owner-gated rollback, and owner-gated rebuild
+- [x] closed replay, path, manifest-shape, drift, post-write hash, active-stack,
+      privacy, and cross-process concurrency RED cycles
+- [x] focused revision/owner suite passed 46/46
+- [x] candidate/closure/approval/event-authority compatibility bundle passed
+      104/104
+- [x] canonical registry passed with 8 manifests, 0 errors, and 0 warnings
+- [x] event sync generated 150 event types and 32 aliases
+- [x] focused protocol test and TypeScript build passed
+- [x] full protocol remained at the exact known 847-pass/4-failure baseline
+- [x] real CLI lifecycle, unsafe-input privacy, deleted-projection recovery,
+      same-revision concurrency, and conflicting-revision concurrency passed
+- [x] scoped diff check and zero-cycle repo-structure post-write gate passed
+- [x] `.vibe` repo intelligence refreshed: 758 files, 0 parse errors
+- [x] code, state-machine, architecture, completion, and security reviews approved
+
+### Evidence
+
+- `.omo/evidence/agent-skill-revision-green.txt`
+- `.omo/evidence/agent-skill-revision-manual-qa.md`
+- `.omo/evidence/agent-skill-revision-debugging-audit.md`
+- `.omo/evidence/agent-skill-revision-review-work.md`
+
+## Wave 5 Effect Observation And Wave 6 Quarantine - 2026-07-11
+
+- [x] created paired Ralph PRD/test-spec artifacts and PIN/RED evidence
+- [x] added closure comparison-key API/CLI/event/index/projection persistence
+- [x] registered `improvement.effect_observed` in TypeScript and regenerated the
+      Python allow-list
+- [x] added metadata-only event observe/show/list CLI and replay service
+- [x] kept effect state out of `.notes` projections and SQLite
+- [x] preserved candidate approval, live owner apply/rollback, and verification
+      gates
+- [x] fixed post-observation rollback replay using the pre-effect event prefix
+- [x] fixed reordered-effect acceptance and shared cross-process serialization
+- [x] fixed partial telemetry sums, bool/int replay confusion, nested closure
+      privacy validation, traversal keys, and >50-event provenance linkage
+- [x] updated ADR/docs to select Forward quarantine without changing authority
+      handlers or `default_runtime=legacy`
+- [x] recorded the unresolved Forward public-context allowlisting/privacy blocker
+      as Wave 3 debt
+- [x] aligned closure public prose with replay validation; POSIX paths reject
+      before append and unsafe episode IDs publish opaque hashes
+- [x] changed only the read-only roster's HTTP default to skip optional external
+      version probes; explicit opt-in remains available
+- [x] focused effect 26/26, closure security 19/19, adjacent 121/121, and Forward
+      runtime + bridge 54/54 pass
+- [x] protocol focused 1/1, TypeScript build, Python compile, 151-event/32-alias
+      sync, and the known full-protocol 847-pass/4-failure baseline match
+- [x] completed review-work/debugging evidence and independent code, security,
+      scope, QA, context, and replay/state-machine reviews
+- [x] removed the temporary debug journal/exclude entry and marked PRD/test-spec
+      terminal
+
+### Evidence
+
+- `.omx/plans/prd-improvement-effect-measurement.md`
+- `.omx/plans/test-spec-improvement-effect-measurement.md`
+- `.omo/evidence/improvement-effect-pin.txt`
+- `.omo/evidence/improvement-effect-red.txt`
+- `.omo/evidence/improvement-effect-green.txt`
+- `.omo/evidence/improvement-effect-debugging-audit.md`
+- `.omo/evidence/improvement-effect-review-work.md`
+
+## Wave 3 Forward Bridge Boundary Refactor - 2026-07-11
+
+- [x] created and completed paired Ralph PRD/test-spec artifacts with PIN, RED,
+      GREEN, manual-QA, debugging, and review evidence
+- [x] extracted compatibility facade, query, command, stream, HTTP, public-context,
+      conversation-read, legacy-reader, and patch-decision boundaries
+- [x] split the query, command, and HTTP clusters into 37 bounded Wave 3 files
+- [x] made empty-workspace reads physically non-materializing and existing SQLite
+      reads URI/read-only with WAL-aware immutable behavior
+- [x] replaced arbitrary public Markdown with allowlisted metadata projections
+- [x] removed raw-message search oracle and sanitized public actor/reviewer and
+      handoff blocker fields
+- [x] preserved legacy-thread containment/discovery, dashboard contracts, facade
+      late binding, SSE behavior, CLI compatibility, and runtime quarantine
+- [x] repaired patch workspace/actor/reason propagation, retry state, and
+      event-before-SQLite approval ordering
+- [x] hardened auth comparison, bounded error handling, identifier validation,
+      root command inventory, request-size handling, and Windows 413 stability
+- [x] centralized allowlisted public actor/approval/handoff projections, removed
+      query wildcard/dynamic-export chains, and listed all 13 mutation routes
+- [x] passed focused 67/67 and complete Wave 3 158/158 test bundles
+- [x] passed HTTP overflow stress 11/11, dashboard 154/154, dashboard production
+      build, Python compile, scoped no-excuse 37/37, and diff checks
+- [x] passed real CLI/live loopback authentication, privacy, traversal, metadata
+      search, SSE, malformed/negative/oversized-body, and shutdown QA
+- [x] isolated the adjacent 51-test 2-failure/9-error legacy baseline without
+      changing persona core or permissively bypassing the event registry
+- [x] promoted debugging findings to durable evidence and removed the temporary
+      debug journal
+- [x] closed settled code review at `CLEAR / APPROVE` and final gate at `APPROVE`,
+      both with no blockers
+
+### Evidence
+
+- `.omo/evidence/wave3-forward-bridge-green.txt`
+- `.omo/evidence/wave3-forward-bridge-manual-qa.md`
+- `.omo/evidence/wave3-debugging-audit.md`
+- `.omo/evidence/wave3-forward-bridge-review-work.md`

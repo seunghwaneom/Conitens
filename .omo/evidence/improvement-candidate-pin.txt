@@ -1,0 +1,12 @@
+Improvement candidate slice PIN
+Date: 2026-07-10
+
+Command:
+python -m unittest tests.test_episode_closure tests.test_episode_closure_cli_security tests.test_candidate_patch_hardening tests.test_approval_controls
+
+Result:
+PASS — 28 tests in 5.640s.
+
+This locks the existing episode closure, legacy candidate patch hardening, and
+generic approval behavior before adding the event-only improvement candidate
+slice.

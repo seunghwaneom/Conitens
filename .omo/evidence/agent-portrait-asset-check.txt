@@ -1,0 +1,5 @@
+implementer.png 288x512 RGBA transparent_corners=True
+orchestrator.png 288x512 RGBA transparent_corners=True
+researcher.png 288x512 RGBA transparent_corners=True
+reviewer.png 288x512 RGBA transparent_corners=True
+validator.png 288x512 RGBA transparent_corners=True

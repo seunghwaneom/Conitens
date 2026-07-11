@@ -13,8 +13,10 @@ The repo now also exposes a narrow explicit forward-runtime entry contract:
 - `ensemble forward context-latest`
 - compatibility alias: `ensemble --forward status`
 
-This forward entry surface is read-only and additive. It does not promote the
-forward stack to the active runtime truth.
+The explicit `forward <action>` surface combines read-only queries with bounded
+ingestion and operator-command actions. It remains additive and quarantined; it
+does not promote the forward stack to the active runtime truth. The legacy
+`--forward` compatibility alias remains status-only and read-only.
 
 ## Current Rule
 

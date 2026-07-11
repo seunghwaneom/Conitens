@@ -4,6 +4,107 @@ Read this file before substantial work.
 
 ## Current State
 
+- Active batch: Unified authority repair execution
+- Status: in_progress (2026-07-11)
+- Wave 0 is implemented: ADR-0004 defines the event ledger as durable workspace
+  truth, Forward SQLite as a bounded operational owner/index, projections as
+  rebuildable views, and explicit gates before any Forward default promotion.
+- Wave 1 behavior locks now cover canonical append aliases, raw-field rejection,
+  normal/duplicated Windows and POSIX user-path redaction, and deterministic
+  event-derived Obsidian thread timestamps.
+- Wave 2A is implemented for rooms: create, message, and tool-event paths append
+  the authority event before file/SQLite projection and materialize from the
+  returned redacted payload. Append failure leaves no projection; later
+  projection failure propagates while the committed event remains replayable.
+- New room messages expose a stable msg:<room_id>:<uuid> authority id and retain
+  the SQLite integer under id as projection identity. Legacy import prefers
+  explicit evidence_refs and remains compatible with attachment/text fallbacks.
+- Verification is green for 56 authority, room/replay, loop-state,
+  episode-security, and GJC tests, Python compile, inventory JSON, and scoped
+  diff checks.
+- Independent HEAVY review returned APPROVED after the tool-event authority,
+  legacy import, projection failure, message identity, path-redaction, and
+  deterministic-rebuild gaps were closed.
+- Wave 2B locked path/token and mutation boundaries, but a later dynamic review
+  found that arbitrary Forward context Markdown still preserves raw bodies,
+  common secret shapes, and absolute POSIX paths. Promotion gate 6 therefore
+  fails; an allowlisted public context projection remains Wave 3 debt.
+- Forward JSON is ASCII-safe on legacy Windows consoles while parsed Unicode is
+  preserved. The combined bridge/runtime suite passes 65/65, dashboard tests
+  pass 150/150, and independent goal, code, security, compatibility, and manual
+  QA lanes approved the current boundary.
+- Wave 2C is implemented for meeting, handoff, spawn, and stop lifecycles.
+  Authority events precede transcript, file, SQLite, loop-state, workspace, or
+  process projections; canonical events are metadata-only; short clean exits,
+  launch errors, cleanup failures, and command-completion failures preserve an
+  explicit terminal/recoverable record rather than silently drifting state.
+- The final meeting/spawn authority group passes 34/34; focused handoff
+  protocol tests pass 6/6; protocol build, event-type sync, Python compile, and
+  scoped diff checks pass. Code, security, compatibility, and test review lanes
+  all returned unconditional scoped PASS. The operations baseline is 2 failures
+  and 9 errors across 23 tests; the full protocol baseline is 4 failures and
+  846 passes, all in separately identified registry/ownership debt.
+- Waves 0-3 are complete, Wave 4 is partial, the bounded Wave 5 exact-key effect
+  slice is implemented, and Wave 6 selected Forward quarantine. The next
+  architecture priority is finishing the Wave 4 dashboard thin-shell boundaries,
+  then continuing measured improvement and promotion gates. Forward remains
+  non-default throughout.
+
+- Active batch: `Architecture direction and refactor planning`
+- Status: `complete` (2026-07-10)
+- Accepted staged plan:
+  `docs/conitens-architecture-direction-refactor-plan-2026-07-10.md`. It is a
+  code- and conversation-backed architecture/refactor plan, not an active-runtime
+  promotion or implementation change.
+- Stable direction: Conitens is a self-improving, event-sourced agent control
+  center above heterogeneous harnesses. It owns approval, verification, evidence,
+  replay, episode closure, and versioned skill/workflow/agent-topology proposals;
+  it does not replace provider runtimes or ingest private raw transcripts as
+  control state.
+- Current authority remains `scripts/ensemble.py + .notes + .agent`. The read-only
+  forward status surface confirms `default_runtime=legacy` while also reporting
+  SQLite-owned authoritative forward state. That dual ownership relation must be
+  settled by the proposed `ADR-0004: unified authority and forward promotion
+  gate` before any forward default promotion.
+- Highest-priority correctness findings: known room/meeting-state/spawn paths
+  write durable/projection data before events; the Forward Bridge mixes query,
+  command, HTTP, SSE, policy, and storage; bridge operator mutations and the
+  patch-approval shortcut have no bridge-level `append_event()` call; current
+  room message events are not sufficient to rebuild the room log.
+- Meeting transcript JSONL remains the canonical append-only transcript/evidence
+  ledger under redaction policy but is not domain state authority. Current
+  `MEETING_MSG` events include masked text; Wave 1 must explicitly test whether
+  that policy-approved payload remains or moves to an evidence ref. Unredacted
+  private raw content remains forbidden in events/operator payloads.
+- Browser-visible path safety is not yet a current guarantee: forward/operator
+  payloads can expose absolute local paths. The plan adds a leakage
+  characterization gate before payload contracts are frozen.
+- Target architecture has five planes: authority, execution, projection/index,
+  operator, and improvement. All durable domain commands cross the authority
+  plane; Forward SQLite remains bounded operational state/index until the
+  promotion gate passes; dashboard remains an operator shell/view model.
+- Refactor order: Wave 0 authority/ADR/docs; Wave 1 behavior locks; Wave 2
+  event-first commit-order repair; Wave 3 bridge/backend and room/handoff read
+  path decomposition; Wave 4 dashboard thin shell; Wave 5 improvement proposal
+  loop; Wave 6 forward promotion or explicit quarantine.
+- First implementation handoff: write ADR-0004 and fix bridge/state-owner docs;
+  add direct `append_event`, deterministic rebuild, bridge mutation/leakage, and
+  room payload-sufficiency tests; only then convert `ensemble_room.py` to
+  event-before-projection behavior.
+- `packages/command-center` remains reference/parity and should be frozen rather
+  than refactored until a later promotion decision. No new dependency, vector
+  DB, TypeScript control-plane rewrite, or repo-wide cleanup is proposed.
+- Generated structure evidence is under `.audit/repo-structure-lens/`; goal,
+  semantic cleanup, runtime hypothesis, independent review, and manual QA
+  evidence is under
+  `.omo/evidence/conitens-architecture-direction-refactor-plan-review.md` and
+  `.omo/evidence/plan-manual-qa/`.
+- Independent architecture critic, fact-check, security, goal/constraint gate,
+  and manual artifact QA lanes passed after revisions. The plan file opens as
+  strict UTF-8, its heading
+  hierarchy and code fences are valid, both Mermaid blocks are plausible, and
+  referenced local paths/tests exist. No runtime implementation changed.
+
 - Active batch: `Episode closure attempt public artifact slice`
 - Status: `complete` (2026-07-05)
 - User ended the Hermes/Supervisor interview with an implementation seed for
@@ -2628,3 +2729,142 @@ Read this file before substantial work.
   regression is still blocked on this Windows host by `PermissionError:
   [WinError 10013]`; focused non-binding bridge tests remain the backend proof
   channel.
+
+## Latest Update: Event-Sourced Improvement Candidate Approval
+
+- Timestamp: `2026-07-10`
+- Conitens now connects a recorded episode closure to a typed, schema-v1,
+  versioned improvement candidate, deterministic risk, metadata-only approval
+  request, and event-derived approval/rejection outcome.
+- Authority remains the event ledger. Candidate list/show replay events directly;
+  no candidate SQLite table or file projection was added.
+- The compatibility CLI exposes `improvement candidate-create`,
+  `candidate-list`, `candidate-show`, and `candidate-decide`; legacy
+  `improvement list/show` remains unchanged.
+- Replay rejects malformed identity/digest/risk/provenance, wrong-order or
+  wrong-actor approvals, private/path/secret-shaped input, and non-string
+  candidate fields before they render or affect version allocation.
+- Final verification: candidate 27/27, compatibility 55/55, authority
+  integration 58/58, focused protocol test and TypeScript build passed. Full
+  protocol remained at its known baseline of four failures and 847 passes.
+- Isolated CLI QA changed only `.notes/events/events.jsonl`; `.agent`, SQLite,
+  Forward, dashboard, and default runtime were untouched.
+- Final code review returned APPROVE and scoped security review returned
+  unconditional PASS.
+- The former next gate is complete: bounded structured revision content now has
+  event-first apply/rollback/rebuild and live owner authorization. Candidate
+  metadata summaries remain non-executable.
+
+## Latest Update: Event-Sourced Agent Skill Revision Apply/Rollback
+
+- Timestamp: `2026-07-10`
+- An approved `skill_patch` candidate can now produce a separate structured,
+  candidate-digest-bound revision for exactly one existing
+  `.agent/skills/<skill>.yaml` target.
+- Apply, rollback, and rebuild require the existing live project-owner match.
+  Apply/rollback append authority events before atomic projection; rebuild
+  derives the target active stack from valid events and rejects ownerless use.
+- Replay validates full event envelopes, candidate approval precedence, exact
+  request/grant/terminal correlation, hashes, reasons, duplicates, ordering, and
+  sequential rollback stack state.
+- Manifest validation is fixed-schema, bounded, privacy-safe, warning-free, and
+  path-safe. External drift and post-replace corruption fail closed.
+- The compatibility CLI exposes revision propose/show/apply/rollback/rebuild as
+  metadata-only ASCII-safe JSON. The live repository's `.agent` registry was not
+  modified during QA.
+- Final verification: focused 46/46, compatibility 104/104, registry 8/0/0,
+  protocol focused test/build, compile, sync, scoped diff, manual CLI recovery/
+  privacy/concurrency, and zero-cycle structure gate passed. Full protocol stayed
+  at its known 847-pass/4-failure baseline.
+- Independent code, state-machine, architecture, completion, and security
+  reviews approved after the ownerless-rebuild security RED was fixed.
+- Forward, dashboard, SQLite authority, `.conitens`, `.agents/skills`, default
+  runtime, and automatic deployment remain outside this slice.
+- The post-apply effect/regression gate is now implemented as a bounded exact-key
+  event-only slice. Split the revision leaf into reducer/materializer modules only
+  when another target family or richer semantics creates real reuse pressure.
+
+## Latest Update: Exact-Key Improvement Effect And Forward Quarantine
+
+- Timestamp: `2026-07-11`
+- Closure attempts now accept an optional exact comparison key and persist it in
+  the closure bundle, authority event, public index, projection rebuild, and CLI.
+- `improvement.effect_observed` connects a source closure, approved candidate,
+  owner-applied revision, and later exact-key closure without claiming causality.
+- Observe/show/list replay events directly; no effect projection, SQLite table,
+  dashboard route, or Forward authority was added.
+- Replay is temporal and fail-closed: it uses the event prefix before the first
+  effect event, preserves valid observations after later rollback, rejects
+  reordered/forged histories, and compares JSON types exactly.
+- Observation shares the revision workspace file lock across processes. One of
+  two conflicting processes commits; the other fails closed without corrupting
+  replay.
+- Nested closure content is exact-schema and public-text validated; secret/path/
+  raw injection, traversal comparison keys, partial telemetry totals, and bounded
+  provenance edge cases have regression coverage.
+- Forward is quarantined by accepted ADR-0004. Gates 1, 6, and 7 are contradicted;
+  gates 2, 3, 4, 5, and 8 remain unproven; `default_runtime=legacy` is unchanged.
+- Gate 6 specifically fails because arbitrary context Markdown can preserve raw
+  bodies, secret-shaped strings, and absolute POSIX paths. Wave 3 must replace
+  blacklist sanitization with an allowlisted public projection before promotion.
+- Closure creation now uses the same bounded public-text policy as effect replay:
+  absolute POSIX paths reject before append, while unsafe episode IDs publish
+  only deterministic `episode-sha256:` refs.
+- The read-only HTTP runtime-roster now skips optional external version probes by
+  default after a reproducible 10-second timeout; `probe_versions=1` remains an
+  explicit diagnostic path. This does not change authority or runtime default.
+- Final verification passes effect 26/26, closure security 19/19, adjacent
+  121/121, and Forward runtime + bridge 54/54. Protocol focused 1/1, TypeScript
+  build, Python compile, and 151-event/32-alias sync pass; the full protocol stays
+  at its known 847-pass/4-failure baseline.
+- Goal/scope, QA, code, security, context/history, and replay/state-machine review
+  lanes all pass. The next architecture priority remains Wave 3 query/command/
+  transport separation, primary read-path convergence, and allowlisted public
+  context; Forward promotion remains prohibited.
+
+## Latest Update: Wave 3 Forward Bridge Boundary Refactor
+
+- Timestamp: `2026-07-11`
+- Wave 3 is complete: `ensemble_forward_bridge.py` is now a compatibility and
+  dependency-assembly facade over separately owned query, command, stream, HTTP,
+  public-context, collaboration-read, legacy compatibility, and patch-decision
+  boundaries.
+- Query/GET paths no longer materialize an absent SQLite database. Existing
+  databases use explicit read-only URI access with WAL-aware immutable handling.
+- Browser context and state documents are built from allowlisted fields rather
+  than arbitrary Markdown. Paths, credentials, secret-shaped strings, local
+  identity labels, raw bodies, and unsafe handoff reasons are omitted or replaced
+  with neutral public values.
+- Thread search is metadata-only. It cannot test for the presence of raw event or
+  legacy message text; repository-backed collaboration data remains primary and
+  contained legacy discovery remains available for historical compatibility.
+- Patch approve/reject routes share one service. Approval carries workspace,
+  actor, and reason; approved is retryable and applied is terminal. Approval
+  request/decision authority events precede their SQLite projections.
+- HTTP keeps loopback/origin/bearer boundaries, uses constant-time token compare,
+  bounded/sanitized errors, inventories mutation routes, and handles slightly
+  oversized Windows requests with a bounded drain while rejecting extreme lengths
+  without unbounded reads.
+- Public approval, actor, and handoff data now cross one shared allowlisted
+  projection used by query, command, and SSE paths. Query modules import their true
+  owners directly through an explicit 27-name facade; wildcard and dynamic-global
+  exports are rejected. The root contract lists all 13 operator mutations.
+- Verification passes focused 67/67 and complete Wave 3 158/158 tests, HTTP
+  overflow stress 11/11, dashboard 154/154, dashboard production build, Python
+  compile, 37-file scoped no-excuse, diff validation, and real CLI/live loopback
+  privacy/auth/traversal/SSE/body-limit QA.
+- The adjacent legacy suite remains at 51 tests with 2 failures and 9 errors from
+  uppercase event-alias drift and three legacy persona manifests; no Forward
+  Bridge module participates. This is a separate migration, not hidden Wave 3
+  fallout.
+- Forward remains a quarantined sidecar and `default_runtime=legacy` is unchanged.
+  Direct Forward-only SQLite projections and approval reviewer semantics remain
+  documented promotion blockers. No ADR-0004 promotion claim is made.
+- Independent settled code review is `CLEAR / APPROVE`; the final LazyCodex gate
+  is `APPROVE`. Neither reports a scoped finding or blocker.
+- Durable evidence lives in `.omo/evidence/wave3-forward-bridge-green.txt`,
+  `.omo/evidence/wave3-forward-bridge-manual-qa.md`,
+  `.omo/evidence/wave3-debugging-audit.md`, and
+  `.omo/evidence/wave3-forward-bridge-review-work.md`, with independent decisions
+  in `.omo/evidence/wave3-forward-bridge-settled-code-review.md` and
+  `.omo/evidence/wave3-forward-bridge-refactor-gate-review.md`.

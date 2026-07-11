@@ -1,0 +1,61 @@
+Bridge privacy/query-boundary RED - 2026-07-10
+
+Command:
+python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_status_json_reports_forward_runtime_shape tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_context_latest_keeps_runtime_and_repo_digests_separate tests.test_forward_bridge_boundary
+
+Result before production repair:
+- Ran 3 tests in 0.489s.
+- 3 failures.
+- forward status exposed the resolved temporary workspace root.
+- context-latest returned absolute runtime and repository context paths.
+- operator workspace query returned the stored absolute path.
+
+Additional Windows CLI RED:
+python -m unittest tests.test_forward_runtime_mode.ForwardRuntimeModeTests.test_forward_context_latest_json_is_safe_on_windows_legacy_stdout
+
+Result before JSON boundary repair:
+- Ran 1 test in 0.217s.
+- Failed with UnicodeEncodeError for U+2014 under CP949 stdout.
+
+Independent-review blocker RED:
+python -m unittest tests.test_forward_bridge_boundary
+
+Result before public projection repair:
+- Ran 3 tests in 0.571s.
+- 3 failures.
+- context digest content exposed workspace and outside absolute paths, a local
+  username, and a secret-shaped value.
+- approval list/detail payloads exposed raw command and token values.
+- traversal-only workspace paths remained `..`, while archived actor identity
+  remained browser-visible.
+- the same test also locks validator feedback and SSE timeline payload privacy;
+  those assertions become reachable after the approval projection is repaired.
+
+Second independent-gate RED:
+python -m unittest tests.test_forward_bridge_boundary
+
+Result before standalone-identity repair:
+- Ran 3 tests in 0.603s.
+- 2 failures.
+- context content still exposed `username=private-owner` and
+  `actor=local/private-owner` after path/token redaction.
+- approval list/detail normalized the actor, but operator inbox and agent roster
+  still exposed the internal `local/private-owner` value.
+
+Third independent-code-review RED:
+python -m unittest tests.test_forward_bridge_boundary
+
+Result before outside-path opacity repair:
+- Ran 3 tests in 0.678s.
+- 1 failure.
+- an outside absolute workspace path was reduced to the basename `repo`; an
+  outside path ending in a local username could therefore expose that username.
+
+Fourth independent-goal-review RED:
+python -m unittest tests.test_forward_bridge_boundary.ForwardBridgeBoundaryTests.test_workspace_queries_hide_absolute_paths_without_sync_writes
+
+Result before relative-traversal opacity repair:
+- Ran 1 test in 0.074s.
+- 1 failure.
+- `../private-owner` was reduced to `private-owner`; relative traversal could
+  therefore expose both path structure and a local username.

@@ -1,12 +1,21 @@
-# BE-1a Forward Read Bridge
+# BE-1a Forward Bridge Query Surface
 
 Status: `implemented`
 
 ## Purpose
 
-BE-1a is the thin read-only bridge for the explicit forward runtime surface.
-It exposes forward `.conitens` state and service projections without changing
-the legacy runtime default.
+BE-1a documented the initial query surface for the explicit forward runtime
+target. The current Forward Bridge now includes query/read-model routes plus
+bounded authenticated operator command routes. It remains quarantined and does
+not change the legacy runtime default.
+
+Current gate assessment: Forward fails promotion now. Gates 1, 6, and 7 are
+contradicted by current bridge behavior, and gates 2, 3, 4, 5, and 8 remain
+unproven. Gate 6 fails because arbitrary context Markdown is not an allowlisted
+public projection and can retain raw bodies, secret-shaped strings, and absolute
+POSIX paths. Treat Forward as an additive operator/read-model sidecar while
+`scripts/ensemble.py` plus `.notes/`, `.agent/`, and the event ledger remain
+the current authority.
 
 ## Framework choice
 
@@ -35,9 +44,9 @@ The command prints JSON containing:
 ## Security boundary
 
 - loopback-only
-- read-only
+- query routes must be side-effect free
 - `Authorization: Bearer <token>` supported
-- no write endpoints
+- bounded authenticated operator command routes exist outside the BE-1a query subset
 - state-doc path fields are workspace-relative, not absolute
 
 ## Endpoint set
@@ -116,7 +125,7 @@ Implemented validations:
 
 ## Out of scope
 
-- no write endpoints
+- new operator command design beyond the bounded authenticated routes already present
 - no SSE/WebSocket
-- no approvals mutation UI/API here
+- no new approvals mutation UI/API here
 - no frontend app implementation in this step

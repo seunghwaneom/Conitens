@@ -3,9 +3,9 @@
 Date: `2026-04-02`
 Reference: [conitens_frontend_rebaseline_v4_1.md](/D:/Google/.Conitens/docs/conitens_frontend_rebaseline_v4_1.md)
 
-## Active runtime today
+## Active runtime at the 2026-04-02 baseline
 
-The active runtime today is still the legacy Python control plane:
+The active runtime at that baseline was the legacy Python control plane:
 
 - `scripts/ensemble.py`
 - `.notes/`
@@ -20,11 +20,11 @@ Evidence:
 - [LATEST_CONTEXT.md](/D:/Google/.Conitens/.conitens/context/LATEST_CONTEXT.md)
   still describes the forward `.conitens` stack as additive, not promoted.
 
-## Forward runtime status
+## Forward runtime status at the 2026-04-02 baseline
 
-The forward runtime is implemented as a substantial additive stack under
-`.conitens/` and `scripts/ensemble_*.py`, but it is not independently exposed
-as the main runnable runtime today.
+At that baseline, the forward runtime was implemented as a substantial additive
+stack under `.conitens/` and `scripts/ensemble_*.py`, but it was not independently
+exposed as the main runnable runtime.
 
 What exists:
 
@@ -35,21 +35,22 @@ What exists:
 - approval controls
 - room/replay/insight services
 
-What is missing as an operator-facing contract:
+What was missing at that baseline as an operator-facing contract:
 
 - no `--forward` mode surfaced from [ensemble.py](/D:/Google/.Conitens/scripts/ensemble.py)
 - no alternate CLI wrapper entrypoint promoted alongside
   [bin/ensemble.js](/D:/Google/.Conitens/bin/ensemble.js)
 - no explicit docs claiming the forward stack is the current operator runtime
 
-Conclusion:
+Baseline conclusion:
 
 - forward runtime is **implemented**
 - forward runtime is **not yet independently runnable as the canonical frontend target**
 
-## Can frontend safely target forward mode now?
+## Current status after the explicit Forward entry contract
 
-Yes, with an explicit limitation.
+Forward can be targeted only as a quarantined local operator sidecar, not as a
+security-cleared or canonical runtime.
 
 The repo now exposes a clearly scoped forward entry contract:
 
@@ -57,14 +58,15 @@ The repo now exposes a clearly scoped forward entry contract:
 - `ensemble forward context-latest`
 - compatibility alias: `ensemble --forward status`
 
-This is enough to satisfy the v4.1 gate that required an explicit forward mode.
+This satisfies the v4.1 prerequisite that required an explicit forward mode.
 It does not promote the forward stack to the active runtime; it only makes the
 forward target operator-visible and selectable.
 
 Decision:
 
-- frontend work is **unblocked for BE-1a and later forward-only work**
-- frontend work must remain explicitly limited to the forward runtime surface
+- local frontend development is **unblocked for quarantined BE-1a work**
+- public-context redaction remains a blocker for any security-cleared or
+  promoted operator surface
 
 ## Existing service modules and their import status
 
@@ -83,7 +85,7 @@ Measured from `scripts/` via direct Python import:
 Interpretation:
 
 - the service layer is not heavily boot-coupled
-- a thin read-only adapter is technically plausible
+- a thin query adapter is technically plausible
 - the current blocker is control-plane/runtime scope, not importability
 
 ## Existing room abstraction mapping candidates
@@ -130,10 +132,20 @@ Reason:
 - the repo already has a working authenticated local HTTP shell in
   [ensemble_ui.py](/D:/Google/.Conitens/scripts/ensemble_ui.py)
 - no established Python web framework is currently present
-- the v4.1 goal for BE-1a is a thin read-only adapter, not a new backend stack
+- the v4.1 goal for BE-1a is a thin query adapter, not a new backend stack
 
-If and only if the forward runtime is promoted or a clear `--forward` mode is
-added, the best first BE-1a path is:
+Current status after the 2026-07-11 promotion review: Forward is quarantined,
+not promoted. Gates 1, 6, and 7 are contradicted, and gates 2, 3, 4, 5, and 8
+remain unproven. Gate 6 fails because arbitrary browser-visible context Markdown
+can retain raw prompt, transcript, stdout, and stderr bodies, secret-shaped
+strings, and absolute POSIX paths. The current blacklist sanitizer is not an
+allowlisted public projection. Forward should be described as an additive
+operator/read-model sidecar with bounded authenticated command routes; current
+authority remains `scripts/ensemble.py` plus `.notes/`, `.agent/`, and the
+event ledger, with `default_runtime=legacy`.
+
+The explicit `forward <action>` entry contract now satisfies the original
+runtime-targeting prerequisite. The implemented BE-1a path therefore remains:
 
 1. scope a forward-only read surface
 2. reuse or extract the relevant routing/projection patterns from
@@ -141,33 +153,35 @@ added, the best first BE-1a path is:
 3. avoid adding FastAPI unless the existing surface becomes a measurable
    limitation
 
-## Recommended next step: BE-1a or decoupling sprint
+## Current next step after BE-1a
 
-Neither BE-1a nor a service decoupling sprint should start first.
+The earlier recommendation to establish a scoped Forward entry contract is
+complete. It did not promote Forward.
 
 Recommended next step:
 
-- add a clearly scoped forward runtime entry contract
-  - either promote the forward stack, or
-  - add an explicit `--forward` mode
+- keep the explicit Forward entry contract quarantined
+- separate query and operator-command boundaries before reconsidering promotion
+- retain the legacy runtime as default authority
 
 Why not decoupling sprint:
 
 - the audited forward service modules already import successfully and quickly
-- the main blocker is runtime targeting, not service importability
+- the main blockers are authority boundaries and public-context redaction, not
+  service importability
 
-Why BE-1a is now reasonable:
+Why quarantined BE-1a development remains reasonable:
 
 - the service layer imports cleanly
 - an explicit forward entry contract now exists
-- the frontend can target that forward-only surface without pretending it is
-  the default runtime
+- the frontend can target that forward-only surface for local development
+  without pretending it is the default runtime or security-cleared
 
 ## Summary verdict
 
 - Active runtime today: legacy Python control plane
-- Forward runtime status: implemented but not promoted/runnable as the current
-  frontend target
-- Frontend can safely target forward mode now: **Yes, explicitly through forward mode**
+- Forward runtime status: implemented as the current explicit dashboard sidecar,
+  but not promoted to default runtime authority
+- Frontend can target forward mode now: **Only as a quarantined local sidecar; public-context redaction remains a blocker**
 - Service module import status: **Pass**
-- Recommended next step: **start BE-1a as a thin forward-only read bridge**
+- Recommended next step: **keep BE-1a scoped to the forward query surface and quarantine Forward until promotion gates pass**
