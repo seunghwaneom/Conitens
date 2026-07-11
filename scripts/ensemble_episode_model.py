@@ -40,6 +40,7 @@ class ClosureRequest:
     review_reasons: tuple[str, ...] = ()
     next_recommendation: str | None = None
     next_reason: str | None = None
+    comparison_key: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

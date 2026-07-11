@@ -15,6 +15,7 @@ export const EVENT_TYPES = [
   "task.completed", "task.failed", "task.cancelled",
   // Handoff
   "handoff.requested", "handoff.accepted",
+  "handoff.started", "handoff.blocked",
   "handoff.rejected", "handoff.completed",
   // Decision
   "decision.proposed", "decision.accepted", "decision.rejected",
@@ -28,6 +29,7 @@ export const EVENT_TYPES = [
   "provider.call_recorded",
   // PR/CI evidence
   "pr.evidence_observed", "ci.evidence_observed",
+  "harness.evidence_observed",
   // Agent — core lifecycle
   "agent.spawned", "agent.heartbeat", "agent.error", "agent.terminated",
   // Agent — extended lifecycle (RFC-1.0.1 §4 Sub-AC 2 extension)
@@ -187,6 +189,11 @@ export const EVENT_TYPES = [
   // All patches require approval before application (approval-gated self-improvement).
   // -------------------------------------------------------------------------
   "improver.pattern_mined",     // a recurring failure pattern was detected
+  "improvement.candidate_proposed",
+  "improvement.revision_proposed",
+  "improvement.revision_applied",
+  "improvement.revision_rolled_back",
+  "improvement.effect_observed",
   "improver.patch_generated",   // a candidate improvement patch was generated
   "improver.report_generated",  // a weekly/periodic improvement report was generated
   // -------------------------------------------------------------------------
@@ -356,6 +363,21 @@ export const PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS = [
   "secret",
 ] as const;
 
+export const HARNESS_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS = [
+  ...PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS,
+  "prompt",
+  "completion",
+  "request",
+  "response",
+  "stdout",
+  "stderr",
+  "output",
+  "terminal_output",
+  "transcript",
+  "raw_transcript",
+  "command",
+] as const;
+
 export interface PullRequestEvidenceObservedPayload {
   provider: string;
   repository: string | null;
@@ -392,6 +414,21 @@ export interface CiEvidenceObservedPayload {
   evidence_refs: string[];
 }
 
+export interface HarnessEvidenceObservedPayload {
+  harness: string;
+  runtime: string | null;
+  status: string;
+  harness_version: string | null;
+  run_id: string | null;
+  iteration_id: string | null;
+  task_id: string | null;
+  observed_at: string;
+  redaction_status: "metadata_only" | "redacted" | "unknown";
+  transcript_ref: string | null;
+  summary: string | null;
+  evidence_refs: string[];
+}
+
 // ---------------------------------------------------------------------------
 // Obsolete alias map — §4.3
 // ---------------------------------------------------------------------------
@@ -415,8 +452,15 @@ export const OBSOLETE_ALIASES: Readonly<Record<string, EventType>> = {
   "REFLECTION_RECORDED": "memory.update_proposed",
   "ROOM_TOOL_EVENT":    "interaction.command_executed",
   "TOOL_EVENT":         "interaction.command_executed",
+  "MEETING_STARTED":    "meeting.started",
+  "MEETING_MSG":        "meeting.deliberation",
+  "MEETING_ENDED":      "meeting.ended",
+  "SUBAGENT_SPAWNED":   "agent.spawned",
+  "SUBAGENT_STOPPED":   "agent.terminated",
   "HANDOFF_REQUESTED":  "handoff.requested",
   "HANDOFF_ACCEPTED":   "handoff.accepted",
+  "HANDOFF_STARTED":    "handoff.started",
+  "HANDOFF_BLOCKED":    "handoff.blocked",
   "HANDOFF_REJECTED":   "handoff.rejected",
   "HANDOFF_COMPLETED":  "handoff.completed",
   "MEMORY_APPENDED":    "memory.update_proposed",

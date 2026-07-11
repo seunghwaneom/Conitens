@@ -95,6 +95,13 @@ describe("EventType", () => {
     expect(resolveAlias("message.new")).toBe("message.received");
     expect(resolveAlias("artifact.generated")).toBe("task.artifact_added");
     expect(resolveAlias("approval.required")).toBe("approval.requested");
+    expect(resolveAlias("MEETING_STARTED")).toBe("meeting.started");
+    expect(resolveAlias("MEETING_MSG")).toBe("meeting.deliberation");
+    expect(resolveAlias("MEETING_ENDED")).toBe("meeting.ended");
+    expect(resolveAlias("SUBAGENT_SPAWNED")).toBe("agent.spawned");
+    expect(resolveAlias("SUBAGENT_STOPPED")).toBe("agent.terminated");
+    expect(resolveAlias("HANDOFF_STARTED")).toBe("handoff.started");
+    expect(resolveAlias("HANDOFF_BLOCKED")).toBe("handoff.blocked");
   });
 
   it("resolveAlias returns null for unknown types", () => {
@@ -157,9 +164,28 @@ describe("TaskState", () => {
 });
 
 describe("HandoffState", () => {
+  it("defines runtime and legacy states", () => {
+    expect(HANDOFF_STATES).toEqual([
+      "requested", "accepted", "started", "blocked", "rejected", "completed",
+    ]);
+  });
+
   it("allows requested → accepted → completed", () => {
     expect(canHandoffTransition("requested", "accepted")).toBe(true);
     expect(canHandoffTransition("accepted", "completed")).toBe(true);
+  });
+
+  it("allows runtime started and blocked flows", () => {
+    expect(canHandoffTransition("requested", "started")).toBe(true);
+    expect(canHandoffTransition("requested", "completed")).toBe(true);
+    expect(canHandoffTransition("accepted", "started")).toBe(true);
+    expect(canHandoffTransition("accepted", "blocked")).toBe(true);
+    expect(canHandoffTransition("started", "blocked")).toBe(true);
+    expect(canHandoffTransition("started", "completed")).toBe(true);
+    expect(canHandoffTransition("started", "rejected")).toBe(true);
+    expect(canHandoffTransition("blocked", "started")).toBe(true);
+    expect(canHandoffTransition("blocked", "completed")).toBe(true);
+    expect(canHandoffTransition("blocked", "rejected")).toBe(true);
   });
 
   it("allows requested → rejected", () => {

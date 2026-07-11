@@ -1445,30 +1445,10 @@ def is_project_owner() -> tuple[bool, str]:
     Returns:
         (is_owner: bool, reason: str)
     """
-    owner_data = read_owner()
-    
-    if owner_data is None:
-        return False, "NOT_INITIALIZED: No OWNER.json found. Run `ensemble init-owner` first."
-    
-    current_user = get_current_user_info()
-    owner = owner_data.get('owner', {})
-    
-    # Check UID first (most reliable)
-    if owner.get('uid') is not None and current_user.get('uid') is not None:
-        if owner['uid'] == current_user['uid']:
-            return True, "UID_MATCH"
-    
-    # Check username + hostname
-    if (owner.get('username') == current_user.get('username') and 
-        owner.get('hostname') == current_user.get('hostname')):
-        return True, "USERNAME_HOSTNAME_MATCH"
-    
-    # Check git email
-    if owner.get('git_email') and current_user.get('git_email'):
-        if owner['git_email'].lower() == current_user['git_email'].lower():
-            return True, "GIT_EMAIL_MATCH"
-    
-    return False, f"NOT_OWNER: Current user ({current_user.get('username')}@{current_user.get('hostname')}) does not match owner ({owner.get('username')}@{owner.get('hostname')})"
+    from ensemble_owner_auth import match_project_owner
+
+    check = match_project_owner(read_owner(), get_current_user_info())
+    return check.allowed, check.reason
 
 
 def initialize_owner() -> dict:
@@ -4719,6 +4699,7 @@ def cmd_episode(args):
         review_reasons=tuple(args.review_reason or []),
         next_recommendation=args.next_recommendation,
         next_reason=args.next_reason,
+        comparison_key=getattr(args, "comparison_key", None),
     )
     try:
         result = close_episode(WORKSPACE, request)
@@ -4749,24 +4730,190 @@ def cmd_improvement(args):
         print("Episode closure module not found. Ensure ensemble_episode_closure.py is in the same directory.")
         raise SystemExit(1)
 
+    if args.action in {
+        "candidate-create",
+        "candidate-list",
+        "candidate-show",
+        "candidate-decide",
+        "revision-propose",
+        "revision-show",
+        "revision-apply",
+        "revision-rollback",
+        "revision-rebuild",
+        "effect-observe",
+        "effect-show",
+        "effect-list",
+    }:
+        try:
+            from ensemble_agent_revisions import (
+                AgentRevisionError,
+                apply_agent_skill_revision,
+                propose_agent_skill_revision,
+                rebuild_agent_skill_revisions,
+                rollback_agent_skill_revision,
+                show_agent_skill_revision,
+            )
+            from ensemble_contracts import parse_simple_yaml
+            from ensemble_improvement_candidate_model import CandidateProposal, ImprovementCandidateError
+            from ensemble_improvement_candidates import (
+                decide_improvement_candidate,
+                list_improvement_candidates,
+                propose_improvement_candidate,
+                show_improvement_candidate,
+            )
+            from ensemble_improvement_effects import (
+                EffectObservationError,
+                EffectObservationRequest,
+                list_improvement_effects,
+                observe_improvement_effect,
+                show_improvement_effect,
+            )
+        except ImportError:
+            print("Improvement module not found.")
+            raise SystemExit(1)
+        try:
+            reason_code = args.reason_code
+            if args.action == "candidate-create":
+                if not args.artifact_id:
+                    print("improvement candidate-create requires <closure_artifact_id>")
+                    raise SystemExit(1)
+                result = propose_improvement_candidate(
+                    WORKSPACE,
+                    CandidateProposal(
+                        closure_artifact_id=args.artifact_id,
+                        kind=args.kind,
+                        target_ref=args.target_ref,
+                        summary=args.summary,
+                        change_summary=tuple(args.change or ()),
+                        impact_areas=tuple(args.impact_area or ()),
+                        actor=args.actor,
+                    ),
+                )
+            elif args.action == "candidate-list":
+                result = list_improvement_candidates(WORKSPACE, limit=args.limit)
+            elif args.action == "candidate-show":
+                if not args.artifact_id:
+                    print("improvement candidate-show requires <candidate_id>")
+                    raise SystemExit(1)
+                result = show_improvement_candidate(WORKSPACE, args.artifact_id)
+            elif args.action == "candidate-decide":
+                if not args.artifact_id:
+                    print("improvement candidate-decide requires <candidate_id>")
+                    raise SystemExit(1)
+                result = decide_improvement_candidate(
+                    WORKSPACE,
+                    args.artifact_id,
+                    decision=args.decision,
+                    reviewer=args.reviewer,
+                    reason_code=reason_code or "reviewed",
+                )
+            elif args.action == "revision-propose":
+                if not args.artifact_id:
+                    print("improvement revision-propose requires <candidate_id>")
+                    raise SystemExit(1)
+                if not args.revision_file:
+                    print("improvement revision-propose requires --revision-file")
+                    raise SystemExit(1)
+                warnings = []
+                try:
+                    revision_text = Path(args.revision_file).read_text(encoding="utf-8")
+                except (OSError, UnicodeError):
+                    raise AgentRevisionError("revision file could not be read")
+                revision_manifest = parse_simple_yaml(revision_text, warnings)
+                if warnings:
+                    raise AgentRevisionError("revision file is malformed")
+                result = propose_agent_skill_revision(
+                    WORKSPACE,
+                    args.artifact_id,
+                    revision_manifest,
+                    actor=args.actor,
+                )
+            elif args.action == "revision-show":
+                if not args.artifact_id:
+                    print("improvement revision-show requires <revision_id>")
+                    raise SystemExit(1)
+                result = show_agent_skill_revision(WORKSPACE, args.artifact_id)
+            elif args.action == "revision-apply":
+                if not args.artifact_id:
+                    print("improvement revision-apply requires <revision_id>")
+                    raise SystemExit(1)
+                result = apply_agent_skill_revision(
+                    WORKSPACE,
+                    args.artifact_id,
+                    reason_code=reason_code or "reviewed",
+                )
+            elif args.action == "revision-rollback":
+                if not args.artifact_id:
+                    print("improvement revision-rollback requires <revision_id>")
+                    raise SystemExit(1)
+                result = rollback_agent_skill_revision(
+                    WORKSPACE,
+                    args.artifact_id,
+                    reason_code=reason_code or "reviewed",
+                )
+            elif args.action == "effect-observe":
+                if not args.artifact_id:
+                    print("improvement effect-observe requires <revision_id>")
+                    raise SystemExit(1)
+                if not args.observed_closure:
+                    print("improvement effect-observe requires --observed-closure")
+                    raise SystemExit(1)
+                result = observe_improvement_effect(
+                    WORKSPACE,
+                    EffectObservationRequest(
+                        revision_id=args.artifact_id,
+                        observed_closure_artifact_id=args.observed_closure,
+                        actor=args.actor,
+                        reason_code=reason_code or "post_apply_observation",
+                    ),
+                )
+            elif args.action == "effect-show":
+                if not args.artifact_id:
+                    print("improvement effect-show requires <observation_id>")
+                    raise SystemExit(1)
+                result = show_improvement_effect(WORKSPACE, args.artifact_id)
+            elif args.action == "effect-list":
+                result = list_improvement_effects(
+                    WORKSPACE,
+                    revision_id=args.revision_id,
+                    limit=args.limit,
+                )
+            else:
+                result = rebuild_agent_skill_revisions(WORKSPACE)
+        except ImprovementCandidateError as exc:
+            print(f"Improvement candidate failed: {exc}")
+            raise SystemExit(1)
+        except AgentRevisionError as exc:
+            print(f"Agent skill revision failed: {exc}")
+            raise SystemExit(1)
+        except EffectObservationError as exc:
+            print(f"Improvement effect failed: {exc}")
+            raise SystemExit(1)
+        print(json.dumps(result, ensure_ascii=True))
+        return
+
     if args.action == "list":
         rows = list_improvements(WORKSPACE, limit=args.limit)
         if not rows:
             print("No agent improvement artifacts found.")
             return
-        print("artifact_id\tepisode_id\tstatus\trisk\tsummary")
+        include_comparison_key = any(row.get("comparison_key") for row in rows)
+        header = ["artifact_id", "episode_id", "status", "risk"]
+        if include_comparison_key:
+            header.append("comparison_key")
+        header.append("summary")
+        print("\t".join(header))
         for row in rows:
-            print(
-                "\t".join(
-                    [
-                        _public_table_cell(row.get("artifact_id", "")),
-                        _public_table_cell(row.get("episode_id", "")),
-                        _public_table_cell(row.get("status", "")),
-                        _public_table_cell(row.get("risk", "")),
-                        _public_table_cell(row.get("summary", "")),
-                    ]
-                )
-            )
+            cells = [
+                _public_table_cell(row.get("artifact_id", "")),
+                _public_table_cell(row.get("episode_id", "")),
+                _public_table_cell(row.get("status", "")),
+                _public_table_cell(row.get("risk", "")),
+            ]
+            if include_comparison_key:
+                cells.append(_public_table_cell(row.get("comparison_key", "")))
+            cells.append(_public_table_cell(row.get("summary", "")))
+            print("\t".join(cells))
         return
 
     if args.action == "show":
@@ -5533,7 +5680,10 @@ def main():
     p_ui.add_argument("--port", type=int, default=8765)
 
     # additive forward runtime entry contract
-    p_forward = subparsers.add_parser("forward", help="Read-only forward `.conitens` runtime entry surface")
+    p_forward = subparsers.add_parser(
+        "forward",
+        help="Quarantined forward `.conitens` sidecar entry surface",
+    )
     p_forward.add_argument(
         "action",
         choices=[
@@ -5593,11 +5743,43 @@ def main():
     p_episode.add_argument("--review-reason", action="append", default=[])
     p_episode.add_argument("--next", dest="next_recommendation")
     p_episode.add_argument("--next-reason")
+    p_episode.add_argument("--comparison-key")
 
     p_improvement = subparsers.add_parser("improvement", help="Read public agent-improvement artifacts")
-    p_improvement.add_argument("action", choices=["list", "show"], help="Improvement action")
+    p_improvement.add_argument(
+        "action",
+        choices=[
+            "list",
+            "show",
+            "candidate-create",
+            "candidate-list",
+            "candidate-show",
+            "candidate-decide",
+            "revision-propose",
+            "revision-show",
+            "revision-apply",
+            "revision-rollback",
+            "revision-rebuild",
+            "effect-observe",
+            "effect-show",
+            "effect-list",
+        ],
+        help="Improvement action",
+    )
     p_improvement.add_argument("artifact_id", nargs="?")
     p_improvement.add_argument("--limit", type=int, default=20)
+    p_improvement.add_argument("--kind", choices=["skill_patch", "workflow_revision", "agent_topology_revision"])
+    p_improvement.add_argument("--target-ref")
+    p_improvement.add_argument("--summary")
+    p_improvement.add_argument("--change", action="append", default=[])
+    p_improvement.add_argument("--impact-area", action="append", default=[])
+    p_improvement.add_argument("--actor", default="supervisor")
+    p_improvement.add_argument("--decision", choices=["approved", "rejected"])
+    p_improvement.add_argument("--reviewer", default="owner")
+    p_improvement.add_argument("--reason-code")
+    p_improvement.add_argument("--revision-file", help="UTF-8 skill manifest for revision-propose")
+    p_improvement.add_argument("--observed-closure")
+    p_improvement.add_argument("--revision-id")
 
     # v4.2 Upgrade System
     p_upgrade_scan = subparsers.add_parser("upgrade-scan", help="Scan journals for upgrade candidates (v4.2)")

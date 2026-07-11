@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
+from ensemble_forward_public_context import build_public_workspace_context_latest_payload
 from ensemble_loop_paths import latest_context_path as runtime_latest_context_path
 from ensemble_loop_paths import loop_state_db_path, loop_state_debug_path
 from ensemble_loop_repository import LoopStateRepository
@@ -79,6 +80,20 @@ SECRET_PATTERNS = (
     re.compile(r"(api[_-]?key|token|secret)\s*[:=]\s*[^\s]+", re.IGNORECASE),
     re.compile(r"(?<![A-Za-z0-9])sk-[A-Za-z0-9_-]{12,}"),
 )
+PUBLIC_LOCAL_PATH_PATTERNS = (
+    re.compile(r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^\r\n<>\"']+", re.IGNORECASE),
+    re.compile(
+        r"(?<![A-Za-z0-9:])/(?:home|Users|tmp|var|opt|srv|mnt|private|workspace|workspaces|root)/[^\r\n<>\"']+",
+        re.IGNORECASE,
+    ),
+)
+PUBLIC_LOCAL_USERNAME_PATTERNS = (
+    re.compile(
+        r"\b(?:username|local[_-]?username|local[_-]?user)\s*[:=]\s*[^\s]+",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\blocal/[A-Za-z0-9._-]+\b", re.IGNORECASE),
+)
 EMAIL_PATTERN = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 RUNTIME_CLI_CHECKS = (
     {"id": "python", "label": "Python", "candidates": (sys.executable, "python3", "python"), "version_args": ("--version",)},
@@ -89,6 +104,7 @@ RUNTIME_CLI_CHECKS = (
     {"id": "claude", "label": "Claude CLI", "candidates": ("claude", "claude.cmd"), "version_args": ("--version",)},
     {"id": "gemini", "label": "Gemini CLI", "candidates": ("gemini", "gemini.cmd"), "version_args": ("--version",)},
     {"id": "opencode", "label": "OpenCode CLI", "candidates": ("opencode", "opencode.cmd"), "version_args": ("--version",)},
+    {"id": "gjc", "label": "Gajae-Code (GJC)", "candidates": ("gjc", "gjc.cmd"), "version_args": ("--version",)},
 )
 
 
@@ -114,6 +130,35 @@ def _safe_path_label(path: str | Path, workspace_root: str | Path) -> str:
     except ValueError:
         return resolved_path.name
     return str(label).replace("\\", "/") or "."
+
+
+def _sanitize_public_text(value: str | None, workspace_root: str | Path) -> str | None:
+    if value is None:
+        return None
+    sanitized = value
+    resolved_workspace = str(Path(workspace_root).resolve())
+    workspace_variants = {
+        resolved_workspace,
+        resolved_workspace.replace("\\", "/"),
+        resolved_workspace.replace("/", "\\"),
+    }
+    for workspace_value in sorted(workspace_variants, key=len, reverse=True):
+        if workspace_value:
+            sanitized = re.sub(
+                re.escape(workspace_value),
+                "[WORKSPACE]",
+                sanitized,
+                flags=re.IGNORECASE,
+            )
+    for pattern in SECRET_PATTERNS:
+        sanitized = pattern.sub("[REDACTED]", sanitized)
+    redacted, _rules = _redact_reviewed_metadata(sanitized)
+    sanitized = str(redacted)
+    for pattern in PUBLIC_LOCAL_PATH_PATTERNS:
+        sanitized = pattern.sub("[REDACTED]", sanitized)
+    for pattern in PUBLIC_LOCAL_USERNAME_PATTERNS:
+        sanitized = pattern.sub("[REDACTED]", sanitized)
+    return sanitized
 
 
 def _sanitize_forward_status_payload(payload: dict[str, Any], workspace: str | Path) -> dict[str, Any]:
@@ -175,23 +220,7 @@ def build_forward_status(workspace: str | Path) -> dict[str, Any]:
 
 
 def build_context_latest_payload(workspace: str | Path) -> dict[str, Any]:
-    runtime_path = runtime_latest_context_path(workspace)
-    repo_path = _repo_latest_context_path(workspace)
-    return {
-        "mode": "forward",
-        "runtime_latest": {
-            "path": str(runtime_path),
-            "content": _read_optional_text(runtime_path),
-        },
-        "repo_latest": (
-            {
-                "path": str(repo_path),
-                "content": _read_optional_text(repo_path),
-            }
-            if repo_path.exists()
-            else None
-        ),
-    }
+    return build_public_workspace_context_latest_payload(workspace)
 
 
 def render_forward_status_text(payload: dict[str, Any]) -> str:
@@ -1433,6 +1462,10 @@ def render_forward_pr_ci_evidence_text(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _serialize_forward_json(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, ensure_ascii=True, indent=2)
+
+
 def run_forward_action(
     workspace: str | Path,
     *,
@@ -1452,21 +1485,24 @@ def run_forward_action(
     repository: str | None = None,
 ) -> str:
     if action == "status":
-        payload = build_forward_status(workspace)
+        payload = _sanitize_forward_status_payload(
+            build_forward_status(workspace),
+            workspace,
+        )
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_status_text(payload)
     if action == "context-latest":
         payload = build_context_latest_payload(workspace)
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_context_latest_text(payload)
     if action == "doctor-evidence":
         payload = build_forward_doctor_evidence_payload(workspace)
         if write_artifact:
             payload = write_forward_doctor_evidence_artifact(workspace, payload)
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_doctor_evidence_text(payload)
     if action == "runtime-roster":
         payload = build_forward_runtime_roster_payload(
@@ -1476,17 +1512,17 @@ def run_forward_action(
             runtime_category=runtime_category,
         )
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_runtime_roster_text(payload)
     if action == "turn-records":
         payload = build_forward_turn_records_payload(workspace, run_id=run_id, room_id=room_id, limit=limit)
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_turn_records_text(payload)
     if action == "workflow-contracts":
         payload = build_forward_workflow_contracts_payload(workspace, workflow_ref=workflow_ref)
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_workflow_contracts_text(payload)
     if action == "status-confidence":
         payload = build_forward_status_confidence_payload(
@@ -1497,7 +1533,7 @@ def run_forward_action(
             limit=limit,
         )
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_status_confidence_text(payload)
     if action == "wake-readiness":
         payload = build_forward_wake_readiness_payload(
@@ -1508,7 +1544,7 @@ def run_forward_action(
             limit=limit,
         )
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_wake_readiness_text(payload)
     if action == "import-pr-ci-evidence":
         payload = import_forward_pr_ci_evidence(
@@ -1519,12 +1555,12 @@ def run_forward_action(
             repository=repository,
         )
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_pr_ci_import_text(payload)
     if action == "append-pr-ci-evidence":
         payload = append_forward_pr_ci_evidence(workspace, input_path=input_path, reviewer=reviewer)
         if output_format == "json":
-            return json.dumps(payload, ensure_ascii=False, indent=2)
+            return _serialize_forward_json(payload)
         return render_forward_pr_ci_evidence_text(payload)
     raise ValueError(f"Unsupported forward action: {action}")
 

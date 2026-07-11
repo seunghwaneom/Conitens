@@ -159,6 +159,9 @@ class ForwardLiveApprovalTests(unittest.TestCase):
 
         self.assertEqual(len(approvals_payload["approvals"]), 1)
         self.assertEqual(detail_payload["approval"]["status"], "pending")
+        self.assertEqual(approvals_payload["approvals"][0]["action_payload"], {})
+        self.assertEqual(detail_payload["approval"]["action_payload"], {})
+        self.assertNotIn("echo risky", json.dumps({"list": approvals_payload, "detail": detail_payload}))
 
     def test_approval_decision_and_resume_round_trip(self) -> None:
         root, repo, run_id = self.prepare_workspace()
@@ -206,9 +209,15 @@ class ForwardLiveApprovalTests(unittest.TestCase):
 
         self.assertEqual(decision_payload["approval"]["status"], "approved")
         self.assertEqual(decision_payload["approval"]["reviewer"], "local-operator")
+        self.assertEqual(decision_payload["approval"]["action_payload"], {})
+        self.assertIsNone(decision_payload["approval"]["reviewer_note"])
+        self.assertEqual(resume_payload["approval"]["action_payload"], {})
         self.assertNotEqual(resume_payload["state"]["current_step"], "approval_pending")
         self.assertFalse(resume_payload["state"]["approval_pending"])
-        self.assertEqual(repo.list_approval_requests(run_id=run_id)[0]["status"], "approved")
+        stored_approval = repo.list_approval_requests(run_id=run_id)[0]
+        self.assertEqual(stored_approval["status"], "approved")
+        self.assertEqual(stored_approval["action_payload"]["command"], "echo risky")
+        self.assertEqual(stored_approval["reviewer_note"], "approved")
 
     def test_rejection_resume_records_rejected_state(self) -> None:
         root, repo, run_id = self.prepare_workspace()

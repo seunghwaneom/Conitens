@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,10 @@ def next_room_id(workspace: str | Path) -> str:
     return f"{prefix}{max_num + 1:03d}"
 
 
+def next_message_id(room_id: str) -> str:
+    return f"msg:{validate_room_id(room_id)}:{uuid.uuid4().hex[:12]}"
+
+
 def create_room(
     workspace: str | Path,
     *,
@@ -72,6 +77,7 @@ def create_room(
     session_boundary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     room_id = next_room_id(workspace)
+    now = utc_iso()
     record = {
         "room_id": room_id,
         "schema_v": 1,
@@ -82,35 +88,44 @@ def create_room(
         "run_id": run_id,
         "iteration_id": iteration_id,
         "created_by": actor,
-        "created_at": utc_iso(),
-        "updated_at": utc_iso(),
+        "created_at": now,
+        "updated_at": now,
         "status": "active",
         "session_boundary": session_boundary or {},
     }
-    room_meta_path(workspace, room_id).write_text(json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8")
-    room_log_path(workspace, room_id).write_text("", encoding="utf-8")
-    LoopStateRepository(workspace).upsert_room(
-        room_id=room_id,
-        room_type=room_type,
-        name=name,
-        status="active",
-        created_by=actor,
-        participants=participants or [],
-        session_boundary=session_boundary or {},
-        run_id=run_id,
-        iteration_id=iteration_id,
-        task_id=task_id,
-        created_at=record["created_at"],
-        updated_at=record["updated_at"],
-    )
-    append_event(
+    event = append_event(
         workspace,
         event_type="ROOM_CREATED",
         actor={"type": "agent", "name": actor},
-        scope={"task_id": task_id, "room_id": room_id, "correlation_id": task_id or room_id},
-        payload={"name": name, "participants": participants or [], "room_type": room_type},
+        scope={
+            "task_id": task_id,
+            "room_id": room_id,
+            "correlation_id": task_id or room_id,
+            "run_id": run_id,
+            "iteration_id": iteration_id,
+        },
+        payload=record,
     )
-    return record
+    projected_record = dict(event.get("payload") or record)
+    projected_record.setdefault("room_id", room_id)
+    projected_record.setdefault("schema_v", 1)
+    room_meta_path(workspace, room_id).write_text(json.dumps(projected_record, indent=2, ensure_ascii=False), encoding="utf-8")
+    room_log_path(workspace, room_id).write_text("", encoding="utf-8")
+    LoopStateRepository(workspace).upsert_room(
+        room_id=room_id,
+        room_type=str(projected_record.get("room_type") or room_type),
+        name=str(projected_record.get("name") or name),
+        status=str(projected_record.get("status") or "active"),
+        created_by=str(projected_record.get("created_by") or actor),
+        participants=list(projected_record.get("participants") or []),
+        session_boundary=dict(projected_record.get("session_boundary") or {}),
+        run_id=projected_record.get("run_id"),
+        iteration_id=projected_record.get("iteration_id"),
+        task_id=projected_record.get("task_id"),
+        created_at=projected_record.get("created_at"),
+        updated_at=projected_record.get("updated_at"),
+    )
+    return projected_record
 
 
 def post_room_message(
@@ -130,23 +145,81 @@ def post_room_message(
     created_at: str | None = None,
 ) -> dict[str, Any]:
     meta = json.loads(room_meta_path(workspace, room_id).read_text(encoding="utf-8"))
+    message_id = next_message_id(room_id)
+    created = created_at or utc_iso()
+    message_task_id = task_id or meta.get("task_id")
+    message_run_id = run_id or meta.get("run_id")
+    message_iteration_id = iteration_id or meta.get("iteration_id")
+    projected_evidence_refs = evidence_refs or attachments or []
+    event_metadata = {"attachments": attachments or [], **(metadata or {})}
     entry = {
-        "ts_utc": created_at or utc_iso(),
+        "message_id": message_id,
+        "ts_utc": created,
+        "created_at": created,
         "room_id": room_id,
         "sender": sender,
         "sender_kind": sender_kind,
         "message_type": message_type,
         "text": text,
+        "content": text,
         "attachments": attachments or [],
-        "task_id": task_id or meta.get("task_id"),
-        "run_id": run_id or meta.get("run_id"),
-        "iteration_id": iteration_id or meta.get("iteration_id"),
-        "metadata": metadata or {},
+        "evidence_refs": projected_evidence_refs,
+        "task_id": message_task_id,
+        "run_id": message_run_id,
+        "iteration_id": message_iteration_id,
+        "metadata": event_metadata,
     }
-    meta["updated_at"] = entry["ts_utc"]
+    event = append_event(
+        workspace,
+        event_type="ROOM_MESSAGE",
+        actor={"type": "agent", "name": sender},
+        scope={
+            "task_id": entry["task_id"],
+            "room_id": room_id,
+            "correlation_id": entry["task_id"] or room_id,
+            "run_id": entry.get("run_id"),
+            "iteration_id": entry.get("iteration_id"),
+            "message_id": message_id,
+        },
+        payload={
+            "room_id": room_id,
+            "message_id": message_id,
+            "sender": sender,
+            "sender_kind": sender_kind,
+            "message_type": message_type,
+            "content": text,
+            "created_at": created,
+            "attachments": attachments or [],
+            "evidence_refs": projected_evidence_refs,
+            "metadata": event_metadata,
+            "task_id": entry["task_id"],
+            "run_id": entry["run_id"],
+            "iteration_id": entry["iteration_id"],
+        },
+    )
+    payload = dict(event.get("payload") or {})
+    projected_entry = {
+        **entry,
+        "message_id": payload.get("message_id", message_id),
+        "room_id": payload.get("room_id", room_id),
+        "sender": payload.get("sender", sender),
+        "sender_kind": payload.get("sender_kind", sender_kind),
+        "message_type": payload.get("message_type", message_type),
+        "text": payload.get("content", text),
+        "content": payload.get("content", text),
+        "attachments": payload.get("attachments", attachments or []),
+        "evidence_refs": payload.get("evidence_refs", projected_evidence_refs),
+        "task_id": payload.get("task_id", entry["task_id"]),
+        "run_id": payload.get("run_id", entry["run_id"]),
+        "iteration_id": payload.get("iteration_id", entry["iteration_id"]),
+        "metadata": payload.get("metadata", event_metadata),
+        "created_at": payload.get("created_at", created),
+        "ts_utc": payload.get("created_at", created),
+    }
+    meta["updated_at"] = projected_entry["ts_utc"]
     room_meta_path(workspace, room_id).write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     with room_log_path(workspace, room_id).open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        handle.write(json.dumps(projected_entry, ensure_ascii=False) + "\n")
     repository = LoopStateRepository(workspace)
     repository.upsert_room(
         room_id=room_id,
@@ -164,25 +237,18 @@ def post_room_message(
     )
     db_entry = repository.append_room_message(
         room_id=room_id,
-        run_id=entry.get("run_id"),
-        iteration_id=entry.get("iteration_id"),
-        sender=sender,
-        sender_kind=sender_kind,
-        message_type=message_type,
-        content=text,
-        evidence_refs=evidence_refs or attachments or [],
-        metadata={"attachments": attachments or [], **(metadata or {})},
-        created_at=entry["ts_utc"],
+        run_id=projected_entry.get("run_id"),
+        iteration_id=projected_entry.get("iteration_id"),
+        sender=str(projected_entry.get("sender") or sender),
+        sender_kind=str(projected_entry.get("sender_kind") or sender_kind),
+        message_type=str(projected_entry.get("message_type") or message_type),
+        content=str(projected_entry.get("content") or ""),
+        evidence_refs=list(projected_entry.get("evidence_refs") or []),
+        metadata=dict(projected_entry.get("metadata") or {}),
+        created_at=projected_entry["ts_utc"],
     )
-    entry["message_id"] = db_entry["id"]
-    append_event(
-        workspace,
-        event_type="ROOM_MESSAGE",
-        actor={"type": "agent", "name": sender},
-        scope={"task_id": entry["task_id"], "room_id": room_id, "correlation_id": entry["task_id"] or room_id, "run_id": entry.get("run_id")},
-        payload={"message_type": message_type, "attachments": attachments or [], "sender_kind": sender_kind},
-    )
-    return entry
+    projected_entry["id"] = db_entry["id"]
+    return projected_entry
 
 
 def show_room(workspace: str | Path, room_id: str) -> dict[str, Any]:

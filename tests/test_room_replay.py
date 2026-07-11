@@ -6,6 +6,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -14,13 +16,16 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
+import ensemble_room
 from ensemble_ag2_room_adapter import AG2RoomAdapter
+from ensemble_allowed_events import resolve_event_type
 from ensemble_approval import ApprovalInterruptAdapter
 from ensemble_context_assembler import ContextAssembler
 from ensemble_context_markdown import ContextRegenerator, TaskPlanWriterReader
 from ensemble_handoff import create_handoff, transition_handoff
 from ensemble_insight_extractor import InsightExtractor
 from ensemble_iteration_service import IterationService
+from ensemble_events import load_events
 from ensemble_loop_repository import LoopStateRepository
 from ensemble_replay_service import ReplayService
 from ensemble_room_service import RoomService
@@ -70,6 +75,470 @@ class RoomReplayTests(unittest.TestCase):
         )
         ContextRegenerator(repo).regenerate_all(run_id)
         return root, repo, run_id, iteration_id
+
+    def test_legacy_room_file_import_remains_supported(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        legacy_room = ensemble_room.create_room(
+            root,
+            name="legacy-room",
+            room_type="discussion",
+            participants=["user", "sample-agent"],
+            actor="legacy-cli",
+            task_id=run_id,
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+        ensemble_room.post_room_message(
+            root,
+            room_id=legacy_room["room_id"],
+            sender="user",
+            sender_kind="user",
+            text="Legacy transcript line",
+            attachments=["artifact:legacy-attachment"],
+            evidence_refs=["evidence:legacy-message"],
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+
+        repository = LoopStateRepository(root)
+        with repository.connect() as connection:
+            connection.execute("DELETE FROM messages WHERE room_id = ?", (legacy_room["room_id"],))
+            connection.execute("DELETE FROM rooms WHERE room_id = ?", (legacy_room["room_id"],))
+
+        snapshot = RoomService(root).room_snapshot(legacy_room["room_id"])
+
+        self.assertEqual(snapshot["room"]["room_id"], legacy_room["room_id"])
+        self.assertEqual(snapshot["messages"][0]["content"], "Legacy transcript line")
+        self.assertEqual(snapshot["messages"][0]["sender_kind"], "user")
+        self.assertEqual(snapshot["messages"][0]["evidence_refs_json"], ["evidence:legacy-message"])
+
+    def test_room_create_event_is_appended_before_projection_writes(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        observed: list[dict[str, Any]] = []
+
+        def capture_event(
+            workspace: Path,
+            *,
+            event_type: str,
+            scope: dict[str, Any],
+            payload: dict[str, Any],
+            **_: Any,
+        ) -> dict[str, Any]:
+            room_id = str(scope["room_id"])
+            observed.append(
+                {
+                    "event_type": resolve_event_type(event_type),
+                    "room_id": room_id,
+                    "payload": payload,
+                    "meta_exists": ensemble_room.room_meta_path(workspace, room_id).exists(),
+                    "log_exists": ensemble_room.room_log_path(workspace, room_id).exists(),
+                    "repo_room": LoopStateRepository(workspace).get_room_record(room_id),
+                }
+            )
+            return {"event_type": resolve_event_type(event_type), "scope": scope, "payload": payload}
+
+        with patch.object(ensemble_room, "append_event", side_effect=capture_event):
+            room = ensemble_room.create_room(
+                root,
+                name="event-first-room",
+                room_type="decision",
+                participants=["user", "sample-agent"],
+                actor="sample-agent",
+                task_id=run_id,
+                run_id=run_id,
+                iteration_id=iteration_id,
+            )
+
+        self.assertEqual(len(observed), 1)
+        self.assertEqual(observed[0]["event_type"], "thread.created")
+        self.assertEqual(observed[0]["room_id"], room["room_id"])
+        self.assertFalse(observed[0]["meta_exists"])
+        self.assertFalse(observed[0]["log_exists"])
+        self.assertIsNone(observed[0]["repo_room"])
+
+    def test_room_create_append_failure_does_not_project_room_state(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+
+        def fail_append(*_: Any, **__: Any) -> None:
+            raise RuntimeError("event append failed")
+
+        with patch.object(ensemble_room, "append_event", side_effect=fail_append):
+            with self.assertRaises(RuntimeError):
+                ensemble_room.create_room(
+                    root,
+                    name="atomic-create-room",
+                    room_type="review",
+                    participants=["user", "sample-agent"],
+                    actor="sample-agent",
+                    task_id=run_id,
+                    run_id=run_id,
+                    iteration_id=iteration_id,
+                )
+
+        room_projection_dir = root / ".notes" / "rooms"
+        self.assertFalse(list(room_projection_dir.glob("*.json")) if room_projection_dir.exists() else [])
+        self.assertFalse(list(room_projection_dir.glob("*.jsonl")) if room_projection_dir.exists() else [])
+        self.assertEqual(LoopStateRepository(root).list_room_records(run_id=run_id), [])
+
+    def test_room_create_projection_failure_keeps_committed_event(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+
+        with patch.object(
+            ensemble_room.LoopStateRepository,
+            "upsert_room",
+            side_effect=RuntimeError("room projection failed"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "room projection failed"):
+                ensemble_room.create_room(
+                    root,
+                    name="projection-failure-room",
+                    room_type="review",
+                    participants=["user", "sample-agent"],
+                    actor="sample-agent",
+                    task_id=run_id,
+                    run_id=run_id,
+                    iteration_id=iteration_id,
+                )
+
+        created_events = [
+            event
+            for event in load_events(root)
+            if event["type"] == "thread.created"
+            and event.get("payload", {}).get("name") == "projection-failure-room"
+        ]
+        self.assertEqual(len(created_events), 1)
+        room_id = created_events[0]["payload"]["room_id"]
+        self.assertTrue(ensemble_room.room_meta_path(root, room_id).exists())
+        self.assertTrue(ensemble_room.room_log_path(root, room_id).exists())
+        self.assertIsNone(LoopStateRepository(root).get_room_record(room_id))
+
+    def test_room_message_event_is_appended_before_projection_writes(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        room = ensemble_room.create_room(
+            root,
+            name="message-event-first-room",
+            room_type="review",
+            participants=["user", "sample-agent"],
+            actor="sample-agent",
+            task_id=run_id,
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+        baseline_log_lines = ensemble_room.room_log_path(root, room["room_id"]).read_text(encoding="utf-8").splitlines()
+        baseline_updated_at = json.loads(ensemble_room.room_meta_path(root, room["room_id"]).read_text(encoding="utf-8"))["updated_at"]
+        observed: list[dict[str, Any]] = []
+
+        def capture_event(
+            workspace: Path,
+            *,
+            event_type: str,
+            scope: dict[str, Any],
+            payload: dict[str, Any],
+            **_: Any,
+        ) -> dict[str, Any]:
+            observed.append(
+                {
+                    "event_type": resolve_event_type(event_type),
+                    "payload": payload,
+                    "log_lines": ensemble_room.room_log_path(workspace, room["room_id"]).read_text(encoding="utf-8").splitlines(),
+                    "updated_at": json.loads(ensemble_room.room_meta_path(workspace, room["room_id"]).read_text(encoding="utf-8"))["updated_at"],
+                    "repo_messages": LoopStateRepository(workspace).list_room_messages(room_id=room["room_id"]),
+                }
+            )
+            return {"event_type": resolve_event_type(event_type), "scope": scope, "payload": payload}
+
+        with patch.object(ensemble_room, "append_event", side_effect=capture_event):
+            message = ensemble_room.post_room_message(
+                root,
+                room_id=room["room_id"],
+                sender="user",
+                sender_kind="user",
+                text="Message must be committed as an event first",
+                run_id=run_id,
+                iteration_id=iteration_id,
+            )
+
+        self.assertEqual(len(observed), 1)
+        self.assertEqual(observed[0]["event_type"], "thread.message_appended")
+        self.assertEqual(message["room_id"], room["room_id"])
+        self.assertEqual(observed[0]["log_lines"], baseline_log_lines)
+        self.assertEqual(observed[0]["updated_at"], baseline_updated_at)
+        self.assertEqual(observed[0]["repo_messages"], [])
+
+    def test_room_message_append_failure_does_not_project_message_state(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        room = ensemble_room.create_room(
+            root,
+            name="atomic-message-room",
+            room_type="review",
+            participants=["user", "sample-agent"],
+            actor="sample-agent",
+            task_id=run_id,
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+        meta_path = ensemble_room.room_meta_path(root, room["room_id"])
+        log_path = ensemble_room.room_log_path(root, room["room_id"])
+        baseline_meta = meta_path.read_text(encoding="utf-8")
+        baseline_log = log_path.read_text(encoding="utf-8")
+        baseline_messages = LoopStateRepository(root).list_room_messages(room_id=room["room_id"])
+
+        def fail_append(*_: Any, **__: Any) -> None:
+            raise RuntimeError("event append failed")
+
+        with patch.object(ensemble_room, "append_event", side_effect=fail_append):
+            with self.assertRaises(RuntimeError):
+                ensemble_room.post_room_message(
+                    root,
+                    room_id=room["room_id"],
+                    sender="user",
+                    sender_kind="user",
+                    text="This projection must not survive a failed event append",
+                    run_id=run_id,
+                    iteration_id=iteration_id,
+                )
+
+        self.assertEqual(meta_path.read_text(encoding="utf-8"), baseline_meta)
+        self.assertEqual(log_path.read_text(encoding="utf-8"), baseline_log)
+        self.assertEqual(LoopStateRepository(root).list_room_messages(room_id=room["room_id"]), baseline_messages)
+
+    def test_room_message_projection_failure_keeps_committed_event(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        room = ensemble_room.create_room(
+            root,
+            name="message-projection-failure-room",
+            room_type="review",
+            participants=["user", "sample-agent"],
+            actor="sample-agent",
+            task_id=run_id,
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+
+        with patch.object(
+            ensemble_room.LoopStateRepository,
+            "append_room_message",
+            side_effect=RuntimeError("message projection failed"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "message projection failed"):
+                ensemble_room.post_room_message(
+                    root,
+                    room_id=room["room_id"],
+                    sender="sample-agent",
+                    sender_kind="agent",
+                    text="Committed event survives projection failure",
+                    run_id=run_id,
+                    iteration_id=iteration_id,
+                )
+
+        message_events = [
+            event
+            for event in load_events(root)
+            if event["type"] == "thread.message_appended"
+            and event.get("payload", {}).get("content")
+            == "Committed event survives projection failure"
+        ]
+        self.assertEqual(len(message_events), 1)
+        self.assertRegex(message_events[0]["payload"]["message_id"], r"^msg:")
+        self.assertEqual(
+            LoopStateRepository(root).list_room_messages(room_id=room["room_id"]),
+            [],
+        )
+
+    def test_room_message_event_payload_is_replay_sufficient(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        room = ensemble_room.create_room(
+            root,
+            name="replay-payload-room",
+            room_type="review",
+            participants=["user", "sample-agent"],
+            actor="sample-agent",
+            task_id=run_id,
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+        observed: list[dict[str, Any]] = []
+
+        def capture_event(
+            workspace: Path,
+            *,
+            event_type: str,
+            actor: dict[str, str],
+            scope: dict[str, Any],
+            payload: dict[str, Any],
+            **_: Any,
+        ) -> dict[str, Any]:
+            observed.append(
+                {
+                    "event_type": resolve_event_type(event_type),
+                    "actor": actor,
+                    "scope": scope,
+                    "payload": payload,
+                    "repo_messages": LoopStateRepository(workspace).list_room_messages(room_id=room["room_id"]),
+                }
+            )
+            return {"event_type": resolve_event_type(event_type), "scope": scope, "payload": payload}
+
+        with patch.object(ensemble_room, "append_event", side_effect=capture_event):
+            ensemble_room.post_room_message(
+                root,
+                room_id=room["room_id"],
+                sender="sample-agent",
+                sender_kind="agent",
+                text="DECISION: room messages must replay from events",
+                message_type="text",
+                attachments=["artifact:room-note"],
+                evidence_refs=["evidence:room-note"],
+                metadata={"importance": "high"},
+                run_id=run_id,
+                iteration_id=iteration_id,
+                created_at="2026-04-01T00:00:01Z",
+            )
+
+        self.assertEqual(len(observed), 1)
+        event = observed[0]
+        payload = event["payload"]
+        scope = event["scope"]
+        self.assertEqual(event["event_type"], "thread.message_appended")
+        self.assertEqual(scope["room_id"], room["room_id"])
+        self.assertEqual(scope["run_id"], run_id)
+        self.assertIn("room_id", payload)
+        self.assertIn("message_id", payload)
+        self.assertIn("sender", payload)
+        self.assertIn("content", payload)
+        self.assertIn("created_at", payload)
+        self.assertIn("evidence_refs", payload)
+        self.assertIn("metadata", payload)
+        self.assertEqual(payload["room_id"], room["room_id"])
+        self.assertRegex(str(payload["message_id"]), r"^msg:[A-Za-z0-9._:-]+$")
+        self.assertEqual(payload["sender"], "sample-agent")
+        self.assertEqual(payload["sender_kind"], "agent")
+        self.assertEqual(payload["message_type"], "text")
+        self.assertEqual(payload["content"], "DECISION: room messages must replay from events")
+        self.assertEqual(payload["created_at"], "2026-04-01T00:00:01Z")
+        self.assertEqual(payload["evidence_refs"], ["evidence:room-note"])
+        self.assertEqual(payload["metadata"], {"importance": "high", "attachments": ["artifact:room-note"]})
+        self.assertEqual(event["repo_messages"], [])
+
+    def test_room_message_returns_authority_and_projection_ids(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        room = ensemble_room.create_room(
+            root,
+            name="message-identity-room",
+            room_type="review",
+            participants=["user", "sample-agent"],
+            actor="sample-agent",
+            task_id=run_id,
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+
+        message = ensemble_room.post_room_message(
+            root,
+            room_id=room["room_id"],
+            sender="sample-agent",
+            sender_kind="agent",
+            text="Stable authority identity",
+            attachments=["artifact:identity-note"],
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+
+        log_entry = json.loads(
+            ensemble_room.room_log_path(root, room["room_id"])
+            .read_text(encoding="utf-8")
+            .strip()
+        )
+        stored = LoopStateRepository(root).list_room_messages(room_id=room["room_id"])
+        self.assertRegex(message["message_id"], r"^msg:[A-Za-z0-9._:-]+$")
+        self.assertIsInstance(message["id"], int)
+        self.assertEqual(log_entry["message_id"], message["message_id"])
+        self.assertEqual(stored[0]["id"], message["id"])
+        self.assertEqual(stored[0]["evidence_refs_json"], ["artifact:identity-note"])
+
+    def test_room_tool_event_is_appended_before_projection(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        rooms = RoomService(root)
+        room = rooms.create_room(
+            name="tool-event-first-room",
+            room_type="review",
+            participants=["user", "sample-agent"],
+            actor="sample-agent",
+            task_id=run_id,
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+        observed: list[dict[str, Any]] = []
+
+        def capture_event(
+            workspace: Path,
+            *,
+            event_type: str,
+            payload: dict[str, Any],
+            **_: Any,
+        ) -> dict[str, Any]:
+            observed.append(
+                {
+                    "event_type": resolve_event_type(event_type),
+                    "payload": payload,
+                    "stored": LoopStateRepository(workspace).list_tool_events(
+                        room_id=room["room_id"]
+                    ),
+                }
+            )
+            return {"type": resolve_event_type(event_type), "payload": payload}
+
+        with patch("ensemble_room_service.append_event", side_effect=capture_event):
+            rooms.append_tool_event(
+                room_id=room["room_id"],
+                actor="sample-agent",
+                tool_name="validator",
+                payload={"status": "checked"},
+                run_id=run_id,
+                iteration_id=iteration_id,
+                created_at="2026-04-01T00:00:02Z",
+            )
+
+        self.assertEqual(len(observed), 1)
+        self.assertEqual(observed[0]["event_type"], "interaction.command_executed")
+        self.assertEqual(observed[0]["stored"], [])
+        self.assertEqual(observed[0]["payload"]["room_id"], room["room_id"])
+        self.assertEqual(observed[0]["payload"]["actor"], "sample-agent")
+        self.assertEqual(observed[0]["payload"]["tool_name"], "validator")
+        self.assertEqual(observed[0]["payload"]["payload"], {"status": "checked"})
+        self.assertEqual(observed[0]["payload"]["created_at"], "2026-04-01T00:00:02Z")
+
+    def test_room_tool_event_append_failure_does_not_project_state(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        rooms = RoomService(root)
+        room = rooms.create_room(
+            name="tool-event-append-failure-room",
+            room_type="review",
+            participants=["user", "sample-agent"],
+            actor="sample-agent",
+            task_id=run_id,
+            run_id=run_id,
+            iteration_id=iteration_id,
+        )
+
+        with patch(
+            "ensemble_room_service.append_event",
+            side_effect=RuntimeError("tool event append failed"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "tool event append failed"):
+                rooms.append_tool_event(
+                    room_id=room["room_id"],
+                    actor="sample-agent",
+                    tool_name="validator",
+                    payload={"status": "checked"},
+                    run_id=run_id,
+                    iteration_id=iteration_id,
+                )
+
+        self.assertEqual(
+            LoopStateRepository(root).list_tool_events(room_id=room["room_id"]),
+            [],
+        )
 
     def test_create_room_persists_room_record(self) -> None:
         root, repo, run_id, iteration_id = self.prepare_workspace()

@@ -12,7 +12,6 @@ import shutil
 import signal
 import subprocess
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -29,6 +28,10 @@ from ensemble_provider_render import build_provider_command, build_provider_rend
 
 
 SAFE_SPAWN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+ARTIFACT_MANIFEST_WARNING = "Artifact manifest projection failed."
+WORKSPACE_CLEANUP_WARNING = "Workspace cleanup failed."
+SPAWN_OBSERVATION_GRACE_SECONDS = 0.25
+COMMAND_COMPLETION_WARNING = "Stop command completion event failed."
 
 
 def utc_iso(ts: datetime | None = None) -> str:
@@ -181,16 +184,211 @@ def _pid_is_running(pid: int | None) -> bool:
         return False
 
 
+def _terminate_launched_process(process: subprocess.Popen[Any]) -> bool:
+    try:
+        if process.poll() is not None:
+            return True
+    except Exception:
+        pass
+    try:
+        process.terminate()
+        process.wait(timeout=5)
+        return True
+    except Exception:
+        pass
+    try:
+        process.kill()
+        process.wait(timeout=5)
+        return True
+    except Exception:
+        return False
+
+
+def _cleanup_failed_spawn_workspace(
+    workspace_info: dict[str, Any] | None,
+    primary_error: BaseException,
+) -> None:
+    if not isinstance(workspace_info, dict):
+        return
+    if workspace_info.get("strategy") != "git-worktree" or not workspace_info.get("created"):
+        return
+    try:
+        cleanup_git_worktree(workspace_info)
+    except Exception as cleanup_error:
+        primary_error.add_note(f"Failed to clean spawned git worktree: {cleanup_error}")
+
+
+def _project_terminal_workspace_cleanup(record: dict[str, Any]) -> None:
+    workspace_info = record.get("workspace", {})
+    if not isinstance(workspace_info, dict):
+        return
+    if workspace_info.get("strategy") != "git-worktree" or not workspace_info.get("created"):
+        return
+    try:
+        cleanup_git_worktree(workspace_info)
+        record["workspace_cleaned"] = True
+    except Exception:
+        record["workspace_cleanup_warning"] = WORKSPACE_CLEANUP_WARNING
+
+
+def _record_spawn_failure(
+    workspace: str | Path,
+    *,
+    actor: str,
+    spawn_id: str,
+    task_id: str | None,
+    provider_id: str,
+    agent_id: str,
+    workspace_id: str,
+    stage: str,
+    handoff_id: str | None = None,
+    primary_error: BaseException | None = None,
+    recoverable: bool = True,
+) -> dict[str, Any] | None:
+    try:
+        event = append_event(
+            workspace,
+            event_type="agent.error",
+            actor={"type": "agent", "name": actor},
+            scope={"task_id": task_id, "correlation_id": spawn_id, "spawn_id": spawn_id},
+            payload={
+                "agent_id": agent_id,
+                "message": f"Subagent spawn failed during {stage}.",
+                "error_code": f"SPAWN_{stage.upper()}",
+                "severity": "error",
+                "task_id": task_id,
+                "recoverable": recoverable,
+            },
+            severity="error",
+        )
+    except Exception as cleanup_error:
+        event = None
+        if primary_error is not None:
+            primary_error.add_note(f"Failed to append spawn failure event: {cleanup_error}")
+    if handoff_id:
+        try:
+            transition_handoff(
+                workspace,
+                handoff_id=handoff_id,
+                state="rejected",
+                actor=actor,
+                detail=f"Subagent spawn failed during {stage}.",
+            )
+        except Exception as cleanup_error:
+            if primary_error is not None:
+                primary_error.add_note(f"Failed to reject spawn handoff {handoff_id}: {cleanup_error}")
+    return event
+
+
+def _record_spawn_termination(
+    workspace: str | Path,
+    *,
+    actor: str,
+    spawn_id: str,
+    task_id: str | None,
+    agent_id: str,
+    primary_error: BaseException,
+) -> dict[str, Any] | None:
+    try:
+        return append_event(
+            workspace,
+            event_type="agent.terminated",
+            actor={"type": "agent", "name": actor},
+            scope={"task_id": task_id, "correlation_id": spawn_id, "spawn_id": spawn_id},
+            payload={
+                "agent_id": agent_id,
+                "reason": "error",
+                "final_task_id": task_id,
+            },
+            severity="error",
+        )
+    except Exception as cleanup_error:
+        primary_error.add_note(f"Failed to append spawn termination event: {cleanup_error}")
+        return None
+
+
+def _record_stop_command_failure(
+    workspace: str | Path,
+    *,
+    actor: str,
+    spawn_id: str,
+    task_id: str | None,
+    primary_error: BaseException,
+) -> None:
+    try:
+        append_event(
+            workspace,
+            event_type="command.failed",
+            actor={"type": "agent", "name": actor},
+            scope={"task_id": task_id, "correlation_id": spawn_id, "spawn_id": spawn_id},
+            payload={
+                "command_id": f"stop:{spawn_id}",
+                "command_type": "agent.terminate",
+                "error_code": "PROCESS_TERMINATION_FAILED",
+                "error_message": "Failed to terminate subagent process.",
+                "retryable": True,
+            },
+            severity="error",
+        )
+    except Exception as cleanup_error:
+        primary_error.add_note(f"Failed to append stop command failure event: {cleanup_error}")
+
+
+def _record_stop_completion_failure(
+    workspace: str | Path,
+    *,
+    actor: str,
+    spawn_id: str,
+    task_id: str | None,
+    primary_error: BaseException,
+) -> dict[str, Any] | None:
+    try:
+        return append_event(
+            workspace,
+            event_type="command.failed",
+            actor={"type": "agent", "name": actor},
+            scope={"task_id": task_id, "correlation_id": spawn_id, "spawn_id": spawn_id},
+            payload={
+                "command_id": f"stop:{spawn_id}",
+                "command_type": "agent.terminate",
+                "error_code": "COMMAND_COMPLETION_EVENT_FAILED",
+                "error_message": COMMAND_COMPLETION_WARNING,
+                "retryable": True,
+            },
+            severity="error",
+        )
+    except Exception as cleanup_error:
+        primary_error.add_note(f"Failed to append stop completion failure event: {cleanup_error}")
+        return None
+
+
 def refresh_spawn_record(workspace: str | Path, spawn_id: str) -> dict[str, Any]:
     record = read_spawn_record(workspace, spawn_id)
     if record.get("status") == "running" and not _pid_is_running(record.get("pid")):
-        record["status"] = "completed"
-        record["updated_at"] = utc_iso()
-        workspace_info = record.get("workspace", {})
-        if isinstance(workspace_info, dict) and workspace_info.get("strategy") == "git-worktree" and workspace_info.get("created"):
-            cleanup_git_worktree(workspace_info)
-            record["workspace_cleaned"] = True
-        _write_spawn_record(workspace, record)
+        terminated_event = append_event(
+            workspace,
+            event_type="agent.terminated",
+            actor={"type": "system", "name": "spawn-monitor"},
+            scope={
+                "task_id": record.get("task_id"),
+                "correlation_id": spawn_id,
+                "spawn_id": spawn_id,
+            },
+            payload={
+                "agent_id": str(record.get("agent_id") or spawn_id),
+                "reason": "task_completed",
+                "final_task_id": record.get("task_id"),
+            },
+        )
+        projected = {
+            **record,
+            "status": "completed",
+            "updated_at": terminated_event["ts_utc"],
+            "terminated_event_id": terminated_event["event_id"],
+        }
+        _project_terminal_workspace_cleanup(projected)
+        _write_spawn_record(workspace, projected)
+        return projected
     return record
 
 
@@ -216,34 +414,101 @@ def start_spawn(
         return gate
 
     provider = get_provider_manifest(workspace, provider_id)
-    workspace_manifest = get_workspace_manifest(workspace, workspace_id)
-    workspace_info = resolve_workspace_target(
-        workspace,
-        workspace_id=workspace_id,
-        agent_id=agent_id,
-        task_id=task_id,
-    )
-    workspace_root = Path(str(workspace_info.get("path") or workspace)).resolve()
-    workspace_root.mkdir(parents=True, exist_ok=True)
-    memory_paths = initialize_agent_memory(workspace, provider_id, agent_id)
+    get_workspace_manifest(workspace, workspace_id)
     spawn_id = next_spawn_id(workspace)
-    log_file = subagent_logs_dir(workspace) / f"{spawn_id}.log"
-    render_values = build_provider_render_values(
-        workspace_root=workspace_root,
-        workspace_path=workspace_root,
-        task_id=task_id,
-        agent_id=agent_id,
-        room_id=room_id,
-        spawn_id=spawn_id,
-        memory_file=memory_paths["long_term_memory_file"],
-        persona_file=memory_paths["persona_file"],
-        shared_memory_file=memory_paths["shared_memory_file"],
-        task_prompt=summary,
+    request_payload: dict[str, Any] = {
+        "agent_id": agent_id,
+        "persona": provider_id,
+        "run_id": task_id or spawn_id,
+        "request_id": spawn_id,
+        "requested_by": actor,
+    }
+    if room_id:
+        request_payload["room_id"] = room_id
+    request_event = append_event(
+        workspace,
+        event_type="agent.spawn_requested",
+        actor={"type": "agent", "name": actor},
+        scope={
+            "task_id": task_id,
+            "room_id": room_id,
+            "correlation_id": spawn_id,
+            "spawn_id": spawn_id,
+        },
+        payload=request_payload,
     )
-    command = _build_command(provider, render_values)
-    executable = command[0]
-    if shutil.which(executable) is None and not Path(executable).exists():
-        raise FileNotFoundError(f"Provider command not found: {executable}")
+
+    workspace_info: dict[str, Any] | None = None
+    try:
+        workspace_info = resolve_workspace_target(
+            workspace,
+            workspace_id=workspace_id,
+            agent_id=agent_id,
+            task_id=task_id,
+        )
+        workspace_root = Path(str(workspace_info.get("path") or workspace)).resolve()
+        workspace_root.mkdir(parents=True, exist_ok=True)
+        memory_paths = initialize_agent_memory(workspace, provider_id, agent_id)
+        log_file = subagent_logs_dir(workspace) / f"{spawn_id}.log"
+        render_values = build_provider_render_values(
+            workspace_root=workspace_root,
+            workspace_path=workspace_root,
+            task_id=task_id,
+            agent_id=agent_id,
+            room_id=room_id,
+            spawn_id=spawn_id,
+            memory_file=memory_paths["long_term_memory_file"],
+            persona_file=memory_paths["persona_file"],
+            shared_memory_file=memory_paths["shared_memory_file"],
+            task_prompt=summary,
+        )
+        command = _build_command(provider, render_values)
+        executable = command[0]
+        if shutil.which(executable) is None and not Path(executable).exists():
+            raise FileNotFoundError(f"Provider command not found: {executable}")
+    except Exception as error:
+        _cleanup_failed_spawn_workspace(workspace_info, error)
+        _record_spawn_failure(
+            workspace,
+            actor=actor,
+            spawn_id=spawn_id,
+            task_id=task_id,
+            provider_id=provider_id,
+            agent_id=agent_id,
+            workspace_id=workspace_id,
+            stage="preparation",
+            primary_error=error,
+        )
+        raise
+
+    try:
+        handoff = create_handoff(
+            workspace,
+            from_actor=actor,
+            to_actor=agent_id,
+            summary=summary or f"Spawned {provider_id} agent {agent_id}",
+            task_id=task_id,
+            correlation_id=spawn_id,
+            artifact_type="subagent",
+            files=[f"subagents/logs/{spawn_id}.log"],
+            owner_transfer=False,
+            worktree_id=workspace_id,
+            lease_paths=[f"workspace:{workspace_id}"],
+        )
+    except Exception as error:
+        _cleanup_failed_spawn_workspace(workspace_info, error)
+        _record_spawn_failure(
+            workspace,
+            actor=actor,
+            spawn_id=spawn_id,
+            task_id=task_id,
+            provider_id=provider_id,
+            agent_id=agent_id,
+            workspace_id=workspace_id,
+            stage="handoff_request",
+            primary_error=error,
+        )
+        raise
 
     env = {
         **os.environ,
@@ -259,36 +524,112 @@ def start_spawn(
         "CONITENS_PERSONA_FILE": memory_paths["persona_file"],
         "CONITENS_SHARED_MEMORY_FILE": memory_paths["shared_memory_file"],
     }
-    with log_file.open("a", encoding="utf-8") as handle:
-        handle.write(f"$ {' '.join(command)}\n")
-        process = subprocess.Popen(
-            command,
-            cwd=str(workspace_root),
-            stdout=handle,
-            stderr=subprocess.STDOUT,
-            text=True,
-            start_new_session=(os.name != "nt"),
-            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
-            env=env,
+    process: subprocess.Popen[Any] | None = None
+    immediate_completion = False
+    try:
+        with log_file.open("a", encoding="utf-8") as handle:
+            handle.write(f"$ {' '.join(command)}\n")
+            process = subprocess.Popen(
+                command,
+                cwd=str(workspace_root),
+                stdout=handle,
+                stderr=subprocess.STDOUT,
+                text=True,
+                start_new_session=(os.name != "nt"),
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+                env=env,
+            )
+            exit_code = process.poll()
+            if exit_code is None:
+                try:
+                    exit_code = process.wait(timeout=SPAWN_OBSERVATION_GRACE_SECONDS)
+                except subprocess.TimeoutExpired:
+                    exit_code = None
+            if exit_code is not None:
+                process.wait(timeout=0)
+                if exit_code != 0:
+                    raise RuntimeError(
+                        f"Provider process exited before spawn observation (exit code {exit_code})."
+                    )
+                immediate_completion = True
+    except Exception as error:
+        if process is not None and not _terminate_launched_process(process):
+            error.add_note("Failed to terminate provider process after launch error.")
+        _cleanup_failed_spawn_workspace(workspace_info, error)
+        _record_spawn_failure(
+            workspace,
+            actor=actor,
+            spawn_id=spawn_id,
+            task_id=task_id,
+            provider_id=provider_id,
+            agent_id=agent_id,
+            workspace_id=workspace_id,
+            stage="process_launch",
+            handoff_id=str(handoff["handoff_id"]),
+            primary_error=error,
         )
-        time.sleep(0.05)
-        if process.poll() is not None:
-            process.wait(timeout=0)
+        raise
 
-    handoff = create_handoff(
-        workspace,
-        from_actor=actor,
-        to_actor=agent_id,
-        summary=summary or f"Spawned {provider_id} agent {agent_id}",
-        task_id=task_id,
-        correlation_id=spawn_id,
-        artifact_type="subagent",
-        files=[str(log_file)],
-        owner_transfer=False,
-        worktree_id=workspace_id,
-        lease_paths=[f"workspace:{workspace_id}"],
-    )
-    transition_handoff(workspace, handoff_id=handoff["handoff_id"], state="started", actor=actor, detail="Subagent process launched.")
+    if process is None:
+        raise RuntimeError("Provider process launch returned no process handle.")
+
+    terminated_event: dict[str, Any] | None = None
+    try:
+        spawned_payload: dict[str, Any] = {
+            "agent_id": agent_id,
+            "persona": provider_id,
+            "run_id": task_id or spawn_id,
+            "parent_agent_id": actor,
+        }
+        if room_id:
+            spawned_payload["room_id"] = room_id
+        spawned_event = append_event(
+            workspace,
+            event_type="agent.spawned",
+            actor={"type": "agent", "name": actor},
+            scope={
+                "task_id": task_id,
+                "room_id": room_id,
+                "correlation_id": spawn_id,
+                "spawn_id": spawn_id,
+            },
+            payload=spawned_payload,
+        )
+        if immediate_completion:
+            terminated_event = append_event(
+                workspace,
+                event_type="agent.terminated",
+                actor={"type": "agent", "name": actor},
+                scope={
+                    "task_id": task_id,
+                    "room_id": room_id,
+                    "correlation_id": spawn_id,
+                    "spawn_id": spawn_id,
+                },
+                payload={
+                    "agent_id": agent_id,
+                    "reason": "task_completed",
+                    "final_task_id": task_id,
+                },
+            )
+    except Exception as error:
+        if not _terminate_launched_process(process):
+            error.add_note("Failed to terminate provider process after spawn observation error.")
+        _cleanup_failed_spawn_workspace(workspace_info, error)
+        _record_spawn_failure(
+            workspace,
+            actor=actor,
+            spawn_id=spawn_id,
+            task_id=task_id,
+            provider_id=provider_id,
+            agent_id=agent_id,
+            workspace_id=workspace_id,
+            stage="spawn_observation",
+            handoff_id=str(handoff["handoff_id"]),
+            primary_error=error,
+        )
+        raise
+
     record = {
         "schema_v": 1,
         "spawn_id": spawn_id,
@@ -301,56 +642,198 @@ def start_spawn(
         "room_id": room_id,
         "summary": summary or "",
         "pid": process.pid,
-        "status": "running",
+        "status": "completed" if immediate_completion else "running",
         "command": command,
         "log_file": str(log_file),
-        "created_at": utc_iso(),
-        "updated_at": utc_iso(),
+        "created_at": request_event["ts_utc"],
+        "updated_at": spawned_event["ts_utc"],
         "handoff_id": handoff["handoff_id"],
         "memory": memory_paths,
+        "request_event_id": request_event["event_id"],
+        "spawned_event_id": spawned_event["event_id"],
     }
-    path = _write_spawn_record(workspace, record)
-    append_event(
-        workspace,
-        event_type="SUBAGENT_SPAWNED",
-        actor={"type": "agent", "name": actor},
-        scope={"task_id": task_id, "correlation_id": spawn_id, "spawn_id": spawn_id},
-        payload={"provider_id": provider_id, "agent_id": agent_id, "workspace_id": workspace_id, "pid": process.pid},
-    )
-    append_artifact_manifest(
-        workspace,
-        artifact_type="subagent_spawn",
-        path=str(path),
-        actor=actor,
-        task_id=task_id,
-        correlation_id=spawn_id,
-        subject_ref=spawn_id,
-        metadata={"provider_id": provider_id, "agent_id": agent_id, "workspace_id": workspace_id, "pid": process.pid},
-    )
+    if terminated_event is not None:
+        record["updated_at"] = terminated_event["ts_utc"]
+        record["terminated_event_id"] = terminated_event["event_id"]
+    try:
+        if immediate_completion:
+            _project_terminal_workspace_cleanup(record)
+        path = _write_spawn_record(workspace, record)
+        transition_handoff(
+            workspace,
+            handoff_id=str(handoff["handoff_id"]),
+            state="completed" if immediate_completion else "started",
+            actor=actor,
+            detail=(
+                "Subagent process completed."
+                if immediate_completion
+                else "Subagent process launched."
+            ),
+        )
+    except Exception as error:
+        process_terminated = _terminate_launched_process(process)
+        if process_terminated and terminated_event is None:
+            terminated_event = _record_spawn_termination(
+                workspace,
+                actor=actor,
+                spawn_id=spawn_id,
+                task_id=task_id,
+                agent_id=agent_id,
+                primary_error=error,
+            )
+        elif not process_terminated:
+            terminated_event = None
+            error.add_note("Failed to terminate provider process after spawn projection error.")
+        error_event = _record_spawn_failure(
+            workspace,
+            actor=actor,
+            spawn_id=spawn_id,
+            task_id=task_id,
+            provider_id=provider_id,
+            agent_id=agent_id,
+            workspace_id=workspace_id,
+            stage="spawn_projection",
+            handoff_id=str(handoff["handoff_id"]),
+            primary_error=error,
+            recoverable=False,
+        )
+        _cleanup_failed_spawn_workspace(workspace_info, error)
+        failed_record = {
+            **record,
+            "status": "failed",
+            "updated_at": (error_event or {}).get("ts_utc") or utc_iso(),
+            "error_event_id": (error_event or {}).get("event_id"),
+            "terminated_event_id": (terminated_event or {}).get("event_id"),
+            "cleanup_errors": list(getattr(error, "__notes__", [])),
+        }
+        try:
+            _write_spawn_record(workspace, failed_record)
+        except Exception:
+            pass
+        raise
+    try:
+        append_artifact_manifest(
+            workspace,
+            artifact_type="subagent_spawn",
+            path=str(path),
+            actor=actor,
+            task_id=task_id,
+            correlation_id=spawn_id,
+            subject_ref=spawn_id,
+            metadata={"provider_id": provider_id, "agent_id": agent_id, "workspace_id": workspace_id, "pid": process.pid},
+        )
+    except Exception:
+        record["artifact_manifest_warning"] = ARTIFACT_MANIFEST_WARNING
+        try:
+            _write_spawn_record(workspace, record)
+        except Exception:
+            pass
     return record
 
 
 def stop_spawn(workspace: str | Path, *, spawn_id: str, actor: str = "CLI") -> dict[str, Any]:
     record = read_spawn_record(workspace, spawn_id)
     pid = int(record.get("pid") or 0)
-    if _pid_is_running(pid):
-        if os.name == "nt":
-            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], check=False, capture_output=True, text=True)
-        else:
-            os.killpg(pid, signal.SIGTERM)
-    record["status"] = "stopped"
-    record["updated_at"] = utc_iso()
-    workspace_info = record.get("workspace", {})
-    if isinstance(workspace_info, dict) and workspace_info.get("strategy") == "git-worktree" and workspace_info.get("created"):
-        cleanup_git_worktree(workspace_info)
-        record["workspace_cleaned"] = True
-    _write_spawn_record(workspace, record)
-    transition_handoff(workspace, handoff_id=record["handoff_id"], state="completed", actor=actor, detail="Subagent process stopped.")
-    append_event(
+    request_event = append_event(
         workspace,
-        event_type="SUBAGENT_STOPPED",
+        event_type="command.issued",
         actor={"type": "agent", "name": actor},
         scope={"task_id": record.get("task_id"), "correlation_id": spawn_id, "spawn_id": spawn_id},
-        payload={"pid": pid},
+        payload={
+            "command_id": f"stop:{spawn_id}",
+            "command_type": "agent.terminate",
+            "source": "cli",
+            "input": {
+                "agent_id": str(record.get("agent_id") or spawn_id),
+                "reason": "user_requested",
+                "force": False,
+            },
+        },
     )
-    return record
+    try:
+        was_running = _pid_is_running(pid)
+        if was_running:
+            if os.name == "nt":
+                result = subprocess.run(
+                    ["taskkill", "/PID", str(pid), "/T", "/F"],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    raise RuntimeError("Failed to terminate subagent process.")
+            else:
+                os.killpg(pid, signal.SIGTERM)
+            if _pid_is_running(pid):
+                raise RuntimeError("Failed to terminate subagent process.")
+    except Exception as error:
+        _record_stop_command_failure(
+            workspace,
+            actor=actor,
+            spawn_id=spawn_id,
+            task_id=record.get("task_id"),
+            primary_error=error,
+        )
+        raise
+    terminated_event = append_event(
+        workspace,
+        event_type="agent.terminated",
+        actor={"type": "agent", "name": actor},
+        scope={"task_id": record.get("task_id"), "correlation_id": spawn_id, "spawn_id": spawn_id},
+        payload={
+            "agent_id": str(record.get("agent_id") or spawn_id),
+            "reason": "user_requested",
+            "final_task_id": record.get("task_id"),
+        },
+    )
+    command_completed_event: dict[str, Any] | None = None
+    command_failed_event: dict[str, Any] | None = None
+    completion_error: BaseException | None = None
+    try:
+        command_completed_event = append_event(
+            workspace,
+            event_type="command.completed",
+            actor={"type": "agent", "name": actor},
+            scope={"task_id": record.get("task_id"), "correlation_id": spawn_id, "spawn_id": spawn_id},
+            payload={
+                "command_id": f"stop:{spawn_id}",
+                "command_type": "agent.terminate",
+                "result": {
+                    "agent_id": str(record.get("agent_id") or spawn_id),
+                    "status": "terminated",
+                },
+                "emitted_event_ids": [terminated_event["event_id"]],
+            },
+        )
+    except Exception as error:
+        completion_error = error
+        command_failed_event = _record_stop_completion_failure(
+            workspace,
+            actor=actor,
+            spawn_id=spawn_id,
+            task_id=record.get("task_id"),
+            primary_error=error,
+        )
+    projected = {
+        **record,
+        "status": "stopped",
+        "updated_at": (command_completed_event or command_failed_event or terminated_event)["ts_utc"],
+        "termination_request_event_id": request_event["event_id"],
+        "terminated_event_id": terminated_event["event_id"],
+    }
+    if command_completed_event is not None:
+        projected["command_completed_event_id"] = command_completed_event["event_id"]
+    if completion_error is not None:
+        projected["command_completion_warning"] = COMMAND_COMPLETION_WARNING
+    if command_failed_event is not None:
+        projected["command_failed_event_id"] = command_failed_event["event_id"]
+    _project_terminal_workspace_cleanup(projected)
+    _write_spawn_record(workspace, projected)
+    transition_handoff(
+        workspace,
+        handoff_id=projected["handoff_id"],
+        state="completed",
+        actor=actor,
+        detail="Subagent process stopped.",
+    )
+    return projected

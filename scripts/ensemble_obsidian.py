@@ -177,9 +177,10 @@ def project_thread(
     decisions: list[dict[str, str]] | None = None,
     summary: str = "",
     created_at: str = "",
+    updated_at: str = "",
 ) -> Path:
     """Project a thread to .notes/40_Comms/ as Obsidian-compatible Markdown."""
-    now = _utc_now()
+    now = updated_at or _utc_now()
     created = created_at or now
     date_parts = created[:10].split("-")  # YYYY-MM-DD
     thread_dir = NOTES_DIR / "40_Comms" / date_parts[0] / date_parts[1] / date_parts[2]
@@ -394,6 +395,7 @@ def rebuild_all(events_dir: Path | None = None) -> dict[str, int]:
                         "status": "open",
                         "summary": "",
                         "created_at": event.get("ts_utc", ""),
+                        "updated_at": event.get("ts_utc", ""),
                     }
             elif etype == "thread.message_appended":
                 tid = payload.get("thread_id", "")
@@ -403,11 +405,13 @@ def rebuild_all(events_dir: Path | None = None) -> dict[str, int]:
                         "sender": payload.get("sender", ""),
                         "message": payload.get("message", ""),
                     })
+                    threads[tid]["updated_at"] = event.get("ts_utc", threads[tid]["updated_at"])
             elif etype == "thread.closed":
                 tid = payload.get("thread_id", "")
                 if tid in threads:
                     threads[tid]["status"] = "closed"
                     threads[tid]["summary"] = payload.get("summary", "")
+                    threads[tid]["updated_at"] = event.get("ts_utc", threads[tid]["updated_at"])
             elif etype == "thread.decision_recorded":
                 tid = payload.get("thread_id", "")
                 if tid in threads:
@@ -415,6 +419,7 @@ def rebuild_all(events_dir: Path | None = None) -> dict[str, int]:
                         "decision": payload.get("decision", ""),
                         "rationale": payload.get("rationale", ""),
                     })
+                    threads[tid]["updated_at"] = event.get("ts_utc", threads[tid]["updated_at"])
 
     # Project all threads
     for tid, data in threads.items():
@@ -423,6 +428,7 @@ def rebuild_all(events_dir: Path | None = None) -> dict[str, int]:
             run=data["run"], status=data["status"],
             messages=data["messages"], decisions=data["decisions"],
             summary=data["summary"], created_at=data["created_at"],
+            updated_at=data["updated_at"],
         )
         counts["threads"] += 1
 

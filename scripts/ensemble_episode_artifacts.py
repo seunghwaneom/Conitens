@@ -67,6 +67,8 @@ def render_closure_digest(bundle: JsonObject) -> str:
     scorecard = _dict_field(bundle, "scorecard")
     raw_access = _dict_field(bundle, "raw_access_audit")
     next_workflow = _dict_field(bundle, "next_workflow_recommendation")
+    comparison_key = bundle.get("comparison_key")
+    comparison_lines = ["## Comparison Key", str(comparison_key), ""] if isinstance(comparison_key, str) else []
     status_title = status.replace("_", " ").title()
     raw_access_text = _raw_access_text(raw_access)
     reasons = _reason_lines(scorecard)
@@ -80,6 +82,7 @@ def render_closure_digest(bundle: JsonObject) -> str:
             "## Summary",
             str(summary.get("summary") or ""),
             "",
+            *comparison_lines,
             "## Why It Could Not Close" if status != "closed" else "## Closure Notes",
             reasons,
             "",

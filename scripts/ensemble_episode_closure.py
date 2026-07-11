@@ -29,9 +29,16 @@ from ensemble_episode_model import (
     JSON_SCALAR_TYPES,
 )
 from ensemble_events import append_event, load_events, redact_text, utc_iso
+from ensemble_improvement_candidate_model import (
+    ImprovementCandidateError,
+    validate_bounded_public_text,
+    validate_bounded_public_token,
+)
 
 PRIVATE_TEXT_MARKERS = ("raw transcript", "provider prompt", "provider completion", "agent scratchpad", "chain-of-thought", "private raw", "begin transcript", "begin raw")
+PRIVATE_TEXT_MARKER_KEYS = frozenset("".join(char for char in marker if char.isalnum()) for marker in PRIVATE_TEXT_MARKERS)
 WINDOWS_USER_PATH_TEXT_RE = re.compile(r"[A-Za-z]:(?:\\\\|\\)Users(?:\\\\|\\)[^\s]+", re.IGNORECASE)
+COMPARISON_KEY_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,120}$")
 
 
 def _event_dict_value(event: JsonObject, section: str, key: str) -> str:
@@ -77,7 +84,7 @@ def _derive_validation_passed(events: list[JsonObject], episode_id: str) -> tupl
     return False, "missing:validation.passed"
 
 
-def _public_text(value: str | None, label: str) -> str | None:
+def _public_text(value: str | None, label: str, max_len: int = 2000) -> str | None:
     if value is None:
         return None
     lowered = value.casefold()
@@ -85,6 +92,11 @@ def _public_text(value: str | None, label: str) -> str | None:
         raise EpisodeClosureError(f"{label} cannot contain private raw transcript content")
     redacted = WINDOWS_USER_PATH_TEXT_RE.sub("[REDACTED]", value)
     redacted, _rules = redact_text(redacted)
+    if redacted.strip():
+        try:
+            validate_bounded_public_text(redacted, label, max_len)
+        except ImprovementCandidateError as exc:
+            raise EpisodeClosureError(f"{label} is malformed") from exc
     return redacted
 
 
@@ -97,22 +109,56 @@ def _public_text_tuple(values: tuple[str, ...], label: str) -> tuple[str, ...]:
     return tuple(redacted)
 
 
+def _comparison_key(value: str | None) -> str | None:
+    if value is None:
+        return None
+    if not COMPARISON_KEY_RE.fullmatch(value):
+        raise EpisodeClosureError("comparison key is malformed")
+    try:
+        validate_bounded_public_token(value, "comparison key", 120)
+    except ImprovementCandidateError as exc:
+        raise EpisodeClosureError("comparison key is malformed") from exc
+    compact = "".join(char for char in value.casefold() if char.isalnum())
+    if any(marker in compact for marker in PRIVATE_TEXT_MARKER_KEYS):
+        raise EpisodeClosureError("comparison key is malformed")
+    if _public_text(value, "comparison key") != value:
+        raise EpisodeClosureError("comparison key is malformed")
+    if "/" in value or "\\" in value or ".." in value:
+        raise EpisodeClosureError("comparison key is malformed")
+    return value
+
+
+def _public_actor(value: str) -> str:
+    try:
+        validate_bounded_public_token(value, "closure actor", 128)
+    except ImprovementCandidateError as exc:
+        raise EpisodeClosureError("closure actor is malformed") from exc
+    return value
+
+
 def _sanitize_request(request: ClosureRequest) -> ClosureRequest:
     return replace(
         request,
+        actor=_public_actor(request.actor),
         summary=_public_text(request.summary, "summary"),
         goal=_public_text(request.goal, "goal"),
         outcome=_public_text(request.outcome, "outcome") or request.outcome,
         risks_remaining=_public_text_tuple(request.risks_remaining, "remaining risk"),
         blocking_reasons=_public_text_tuple(request.blocking_reasons, "blocking reason"),
         review_reasons=_public_text_tuple(request.review_reasons, "review reason"),
-        next_recommendation=_public_text(request.next_recommendation, "next recommendation"),
+        next_recommendation=_public_text(request.next_recommendation, "next recommendation", 500),
         next_reason=_public_text(request.next_reason, "next reason"),
+        comparison_key=_comparison_key(request.comparison_key),
     )
 
 
 def _public_episode_id(episode_id: str) -> str:
-    return _public_text(episode_id, "episode id") or opaque_episode_slug(episode_id)
+    opaque_id = f"episode-sha256:{opaque_episode_slug(episode_id)}"
+    try:
+        public_id = _public_text(episode_id, "episode id", 200)
+    except EpisodeClosureError:
+        return opaque_id
+    return public_id if public_id == episode_id else opaque_id
 
 
 def _score_request(request: ClosureRequest, events: list[JsonObject]) -> tuple[ClosureStatus, JsonObject, JsonObject]:
@@ -199,6 +245,8 @@ def build_closure_bundle(
         "next_workflow_recommendation": next_workflow,
         "source_event_ids": source_event_ids,
     }
+    if request.comparison_key is not None:
+        bundle["comparison_key"] = request.comparison_key
     return status, bundle
 
 
@@ -236,30 +284,35 @@ def close_episode(workspace: str | Path, request: ClosureRequest) -> ClosureResu
         "created_at": created_at,
         "promotion_available": status in ("blocked", "needs_review"),
     }
+    if request.comparison_key is not None:
+        index_record["comparison_key"] = request.comparison_key
+    event_payload: JsonObject = {
+        "artifact_kind": ARTIFACT_KIND,
+        "artifact_id": artifact_id,
+        "episode_id": public_episode_id,
+        "source_episode_ref": f"episode-sha256:{episode_slug}",
+        "status": status,
+        "risk": request.risk,
+        "summary": index_record["summary"],
+        "digest_path": paths.digest_rel,
+        "evidence_path": paths.evidence_rel,
+        "projection_path": paths.projection_rel,
+        "artifact_sha256": json_hash(bundle),
+        "digest_sha256": sha256(digest_text.encode("utf-8")).hexdigest(),
+        "source_event_ids": bundle["source_event_ids"],
+        "projection": "derived_read_model",
+        "closure_bundle": bundle,
+        "index_record": index_record,
+    }
+    if request.comparison_key is not None:
+        event_payload["comparison_key"] = request.comparison_key
     event = append_event(
         workspace_root,
         event_type="task.artifact_added",
         actor={"type": "agent", "name": request.actor},
         scope={"surface": "agent-improvement"},
         severity="warn" if status != "closed" else "info",
-        payload={
-            "artifact_kind": ARTIFACT_KIND,
-            "artifact_id": artifact_id,
-            "episode_id": public_episode_id,
-            "source_episode_ref": f"episode-sha256:{episode_slug}",
-            "status": status,
-            "risk": request.risk,
-            "summary": index_record["summary"],
-            "digest_path": paths.digest_rel,
-            "evidence_path": paths.evidence_rel,
-            "projection_path": paths.projection_rel,
-            "artifact_sha256": json_hash(bundle),
-            "digest_sha256": sha256(digest_text.encode("utf-8")).hexdigest(),
-            "source_event_ids": bundle["source_event_ids"],
-            "projection": "derived_read_model",
-            "closure_bundle": bundle,
-            "index_record": index_record,
-        },
+        payload=event_payload,
     )
     return write_projection_from_event(workspace_root, event)
 

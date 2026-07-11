@@ -118,6 +118,8 @@ class EpisodeClosureCliSecurityTests(unittest.TestCase):
                     "Close through CLI",
                     "--actor",
                     "supervisor",
+                    "--comparison-key",
+                    "workflow.context-curator:v1",
                 ],
                 check=True,
                 capture_output=True,
@@ -132,10 +134,49 @@ class EpisodeClosureCliSecurityTests(unittest.TestCase):
             self.assertIn(artifact_id, list_proc.stdout)
             self.assertIn("ep-cli", list_proc.stdout)
             self.assertIn("closed", list_proc.stdout)
+            self.assertIn("workflow.context-curator:v1", list_proc.stdout)
 
             show_proc = _run_ensemble(workspace, "improvement", "show", artifact_id)
             self.assertIn("# Episode ep-cli Closure Attempt", show_proc.stdout)
             self.assertIn("CLI closure succeeded.", show_proc.stdout)
+            self.assertIn("workflow.context-curator:v1", show_proc.stdout)
+
+            event = [item for item in load_events(workspace) if item["type"] == "task.artifact_added"][-1]
+            self.assertEqual(event["payload"]["comparison_key"], "workflow.context-curator:v1")
+
+    def test_cli_unsafe_comparison_key_fails_before_event_or_projection(self) -> None:
+        for unsafe_key in (
+            r"C:\\Users\\alice\\secret token=supersecret123",
+            "github_pat_11AAABBBCCCDDDEEEFFF000111222333444",
+            "AKIAIOSFODNN7EXAMPLE",
+        ):
+            with self.subTest(unsafe_key=unsafe_key):
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    workspace = Path(temp_dir)
+                    episode_id = "ep-cli-unsafe-key"
+                    seed_episode(workspace, episode_id)
+                    seed_validation_passed(workspace, episode_id)
+                    baseline = load_events(workspace)
+
+                    result = _run_ensemble_unchecked(
+                        workspace,
+                        "episode",
+                        "close",
+                        episode_id,
+                        "--summary",
+                        "Validation passed.",
+                        "--goal",
+                        "Reject unsafe comparison key",
+                        "--comparison-key",
+                        unsafe_key,
+                    )
+
+                    self.assertNotEqual(result.returncode, 0)
+                    combined = result.stdout + result.stderr
+                    self.assertNotIn(unsafe_key, combined)
+                    self.assertNotIn(str(workspace.resolve()), combined)
+                    self.assertEqual(load_events(workspace), baseline)
+                    self.assertFalse((workspace / ".notes" / "artifacts" / "agent-improvement").exists())
 
     def test_cli_missing_validation_creates_blocked_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -210,6 +251,33 @@ class EpisodeClosureCliSecurityTests(unittest.TestCase):
                 self.assertNotIn(r"C:\\Users\\alice", public_text)
                 self.assertIn("[REDACTED]", public_text)
 
+    def test_cli_public_summary_rejects_absolute_posix_path_without_leak(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            episode_id = "ep-cli-private-path"
+            unsafe_summary = "Review /private/customer/export.json before closure."
+            seed_episode(workspace, episode_id)
+            seed_validation_passed(workspace, episode_id)
+            baseline = load_events(workspace)
+
+            result = _run_ensemble_unchecked(
+                workspace,
+                "episode",
+                "close",
+                episode_id,
+                "--summary",
+                unsafe_summary,
+                "--goal",
+                "Reject private paths",
+            )
+
+            output = result.stdout + result.stderr
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn(unsafe_summary, output)
+            self.assertNotIn(str(workspace), output)
+            self.assertEqual(load_events(workspace), baseline)
+            self.assertFalse((workspace / ".notes" / "artifacts" / "agent-improvement").exists())
+
     def test_sensitive_episode_id_does_not_leak_to_public_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
@@ -265,9 +333,15 @@ class EpisodeClosureCliSecurityTests(unittest.TestCase):
 
 
 def _run_ensemble(workspace: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    result = _run_ensemble_unchecked(workspace, *args)
+    result.check_returncode()
+    return result
+
+
+def _run_ensemble_unchecked(workspace: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [sys.executable, str(SCRIPTS / "ensemble.py"), "--workspace", str(workspace), *args],
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         encoding="utf-8",

@@ -57,8 +57,9 @@ def ensure_personas_root(workspace: str | Path) -> Path:
     return path
 
 
-def loop_state_db_path(workspace: str | Path) -> Path:
-    return ensure_runtime_root(workspace) / LOOP_DB_FILENAME
+def loop_state_db_path(workspace: str | Path, *, create_parent: bool = True) -> Path:
+    root = ensure_runtime_root(workspace) if create_parent else runtime_root(workspace)
+    return root / LOOP_DB_FILENAME
 
 
 def loop_state_debug_path(workspace: str | Path) -> Path:
