@@ -48,7 +48,7 @@ export function OperatorSummaryPanel({ summary, state, error }: OperatorSummaryP
           <div className="forward-section-header">
             <div>
               <p className="forward-panel-label">Evidence health</p>
-              <h3>Provider telemetry projection</h3>
+              <h3>Telemetry and harness evidence</h3>
             </div>
             <span className={`forward-state ${summary.evidence.posture === "danger" ? "state-error" : summary.evidence.posture === "warning" ? "state-loading" : "state-ready"}`}>
               {summary.evidence.posture}

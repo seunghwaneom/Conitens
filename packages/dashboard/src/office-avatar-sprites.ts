@@ -1,5 +1,9 @@
 import type { CSSProperties } from "react";
 import type { AgentOfficeProfile } from "./agent-profiles.ts";
+import {
+  GENERATED_AGENT_SPRITE_MANIFEST,
+  type AgentMotionProfile,
+} from "./agent-sprite-manifest.generated.ts";
 
 export const OFFICE_AVATAR_POSES = [
   "sit",
@@ -14,130 +18,101 @@ export type OfficeAvatarPose = (typeof OFFICE_AVATAR_POSES)[number];
 export const OFFICE_AVATAR_FACINGS = ["left", "right", "down"] as const;
 export type OfficeAvatarFacing = (typeof OFFICE_AVATAR_FACINGS)[number];
 
-interface OfficeAvatarSpriteSpec {
-  frameX: number;
-  frameY: number;
-  backgroundSize: string;
+interface OfficeAvatarVariantSpec {
+  frameOffset: number;
   transform?: string;
 }
 
-const CANONICAL_STAGE_SHEETS: Record<AgentOfficeProfile["role"], string> = {
-  orchestrator: new URL("../../command-center/public/sprites/agent-orchestrator.png", import.meta.url).href,
-  implementer: new URL("../../command-center/public/sprites/agent-implementer.png", import.meta.url).href,
-  researcher: new URL("../../command-center/public/sprites/agent-researcher.png", import.meta.url).href,
-  reviewer: new URL("../../command-center/public/sprites/agent-reviewer.png", import.meta.url).href,
-  validator: new URL("../../command-center/public/sprites/agent-validator.png", import.meta.url).href,
-};
+export interface OfficeAvatarFrameSpec {
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+}
 
-const STAGE_FRAME_SIZE = 24;
-const STAGE_SHEET_SIZE = "192px 120px";
+export interface OfficeAvatarSpriteSpec extends CSSProperties {
+  readonly source: "sprite-gen";
+  readonly atlasPath: string;
+  readonly motionProfile: AgentMotionProfile;
+  readonly frames: readonly OfficeAvatarFrameSpec[];
+  readonly fps: number;
+  readonly frameWidth: number;
+  readonly frameHeight: number;
+  readonly sheetWidth: number;
+  readonly sheetHeight: number;
+  readonly cycleSeconds: number;
+}
 
 export const OFFICE_AVATAR_REGISTRY = {
   "stand:down": {
-    frameX: 0,
-    frameY: 0,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 0,
   },
   "stand:left": {
-    frameX: 20,
-    frameY: 0,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 1,
   },
   "stand:right": {
-    frameX: 20,
-    frameY: 0,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 1,
     transform: "scaleX(-1)",
   },
   "lean:down": {
-    frameX: 40,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 2,
     transform: "translateY(1px)",
   },
   "lean:left": {
-    frameX: 60,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 3,
     transform: "translateY(1px)",
   },
   "lean:right": {
-    frameX: 60,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 3,
     transform: "translateY(1px) scaleX(-1)",
   },
   "guard:down": {
-    frameX: 60,
-    frameY: 60,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 4,
   },
   "guard:left": {
-    frameX: 80,
-    frameY: 60,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 5,
   },
   "guard:right": {
-    frameX: 80,
-    frameY: 60,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 5,
     transform: "scaleX(-1)",
   },
   "inspect:down": {
-    frameX: 20,
-    frameY: 40,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 2,
     transform: "translateY(1px)",
   },
   "inspect:left": {
-    frameX: 40,
-    frameY: 40,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 3,
     transform: "translateY(1px)",
   },
   "inspect:right": {
-    frameX: 40,
-    frameY: 40,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 3,
     transform: "translateY(1px) scaleX(-1)",
   },
   "sit:down": {
-    frameX: 0,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 6,
     transform: "translateY(2px)",
   },
   "sit:left": {
-    frameX: 20,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 6,
     transform: "translateY(2px)",
   },
   "sit:right": {
-    frameX: 20,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 6,
     transform: "translateY(2px) scaleX(-1)",
   },
   "desk:down": {
-    frameX: 40,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 7,
     transform: "translateY(2px)",
   },
   "desk:left": {
-    frameX: 60,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 7,
     transform: "translateY(2px)",
   },
   "desk:right": {
-    frameX: 60,
-    frameY: 20,
-    backgroundSize: STAGE_SHEET_SIZE,
+    frameOffset: 7,
     transform: "translateY(2px) scaleX(-1)",
   },
-} as const satisfies Record<`${OfficeAvatarPose}:${OfficeAvatarFacing}`, OfficeAvatarSpriteSpec>;
+} as const satisfies Record<`${OfficeAvatarPose}:${OfficeAvatarFacing}`, OfficeAvatarVariantSpec>;
 
 export function resolveOfficeAvatarSprite({
   role,
@@ -147,12 +122,27 @@ export function resolveOfficeAvatarSprite({
   role: AgentOfficeProfile["role"];
   pose?: OfficeAvatarPose;
   facing?: OfficeAvatarFacing;
-}): CSSProperties {
-  const variant = OFFICE_AVATAR_REGISTRY[`${pose}:${facing}`] as OfficeAvatarSpriteSpec;
+}): OfficeAvatarSpriteSpec {
+  const roleManifest = GENERATED_AGENT_SPRITE_MANIFEST.roles[role];
+  const variant: OfficeAvatarVariantSpec = OFFICE_AVATAR_REGISTRY[`${pose}:${facing}`];
+  const orderedFrames = roleManifest.frames.map((_, index, frames) => {
+    const frameIndex = (index + variant.frameOffset) % frames.length;
+    return frames[frameIndex];
+  });
+  const atlasPath = `/${roleManifest.atlasPath}`;
   return {
-    backgroundImage: `url("${CANONICAL_STAGE_SHEETS[role]}")`,
-    backgroundPosition: `-${(variant.frameX / 20) * STAGE_FRAME_SIZE}px -${(variant.frameY / 20) * STAGE_FRAME_SIZE}px`,
-    backgroundSize: variant.backgroundSize,
+    source: "sprite-gen",
+    atlasPath,
+    motionProfile: roleManifest.motionProfile,
+    frames: orderedFrames,
+    fps: roleManifest.fps,
+    frameWidth: roleManifest.cellWidth,
+    frameHeight: roleManifest.cellHeight,
+    sheetWidth: roleManifest.sheetWidth,
+    sheetHeight: roleManifest.sheetHeight,
+    cycleSeconds: orderedFrames.length / roleManifest.fps,
+    backgroundImage: `url("${atlasPath}")`,
+    backgroundSize: `${roleManifest.sheetWidth}px ${roleManifest.sheetHeight}px`,
     transform: variant.transform,
   };
 }

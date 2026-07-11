@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import layoutStyles from "../office.module.css";
 import stageStyles from "../office-stage.module.css";
+import { AgentCharacterStage } from "./AgentCharacterStage.js";
 import { OfficeRoomScene } from "./OfficeRoomScene.js";
 import { getOfficeFixtureStyle } from "../office-fixture-registry.js";
-import { FloorViewport, FocusedHandoffView } from "../spatial-lens/index.js";
+import { FloorViewport } from "../spatial-lens/index.js";
 import {
   OFFICE_STAGE_CORRIDORS,
   OFFICE_STAGE_CORRIDOR_FIXTURES,
@@ -18,8 +19,8 @@ export type OfficeStageMode = "focused" | "overview" | "classic";
 export const OFFICE_STAGE_MODE_STORAGE_KEY = "conitens.officeStageMode";
 
 const OFFICE_STAGE_MODES = [
-  { mode: "focused", label: "Focused" },
-  { mode: "overview", label: "Floor Overview" },
+  { mode: "focused", label: "Agents" },
+  { mode: "overview", label: "Topology" },
   { mode: "classic", label: "Classic" },
 ] as const satisfies readonly { readonly mode: OfficeStageMode; readonly label: string }[];
 
@@ -86,14 +87,14 @@ export function OfficeStage({
         <div className={stageStyles["office-stage-header-copy"]}>
           <p className={stageStyles["office-stage-kicker"]}>
             {stageMode === "focused"
-              ? "Active handoff"
+              ? "Agent cast"
               : stageMode === "overview"
-                ? "Floor overview"
+                ? "Runtime topology"
                 : "Live camera"}
           </p>
           <span className={stageStyles["office-stage-meta"]}>
             {stageMode === "focused"
-              ? "Current blocker, owner, and next action."
+              ? "Agent characters, role motion, and current handoff signal."
               : stageMode === "overview"
                 ? "Whole-floor topology for debug and orientation."
                 : "Focused scene follows the selected room."}
@@ -160,13 +161,12 @@ export function OfficeStage({
             className={stageStyles["office-stage-tabpanel"]}
           >
             {isSelected && entry.mode === "focused" ? (
-              <FocusedHandoffView
-                rooms={rooms}
+              <AgentCharacterStage
+                residents={rooms.flatMap((room) => room.residents)}
                 tasks={tasks}
                 handoffs={handoffs}
-                events={events}
-                selectedRoomId={selectedRoomId}
                 selectedResidentId={selectedResidentId}
+                onSelectResident={onSelectResident}
               />
             ) : null}
             {isSelected && entry.mode === "overview" ? (

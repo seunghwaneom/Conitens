@@ -1,0 +1,263 @@
+{
+  "generator": "sprite-gen",
+  "generatorRepo": "https://github.com/aldegad/sprite-gen",
+  "generatorVersion": "1.9.2",
+  "pipeline": "loose-png-import -> curation-export -> atlas-compose",
+  "sheet": "office-fixtures.png",
+  "theme": "signal-first-pixel-office",
+  "cellSize": 24,
+  "columns": 25,
+  "sourceRun": ".tmp/sprite-gen-office-fixtures/run",
+  "sprites": [
+    {
+      "kind": "desk",
+      "index": 0,
+      "sourceRect": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "bench",
+      "index": 1,
+      "sourceRect": {
+        "x": 24,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "console",
+      "index": 2,
+      "sourceRect": {
+        "x": 48,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "reception",
+      "index": 3,
+      "sourceRect": {
+        "x": 72,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "chair",
+      "index": 4,
+      "sourceRect": {
+        "x": 96,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "monitor",
+      "index": 5,
+      "sourceRect": {
+        "x": 120,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "screen",
+      "index": 6,
+      "sourceRect": {
+        "x": 144,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "terminal",
+      "index": 7,
+      "sourceRect": {
+        "x": 168,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "plant",
+      "index": 8,
+      "sourceRect": {
+        "x": 192,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "board",
+      "index": 9,
+      "sourceRect": {
+        "x": 216,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "reception-return",
+      "index": 10,
+      "sourceRect": {
+        "x": 240,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "server",
+      "index": 11,
+      "sourceRect": {
+        "x": 264,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "rack",
+      "index": 12,
+      "sourceRect": {
+        "x": 288,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "locker",
+      "index": 13,
+      "sourceRect": {
+        "x": 312,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "shelf",
+      "index": 14,
+      "sourceRect": {
+        "x": 336,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "lamp",
+      "index": 15,
+      "sourceRect": {
+        "x": 360,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "note",
+      "index": 16,
+      "sourceRect": {
+        "x": 384,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "coffee",
+      "index": 17,
+      "sourceRect": {
+        "x": 408,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "stamp",
+      "index": 18,
+      "sourceRect": {
+        "x": 432,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "cart",
+      "index": 19,
+      "sourceRect": {
+        "x": 456,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "cabinet",
+      "index": 20,
+      "sourceRect": {
+        "x": 480,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "couch",
+      "index": 21,
+      "sourceRect": {
+        "x": 504,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "clock",
+      "index": 22,
+      "sourceRect": {
+        "x": 528,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "bulletin",
+      "index": 23,
+      "sourceRect": {
+        "x": 552,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "kind": "extinguisher",
+      "index": 24,
+      "sourceRect": {
+        "x": 576,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      }
+    }
+  ]
+}

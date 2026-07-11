@@ -220,15 +220,51 @@ function parseOperatorEvidenceSummary(value: unknown, field: string): ForwardOpe
     },
     budget: {
       sources: asNumber(value.budget.sources, `${field}.budget.sources`),
+      harness_sources: value.budget.harness_sources == null
+        ? 0
+        : asNumber(value.budget.harness_sources, `${field}.budget.harness_sources`),
       retry_decisions: asNumber(value.budget.retry_decisions, `${field}.budget.retry_decisions`),
       approval_pending: asNumber(value.budget.approval_pending, `${field}.budget.approval_pending`),
     },
+    harness: parseHarnessEvidenceSummary(value.harness, `${field}.harness`),
     sensitivity: {
       pii_findings: asNumber(value.sensitivity.pii_findings, `${field}.sensitivity.pii_findings`),
       raw_content_exposed: asBoolean(value.sensitivity.raw_content_exposed, `${field}.sensitivity.raw_content_exposed`),
       redaction: asString(value.sensitivity.redaction, `${field}.sensitivity.redaction`),
     },
     evidence_refs: asStringArray(value.evidence_refs),
+  };
+}
+
+function parseHarnessEvidenceSummary(value: unknown, field: string): ForwardOperatorEvidenceSummaryResponse["harness"] {
+  if (value == null) {
+    return {
+      observed: 0,
+      sources: 0,
+      evidence_count: 0,
+      latest_runtime: null,
+      latest_run_id: null,
+      latest_status: null,
+      latest_summary: null,
+      redacted_events: 0,
+      metadata_only: true,
+      raw_transcript_exposed: false,
+    };
+  }
+  if (!isObject(value)) {
+    throw new Error(`Invalid ${field}`);
+  }
+  return {
+    observed: asNumber(value.observed, `${field}.observed`),
+    sources: asNumber(value.sources, `${field}.sources`),
+    evidence_count: asNumber(value.evidence_count, `${field}.evidence_count`),
+    latest_runtime: asNullableString(value.latest_runtime, `${field}.latest_runtime`),
+    latest_run_id: asNullableString(value.latest_run_id, `${field}.latest_run_id`),
+    latest_status: asNullableString(value.latest_status, `${field}.latest_status`),
+    latest_summary: asNullableString(value.latest_summary, `${field}.latest_summary`),
+    redacted_events: asNumber(value.redacted_events, `${field}.redacted_events`),
+    metadata_only: asBoolean(value.metadata_only, `${field}.metadata_only`),
+    raw_transcript_exposed: asBoolean(value.raw_transcript_exposed, `${field}.raw_transcript_exposed`),
   };
 }
 

@@ -21,6 +21,25 @@
   --shell-speed: 160ms;
   --shell-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --shell-shadow: 0 8px 2px rgba(0, 0, 0, 0), 0 5px 2px rgba(0, 0, 0, 0.01), 0 3px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.07), 0 0 1px rgba(0, 0, 0, 0.12);
+  --office-ink: #0b1119;
+  --office-ink-deep: #05080c;
+  --office-wall: #182331;
+  --office-wall-strong: #243345;
+  --office-surface: #17212c;
+  --office-surface-raised: #202b36;
+  --office-line: rgba(132, 151, 169, 0.26);
+  --office-line-strong: rgba(180, 195, 206, 0.38);
+  --office-room-text: #edf3fb;
+  --office-room-muted: rgba(216, 228, 243, 0.66);
+  --office-floor-control: #18283a;
+  --office-floor-workspace: #202b36;
+  --office-floor-lab: #1f302b;
+  --office-floor-lobby: #2b2d32;
+  --office-floor-review: #253242;
+  --office-floor-stage: #1b242d;
+  --office-accent-cyan: #66d6e8;
+  --office-accent-green: #74aa74;
+  --office-accent-amber: #d2a348;
 }
 
 body {

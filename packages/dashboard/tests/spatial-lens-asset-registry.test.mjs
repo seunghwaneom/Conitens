@@ -84,6 +84,19 @@ test("spatial lens registry resolves existing local assets and placeholders", ()
     h: 24,
   });
 
+  const reviewer = resolveSpatialLensAsset("character.reviewer");
+  assert.equal(reviewer?.kind, "character");
+  assert.equal(
+    reviewer?.src,
+    "/agent-sprites/generated/reviewer/sprite-sheet-alpha.png",
+  );
+  assert.deepEqual(reviewer?.animationFrames[0]?.sourceRect, {
+    x: 0,
+    y: 0,
+    w: 64,
+    h: 64,
+  });
+
   const missingWall = getSpatialLensAssetOrPlaceholder("wall", "wall.missing");
   assert.equal(missingWall.id, "wall.placeholder");
   assert.equal(missingWall.isPlaceholder, true);

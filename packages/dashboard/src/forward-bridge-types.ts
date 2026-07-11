@@ -170,8 +170,21 @@ export interface ForwardOperatorEvidenceSummaryResponse {
   };
   budget: {
     sources: number;
+    harness_sources: number;
     retry_decisions: number;
     approval_pending: number;
+  };
+  harness: {
+    observed: number;
+    sources: number;
+    evidence_count: number;
+    latest_runtime: string | null;
+    latest_run_id: string | null;
+    latest_status: string | null;
+    latest_summary: string | null;
+    redacted_events: number;
+    metadata_only: boolean;
+    raw_transcript_exposed: boolean;
   };
   sensitivity: {
     pii_findings: number;

@@ -341,24 +341,27 @@ test("spatial lens floor viewport no longer mounts focused corridor continuity",
   );
 });
 
-test("spatial lens focused mode renders the workbench instead of a floor viewport", () => {
+test("spatial lens focused mode renders the character stage instead of a floor viewport", () => {
   const officeStageSource = readDashboardSource("components/OfficeStage.tsx");
+  const characterStageSource = readDashboardSource("components/AgentCharacterStage.tsx");
   const viewportSource = readSpatialLensSource("components/FloorViewport.tsx");
 
   assert.equal(existsSync(path.join(SPATIAL_LENS_ROOT, "components/MinimapDock.tsx")), false);
   assert.doesNotMatch(viewportSource, /import \{ MinimapDock \}/);
   assert.doesNotMatch(viewportSource, /<MinimapDock/);
-  assert.match(officeStageSource, /FocusedHandoffView/);
   assert.match(officeStageSource, /stageMode === "focused"/);
-  assert.match(officeStageSource, /<FocusedHandoffView/);
+  assert.match(officeStageSource, /<AgentCharacterStage/);
+  assert.match(characterStageSource, /data-agent-character-stage="true"/);
+  assert.match(characterStageSource, /data-agent-character-card/);
   assert.match(officeStageSource, /viewMode="overview"/);
   assert.doesNotMatch(officeStageSource, /viewMode=\{stageMode\}/);
   assert.doesNotMatch(officeStageSource, /viewMode="focused"/);
 });
 
-test("spatial lens focused mode exposes one active handoff workbench", () => {
+test("spatial lens focused mode keeps handoff signals inside the character stage", () => {
   const officeStageSource = readDashboardSource("components/OfficeStage.tsx");
-  const workbenchSource = readSpatialLensSource("components/FocusedHandoffView.tsx");
+  const characterStageSource = readDashboardSource("components/AgentCharacterStage.tsx");
+  const characterModelSource = readDashboardSource("agent-character-stage-model.ts");
   const modelSource = readSpatialLensSource("model/focusedHandoffModel.ts");
   const nextActionSource = readSpatialLensSource("model/focusedNextAction.ts");
   const viewportSource = readSpatialLensSource("components/FloorViewport.tsx");
@@ -367,23 +370,18 @@ test("spatial lens focused mode exposes one active handoff workbench", () => {
   const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
 
   assert.match(officeStageSource, /isSelected && entry\.mode === "focused" \? \(/);
-  assert.match(workbenchSource, /export function FocusedHandoffView/);
-  assert.match(workbenchSource, /data-focused-handoff-view="true"/);
-  assert.match(workbenchSource, /data-focused-view-layer="posture"/);
-  assert.match(workbenchSource, /data-focused-view-layer="workbench"/);
-  assert.match(workbenchSource, /data-focused-view-layer="spatial-context"/);
-  assert.match(workbenchSource, /data-active-handoff-workbench="true"/);
-  assert.match(workbenchSource, /data-workbench-primary="active-handoff"/);
-  assert.match(workbenchSource, /data-workbench-phase-representation="single"/);
-  assert.match(workbenchSource, /data-workbench-step-count=\{model\.steps\.length\}/);
-  assert.match(workbenchSource, /data-handoff-chain-task=\{model\.blockedTaskId\}/);
-  assert.match(workbenchSource, /data-next-operator-action=\{model\.nextActionKind\}/);
-  assert.match(workbenchSource, /href=\{model\.nextActionHref\}/);
-  assert.match(workbenchSource, /data-next-action-kind=\{model\.nextActionKind\}/);
-  assert.match(workbenchSource, /model\.nextActionCtaLabel/);
-  assert.doesNotMatch(workbenchSource, /href="#\/approvals"/);
-  assert.match(workbenchSource, /data-focused-spatial-context="muted"/);
-  assert.match(workbenchSource, /model\.handoffSummaryLabel/);
+  assert.match(characterStageSource, /data-agent-character-stage="true"/);
+  assert.match(characterStageSource, /model\.handoffLabel/);
+  assert.match(characterStageSource, /model\.blockedLabel/);
+  assert.match(characterStageSource, /model\.nextActionHref/);
+  assert.match(characterStageSource, /model\.nextActionKind/);
+  assert.match(characterStageSource, /model\.nextActionCtaLabel/);
+  assert.match(characterModelSource, /getAgentWorkState/);
+  assert.match(characterModelSource, /handoffLabel/);
+  assert.match(characterModelSource, /blockedLabel/);
+  assert.match(characterModelSource, /nextActionLabel/);
+  assert.match(characterModelSource, /deriveFocusedNextAction/);
+  assert.match(characterModelSource, /nextActionHref/);
   assert.match(modelSource, /"q_184_owner_gate"/);
   assert.match(nextActionSource, /"Owner approval required"/);
   assert.match(modelSource, /handoffSummaryLabel/);

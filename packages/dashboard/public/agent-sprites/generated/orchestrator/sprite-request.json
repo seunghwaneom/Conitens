@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "kind": "sprite-gen-request",
+  "engine": "component-row",
+  "character": {
+    "id": "orchestrator",
+    "description": "front-facing full-body pixel operations lead with swept hair, command jacket, sash, trousers, shoes, and dispatch tablet",
+    "base_image": "base-source.png"
+  },
+  "cell": {
+    "shape": "square",
+    "width": 64,
+    "height": 64,
+    "safe_margin_x": 5,
+    "safe_margin_y": 5,
+    "size": 64,
+    "safe_margin": 5
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [
+      255,
+      0,
+      255
+    ],
+    "selection": "manual"
+  },
+  "states": {
+    "command-pulse": {
+      "frames": 8,
+      "fps": 6,
+      "loop": true,
+      "action": "front-facing full-body pixel operations lead with swept hair, command jacket, sash, trousers, shoes, and dispatch tablet"
+    }
+  },
+  "style": "front-facing full-body pixel human character sprite with character lineup portrait proportions, large readable head, expressive eyes, highlighted hair, clear neck, shoulders, torso, arms, hands, separated legs, shoes, clothing layers, and role prop; upright human proportions with a distinct silhouette, chunky dark outline, limited production palette, and details large enough to read at dashboard scale",
+  "motion_phase_guides": false,
+  "reference_sources": [
+    "user-reference:codex-clipboard-11b0d6b3-front-facing-full-body-pixel-boy.png",
+    "user-reference:codex-clipboard-c73a6cca-front-facing-pixel-character-lineup.png",
+    "user-reference:codex-clipboard-3a0ec65f-front-facing-rpg-character-lineup.png"
+  ],
+  "reference_notes": "user-supplied front-facing pixel character references; art-direction only; no source pixels copied"
+}

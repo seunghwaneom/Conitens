@@ -64,11 +64,11 @@
 
 .floor-viewport[data-viewport-mode="overview"] {
   height: clamp(720px, 64vw, 900px);
-  border-color: #101923;
+  border-color: var(--office-ink, #0b1119);
   background:
-    linear-gradient(rgba(255, 244, 214, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 244, 214, 0.018) 1px, transparent 1px),
-    #07101a;
+    linear-gradient(rgba(102, 214, 232, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(102, 214, 232, 0.018) 1px, transparent 1px),
+    var(--office-ink-deep, #05080c);
   background-size: 24px 24px;
 }
 
@@ -88,27 +88,27 @@
       bright quiet-lab/checkpoint/maker floors stop patchworking against the
       dark building shell. */
 .floor-viewport[data-viewport-mode="overview"] .room-floor[data-floor-style="command-grid"] {
-  background-color: #203043;
+  background-color: var(--office-floor-control, #18283a);
 }
 
 .floor-viewport[data-viewport-mode="overview"] .room-floor[data-floor-style="maker-plank"] {
-  background-color: #382c20;
+  background-color: var(--office-floor-workspace, #202b36);
 }
 
 .floor-viewport[data-viewport-mode="overview"] .room-floor[data-floor-style="quiet-lab"] {
-  background-color: #25302c;
+  background-color: var(--office-floor-lab, #1f302b);
 }
 
 .floor-viewport[data-viewport-mode="overview"] .room-floor[data-floor-style="checkpoint-tile"] {
-  background-color: #26302b;
+  background-color: #21382f;
 }
 
 .floor-viewport[data-viewport-mode="overview"] .room-floor[data-floor-style="quiet-review"] {
-  background-color: #25323e;
+  background-color: var(--office-floor-review, #253242);
 }
 
 .floor-viewport[data-viewport-mode="overview"] .room-floor[data-floor-style="commons-stage"] {
-  background-color: #34291d;
+  background-color: var(--office-floor-lobby, #2b2d32);
 }
 
 .floor-camera {
@@ -123,21 +123,21 @@
   top: 12px;
   z-index: 12;
   padding: 6px 8px;
-  border: 2px solid #111923;
-  background: #fff4d6;
-  color: #182431;
+  border: 2px solid var(--office-ink, #0b1119);
+  background: var(--office-surface-raised, #202b36);
+  color: var(--office-room-text, #edf3fb);
   font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
-  box-shadow: 2px 2px 0 #060a10;
+  box-shadow: 2px 2px 0 var(--office-ink-deep, #05080c);
 }
 
 .floor-overview-label::after {
   content: " topology map";
   margin-left: 6px;
-  color: #314151;
+  color: var(--office-room-muted, rgba(216, 228, 243, 0.66));
   font-size: 9px;
   font-weight: 800;
 }
@@ -802,27 +802,27 @@
 }
 
 .room-floor[data-floor-style="command-grid"] {
-  background-color: #24364a;
+  background-color: var(--office-floor-control, #18283a);
 }
 
 .room-floor[data-floor-style="maker-plank"] {
-  background-color: #8a5d32;
+  background-color: var(--office-floor-workspace, #202b36);
 }
 
 .room-floor[data-floor-style="quiet-lab"] {
-  background-color: #d8ded9;
+  background-color: var(--office-floor-lab, #1f302b);
 }
 
 .room-floor[data-floor-style="checkpoint-tile"] {
-  background-color: #cfd9d2;
+  background-color: #21382f;
 }
 
 .room-floor[data-floor-style="quiet-review"] {
-  background-color: #6f91a9;
+  background-color: var(--office-floor-review, #253242);
 }
 
 .room-floor[data-floor-style="commons-stage"] {
-  background-color: #b0824a;
+  background-color: var(--office-floor-lobby, #2b2d32);
 }
 
 .generated-room-backdrop-layer,

@@ -20,26 +20,22 @@ import {
 } from "./components/OperatorTaskEditorPanel.js";
 import { OperatorWorkspaceDetailPanel } from "./components/OperatorWorkspaceDetailPanel.js";
 import { OperatorWorkspaceEditorPanel } from "./components/OperatorWorkspaceEditorPanel.js";
+import { useOperatorWorkspaceController } from "./features/workspaces/use-operator-workspace-controller.js";
 import { useForwardStream } from "./hooks/use-forward-stream.js";
 import {
   forwardArchiveOperatorTask,
   forwardGetOperatorAgents,
   forwardCreateOperatorTask,
-  forwardCreateOperatorWorkspace,
-  forwardDetachOperatorTaskWorkspace,
   forwardDeleteOperatorTask,
   forwardGetOperatorInbox,
   forwardGetOperatorTask,
   forwardGetOperatorTasks,
-  forwardGetOperatorWorkspace,
-  forwardGetOperatorWorkspaces,
   forwardGetOperatorSummary,
   forwardGetOperatorTaskReconcilePreview,
   forwardGetOperatorWakeReadiness,
   forwardRequestOperatorTaskApproval,
   forwardRestoreOperatorTask,
   forwardUpdateOperatorTask,
-  forwardUpdateOperatorWorkspace,
   forwardGet,
   parseContextLatestResponse,
   parseReplayResponse,
@@ -61,8 +57,6 @@ import {
   type ForwardOperatorTaskReconcilePreviewResponse,
   type ForwardOperatorTasksResponse,
   type ForwardOperatorWakeReadinessResponse,
-  type ForwardOperatorWorkspaceDetailResponse,
-  type ForwardOperatorWorkspacesResponse,
   type ForwardOperatorSummaryResponse,
   type ForwardReplayResponse,
   type ForwardRoomTimelineResponse,
@@ -79,13 +73,7 @@ import { toOperatorTaskReconcilePreview } from "./operator-reconciler-model.js";
 import { toOperatorSummaryViewModel } from "./operator-summary-model.js";
 import { toOperatorTaskDetail, toOperatorTaskListItems } from "./operator-tasks-model.js";
 import { toOperatorWakeReadinessViewModel } from "./operator-wake-readiness-model.js";
-import {
-  buildOperatorWorkspaceMutationBody,
-  getOperatorWorkspaceQuickStatusActions,
-  operatorWorkspaceNeedsArchiveRationale,
-  type OperatorWorkspaceDraft,
-} from "./operator-workspace-actions.js";
-import { toOperatorWorkspaceDetail, toOperatorWorkspaceListItems } from "./operator-workspaces-model.js";
+import { toOperatorWorkspaceListItems } from "./operator-workspaces-model.js";
 import {
   extractRoomOptions,
   pickNextRoomId,
@@ -132,9 +120,6 @@ export function App() {
   const [operatorTasks, setOperatorTasks] = useState<ForwardOperatorTasksResponse | null>(null);
   const [selectedTask, setSelectedTask] = useState<ForwardOperatorTaskDetailResponse | null>(null);
   const [taskReconcilePreview, setTaskReconcilePreview] = useState<ForwardOperatorTaskReconcilePreviewResponse | null>(null);
-  const [operatorWorkspaces, setOperatorWorkspaces] = useState<ForwardOperatorWorkspacesResponse | null>(null);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<ForwardOperatorWorkspaceDetailResponse | null>(null);
-  const [workspaceLinkedTasks, setWorkspaceLinkedTasks] = useState<ForwardOperatorTasksResponse | null>(null);
   const [runs, setRuns] = useState<ForwardRunSummary[]>([]);
   const [operatorInbox, setOperatorInbox] = useState<ForwardOperatorInboxResponse | null>(null);
   const [operatorSummary, setOperatorSummary] = useState<ForwardOperatorSummaryResponse | null>(null);
@@ -150,11 +135,6 @@ export function App() {
   const [tasksState, setTasksState] = useState<LoadState>("idle");
   const [taskDetailState, setTaskDetailState] = useState<LoadState>("idle");
   const [taskReconcileState, setTaskReconcileState] = useState<LoadState>("idle");
-  const [workspacesState, setWorkspacesState] = useState<LoadState>("idle");
-  const [workspaceDetailState, setWorkspaceDetailState] = useState<LoadState>("idle");
-  const [workspaceMutationState, setWorkspaceMutationState] = useState<LoadState>("idle");
-  const [workspaceLinkedTasksState, setWorkspaceLinkedTasksState] = useState<LoadState>("idle");
-  const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
   const [runsState, setRunsState] = useState<LoadState>("idle");
   const [overviewState, setOverviewState] = useState<LoadState>("idle");
   const [wakeReadinessState, setWakeReadinessState] = useState<LoadState>("idle");
@@ -183,12 +163,6 @@ export function App() {
   const [tasksError, setTasksError] = useState<string | null>(null);
   const [taskDetailError, setTaskDetailError] = useState<string | null>(null);
   const [taskReconcileError, setTaskReconcileError] = useState<string | null>(null);
-  const [workspacesError, setWorkspacesError] = useState<string | null>(null);
-  const [workspaceDetailError, setWorkspaceDetailError] = useState<string | null>(null);
-  const [workspaceMutationError, setWorkspaceMutationError] = useState<string | null>(null);
-  const [workspaceLinkedTasksError, setWorkspaceLinkedTasksError] = useState<string | null>(null);
-  const [workspaceTaskActionError, setWorkspaceTaskActionError] = useState<string | null>(null);
-  const [workspaceTaskActionMessage, setWorkspaceTaskActionMessage] = useState<string | null>(null);
   const [taskMutationError, setTaskMutationError] = useState<string | null>(null);
   const [taskArchiveError, setTaskArchiveError] = useState<string | null>(null);
   const [taskDeleteError, setTaskDeleteError] = useState<string | null>(null);
@@ -221,18 +195,6 @@ export function App() {
     blockedReason: "",
     acceptance: "",
     workspaceRef: "",
-  });
-  const [workspaceDraft, setWorkspaceDraft] = useState<OperatorWorkspaceDraft>({
-    label: "",
-    path: "",
-    kind: "repo",
-    status: "active",
-    archiveNote: "",
-    ownerAgentId: "",
-    linkedRunId: "",
-    linkedIterationId: "",
-    taskIds: "",
-    notes: "",
   });
   const isOfficePreview = route.screen === "office-preview";
   const activeLinkedRunId =
@@ -496,45 +458,36 @@ export function App() {
     };
   }, [config, isOfficePreview, route.screen, liveRevision, taskFilterOwner, taskFilterStatus, taskIncludeArchived]);
 
-  useEffect(() => {
-    if (
-      isOfficePreview ||
-      !config.token.trim() ||
-      (
-        route.screen !== "workspaces" &&
-        route.screen !== "workspace-detail" &&
-        route.screen !== "tasks" &&
-        route.screen !== "task-detail"
-      )
-    ) {
-      setOperatorWorkspaces(null);
-      setWorkspacesState("idle");
-      setWorkspacesError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspacesState("loading");
-    setWorkspacesError(null);
-    forwardGetOperatorWorkspaces(config)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWorkspaces(payload);
-        setWorkspacesState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setOperatorWorkspaces(null);
-        setWorkspacesState("error");
-        setWorkspacesError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, liveRevision]);
+  const {
+    operatorWorkspaces,
+    workspaceDetail,
+    workspaceLinkedTasks,
+    workspacesState,
+    workspaceDetailState,
+    workspaceMutationState,
+    workspaceLinkedTasksState,
+    workspaceTaskActionState,
+    workspacesError,
+    workspaceDetailError,
+    workspaceMutationError,
+    workspaceLinkedTasksError,
+    workspaceTaskActionError,
+    workspaceTaskActionMessage,
+    workspaceDraft,
+    setWorkspaceDraft,
+    workspaceQuickStatusActions,
+    openWorkspace,
+    handleWorkspaceSubmit,
+    handleWorkspaceQuickStatus,
+    handleWorkspaceDetachTask,
+    handleWorkspaceArchiveTask,
+  } = useOperatorWorkspaceController({
+    config,
+    route,
+    isOfficePreview,
+    liveRevision,
+    setLiveRevision,
+  });
 
   useEffect(() => {
     if (isOfficePreview || !config.token.trim() || route.screen !== "task-detail" || !route.taskId) {
@@ -598,68 +551,6 @@ export function App() {
       cancelled = true;
     };
   }, [config, isOfficePreview, route.screen, route.taskId, liveRevision]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      setSelectedWorkspace(null);
-      setWorkspaceDetailState("idle");
-      setWorkspaceDetailError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspaceDetailState("loading");
-    setWorkspaceDetailError(null);
-    forwardGetOperatorWorkspace(config, route.workspaceId)
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedWorkspace(payload);
-        setWorkspaceDetailState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setSelectedWorkspace(null);
-        setWorkspaceDetailState("error");
-        setWorkspaceDetailError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.workspaceId]);
-
-  useEffect(() => {
-    if (isOfficePreview || !config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      setWorkspaceLinkedTasks(null);
-      setWorkspaceLinkedTasksState("idle");
-      setWorkspaceLinkedTasksError(null);
-      return;
-    }
-    let cancelled = false;
-    setWorkspaceLinkedTasksState("loading");
-    setWorkspaceLinkedTasksError(null);
-    forwardGetOperatorTasks(config, { workspaceRef: route.workspaceId, includeArchived: true })
-      .then((payload) => {
-        if (cancelled) {
-          return;
-        }
-        setWorkspaceLinkedTasks(payload);
-        setWorkspaceLinkedTasksState("ready");
-      })
-      .catch((err: Error) => {
-        if (cancelled) {
-          return;
-        }
-        setWorkspaceLinkedTasks(null);
-        setWorkspaceLinkedTasksState("error");
-        setWorkspaceLinkedTasksError(err.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [config, isOfficePreview, route.screen, route.workspaceId, liveRevision]);
 
   useEffect(() => {
     if (isOfficePreview || !config.token.trim()) {
@@ -828,14 +719,6 @@ export function App() {
   const workspaceItems = useMemo(
     () => (operatorWorkspaces ? toOperatorWorkspaceListItems(operatorWorkspaces) : []),
     [operatorWorkspaces],
-  );
-  const workspaceDetail = useMemo(
-    () => (selectedWorkspace ? toOperatorWorkspaceDetail(selectedWorkspace) : null),
-    [selectedWorkspace],
-  );
-  const workspaceQuickStatusActions = useMemo(
-    () => (workspaceDetail ? getOperatorWorkspaceQuickStatusActions(workspaceDetail.status, workspaceDraft) : []),
-    [workspaceDetail, workspaceDraft],
   );
   const workspaceLinkedTaskItems = useMemo(
     () => (workspaceLinkedTasks?.tasks ?? []).map((task) => ({
@@ -1054,42 +937,6 @@ export function App() {
   }, [route.screen, taskDetail]);
 
   useEffect(() => {
-    if (route.screen === "workspace-detail" && workspaceDetail) {
-      setWorkspaceDraft({
-        label: workspaceDetail.label,
-        path: workspaceDetail.path,
-        kind: workspaceDetail.kind,
-        status: workspaceDetail.status,
-        archiveNote: workspaceDetail.archiveNote ?? "",
-        ownerAgentId: workspaceDetail.owner === "unassigned" ? "" : workspaceDetail.owner,
-        linkedRunId: workspaceDetail.linkedRunId ?? "",
-        linkedIterationId: workspaceDetail.linkedIterationId ?? "",
-        taskIds: workspaceDetail.taskIds.join(", "),
-        notes: workspaceDetail.notes ?? "",
-      });
-      setWorkspaceMutationState("idle");
-      setWorkspaceMutationError(null);
-      return;
-    }
-    if (route.screen === "workspaces") {
-      setWorkspaceDraft({
-        label: "",
-        path: "",
-        kind: "repo",
-        status: "active",
-        archiveNote: "",
-        ownerAgentId: "",
-        linkedRunId: "",
-        linkedIterationId: "",
-        taskIds: "",
-        notes: "",
-      });
-      setWorkspaceMutationState("idle");
-      setWorkspaceMutationError(null);
-    }
-  }, [route.screen, workspaceDetail]);
-
-  useEffect(() => {
     if (route.screen !== "agents") {
       return;
     }
@@ -1125,10 +972,6 @@ export function App() {
 
   const openTask = (taskId: string) => {
     window.location.hash = buildForwardRoute({ screen: "task-detail", runId: null, taskId, workspaceId: null, threadId: null, agentId: null });
-  };
-
-  const openWorkspace = (workspaceId: string) => {
-    window.location.hash = buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId, threadId: null, agentId: null });
   };
 
   function applySavedTaskFilterPreset(preset: SavedTaskFilterPreset) {
@@ -1198,105 +1041,6 @@ export function App() {
       window.location.hash = buildForwardRoute({ screen: "tasks", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
     }
     setLiveRevision((current) => current + 1);
-  }
-
-  async function refreshWorkspacesAndSelection(nextWorkspaceId: string | null = null) {
-    const workspacesPayload = await forwardGetOperatorWorkspaces(config);
-    setOperatorWorkspaces(workspacesPayload);
-    if (nextWorkspaceId) {
-      const workspacePayload = await forwardGetOperatorWorkspace(config, nextWorkspaceId);
-      setSelectedWorkspace(workspacePayload);
-      window.location.hash = buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId: nextWorkspaceId, threadId: null, agentId: null });
-    } else {
-      setSelectedWorkspace(null);
-      window.location.hash = buildForwardRoute({ screen: "workspaces", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
-    }
-    setLiveRevision((current) => current + 1);
-  }
-
-  async function handleWorkspaceSubmit() {
-    if (!config.token.trim()) {
-      return;
-    }
-    if (operatorWorkspaceNeedsArchiveRationale(workspaceDraft.status, workspaceDraft)) {
-      setWorkspaceMutationState("error");
-      setWorkspaceMutationError("Workspace archive rationale is required.");
-      return;
-    }
-    const body = buildOperatorWorkspaceMutationBody(workspaceDraft);
-    try {
-      setWorkspaceMutationState("loading");
-      setWorkspaceMutationError(null);
-      const result = route.screen === "workspace-detail" && route.workspaceId
-        ? await forwardUpdateOperatorWorkspace(config, route.workspaceId, body)
-        : await forwardCreateOperatorWorkspace(config, body);
-      await refreshWorkspacesAndSelection(result.workspace.workspace_id);
-      setWorkspaceMutationState("ready");
-    } catch (error) {
-      setWorkspaceMutationState("error");
-      setWorkspaceMutationError(toErrorMessage(error));
-    }
-  }
-
-  async function handleWorkspaceQuickStatus(status: string) {
-    if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      return;
-    }
-    if (operatorWorkspaceNeedsArchiveRationale(status, workspaceDraft)) {
-      setWorkspaceMutationState("error");
-      setWorkspaceMutationError("Workspace archive rationale is required.");
-      return;
-    }
-    const body = buildOperatorWorkspaceMutationBody(workspaceDraft, status);
-    try {
-      setWorkspaceMutationState("loading");
-      setWorkspaceMutationError(null);
-      const result = await forwardUpdateOperatorWorkspace(config, route.workspaceId, body);
-      await refreshWorkspacesAndSelection(result.workspace.workspace_id);
-      setWorkspaceMutationState("ready");
-    } catch (error) {
-      setWorkspaceMutationState("error");
-      setWorkspaceMutationError(toErrorMessage(error));
-    }
-  }
-
-  async function handleWorkspaceDetachTask(taskId: string) {
-    if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      return;
-    }
-    try {
-      setWorkspaceTaskActionState("loading");
-      setWorkspaceTaskActionError(null);
-      setWorkspaceTaskActionMessage(null);
-      await forwardDetachOperatorTaskWorkspace(config, taskId);
-      await refreshWorkspacesAndSelection(route.workspaceId);
-      setWorkspaceTaskActionState("ready");
-      setWorkspaceTaskActionMessage(`Detached ${taskId} from ${route.workspaceId}.`);
-    } catch (error) {
-      setWorkspaceTaskActionState("error");
-      setWorkspaceTaskActionError(toErrorMessage(error));
-    }
-  }
-
-  async function handleWorkspaceArchiveTask(taskId: string) {
-    if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      return;
-    }
-    const rationale =
-      workspaceDraft.archiveNote.trim() ||
-      `Workspace archive blocker resolution for ${route.workspaceId}.`;
-    try {
-      setWorkspaceTaskActionState("loading");
-      setWorkspaceTaskActionError(null);
-      setWorkspaceTaskActionMessage(null);
-      await forwardArchiveOperatorTask(config, taskId, { archive_note: rationale });
-      await refreshWorkspacesAndSelection(route.workspaceId);
-      setWorkspaceTaskActionState("ready");
-      setWorkspaceTaskActionMessage(`Archived linked task ${taskId}.`);
-    } catch (error) {
-      setWorkspaceTaskActionState("error");
-      setWorkspaceTaskActionError(toErrorMessage(error));
-    }
   }
 
   async function handleBulkTaskLifecycle(action: TaskBulkAction) {
@@ -2148,24 +1892,30 @@ export function App() {
                         },
                       ]
                     : workspaceItems
-                  ).map((item) => (
-                    <button
-                      key={item.workspaceId}
-                      className={`forward-run-item${route.workspaceId === item.workspaceId ? " active" : ""}`}
-                      onClick={() => openWorkspace(item.workspaceId)}
-                    >
-                      <div className="forward-run-topline">
-                        <strong>{item.label}</strong>
-                        <span>{item.status}</span>
-                      </div>
-                      <p>{item.subtitle}</p>
-                      <div className="forward-metric-row">
-                        {item.metrics.map((metric) => (
-                          <span key={metric}>{metric}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
+                  ).map((item) => {
+                    const isWorkspaceSelected =
+                      route.workspaceId === item.workspaceId || (isDemo && item.workspaceId === "demo-workspace");
+                    return (
+                      <button
+                        key={item.workspaceId}
+                        type="button"
+                        className={`forward-run-item${isWorkspaceSelected ? " active" : ""}`}
+                        aria-pressed={isWorkspaceSelected}
+                        onClick={() => openWorkspace(item.workspaceId)}
+                      >
+                        <div className="forward-run-topline">
+                          <strong>{item.label}</strong>
+                          <span>{item.status}</span>
+                        </div>
+                        <p>{item.subtitle}</p>
+                        <div className="forward-metric-row">
+                          {item.metrics.map((metric) => (
+                            <span key={metric}>{metric}</span>
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             ) : isDemo ? (
@@ -2588,7 +2338,7 @@ export function App() {
                       : workspaceDetail
                   }
                   state={isDemo ? "ready" : route.screen === "workspaces" ? workspacesState : workspaceDetailState}
-                  error={workspaceDetailError}
+                  error={route.screen === "workspaces" ? workspacesError : workspaceDetailError}
                   mutationState={isDemo ? "ready" : workspaceMutationState}
                   mutationError={workspaceMutationError}
                   onQuickStatus={!isDemo && route.screen === "workspace-detail" ? handleWorkspaceQuickStatus : undefined}

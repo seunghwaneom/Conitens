@@ -125,9 +125,11 @@ export function toOperatorSummaryViewModel(
   const evidence = summary.evidence
     ? {
         posture:
-          summary.evidence.sensitivity.raw_content_exposed || summary.evidence.sensitivity.pii_findings > 0
+          summary.evidence.sensitivity.raw_content_exposed ||
+          summary.evidence.harness.raw_transcript_exposed ||
+          summary.evidence.sensitivity.pii_findings > 0
             ? "danger" as const
-            : summary.evidence.provider_calls.observed === 0
+            : summary.evidence.provider_calls.observed === 0 && summary.evidence.harness.observed === 0
               ? "warning" as const
               : "ok" as const,
         metrics: [
@@ -159,6 +161,12 @@ export function toOperatorSummaryViewModel(
             value: String(summary.evidence.sensitivity.pii_findings),
             detail: summary.evidence.sensitivity.redaction,
           },
+          {
+            id: "harness-observed",
+            label: "Harness evidence",
+            value: String(summary.evidence.harness.observed),
+            detail: `${summary.evidence.budget.harness_sources} metadata-only source${summary.evidence.budget.harness_sources === 1 ? "" : "s"}`,
+          },
         ],
         notes: [
           {
@@ -170,6 +178,20 @@ export function toOperatorSummaryViewModel(
             detail: summary.evidence.provider_calls.latest_provider || summary.evidence.provider_calls.latest_model
               ? [summary.evidence.provider_calls.latest_provider, summary.evidence.provider_calls.latest_model].filter(Boolean).join(" | ")
               : "This first slice stays projection-only and does not introduce a provider proxy.",
+          },
+          {
+            id: "evidence-harness",
+            tone: summary.evidence.harness.raw_transcript_exposed
+              ? "danger" as const
+              : summary.evidence.harness.observed === 0
+                ? "warning" as const
+                : "info" as const,
+            title: summary.evidence.harness.observed === 0
+              ? "No terminal harness evidence observed yet"
+              : "GJC harness evidence is metadata-only",
+            detail: summary.evidence.harness.latest_summary
+              ?? summary.evidence.harness.latest_runtime
+              ?? "GJC transcripts stay outside the control-plane state model.",
           },
         ],
       }
