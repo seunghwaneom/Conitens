@@ -4,7 +4,7 @@ import stageStyles from "../office-stage.module.css";
 import { AgentCharacterStage } from "./AgentCharacterStage.js";
 import { OfficeRoomScene } from "./OfficeRoomScene.js";
 import { getOfficeFixtureStyle } from "../office-fixture-registry.js";
-import { FloorViewport } from "../spatial-lens/index.js";
+import { FloorViewport, FocusedHandoffView } from "../spatial-lens/index.js";
 import {
   OFFICE_STAGE_CORRIDORS,
   OFFICE_STAGE_CORRIDOR_FIXTURES,
@@ -161,13 +161,23 @@ export function OfficeStage({
             className={stageStyles["office-stage-tabpanel"]}
           >
             {isSelected && entry.mode === "focused" ? (
-              <AgentCharacterStage
-                residents={rooms.flatMap((room) => room.residents)}
-                tasks={tasks}
-                handoffs={handoffs}
-                selectedResidentId={selectedResidentId}
-                onSelectResident={onSelectResident}
-              />
+              <>
+                <FocusedHandoffView
+                  rooms={rooms}
+                  tasks={tasks}
+                  handoffs={handoffs}
+                  events={events}
+                  selectedRoomId={selectedRoomId}
+                  selectedResidentId={selectedResidentId}
+                />
+                <AgentCharacterStage
+                  residents={rooms.flatMap((room) => room.residents)}
+                  tasks={tasks}
+                  handoffs={handoffs}
+                  selectedResidentId={selectedResidentId}
+                  onSelectResident={onSelectResident}
+                />
+              </>
             ) : null}
             {isSelected && entry.mode === "overview" ? (
               <FloorViewport

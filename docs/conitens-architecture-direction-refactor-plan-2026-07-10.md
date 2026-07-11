@@ -17,14 +17,14 @@
 | 0 | 완료 | ADR-0004와 state-owner/direct-write inventory가 authority 및 promotion gate를 고정한다. |
 | 1 | 완료 | append/redaction/rebuild 및 public-boundary behavior lock이 존재한다. |
 | 2 | 완료 | room, meeting, handoff, spawn, stop의 event-before-projection 경계와 Forward public serialization이 잠겼다. |
-| 3 | 미완료 | Forward bridge의 query/command/transport/storage 책임 분리와 room/handoff primary read path 수렴이 남았다. |
+| 3 | 완료 | Forward bridge가 query/command/stream/HTTP/public-context 경계로 분리됐고 read path가 명시적 소유자를 사용한다. |
 | 4 | 부분 완료 | Spatial Lens와 일부 dashboard feature 경계는 개선됐지만 `App` thin shell 및 operator API domain split의 전체 완료 근거는 없다. |
 | 5 | bounded vertical slice 완료 | episode closure → candidate → owner-gated skill revision → exact-key post-apply effect observation이 연결됐다. 다른 materializable target family는 의도적으로 포함하지 않았다. |
-| 6 | 결정 완료, 정리 미완료 | 선택 B인 Forward 격리를 채택했다. 문서와 ADR은 정렬됐지만 중복 execution owner/bridge 책임 정리는 Wave 3 후속 작업이다. |
+| 6 | 결정 완료, 정리 진행 중 | 선택 B인 Forward 격리를 채택했다. 문서와 ADR은 정렬됐고 남은 promotion gate는 별도 후속 작업이다. |
 
-따라서 다음 구현 우선순위는 Wave 3이다. Wave 5의 다른 target family 확장이나
-Forward 승격보다 bridge query/command 책임 분리와 primary read-path 수렴을 먼저
-완료해야 한다.
+따라서 다음 구현 우선순위는 Wave 4 dashboard thin-shell 경계 마무리다. Wave 5의
+다른 target family 확장이나 Forward 승격은 여전히 별도 근거와 승격 gate를
+요구한다.
 
 ## 1. 결론
 
@@ -640,8 +640,8 @@ packages/dashboard/src/
 않는다. 최종 검증에서 read-only runtime-roster가 선택적 version probe를 기본으로
 실행해 10초 응답 계약을 넘기는 결함이 재현되어, HTTP 기본값만 probe 비활성으로
 좁혔다. `probe_versions=1` 명시적 진단 경로는 유지한다. 이 조정은 승격이 아니라
-격리된 sidecar의 bounded-read 안정화다. public-context allowlist 부재는 여전히
-승격 차단 사유이자 Wave 3 보안 부채다.
+격리된 sidecar의 bounded-read 안정화다. allowlisted public context는 Wave 3에서
+도입됐지만, 승격에는 여전히 별도 운영·migration·rollback 근거가 필요하다.
 
 ## 9. 우선순위 백로그
 

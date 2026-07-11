@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD_SRC = path.resolve(TEST_DIR, "../src");
 
-test("office preview shell makes focused mode character-first", () => {
+test("office preview shell keeps the handoff workbench primary and the character cast secondary", () => {
   const pixelOfficeSource = readDashboardSource("components/PixelOffice.tsx");
   const officeStageSource = readDashboardSource("components/OfficeStage.tsx");
   const characterStageSource = readDashboardSource("components/AgentCharacterStage.tsx");
@@ -25,11 +25,13 @@ test("office preview shell makes focused mode character-first", () => {
     officeCssSource,
     /\.office-layout\[data-stage-mode="focused"\]/,
   );
-  assert.match(
-    officeStageSource,
-    /isSelected && entry\.mode === "focused" \? \(\s+<AgentCharacterStage/,
+  assert.match(officeStageSource, /<FocusedHandoffView/);
+  assert.match(officeStageSource, /<AgentCharacterStage/);
+  assert.ok(
+    officeStageSource.indexOf("<FocusedHandoffView") <
+      officeStageSource.indexOf("<AgentCharacterStage"),
+    "FocusedHandoffView must render before the secondary character stage",
   );
-  assert.doesNotMatch(officeStageSource, /<FocusedHandoffView/);
   assert.match(characterStageSource, /data-agent-character-stage="true"/);
   assert.match(characterStageSource, /data-agent-character-card/);
   assert.match(characterStageSource, /data-motion-profile/);

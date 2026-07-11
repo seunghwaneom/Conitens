@@ -14,6 +14,7 @@ from ensemble_improvement_candidate_model import (
     validate_public_token,
     validate_reason_code,
 )
+from ensemble_workspace_lock import workspace_lock
 
 CANDIDATE_EVENT = "improvement.candidate_proposed"
 APPROVAL_REQUESTED = "approval.requested"
@@ -103,26 +104,27 @@ def decide_improvement_candidate(
     validate_public_token(candidate_id, "candidate id")
     validate_bounded_token(reviewer, "reviewer", 128)
     validate_reason_code(reason_code)
-    candidate = show_improvement_candidate(workspace, candidate_id)
-    if candidate.get("status") != "pending_review":
-        raise ImprovementCandidateError("candidate already decided")
-    if not bool(candidate.get("review_requested")):
-        raise ImprovementCandidateError("candidate approval request is missing")
+    with workspace_lock(workspace):
+        candidate = show_improvement_candidate(workspace, candidate_id)
+        if candidate.get("status") != "pending_review":
+            raise ImprovementCandidateError("candidate already decided")
+        if not bool(candidate.get("review_requested")):
+            raise ImprovementCandidateError("candidate approval request is missing")
 
-    append_event(
-        workspace,
-        event_type=APPROVAL_GRANTED if decision_value == "approved" else APPROVAL_DENIED,
-        actor={"type": "reviewer", "name": reviewer},
-        scope={"surface": "agent-improvement", "candidate_id": candidate_id},
-        payload={
-            "request_id": candidate["approval_request_id"],
-            "candidate_id": candidate_id,
-            "candidate_version": candidate["candidate_version"],
-            "action_type": "review_improvement_candidate",
-            "decision": decision_value,
-            "decision_reason_code": reason_code,
-        },
-    )
+        append_event(
+            workspace,
+            event_type=APPROVAL_GRANTED if decision_value == "approved" else APPROVAL_DENIED,
+            actor={"type": "reviewer", "name": reviewer},
+            scope={"surface": "agent-improvement", "candidate_id": candidate_id},
+            payload={
+                "request_id": candidate["approval_request_id"],
+                "candidate_id": candidate_id,
+                "candidate_version": candidate["candidate_version"],
+                "action_type": "review_improvement_candidate",
+                "decision": decision_value,
+                "decision_reason_code": reason_code,
+            },
+        )
     return show_improvement_candidate(workspace, candidate_id)
 
 

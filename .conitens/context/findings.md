@@ -3502,3 +3502,9 @@
   migration and explicit persona-core authorization.
 - Independent settled review found no remaining scoped code-quality issue
   (`CLEAR / APPROVE`), and the final gate approved the refactor with no blockers.
+- PR hardening found three boundary regressions after that snapshot: Focused mode
+  omitted its primary handoff workbench, concurrent candidate decisions could both
+  append, and read-only `forward status` created runtime directories. Regression
+  tests now cover each repaired boundary.
+- Git-config email is mutable repository/user metadata and cannot authorize owner
+  actions; only UID or the recorded username-plus-hostname identity may authorize.

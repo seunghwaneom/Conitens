@@ -2633,3 +2633,11 @@ Do not promote Forward. A future promotion slice must resolve and prove the
 documented Forward-only direct SQLite projection and approval reviewer semantics,
 along with every ADR-0004 gate. Separately plan the legacy event-alias and persona
 schema migration; do not mix it into bridge boundary work.
+
+## PR hardening follow-up (2026-07-11)
+
+- [x] Restore Active Handoff Workbench ahead of the character stage in Focused mode.
+- [x] Serialize improvement-candidate terminal decisions with a workspace lock.
+- [x] Make `forward status` avoid creating `.conitens` paths on an empty workspace.
+- [x] Remove Git email as a project-owner authorization factor.
+- [x] Run integrated tests, build, and browser QA before final review and PR creation.

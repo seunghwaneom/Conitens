@@ -61,6 +61,7 @@ class ForwardRuntimeModeTests(unittest.TestCase):
             self.assertTrue(payload["artifacts"]["loop_state_db"].endswith("loop_state.sqlite3"))
             self.assertFalse(Path(payload["artifacts"]["loop_state_db"]).is_absolute())
             self.assertIn("run_state", payload["runtime"]["authoritative_state_owners"])
+            self.assertFalse((workspace / ".conitens").exists())
 
     def test_forward_context_latest_uses_structured_public_state_and_omits_repo_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

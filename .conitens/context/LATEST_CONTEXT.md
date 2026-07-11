@@ -2818,9 +2818,10 @@ Read this file before substantial work.
   build, Python compile, and 151-event/32-alias sync pass; the full protocol stays
   at its known 847-pass/4-failure baseline.
 - Goal/scope, QA, code, security, context/history, and replay/state-machine review
-  lanes all pass. The next architecture priority remains Wave 3 query/command/
-  transport separation, primary read-path convergence, and allowlisted public
-  context; Forward promotion remains prohibited.
+  lanes all pass for that slice. Wave 3 subsequently completed the query/command/
+  transport separation and allowlisted public context described below. The next
+  architecture priority is Wave 4 thin-shell completion; Forward promotion remains
+  prohibited.
 
 ## Latest Update: Wave 3 Forward Bridge Boundary Refactor
 
@@ -2862,6 +2863,13 @@ Read this file before substantial work.
   documented promotion blockers. No ADR-0004 promotion claim is made.
 - Independent settled code review is `CLEAR / APPROVE`; the final LazyCodex gate
   is `APPROVE`. Neither reports a scoped finding or blocker.
+- A subsequent PR-hardening pass restored the Focused-mode Active Handoff
+  Workbench, made candidate terminal decisions atomic, stopped `forward status`
+  from materializing an empty runtime, and removed Git email as an owner
+  authorization factor. Integrated validation passes Python 119/119, dashboard
+  154/154, the production build, and live Chrome hierarchy/console checks. Final
+  security and code-quality review approve the staged diff; commit, push, and PR
+  creation remain.
 - Durable evidence lives in `.omo/evidence/wave3-forward-bridge-green.txt`,
   `.omo/evidence/wave3-forward-bridge-manual-qa.md`,
   `.omo/evidence/wave3-debugging-audit.md`, and

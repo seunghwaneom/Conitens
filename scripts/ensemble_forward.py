@@ -173,7 +173,7 @@ def _sanitize_forward_status_payload(payload: dict[str, Any], workspace: str | P
 
 
 def build_forward_status(workspace: str | Path) -> dict[str, Any]:
-    repository = LoopStateRepository(workspace)
+    repository = LoopStateRepository(workspace, read_only=True)
     restore = StateRestoreService(repository)
     latest_snapshot = restore.restore_latest_active_run_from_disk()
     latest_run = latest_snapshot["run"] if latest_snapshot else None
@@ -189,9 +189,9 @@ def build_forward_status(workspace: str | Path) -> dict[str, Any]:
         },
         "workspace_root": str(Path(workspace).resolve()),
         "artifacts": {
-            "loop_state_db": str(loop_state_db_path(workspace)),
-            "loop_state_debug": str(loop_state_debug_path(workspace)),
-            "runtime_latest_context": str(runtime_latest_context_path(workspace)),
+            "loop_state_db": str(loop_state_db_path(workspace, create_parent=False)),
+            "loop_state_debug": str(loop_state_debug_path(workspace, create_parent=False)),
+            "runtime_latest_context": str(runtime_latest_context_path(workspace, create_parent=False)),
             "repo_latest_context": str(_repo_latest_context_path(workspace)),
         },
         "runtime": {

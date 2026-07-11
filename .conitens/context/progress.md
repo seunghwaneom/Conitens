@@ -4035,3 +4035,14 @@ Floor Overview remains the topology view, and Classic remains isolated.
 - `.omo/evidence/wave3-forward-bridge-manual-qa.md`
 - `.omo/evidence/wave3-debugging-audit.md`
 - `.omo/evidence/wave3-forward-bridge-review-work.md`
+
+## PR hardening follow-up (2026-07-11)
+
+- [x] Focused workbench hierarchy restored and locked by dashboard tests
+- [x] candidate decision check-and-append protected by shared cross-process lock
+- [x] `forward status` empty-workspace query made non-materializing
+- [x] spoofable Git-email owner fallback removed
+- [x] integrated validation: Python 119/119, dashboard 154/154, production build,
+      and live Chrome Focused-mode hierarchy with zero console errors
+- [x] final security and code-quality review approved the shared lock and UI hardening
+- [ ] commit, push, and PR creation

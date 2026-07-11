@@ -37,7 +37,7 @@ class OwnerAuthorizationCompatibilityTests(unittest.TestCase):
         ):
             self.assertEqual(ensemble.is_project_owner(), (True, "USERNAME_HOSTNAME_MATCH"))
 
-    def test_git_email_match_remains_case_insensitive(self) -> None:
+    def test_git_email_match_is_not_an_authorization_factor(self) -> None:
         owner = {
             "owner": {
                 "username": "owner",
@@ -56,7 +56,9 @@ class OwnerAuthorizationCompatibilityTests(unittest.TestCase):
             patch.object(ensemble, "read_owner", return_value=owner),
             patch.object(ensemble, "get_current_user_info", return_value=current),
         ):
-            self.assertEqual(ensemble.is_project_owner(), (True, "GIT_EMAIL_MATCH"))
+            allowed, reason = ensemble.is_project_owner()
+            self.assertFalse(allowed)
+            self.assertTrue(reason.startswith("NOT_OWNER:"))
 
     def test_mismatch_reason_shape_is_preserved(self) -> None:
         owner = {"owner": {"username": "owner", "hostname": "control", "uid": None}}

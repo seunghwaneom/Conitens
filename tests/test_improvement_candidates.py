@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from copy import deepcopy
 from pathlib import Path
@@ -1081,6 +1082,76 @@ class ImprovementCandidateTests(unittest.TestCase):
         from ensemble_allowed_events import ALLOWED_EVENT_TYPES
 
         self.assertIn("improvement.candidate_proposed", ALLOWED_EVENT_TYPES)
+
+    def test_cross_process_terminal_decisions_append_exactly_one_terminal_event(self) -> None:
+        api = _candidate_api()
+        candidate = api["propose"](self.workspace, self.proposal())
+        env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+        gate_path = self.workspace / "candidate-decision-go"
+        worker = "\n".join(
+            (
+                "import sys, time",
+                "from pathlib import Path",
+                "sys.path.insert(0, sys.argv[1])",
+                "from ensemble_improvement_candidate_model import ImprovementCandidateError",
+                "from ensemble_improvement_candidates import decide_improvement_candidate",
+                "workspace, candidate_id, decision, ready_path, gate_path = sys.argv[2:]",
+                "Path(ready_path).write_text('ready', encoding='utf-8')",
+                "while not Path(gate_path).exists(): time.sleep(0.01)",
+                "try:",
+                "    decide_improvement_candidate(workspace, candidate_id, decision=decision, reviewer=f'reviewer-{decision}', reason_code=f'concurrent_{decision}')",
+                "except ImprovementCandidateError:",
+                "    raise SystemExit(1) from None",
+            )
+        )
+        processes: list[subprocess.Popen[str]] = []
+        ready_paths: list[Path] = []
+        for decision in ("approved", "rejected"):
+            ready_path = self.workspace / f"candidate-decision-{decision}.ready"
+            ready_paths.append(ready_path)
+            processes.append(
+                subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-c",
+                        worker,
+                        str(SCRIPTS),
+                        str(self.workspace),
+                        candidate["candidate_id"],
+                        decision,
+                        str(ready_path),
+                        str(gate_path),
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    env=env,
+                )
+            )
+
+        deadline = time.monotonic() + 10
+        while not all(path.exists() for path in ready_paths):
+            if time.monotonic() >= deadline:
+                for process in processes:
+                    process.terminate()
+                diagnostics = [process.communicate(timeout=1) for process in processes]
+                self.fail(f"candidate decision processes did not reach the start barrier: {diagnostics}")
+            time.sleep(0.01)
+        gate_path.write_text("go", encoding="utf-8")
+
+        results = [process.communicate(timeout=10) for process in processes]
+        return_codes = [process.returncode for process in processes]
+
+        terminal_events = [
+            event
+            for event in self.candidate_events()
+            if event["type"] in {"approval.granted", "approval.denied"}
+        ]
+        self.assertEqual(len(terminal_events), 1)
+        self.assertEqual(return_codes.count(0), 1, results)
+        self.assertIn(api["show"](self.workspace, candidate["candidate_id"])["status"], {"approved", "rejected"})
 
     def _copy_closure_events(self, workspace: Path) -> None:
         for event in load_events(self.workspace):

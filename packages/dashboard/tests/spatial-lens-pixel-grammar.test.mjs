@@ -341,7 +341,7 @@ test("spatial lens floor viewport no longer mounts focused corridor continuity",
   );
 });
 
-test("spatial lens focused mode renders the character stage instead of a floor viewport", () => {
+test("spatial lens focused mode renders the handoff workbench before the character stage", () => {
   const officeStageSource = readDashboardSource("components/OfficeStage.tsx");
   const characterStageSource = readDashboardSource("components/AgentCharacterStage.tsx");
   const viewportSource = readSpatialLensSource("components/FloorViewport.tsx");
@@ -350,7 +350,13 @@ test("spatial lens focused mode renders the character stage instead of a floor v
   assert.doesNotMatch(viewportSource, /import \{ MinimapDock \}/);
   assert.doesNotMatch(viewportSource, /<MinimapDock/);
   assert.match(officeStageSource, /stageMode === "focused"/);
+  assert.match(officeStageSource, /<FocusedHandoffView/);
   assert.match(officeStageSource, /<AgentCharacterStage/);
+  assert.ok(
+    officeStageSource.indexOf("<FocusedHandoffView") <
+      officeStageSource.indexOf("<AgentCharacterStage"),
+    "the active handoff workbench must remain the primary focused surface",
+  );
   assert.match(characterStageSource, /data-agent-character-stage="true"/);
   assert.match(characterStageSource, /data-agent-character-card/);
   assert.match(officeStageSource, /viewMode="overview"/);
@@ -358,9 +364,10 @@ test("spatial lens focused mode renders the character stage instead of a floor v
   assert.doesNotMatch(officeStageSource, /viewMode="focused"/);
 });
 
-test("spatial lens focused mode keeps handoff signals inside the character stage", () => {
+test("spatial lens focused mode keeps the workbench authoritative and the character stage informative", () => {
   const officeStageSource = readDashboardSource("components/OfficeStage.tsx");
   const characterStageSource = readDashboardSource("components/AgentCharacterStage.tsx");
+  const workbenchSource = readSpatialLensSource("components/FocusedHandoffView.tsx");
   const characterModelSource = readDashboardSource("agent-character-stage-model.ts");
   const modelSource = readSpatialLensSource("model/focusedHandoffModel.ts");
   const nextActionSource = readSpatialLensSource("model/focusedNextAction.ts");
@@ -370,6 +377,9 @@ test("spatial lens focused mode keeps handoff signals inside the character stage
   const cssSource = readSpatialLensSource("styles/spatial-lens.module.css");
 
   assert.match(officeStageSource, /isSelected && entry\.mode === "focused" \? \(/);
+  assert.match(workbenchSource, /data-active-handoff-workbench="true"/);
+  assert.match(workbenchSource, /data-workbench-primary="active-handoff"/);
+  assert.match(workbenchSource, /model\.nextActionLabel/);
   assert.match(characterStageSource, /data-agent-character-stage="true"/);
   assert.match(characterStageSource, /model\.handoffLabel/);
   assert.match(characterStageSource, /model\.blockedLabel/);

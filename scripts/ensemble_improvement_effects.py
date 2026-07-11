@@ -7,7 +7,6 @@ from pathlib import Path
 from ensemble_agent_revisions import (
     AgentRevisionError,
     replay_agent_skill_revision,
-    workspace_lock,
 )
 from ensemble_episode_artifacts import json_hash, render_closure_digest
 from ensemble_episode_model import ARTIFACT_KIND, EpisodeClosureError, JsonObject
@@ -41,6 +40,7 @@ from ensemble_improvement_effect_model import (
     valid_utc_timestamp,
     validate_request,
 )
+from ensemble_workspace_lock import workspace_lock
 
 EFFECT_EVENT = "improvement.effect_observed"
 REVISION_PROPOSED = "improvement.revision_proposed"

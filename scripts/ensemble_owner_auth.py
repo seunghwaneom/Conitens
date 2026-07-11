@@ -73,10 +73,6 @@ def match_project_owner(owner_data: dict[str, Any] | None, current_user: dict[st
         return OwnerCheck(True, "UID_MATCH")
     if owner.get("username") == current_user.get("username") and owner.get("hostname") == current_user.get("hostname"):
         return OwnerCheck(True, "USERNAME_HOSTNAME_MATCH")
-    owner_email = owner.get("git_email")
-    current_email = current_user.get("git_email")
-    if isinstance(owner_email, str) and isinstance(current_email, str) and owner_email.lower() == current_email.lower():
-        return OwnerCheck(True, "GIT_EMAIL_MATCH")
     return OwnerCheck(
         False,
         "NOT_OWNER: Current user "

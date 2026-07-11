@@ -5,11 +5,9 @@ import hashlib
 import os
 import re
 import tempfile
-import threading
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator, Literal
+from typing import Any, Literal
 
 from ensemble_contracts import parse_simple_yaml
 from ensemble_episode_model import JsonObject
@@ -22,6 +20,7 @@ from ensemble_improvement_candidate_model import (
 from ensemble_improvement_candidates import show_improvement_candidate
 from ensemble_owner_auth import OwnerAuthorizationError, require_project_owner
 from ensemble_registry import SKILL_ALLOWED_FIELDS, SKILL_REQUIRED_FIELDS
+from ensemble_workspace_lock import workspace_lock
 
 REVISION_PROPOSED = "improvement.revision_proposed"
 REVISION_APPLIED = "improvement.revision_applied"
@@ -49,8 +48,6 @@ TOKEN_RE = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,119}$")
 PRIVATE_MARKERS = ("raw transcript", "provider prompt", "provider completion", "stdout", "stderr", "scratchpad")
 SECRET_RE = re.compile(r"(?i)(token\s*=|api[_-]?key\s*=|bearer\s+[a-z0-9._-]+|sk-[a-z0-9._-]+|ghp_[a-z0-9]+)")
 PATH_RE = re.compile(r"(?i)([a-z]:(?:\\+|/+)[^\s]+|\\\\[^\\\s]+\\[^\s]+|(^|\s)/(?!/)[^\s]+)")
-_LOCKS: dict[str, threading.Lock] = {}
-_LOCKS_GUARD = threading.Lock()
 REVISION_PAYLOAD_KEYS = frozenset(
     {
         "artifact_kind",
@@ -1083,34 +1080,3 @@ def _atomic_write(target: Target, text: str) -> None:
         except OSError:
             pass
         raise AgentRevisionError("revision materialization failed") from exc
-
-
-@contextmanager
-def workspace_lock(workspace: str | Path) -> Iterator[None]:
-    key = hashlib.sha256(str(Path(workspace).resolve()).encode("utf-8")).hexdigest()
-    with _LOCKS_GUARD:
-        lock = _LOCKS.setdefault(key, threading.Lock())
-    lock.acquire()
-    lock_path = Path(tempfile.gettempdir()) / f"conitens-revision-{key}.lock"
-    handle = lock_path.open("a+b")
-    try:
-        handle.seek(0, os.SEEK_END)
-        if handle.tell() == 0:
-            handle.write(b"\0")
-            handle.flush()
-        handle.seek(0)
-        if os.name == "nt":
-            import msvcrt
-
-            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
-            yield
-            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-        else:
-            import fcntl
-
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-            yield
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-    finally:
-        handle.close()
-        lock.release()
