@@ -4056,4 +4056,5 @@ Floor Overview remains the topology view, and Classic remains isolated.
 - [x] reconciled README and control-plane documentation without changing runtime authority
 - [x] completed integrated automated and manual verification
 - [x] fixed the review-discovered stale workspace draft race; dashboard now passes 155/155 and rebuilds
-- [ ] push the history-preserving merge commit and confirm PR mergeability
+- [x] created and independently verified the history-preserving two-parent merge commit
+- [ ] push the merge commit and confirm GitHub PR mergeability

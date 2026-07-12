@@ -2889,9 +2889,9 @@ Read this file before substantial work.
   boundaries. The PR workspace controller now composes through the thin
   `App.tsx` shell, while workspace selection and list-error behavior live in
   `OperatorWorkbenchScreen.tsx`.
-- The final branch update will use a two-parent merge commit so both public
-  histories remain reachable without force-pushing or regressing the `main`
-  architecture.
+- The verified integration commit uses the original PR head and current `main`
+  as its two parents, so both public histories remain reachable without a force
+  push or regression of the `main` architecture.
 - Forward remains quarantined and `default_runtime=legacy` is unchanged. This
   merge resolves repository integration only; it does not claim promotion.
 - Integrated verification passes Python 213/213, dashboard 155/155 and its
@@ -2902,3 +2902,6 @@ Read this file before substantial work.
   failure-first test reproduced it; route/detail identity is now checked at the
   resource, controller, command, and screen boundaries before any mutation is
   available.
+- Independent goal/scope and QA rechecks pass for the final merge graph, exact
+  reviewed tree identity, ancestry, and clean worktree. Remote publication and
+  GitHub mergeability confirmation are the only remaining delivery checks.

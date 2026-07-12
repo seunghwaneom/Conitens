@@ -2650,4 +2650,5 @@ schema migration; do not mix it into bridge boundary work.
 - [x] Preserve Forward quarantine and legacy runtime authority in merged documentation.
 - [x] Pass integrated Python, protocol, dashboard, and manual browser verification.
 - [x] Fix the review-discovered stale workspace draft race with failure-first coverage.
-- [ ] Publish the two-parent merge commit and confirm GitHub reports PR #33 mergeable.
+- [x] Create and independently verify the history-preserving two-parent merge commit.
+- [ ] Push the branch and confirm GitHub reports PR #33 mergeable.

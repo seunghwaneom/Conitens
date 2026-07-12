@@ -3521,8 +3521,8 @@
   After the extraction, the same behavior is owned by
   `OperatorWorkbenchScreen.tsx`, so the test now reads the actual owner rather
   than forcing a monolithic layout.
-- A two-parent merge commit can preserve both the public PR history and current
-  `main` while publishing the already verified integration tree as a
+- The verified two-parent merge commit preserves both the public PR history and
+  current `main` while publishing the reviewed integration tree as a
   fast-forward update to the PR branch.
 - Review found a real workspace route-transition race: the old detail draft could
   remain actionable after selecting a new workspace. Resources now clear stale

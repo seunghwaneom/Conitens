@@ -48,6 +48,10 @@ the broader cleanup record on `main`, not strictly patch-identical.
 
 ## Final gate
 
-Pending creation of the two-parent merge object. The final reviewer must verify
-both ancestry checks, tree identity, clean merge simulation, and branch
-fast-forwardability before publication.
+Verdict: PASS. Commit `7e9f623509e8d540293222eafe25c24c3bb545c4`
+has exactly two parents in the required order: original PR head
+`30130331b53613d5a14bb6c90410bf571a805eb4`, then current `origin/main`
+`7e629806fa9495f6a21b52e1f4f9f61f9943cbd0`. Both ancestry checks pass,
+its tree is exactly the reviewed integration tree
+`4e5867d4262d894dd1a26ceaf783bac6b652c538`, and the worktree is clean.
+Independent goal/scope and QA rechecks report no remaining local blocker.
