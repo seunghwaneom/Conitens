@@ -1,0 +1,39 @@
+PR #33 QA rerun record (2026-07-12)
+
+Surface: packages/dashboard
+Invocation: pnpm.cmd --filter @conitens/dashboard test
+Result before review fix: exit 0; 154 tests passed, 0 failed.
+
+Surface: packages/dashboard after stale-detail race fix
+Invocation: pnpm --filter @conitens/dashboard test
+Result: exit 0; 155 tests passed, 0 failed. The added test first failed by
+calling updateWorkspace for workspace-2 with workspace-1's draft, then passed
+after the route/detail identity guard landed.
+
+Surface: packages/dashboard production build after race fix
+Invocation: pnpm --filter @conitens/dashboard build
+Result: exit 0; TypeScript project build and Vite production build passed.
+Vite retained the existing >500 kB chunk warning.
+
+Surface: rebuilt workspace UI after race fix
+Invocation: Playwright CLI open #/workspaces; click Demo workspace; console error
+Result: route changed to #/workspaces/demo-workspace, selected state and detail
+remained visible, and the browser reported 0 errors and 0 warnings.
+
+Surface: packages/protocol
+Invocation: pnpm.cmd --filter @conitens/protocol test
+Result: exit 1; 847 tests passed, 4 failures. Failures are the documented
+agent-event registry/ownership baseline (the same 4 failures called out by
+the integration contract), with no additional failures.
+
+Surface: episode closure / Forward Python paths
+Invocation: python -m unittest tests.test_episode_closure
+tests.test_episode_closure_cli_security tests.test_forward_bridge
+tests.test_forward_runtime_mode
+Result: exit 0; Ran 73 tests in 61.479s; OK.
+
+Surface: git integration graph
+Invocation: git cat-file -p HEAD; git log --graph --oneline --decorate -12
+Result before final merge construction: HEAD=e477ceb has only parent a965340;
+graph is linear. This is the expected pre-merge integration tree. The final gate
+must verify both histories after the two-parent object is created.

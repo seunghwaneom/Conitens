@@ -4045,4 +4045,15 @@ Floor Overview remains the topology view, and Classic remains isolated.
 - [x] integrated validation: Python 119/119, dashboard 154/154, production build,
       and live Chrome Focused-mode hierarchy with zero console errors
 - [x] final security and code-quality review approved the shared lock and UI hardening
-- [ ] commit, push, and PR creation
+- [x] commit, push, and PR creation
+
+## PR #33 conflict integration - 2026-07-12
+
+- [x] created an isolated worktree from current `origin/main`
+- [x] replayed the five PR-specific commits and skipped cleanup history superseded by `main`
+- [x] resolved `App.tsx` by preserving the extracted shell and composing the workspace controller
+- [x] updated the extracted workbench screen and its source-ownership regression test
+- [x] reconciled README and control-plane documentation without changing runtime authority
+- [x] completed integrated automated and manual verification
+- [x] fixed the review-discovered stale workspace draft race; dashboard now passes 155/155 and rebuilds
+- [ ] push the history-preserving merge commit and confirm PR mergeability

@@ -10,6 +10,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
+    "@conitens/protocol": "workspace:*",
     "@dnd-kit/core": "^6.3.0",
     "@dnd-kit/utilities": "^3.2.0",
     "react": "^19.0.0",

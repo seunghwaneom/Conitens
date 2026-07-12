@@ -9,6 +9,10 @@ import { createOperatorWorkspaceCommandService } from "../src/features/workspace
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD_SRC = path.resolve(TEST_DIR, "../src");
 const APP_PATH = path.join(DASHBOARD_SRC, "App.tsx");
+const OPERATOR_WORKBENCH_SCREEN_PATH = path.join(
+  DASHBOARD_SRC,
+  "screens/OperatorWorkbenchScreen.tsx",
+);
 const WORKSPACE_CONTROLLER_PATH = path.join(
   DASHBOARD_SRC,
   "features/workspaces/use-operator-workspace-controller.ts",
@@ -81,7 +85,7 @@ test("workspace command service drives bridge, feedback, and refresh in runtime 
   const feedback = makeFeedback(events);
   const refresh = async (workspaceId) => events.push(`refresh:${workspaceId}`);
 
-  await service.submit({ config, route: workspaceRoute, draft: makeDraft(), refresh, feedback });
+  await service.submit({ config, route: workspaceRoute, loadedWorkspaceId: null, draft: makeDraft(), refresh, feedback });
   assert.deepEqual(events, [
     "mutation:loading",
     "mutation-error:null",
@@ -94,6 +98,7 @@ test("workspace command service drives bridge, feedback, and refresh in runtime 
   await service.quickStatus({
     config,
     route: detailRoute,
+    loadedWorkspaceId: "workspace-1",
     draft: makeDraft({ archiveNote: "approved rationale" }),
     status: "archived",
     refresh,
@@ -108,7 +113,7 @@ test("workspace command service drives bridge, feedback, and refresh in runtime 
   ]);
 
   events.length = 0;
-  await service.detachTask({ config, route: detailRoute, draft: makeDraft(), taskId: "task-1", refresh, feedback });
+  await service.detachTask({ config, route: detailRoute, loadedWorkspaceId: "workspace-1", draft: makeDraft(), taskId: "task-1", refresh, feedback });
   assert.deepEqual(events, [
     "task:loading",
     "task-error:null",
@@ -123,6 +128,7 @@ test("workspace command service drives bridge, feedback, and refresh in runtime 
   await service.archiveTask({
     config,
     route: detailRoute,
+    loadedWorkspaceId: "workspace-1",
     draft: makeDraft({ archiveNote: "verified blocker resolution" }),
     taskId: "task-1",
     refresh,
@@ -152,6 +158,7 @@ test("workspace command service blocks archive mutation before the bridge", asyn
   await service.quickStatus({
     config,
     route: detailRoute,
+    loadedWorkspaceId: "workspace-1",
     draft: makeDraft(),
     status: "archived",
     refresh: async () => events.push("unexpected-refresh"),
@@ -161,6 +168,31 @@ test("workspace command service blocks archive mutation before the bridge", asyn
   assert.deepEqual(events, [
     "mutation:error",
     "mutation-error:Workspace archive rationale is required.",
+  ]);
+});
+
+test("workspace command service rejects a stale detail draft after route selection changes", async () => {
+  const events = [];
+  const gateway = {
+    createWorkspace: async () => events.push("unexpected-create"),
+    updateWorkspace: async () => events.push("unexpected-update"),
+    detachTaskWorkspace: async () => events.push("unexpected-detach"),
+    archiveTask: async () => events.push("unexpected-archive"),
+  };
+  const service = createOperatorWorkspaceCommandService(gateway);
+
+  await service.submit({
+    config,
+    route: { ...detailRoute, workspaceId: "workspace-2" },
+    loadedWorkspaceId: "workspace-1",
+    draft: makeDraft({ label: "Workspace one draft" }),
+    refresh: async () => events.push("unexpected-refresh"),
+    feedback: makeFeedback(events),
+  });
+
+  assert.deepEqual(events, [
+    "mutation:error",
+    "mutation-error:Workspace detail is still loading.",
   ]);
 });
 
@@ -187,20 +219,20 @@ test("App composes one feature-owned workspace controller", () => {
 });
 
 test("workspace list errors and selection remain operator-legible", () => {
-  const appSource = readSource(APP_PATH);
+  const screenSource = readSource(OPERATOR_WORKBENCH_SCREEN_PATH);
 
   assert.match(
-    appSource,
+    screenSource,
     /error=\{route\.screen === "workspaces" \? workspacesError : workspaceDetailError\}/,
     "the list route must render the workspace-list error instead of an empty detail error",
   );
   assert.match(
-    appSource,
+    screenSource,
     /aria-pressed=\{isWorkspaceSelected\}/,
     "the workspace rail must announce its selected item",
   );
   assert.match(
-    appSource,
+    screenSource,
     /forward-run-item\$\{isWorkspaceSelected \? " active" : ""\}/,
     "the visual and semantic selected states must share one predicate",
   );

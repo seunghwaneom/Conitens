@@ -3508,3 +3508,23 @@
   tests now cover each repaired boundary.
 - Git-config email is mutable repository/user metadata and cannot authorize owner
   actions; only UID or the recorded username-plus-hostname identity may authorize.
+
+## PR #33 conflict integration findings - 2026-07-12
+
+- The apparent 39-path merge conflict overstated the semantic conflict because
+  cleanup intent on the PR branch was superseded by a broader cleanup record on
+  `main`.
+- Choosing the PR side wholesale for `packages/dashboard/src/App.tsx` would have
+  deleted the screen and data-hook extraction landed on `main`. The safe merge
+  keeps the thin shell and wires the PR controller into that existing boundary.
+- The PR regression test assumed workspace list markup remained in `App.tsx`.
+  After the extraction, the same behavior is owned by
+  `OperatorWorkbenchScreen.tsx`, so the test now reads the actual owner rather
+  than forcing a monolithic layout.
+- A two-parent merge commit can preserve both the public PR history and current
+  `main` while publishing the already verified integration tree as a
+  fast-forward update to the PR branch.
+- Review found a real workspace route-transition race: the old detail draft could
+  remain actionable after selecting a new workspace. Resources now clear stale
+  projections, the controller and command boundary require exact route/detail ID
+  identity, and the screen hides mutations until the new detail is ready.

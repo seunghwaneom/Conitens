@@ -85,13 +85,15 @@ test("isValidTransition rejects invalid state changes", () => {
   assert.ok(!isValidTransition("assigned", "done"));
 });
 
-test("isValidTransition allows cancellation from most states", () => {
+test("isValidTransition allows cancellation from active/pending states", () => {
   assert.ok(isValidTransition("draft", "cancelled"));
   assert.ok(isValidTransition("planned", "cancelled"));
   assert.ok(isValidTransition("assigned", "cancelled"));
   assert.ok(isValidTransition("active", "cancelled"));
   assert.ok(isValidTransition("blocked", "cancelled"));
-  assert.ok(isValidTransition("failed", "cancelled"));
+  // Canonical protocol machine: a failed task can only be reassigned, not
+  // cancelled directly (RFC-1.0.1 §5, failed -> [assigned]).
+  assert.ok(!isValidTransition("failed", "cancelled"));
 });
 
 test("isValidTransition returns false for unknown states", () => {

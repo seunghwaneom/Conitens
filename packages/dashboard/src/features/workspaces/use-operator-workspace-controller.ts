@@ -54,18 +54,21 @@ export function useOperatorWorkspaceController({
   const [workspaceTaskActionError, setWorkspaceTaskActionError] = useState<string | null>(null);
   const [workspaceTaskActionMessage, setWorkspaceTaskActionMessage] = useState<string | null>(null);
   const [workspaceDraft, setWorkspaceDraft] = useState<OperatorWorkspaceDraft>(() => emptyWorkspaceDraft());
+  const workspaceDetailReady = route.screen === "workspace-detail"
+    && Boolean(route.workspaceId)
+    && resources.workspaceDetail?.workspaceId === route.workspaceId;
 
   const workspaceQuickStatusActions = useMemo(
     () => (
-      resources.workspaceDetail
+      workspaceDetailReady && resources.workspaceDetail
         ? getOperatorWorkspaceQuickStatusActions(resources.workspaceDetail.status, workspaceDraft)
         : []
     ),
-    [resources.workspaceDetail, workspaceDraft],
+    [resources.workspaceDetail, workspaceDetailReady, workspaceDraft],
   );
 
   useEffect(() => {
-    if (route.screen === "workspace-detail" && resources.workspaceDetail) {
+    if (workspaceDetailReady && resources.workspaceDetail) {
       setWorkspaceDraft({
         label: resources.workspaceDetail.label,
         path: resources.workspaceDetail.path,
@@ -82,12 +85,12 @@ export function useOperatorWorkspaceController({
       setWorkspaceMutationError(null);
       return;
     }
-    if (route.screen === "workspaces") {
+    if (route.screen === "workspaces" || route.screen === "workspace-detail") {
       setWorkspaceDraft(emptyWorkspaceDraft());
       setWorkspaceMutationState("idle");
       setWorkspaceMutationError(null);
     }
-  }, [route.screen, resources.workspaceDetail]);
+  }, [route.screen, route.workspaceId, resources.workspaceDetail, workspaceDetailReady]);
 
   const feedback = {
     setMutationState: setWorkspaceMutationState,
@@ -101,6 +104,7 @@ export function useOperatorWorkspaceController({
     await operatorWorkspaceCommandService.submit({
       config,
       route,
+      loadedWorkspaceId: resources.workspaceDetail?.workspaceId ?? null,
       draft: workspaceDraft,
       refresh: resources.refreshWorkspacesAndSelection,
       feedback,
@@ -111,6 +115,7 @@ export function useOperatorWorkspaceController({
     await operatorWorkspaceCommandService.quickStatus({
       config,
       route,
+      loadedWorkspaceId: resources.workspaceDetail?.workspaceId ?? null,
       draft: workspaceDraft,
       status,
       refresh: resources.refreshWorkspacesAndSelection,
@@ -122,6 +127,7 @@ export function useOperatorWorkspaceController({
     await operatorWorkspaceCommandService.detachTask({
       config,
       route,
+      loadedWorkspaceId: resources.workspaceDetail?.workspaceId ?? null,
       draft: workspaceDraft,
       taskId,
       refresh: resources.refreshWorkspacesAndSelection,
@@ -133,6 +139,7 @@ export function useOperatorWorkspaceController({
     await operatorWorkspaceCommandService.archiveTask({
       config,
       route,
+      loadedWorkspaceId: resources.workspaceDetail?.workspaceId ?? null,
       draft: workspaceDraft,
       taskId,
       refresh: resources.refreshWorkspacesAndSelection,
@@ -143,6 +150,7 @@ export function useOperatorWorkspaceController({
   return {
     operatorWorkspaces: resources.operatorWorkspaces,
     workspaceDetail: resources.workspaceDetail,
+    workspaceDetailReady,
     workspaceLinkedTasks: resources.workspaceLinkedTasks,
     workspacesState: resources.workspacesState,
     workspaceDetailState: resources.workspaceDetailState,

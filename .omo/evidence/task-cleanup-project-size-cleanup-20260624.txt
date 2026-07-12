@@ -1,0 +1,66 @@
+﻿PROJECT SIZE CLEANUP EXECUTION 2026-06-24T22:46:19.0762191+09:00
+branch=codex/push-local-cleanup-20260624 head=7a8dc27
+ARCHIVED dependencies-build-cache.tar.gz: node_modules, packages\command-center\node_modules, packages\core\node_modules, packages\dashboard\node_modules, packages\protocol\node_modules, packages\tui\node_modules, packages\command-center\dist, packages\core\dist, packages\dashboard\dist, packages\protocol\dist, packages\tui\dist, packages\command-center\tsconfig.tsbuildinfo, packages\dashboard\tsconfig.tsbuildinfo
+removed	node_modules	bytes=987928148	files=28846	label=dependencies-build-cache
+removed	packages\command-center\node_modules	bytes=17414301	files=232	label=dependencies-build-cache
+removed	packages\core\node_modules	bytes=0	files=0	label=dependencies-build-cache
+removed	packages\dashboard\node_modules	bytes=2790503	files=17	label=dependencies-build-cache
+removed	packages\protocol\node_modules	bytes=514	files=1	label=dependencies-build-cache
+removed	packages\tui\node_modules	bytes=0	files=0	label=dependencies-build-cache
+removed	packages\command-center\dist	bytes=2390533	files=30	label=dependencies-build-cache
+removed	packages\core\dist	bytes=1018088	files=268	label=dependencies-build-cache
+removed	packages\dashboard\dist	bytes=5579515	files=26	label=dependencies-build-cache
+removed	packages\protocol\dist	bytes=661050	files=88	label=dependencies-build-cache
+removed	packages\tui\dist	bytes=12654	files=24	label=dependencies-build-cache
+removed	packages\command-center\tsconfig.tsbuildinfo	bytes=8268	files=1	label=dependencies-build-cache
+PROJECT SIZE CLEANUP RESUME 2026-06-24T22:48:18.3248711+09:00
+branch=codex/push-local-cleanup-20260624 head=7a8dc27
+SKIP archive dependencies-build-cache.tar.gz - no existing paths
+PROJECT SIZE CLEANUP RESUME 2026-06-24T22:49:18.1349127+09:00
+branch=codex/push-local-cleanup-20260624 head=7a8dc27
+SKIP archive dependencies-build-cache.tar.gz - no existing paths
+PROJECT SIZE CLEANUP RESUME 2026-06-24T22:49:43.7506282+09:00
+branch=codex/push-local-cleanup-20260624 head=7a8dc27
+SKIP archive dependencies-build-cache.tar.gz - no existing paths
+removed_invalid_reparse	.omx\tmp\Program-reparsepoint-backup	label=omx-temp-workspaces
+ARCHIVED omx-temp-workspaces.tar.gz: .omx\tmp, .omx\tmp-pr15, .omx\tmp-pr17, .omx\tmp-playwright, .omx\team
+removed	.omx\tmp	bytes=438279610	files=10898	label=omx-temp-workspaces
+removed	.omx\tmp-pr15	bytes=21046213	files=928	label=omx-temp-workspaces
+removed	.omx\tmp-pr17	bytes=23804566	files=955	label=omx-temp-workspaces
+removed	.omx\tmp-playwright	bytes=13329247	files=569	label=omx-temp-workspaces
+removed	.omx\team	bytes=24070752	files=1542	label=omx-temp-workspaces
+PROJECT SIZE CLEANUP RESUME 2026-06-24T22:52:10.8297226+09:00
+branch=codex/push-local-cleanup-20260624 head=7a8dc27
+SKIP archive dependencies-build-cache.tar.gz - no existing paths
+SKIP archive omx-temp-workspaces.tar.gz - no existing paths
+PROJECT SIZE CLEANUP RESUME 2026-06-24T22:52:21.7775866+09:00
+branch=codex/push-local-cleanup-20260624 head=7a8dc27
+SKIP archive dependencies-build-cache.tar.gz - no existing paths
+SKIP archive omx-temp-workspaces.tar.gz - no existing paths
+removed_research_reparse	RESEARCH\agent-systems-comparison-2026-06-06\sources\repos\cli-jaw\bin\cli-jaw	label=research-sources-repos
+removed_research_reparse	RESEARCH\agent-systems-comparison-2026-06-06\sources\repos\cli-jaw\bin\jaw	label=research-sources-repos
+removed_research_reparse	RESEARCH\agent-systems-comparison-2026-06-06\sources\repos\maestro\AGENTS.md	label=research-sources-repos
+ARCHIVED research-sources-repos.tar.gz: RESEARCH\agent-systems-comparison-2026-06-06\sources\repos
+removed	RESEARCH\agent-systems-comparison-2026-06-06\sources\repos	bytes=416710885	files=8719	label=research-sources-repos
+ARCHIVED output-generated-evidence.tar.gz: output
+removed	output	bytes=71485348	files=453	label=output-generated-evidence
+KEEP .codegraph because daemon pid is live
+PROJECT SIZE CLEANUP RESUME 2026-06-24T22:53:13.4871955+09:00
+branch=codex/push-local-cleanup-20260624 head=7a8dc27
+SKIP archive dependencies-build-cache.tar.gz - no existing paths
+SKIP archive omx-temp-workspaces.tar.gz - no existing paths
+SKIP archive research-sources-repos.tar.gz - no existing paths
+SKIP archive output-generated-evidence.tar.gz - no existing paths
+KEEP .codegraph because daemon pid is live
+ARCHIVED tool-caches.tar.gz: .omc, packages\command-center\.omc, packages\dashboard\.omc, packages\core\.omc, scripts\.omc
+removed	.omc	bytes=311086	files=171	label=tool-caches
+removed	packages\command-center\.omc	bytes=6080	files=7	label=tool-caches
+removed	packages\dashboard\.omc	bytes=25702	files=21	label=tool-caches
+removed	packages\core\.omc	bytes=217	files=2	label=tool-caches
+removed	scripts\.omc	bytes=2277	files=4	label=tool-caches
+ARCHIVED omo-stale-dev-logs.tar.gz: .omo\evidence\floor-overview-oss-ux-dev-server.log, .omo\evidence\floor-overview-oss-ux-dev-server.pid, .omo\evidence\task-7-dev-server.log, .omo\evidence\task-7-dev-server.pid
+removed	.omo\evidence\floor-overview-oss-ux-dev-server.log	bytes=478	files=1	label=omo-stale-dev-logs
+removed	.omo\evidence\floor-overview-oss-ux-dev-server.pid	bytes=6	files=1	label=omo-stale-dev-logs
+removed	.omo\evidence\task-7-dev-server.log	bytes=863982	files=1	label=omo-stale-dev-logs
+removed	.omo\evidence\task-7-dev-server.pid	bytes=6	files=1	label=omo-stale-dev-logs
+cleanup execution complete

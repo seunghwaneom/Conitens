@@ -2876,3 +2876,29 @@ Read this file before substantial work.
   `.omo/evidence/wave3-forward-bridge-review-work.md`, with independent decisions
   in `.omo/evidence/wave3-forward-bridge-settled-code-review.md` and
   `.omo/evidence/wave3-forward-bridge-refactor-gate-review.md`.
+
+## Latest Update: PR #33 Conflict Integration
+
+- Timestamp: `2026-07-12`
+- PR #33 (`codex/episode-closure-attempt -> main`) diverged from `main` before
+  the dashboard thin-shell extraction and repository identity cleanup landed.
+- The integration is built from current `main` by replaying only the five
+  PR-specific changes. Cleanup history superseded by `main` is intentionally not
+  replayed.
+- `main` remains authoritative for the extracted dashboard screen and hook
+  boundaries. The PR workspace controller now composes through the thin
+  `App.tsx` shell, while workspace selection and list-error behavior live in
+  `OperatorWorkbenchScreen.tsx`.
+- The final branch update will use a two-parent merge commit so both public
+  histories remain reachable without force-pushing or regressing the `main`
+  architecture.
+- Forward remains quarantined and `default_runtime=legacy` is unchanged. This
+  merge resolves repository integration only; it does not claim promotion.
+- Integrated verification passes Python 213/213, dashboard 155/155 and its
+  production build, protocol changed-slice/build checks, Python compile, diff
+  validation, and browser QA. The full protocol suite remains at its documented
+  847-pass/4-failure baseline.
+- Code review exposed a stale workspace draft race during A-to-B navigation. A
+  failure-first test reproduced it; route/detail identity is now checked at the
+  resource, controller, command, and screen boundaries before any mutation is
+  available.

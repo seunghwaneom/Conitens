@@ -42,6 +42,7 @@ interface OperatorWorkspaceCommandFeedback {
 interface OperatorWorkspaceCommandContext {
   readonly config: ForwardBridgeConfig;
   readonly route: ForwardRoute;
+  readonly loadedWorkspaceId: string | null;
   readonly draft: OperatorWorkspaceDraft;
   readonly refresh: (nextWorkspaceId?: string | null) => Promise<void>;
   readonly feedback: OperatorWorkspaceCommandFeedback;
@@ -59,10 +60,19 @@ function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function hasCurrentWorkspaceDetail(route: ForwardRoute, loadedWorkspaceId: string | null): boolean {
+  return route.screen === "workspace-detail" && Boolean(route.workspaceId) && route.workspaceId === loadedWorkspaceId;
+}
+
 export function createOperatorWorkspaceCommandService(gateway: OperatorWorkspaceCommandGateway) {
   return {
-    async submit({ config, route, draft, refresh, feedback }: OperatorWorkspaceCommandContext) {
+    async submit({ config, route, loadedWorkspaceId, draft, refresh, feedback }: OperatorWorkspaceCommandContext) {
       if (!config.token.trim()) return;
+      if (route.screen === "workspace-detail" && !hasCurrentWorkspaceDetail(route, loadedWorkspaceId)) {
+        feedback.setMutationState("error");
+        feedback.setMutationError("Workspace detail is still loading.");
+        return;
+      }
       if (operatorWorkspaceNeedsArchiveRationale(draft.status, draft)) {
         feedback.setMutationState("error");
         feedback.setMutationError("Workspace archive rationale is required.");
@@ -83,8 +93,13 @@ export function createOperatorWorkspaceCommandService(gateway: OperatorWorkspace
       }
     },
 
-    async quickStatus({ config, route, draft, status, refresh, feedback }: OperatorWorkspaceQuickStatusContext) {
+    async quickStatus({ config, route, loadedWorkspaceId, draft, status, refresh, feedback }: OperatorWorkspaceQuickStatusContext) {
       if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) return;
+      if (!hasCurrentWorkspaceDetail(route, loadedWorkspaceId)) {
+        feedback.setMutationState("error");
+        feedback.setMutationError("Workspace detail is still loading.");
+        return;
+      }
       if (operatorWorkspaceNeedsArchiveRationale(status, draft)) {
         feedback.setMutationState("error");
         feedback.setMutationError("Workspace archive rationale is required.");
@@ -103,8 +118,13 @@ export function createOperatorWorkspaceCommandService(gateway: OperatorWorkspace
       }
     },
 
-    async detachTask({ config, route, taskId, refresh, feedback }: OperatorWorkspaceTaskContext) {
+    async detachTask({ config, route, loadedWorkspaceId, taskId, refresh, feedback }: OperatorWorkspaceTaskContext) {
       if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) return;
+      if (!hasCurrentWorkspaceDetail(route, loadedWorkspaceId)) {
+        feedback.setTaskActionState("error");
+        feedback.setTaskActionError("Workspace detail is still loading.");
+        return;
+      }
       try {
         feedback.setTaskActionState("loading");
         feedback.setTaskActionError(null);
@@ -119,8 +139,13 @@ export function createOperatorWorkspaceCommandService(gateway: OperatorWorkspace
       }
     },
 
-    async archiveTask({ config, route, draft, taskId, refresh, feedback }: OperatorWorkspaceTaskContext) {
+    async archiveTask({ config, route, loadedWorkspaceId, draft, taskId, refresh, feedback }: OperatorWorkspaceTaskContext) {
       if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) return;
+      if (!hasCurrentWorkspaceDetail(route, loadedWorkspaceId)) {
+        feedback.setTaskActionState("error");
+        feedback.setTaskActionError("Workspace detail is still loading.");
+        return;
+      }
       const rationale = draft.archiveNote.trim() || `Workspace archive blocker resolution for ${route.workspaceId}.`;
       try {
         feedback.setTaskActionState("loading");

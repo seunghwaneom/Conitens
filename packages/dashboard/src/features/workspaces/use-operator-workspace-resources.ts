@@ -88,6 +88,7 @@ export function useOperatorWorkspaceResources({
       return;
     }
     let cancelled = false;
+    setSelectedWorkspace(null);
     setWorkspaceDetailState("loading");
     setWorkspaceDetailError(null);
     forwardGetOperatorWorkspace(config, route.workspaceId)
@@ -115,6 +116,7 @@ export function useOperatorWorkspaceResources({
       return;
     }
     let cancelled = false;
+    setWorkspaceLinkedTasks(null);
     setWorkspaceLinkedTasksState("loading");
     setWorkspaceLinkedTasksError(null);
     forwardGetOperatorTasks(config, { workspaceRef: route.workspaceId, includeArchived: true })

@@ -2641,3 +2641,13 @@ schema migration; do not mix it into bridge boundary work.
 - [x] Make `forward status` avoid creating `.conitens` paths on an empty workspace.
 - [x] Remove Git email as a project-owner authorization factor.
 - [x] Run integrated tests, build, and browser QA before final review and PR creation.
+
+## PR #33 conflict integration (2026-07-12)
+
+- [x] Identify cleanup history superseded by `main` and isolate the five PR-specific commits.
+- [x] Preserve `main`'s extracted dashboard shell while composing the PR workspace controller.
+- [x] Move workspace list selection and error semantics to the extracted workbench screen.
+- [x] Preserve Forward quarantine and legacy runtime authority in merged documentation.
+- [x] Pass integrated Python, protocol, dashboard, and manual browser verification.
+- [x] Fix the review-discovered stale workspace draft race with failure-first coverage.
+- [ ] Publish the two-parent merge commit and confirm GitHub reports PR #33 mergeable.
