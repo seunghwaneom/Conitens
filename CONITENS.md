@@ -67,7 +67,7 @@ Current control-plane decision:
 - canonical agent/skill/gate metadata = `.agent/agents/`, `.agent/skills/`, `.agent/policies/`
 - lowercase canonical extension paths = `.notes/workflows/`, `.notes/events/`, `.notes/meetings/`, `.notes/office/`, `.notes/artifacts/`, `.notes/handoffs/`, `.notes/gates/`
 - legacy uppercase aliases remain readable and writable during the transition
-- current forward operator UI = `packages/dashboard`, backed by the read-only Forward Bridge
+- current forward operator UI = `packages/dashboard`, backed by the quarantined Forward Bridge sidecar
 - reference/parity surfaces only = remaining `packages/*`, RFC-era `.conitens` material, older roadmap documents
 
 See [docs/adr-0001-control-plane.md](docs/adr-0001-control-plane.md) and [docs/control-plane-compatibility.md](docs/control-plane-compatibility.md).
@@ -75,9 +75,15 @@ See [docs/adr-0001-control-plane.md](docs/adr-0001-control-plane.md) and [docs/c
 ### Forward Dashboard Surface
 
 `packages/dashboard` is the active browser-facing operator UI for the forward
-surface. It reads runtime projections through
+surface. It reads runtime projections and sends bounded authenticated operator
+commands through
 [scripts/ensemble_forward_bridge.py](scripts/ensemble_forward_bridge.py) and
 does not become the operational source of truth.
+
+Forward is quarantined, not promoted. The current gate assessment is:
+gates 1, 6, and 7 contradicted, and gates 2, 3, 4, 5, and 8
+unproven. Current authority remains `scripts/ensemble.py` plus `.notes/`,
+`.agent/`, and the event ledger; `default_runtime=legacy` remains unchanged.
 
 The Office Preview route is maintained as an operator visualization:
 

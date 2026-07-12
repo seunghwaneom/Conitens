@@ -56,24 +56,81 @@ class ForwardRuntimeModeTests(unittest.TestCase):
             self.assertEqual(payload["entry_contract"]["default_runtime"], "legacy")
             self.assertIn("forward", payload["entry_contract"]["selector"])
             self.assertGreaterEqual(payload["runtime"]["schema_version"], 8)
+            self.assertEqual(payload["workspace_root"], ".")
+            self.assertNotIn(str(workspace.resolve()), result.stdout)
             self.assertTrue(payload["artifacts"]["loop_state_db"].endswith("loop_state.sqlite3"))
+            self.assertFalse(Path(payload["artifacts"]["loop_state_db"]).is_absolute())
             self.assertIn("run_state", payload["runtime"]["authoritative_state_owners"])
+            self.assertFalse((workspace / ".conitens").exists())
 
-    def test_forward_context_latest_keeps_runtime_and_repo_digests_separate(self) -> None:
+    def test_forward_context_latest_uses_structured_public_state_and_omits_repo_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            run_id = RunService(repository).create_run("RAW_REQUEST_DO_NOT_PUBLISH token=private")["run_id"]
+            repository.upsert_task_plan(
+                run_id=run_id,
+                current_plan="PRIVATE_PLAN_DO_NOT_PUBLISH",
+                objective="Public CLI objective",
+                steps=[{"title": "Public CLI step", "status": "in_progress", "notes": "PRIVATE_NOTE"}],
+                acceptance_criteria=["PRIVATE_ACCEPTANCE"],
+                owner="private-owner",
+            )
             runtime_context = workspace / ".conitens" / "context"
             runtime_context.mkdir(parents=True, exist_ok=True)
-            (runtime_context / "LATEST_CONTEXT.md").write_text("runtime-digest", encoding="utf-8")
+            (runtime_context / "LATEST_CONTEXT.md").write_text("RUNTIME_RAW_DO_NOT_PUBLISH", encoding="utf-8")
             repo_context = workspace / ".vibe" / "context"
             repo_context.mkdir(parents=True, exist_ok=True)
-            (repo_context / "LATEST_CONTEXT.md").write_text("repo-digest", encoding="utf-8")
+            (repo_context / "LATEST_CONTEXT.md").write_text("REPO_RAW_DO_NOT_PUBLISH", encoding="utf-8")
 
             result = self.run_cli("--workspace", str(workspace), "forward", "context-latest", "--format", "json")
             payload = json.loads(result.stdout)
-            self.assertEqual(payload["runtime_latest"]["content"], "runtime-digest")
-            self.assertEqual(payload["repo_latest"]["content"], "repo-digest")
-            self.assertNotEqual(payload["runtime_latest"]["path"], payload["repo_latest"]["path"])
+            self.assertIn("Public CLI objective", payload["runtime_latest"]["content"])
+            self.assertIn("Public CLI step", payload["runtime_latest"]["content"])
+            self.assertIsNone(payload["repo_latest"])
+            self.assertFalse(Path(payload["runtime_latest"]["path"]).is_absolute())
+            self.assertNotIn(str(workspace.resolve()), result.stdout)
+            self.assertNotIn("RAW_REQUEST_DO_NOT_PUBLISH", result.stdout)
+            self.assertNotIn("PRIVATE_PLAN_DO_NOT_PUBLISH", result.stdout)
+            self.assertNotIn("RUNTIME_RAW_DO_NOT_PUBLISH", result.stdout)
+            self.assertNotIn("REPO_RAW_DO_NOT_PUBLISH", result.stdout)
+            self.assertNotIn("private-owner", result.stdout)
+
+    def test_forward_context_latest_json_is_safe_on_windows_legacy_stdout(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            workspace = Path(temp_dir)
+            repository = LoopStateRepository(workspace)
+            run_id = RunService(repository).create_run("private request")["run_id"]
+            repository.upsert_task_plan(
+                run_id=run_id,
+                current_plan="private plan",
+                objective="runtime\u2014digest \U0001f680",
+                steps=[],
+                acceptance_criteria=[],
+                owner="private-owner",
+            )
+            runtime_context = workspace / ".conitens" / "context"
+            runtime_context.mkdir(parents=True, exist_ok=True)
+            (runtime_context / "LATEST_CONTEXT.md").write_text(
+                "RAW_RUNTIME_MARKDOWN_DO_NOT_PUBLISH",
+                encoding="utf-8",
+            )
+
+            result = self.run_cli(
+                "--workspace",
+                str(workspace),
+                "forward",
+                "context-latest",
+                "--format",
+                "json",
+                check=False,
+                extra_env={"PYTHONIOENCODING": "cp949", "PYTHONUTF8": "0"},
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertIn("runtime\u2014digest \U0001f680", payload["runtime_latest"]["content"])
+            self.assertNotIn("RAW_RUNTIME_MARKDOWN_DO_NOT_PUBLISH", result.stdout)
 
     def test_forward_doctor_evidence_reports_cli_and_privacy_shape(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

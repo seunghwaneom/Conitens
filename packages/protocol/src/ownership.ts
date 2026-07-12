@@ -47,6 +47,7 @@ export const REDUCERS: readonly ReducerDescriptor[] = [
     ownedFiles: ["handoffs/*.md"],
     inputEvents: [
       "handoff.requested", "handoff.accepted",
+      "handoff.started", "handoff.blocked",
       "handoff.rejected", "handoff.completed",
     ],
     readsFrom: ["tasks/*.md"],

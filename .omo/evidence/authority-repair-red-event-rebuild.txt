@@ -1,0 +1,24 @@
+Conitens authority repair — Wave 1 event/rebuild RED
+Date: 2026-07-10
+Command: python -m unittest tests.test_event_authority
+Exit code: 1
+Result: Ran 3 tests in 1.170s; failures=2.
+
+Failure 1:
+test_append_event_uses_canonical_alias_id_path_and_redaction
+AssertionError: Windows path payload still contained local username `alice` in
+`C:\\Users\\alice\\repo\\secret.txt`; token redaction applied but the Windows
+path pattern did not match the runtime string representation.
+
+Failure 2:
+test_rebuild_all_is_deterministic_and_overwrites_stale_projection
+AssertionError: repeated rebuild changed projected `updated_at` from
+2026-07-10T02:05:58Z to 2026-07-10T02:05:59Z even though the event fixture was
+identical.
+
+Passing characterization:
+forbidden provider/harness raw fields raised before either canonical or legacy
+event JSONL changed.
+
+Interpretation: production code has not yet been edited. These failures prove
+the path-redaction and deterministic-replay gaps targeted by Wave 1.

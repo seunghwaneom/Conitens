@@ -1,14 +1,14 @@
-import React, { useRef, useEffect } from "react";
+import React from "react";
 import type { AgentOfficeProfile } from "../agent-profiles.js";
-import { drawPixelAvatar } from "../pixel-canvas-avatar.js";
-import type { OfficeAvatarFacing, OfficeAvatarPose } from "../office-avatar-sprites.js";
+import {
+  resolveOfficeAvatarSprite,
+  type OfficeAvatarFacing,
+  type OfficeAvatarPose,
+} from "../office-avatar-sprites.js";
+import type { AgentMotionProfile } from "../agent-sprite-manifest.generated.js";
 import stageStyles from "../office-stage.module.css";
 
-const AVATAR_SCALE = 4;
-const AVATAR_W = 24;
-const AVATAR_H = 32;
-const AVATAR_DISPLAY_W = 32;
-const AVATAR_DISPLAY_H = 42;
+const DEFAULT_SPRITE_DISPLAY_SCALE = 2;
 
 export function OfficeAvatar({
   profile,
@@ -16,24 +16,19 @@ export function OfficeAvatar({
   selected = false,
   pose,
   facing,
+  motionProfile,
+  displayScale = DEFAULT_SPRITE_DISPLAY_SCALE,
 }: {
   profile: AgentOfficeProfile;
   label: string;
   selected?: boolean;
   pose?: OfficeAvatarPose;
   facing?: OfficeAvatarFacing;
+  motionProfile?: AgentMotionProfile;
+  displayScale?: 2 | 3 | 4;
 }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.imageSmoothingEnabled = false;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawPixelAvatar(ctx, profile.role, AVATAR_SCALE);
-  }, [profile.role]);
+  const sprite = resolveOfficeAvatarSprite({ role: profile.role, pose, facing });
+  const activeMotionProfile = motionProfile ?? sprite.motionProfile;
 
   return (
     <span
@@ -41,20 +36,38 @@ export function OfficeAvatar({
         stageStyles["office-pixel-avatar"],
         selected ? stageStyles.selected : "",
       ].filter(Boolean).join(" ")}
-      style={{ "--office-accent": profile.accent } as React.CSSProperties}
+      data-agent-avatar-source="sprite-gen"
+      data-agent-role={profile.role}
+      data-motion-profile={activeMotionProfile}
+      style={
+        {
+          "--office-accent": profile.accent,
+          "--agent-cycle-duration": `${sprite.cycleSeconds.toFixed(3)}s`,
+          "--agent-frame-count": sprite.frames.length,
+          "--agent-frame-width": `${sprite.frameWidth * displayScale}px`,
+          "--agent-frame-height": `${sprite.frameHeight * displayScale}px`,
+          "--agent-base-transform": sprite.transform ?? "translateX(0)",
+        } as React.CSSProperties
+      }
       title={`${label} / ${profile.archetype}`}
     >
-      <canvas
-        ref={canvasRef}
-        width={AVATAR_W * AVATAR_SCALE}
-        height={AVATAR_H * AVATAR_SCALE}
-        style={{
-          width: `${AVATAR_DISPLAY_W}px`,
-          height: `${AVATAR_DISPLAY_H}px`,
-          imageRendering: "pixelated",
-        }}
-        aria-hidden="true"
-      />
+      <span className={stageStyles["agent-sprite-frame-stack"]} aria-hidden="true">
+        {sprite.frames.map((frame, index) => (
+          <span
+            key={`${frame.x}-${frame.y}-${index}`}
+            className={stageStyles["agent-sprite-frame"]}
+            style={
+              {
+                "--agent-frame-index": index,
+                animationDelay: `${-(sprite.cycleSeconds / sprite.frames.length) * index}s`,
+                backgroundImage: sprite.backgroundImage,
+                backgroundPosition: `-${frame.x * displayScale}px -${frame.y * displayScale}px`,
+                backgroundSize: `${sprite.sheetWidth * displayScale}px ${sprite.sheetHeight * displayScale}px`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </span>
       <span className={stageStyles["office-pixel-mark"]}>{profile.mark}</span>
     </span>
   );

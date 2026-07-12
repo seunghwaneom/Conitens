@@ -37,14 +37,16 @@ export function isTerminal(state: TaskState): boolean {
 // ---------------------------------------------------------------------------
 
 export const HANDOFF_STATES = [
-  "requested", "accepted", "rejected", "completed",
+  "requested", "accepted", "started", "blocked", "rejected", "completed",
 ] as const;
 
 export type HandoffState = (typeof HANDOFF_STATES)[number];
 
 export const VALID_HANDOFF_TRANSITIONS: Readonly<Record<HandoffState, readonly HandoffState[]>> = {
-  requested: ["accepted", "rejected"],
-  accepted:  ["completed"],
+  requested: ["accepted", "started", "rejected", "completed"],
+  accepted:  ["started", "blocked", "rejected", "completed"],
+  started:   ["blocked", "rejected", "completed"],
+  blocked:   ["started", "rejected", "completed"],
   rejected:  [],
   completed: [],
 };

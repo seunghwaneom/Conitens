@@ -4,6 +4,7 @@ import {
   type OperatorTaskDraft,
   type OperatorTaskWorkspaceOption,
 } from "./components/OperatorTaskEditorPanel.js";
+import { useOperatorWorkspaceController } from "./features/workspaces/use-operator-workspace-controller.js";
 import { useForwardStream } from "./hooks/use-forward-stream.js";
 import {
   useOperatorAgentsData,
@@ -11,7 +12,6 @@ import {
   useOperatorSummaryData,
   useOperatorWakeReadinessData,
   useOperatorTaskReconcileData,
-  useOperatorWorkspaceLinkedTasksData,
   useRunsData,
   type LoadState,
 } from "./hooks/use-operator-screen-data.js";
@@ -19,24 +19,17 @@ import { useRunDetailData } from "./hooks/use-run-detail-data.js";
 import {
   useOperatorTasksData,
   useOperatorTaskDetailData,
-  useOperatorWorkspacesData,
-  useOperatorWorkspaceDetailData,
 } from "./hooks/use-operator-mutable-data.js";
 import { toErrorMessage } from "./utils.js";
 import {
   forwardArchiveOperatorTask,
   forwardCreateOperatorTask,
-  forwardCreateOperatorWorkspace,
-  forwardDetachOperatorTaskWorkspace,
   forwardDeleteOperatorTask,
   forwardGetOperatorTask,
   forwardGetOperatorTasks,
-  forwardGetOperatorWorkspace,
-  forwardGetOperatorWorkspaces,
   forwardRequestOperatorTaskApproval,
   forwardRestoreOperatorTask,
   forwardUpdateOperatorTask,
-  forwardUpdateOperatorWorkspace,
   persistBridgeConfig,
   persistSavedTaskFilterPresets,
   persistTaskFilterState,
@@ -51,8 +44,6 @@ import {
   type ForwardOperatorTaskReconcilePreviewResponse,
   type ForwardOperatorTasksResponse,
   type ForwardOperatorWakeReadinessResponse,
-  type ForwardOperatorWorkspaceDetailResponse,
-  type ForwardOperatorWorkspacesResponse,
   type ForwardOperatorSummaryResponse,
   type ForwardReplayResponse,
   type ForwardRoomTimelineResponse,
@@ -69,13 +60,7 @@ import { toOperatorTaskReconcilePreview } from "./operator-reconciler-model.js";
 import { toOperatorSummaryViewModel } from "./operator-summary-model.js";
 import { toOperatorTaskDetail, toOperatorTaskListItems } from "./operator-tasks-model.js";
 import { toOperatorWakeReadinessViewModel } from "./operator-wake-readiness-model.js";
-import {
-  buildOperatorWorkspaceMutationBody,
-  getOperatorWorkspaceQuickStatusActions,
-  operatorWorkspaceNeedsArchiveRationale,
-  type OperatorWorkspaceDraft,
-} from "./operator-workspace-actions.js";
-import { toOperatorWorkspaceDetail, toOperatorWorkspaceListItems } from "./operator-workspaces-model.js";
+import { toOperatorWorkspaceListItems } from "./operator-workspaces-model.js";
 import {
   extractRoomOptions,
   summarizeFindingsDocument,
@@ -110,8 +95,6 @@ export function App() {
   const initialTaskFilterState = readInitialTaskFilterState();
   const [config, setConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
   const [draftConfig, setDraftConfig] = useState<ForwardBridgeConfig>(() => readInitialBridgeConfig());
-  const [workspaceMutationState, setWorkspaceMutationState] = useState<LoadState>("idle");
-  const [workspaceTaskActionState, setWorkspaceTaskActionState] = useState<LoadState>("idle");
   const [taskMutationState, setTaskMutationState] = useState<LoadState>("idle");
   const [taskArchiveState, setTaskArchiveState] = useState<LoadState>("idle");
   const [taskDeleteState, setTaskDeleteState] = useState<LoadState>("idle");
@@ -127,9 +110,6 @@ export function App() {
   const [taskArchiveRationale, setTaskArchiveRationale] = useState("");
   const [taskBulkArchiveRationale, setTaskBulkArchiveRationale] = useState("");
   const [taskApprovalRationale, setTaskApprovalRationale] = useState("");
-  const [workspaceMutationError, setWorkspaceMutationError] = useState<string | null>(null);
-  const [workspaceTaskActionError, setWorkspaceTaskActionError] = useState<string | null>(null);
-  const [workspaceTaskActionMessage, setWorkspaceTaskActionMessage] = useState<string | null>(null);
   const [taskMutationError, setTaskMutationError] = useState<string | null>(null);
   const [taskArchiveError, setTaskArchiveError] = useState<string | null>(null);
   const [taskDeleteError, setTaskDeleteError] = useState<string | null>(null);
@@ -155,19 +135,38 @@ export function App() {
     acceptance: "",
     workspaceRef: "",
   });
-  const [workspaceDraft, setWorkspaceDraft] = useState<OperatorWorkspaceDraft>({
-    label: "",
-    path: "",
-    kind: "repo",
-    status: "active",
-    archiveNote: "",
-    ownerAgentId: "",
-    linkedRunId: "",
-    linkedIterationId: "",
-    taskIds: "",
-    notes: "",
-  });
   const isOfficePreview = route.screen === "office-preview";
+  const {
+    operatorWorkspaces,
+    workspaceDetail,
+    workspaceDetailReady,
+    workspaceLinkedTasks,
+    workspacesState,
+    workspaceDetailState,
+    workspaceMutationState,
+    workspaceLinkedTasksState,
+    workspaceTaskActionState,
+    workspacesError,
+    workspaceDetailError,
+    workspaceMutationError,
+    workspaceLinkedTasksError,
+    workspaceTaskActionError,
+    workspaceTaskActionMessage,
+    workspaceDraft,
+    setWorkspaceDraft,
+    workspaceQuickStatusActions,
+    openWorkspace,
+    handleWorkspaceSubmit,
+    handleWorkspaceQuickStatus,
+    handleWorkspaceDetachTask,
+    handleWorkspaceArchiveTask,
+  } = useOperatorWorkspaceController({
+    config,
+    route,
+    isOfficePreview,
+    liveRevision,
+    setLiveRevision,
+  });
   const { data: operatorTasks, state: tasksState, error: tasksError, setData: setOperatorTasks } =
     useOperatorTasksData({ config, isOfficePreview, screen: route.screen, liveRevision, taskFilterStatus, taskFilterOwner, taskIncludeArchived });
   const { data: selectedTask, state: taskDetailState, error: taskDetailError, setData: setSelectedTask } =
@@ -194,14 +193,8 @@ export function App() {
     useOperatorInboxData({ config, isOfficePreview, screen: route.screen, liveRevision });
   const { data: taskReconcilePreview, state: taskReconcileState, error: taskReconcileError } =
     useOperatorTaskReconcileData({ config, isOfficePreview, screen: route.screen, taskId: route.taskId, liveRevision });
-  const { data: workspaceLinkedTasks, state: workspaceLinkedTasksState, error: workspaceLinkedTasksError } =
-    useOperatorWorkspaceLinkedTasksData({ config, isOfficePreview, screen: route.screen, workspaceId: route.workspaceId ?? null, liveRevision });
   const { data: runs, state: runsState, error: runsError } =
     useRunsData({ config, isOfficePreview, liveRevision });
-  const { data: operatorWorkspaces, state: workspacesState, error: workspacesError, setData: setOperatorWorkspaces } =
-    useOperatorWorkspacesData({ config, isOfficePreview, screen: route.screen, liveRevision });
-  const { data: selectedWorkspace, state: workspaceDetailState, error: workspaceDetailError, setData: setSelectedWorkspace } =
-    useOperatorWorkspaceDetailData({ config, isOfficePreview, screen: route.screen, workspaceId: route.workspaceId ?? null });
   const {
     selectedRun,
     replay,
@@ -326,14 +319,6 @@ export function App() {
   const workspaceItems = useMemo(
     () => (operatorWorkspaces ? toOperatorWorkspaceListItems(operatorWorkspaces) : []),
     [operatorWorkspaces],
-  );
-  const workspaceDetail = useMemo(
-    () => (selectedWorkspace ? toOperatorWorkspaceDetail(selectedWorkspace) : null),
-    [selectedWorkspace],
-  );
-  const workspaceQuickStatusActions = useMemo(
-    () => (workspaceDetail ? getOperatorWorkspaceQuickStatusActions(workspaceDetail.status, workspaceDraft) : []),
-    [workspaceDetail, workspaceDraft],
   );
   const workspaceLinkedTaskItems = useMemo(
     () => (workspaceLinkedTasks?.tasks ?? []).map((task) => ({
@@ -552,42 +537,6 @@ export function App() {
   }, [route.screen, taskDetail]);
 
   useEffect(() => {
-    if (route.screen === "workspace-detail" && workspaceDetail) {
-      setWorkspaceDraft({
-        label: workspaceDetail.label,
-        path: workspaceDetail.path,
-        kind: workspaceDetail.kind,
-        status: workspaceDetail.status,
-        archiveNote: workspaceDetail.archiveNote ?? "",
-        ownerAgentId: workspaceDetail.owner === "unassigned" ? "" : workspaceDetail.owner,
-        linkedRunId: workspaceDetail.linkedRunId ?? "",
-        linkedIterationId: workspaceDetail.linkedIterationId ?? "",
-        taskIds: workspaceDetail.taskIds.join(", "),
-        notes: workspaceDetail.notes ?? "",
-      });
-      setWorkspaceMutationState("idle");
-      setWorkspaceMutationError(null);
-      return;
-    }
-    if (route.screen === "workspaces") {
-      setWorkspaceDraft({
-        label: "",
-        path: "",
-        kind: "repo",
-        status: "active",
-        archiveNote: "",
-        ownerAgentId: "",
-        linkedRunId: "",
-        linkedIterationId: "",
-        taskIds: "",
-        notes: "",
-      });
-      setWorkspaceMutationState("idle");
-      setWorkspaceMutationError(null);
-    }
-  }, [route.screen, workspaceDetail]);
-
-  useEffect(() => {
     if (route.screen !== "agents") {
       return;
     }
@@ -623,10 +572,6 @@ export function App() {
 
   const openTask = (taskId: string) => {
     window.location.hash = buildForwardRoute({ screen: "task-detail", runId: null, taskId, workspaceId: null, threadId: null, agentId: null });
-  };
-
-  const openWorkspace = (workspaceId: string) => {
-    window.location.hash = buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId, threadId: null, agentId: null });
   };
 
   function applySavedTaskFilterPreset(preset: SavedTaskFilterPreset) {
@@ -696,105 +641,6 @@ export function App() {
       window.location.hash = buildForwardRoute({ screen: "tasks", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
     }
     setLiveRevision((current) => current + 1);
-  }
-
-  async function refreshWorkspacesAndSelection(nextWorkspaceId: string | null = null) {
-    const workspacesPayload = await forwardGetOperatorWorkspaces(config);
-    setOperatorWorkspaces(workspacesPayload);
-    if (nextWorkspaceId) {
-      const workspacePayload = await forwardGetOperatorWorkspace(config, nextWorkspaceId);
-      setSelectedWorkspace(workspacePayload);
-      window.location.hash = buildForwardRoute({ screen: "workspace-detail", runId: null, taskId: null, workspaceId: nextWorkspaceId, threadId: null, agentId: null });
-    } else {
-      setSelectedWorkspace(null);
-      window.location.hash = buildForwardRoute({ screen: "workspaces", runId: null, taskId: null, workspaceId: null, threadId: null, agentId: null });
-    }
-    setLiveRevision((current) => current + 1);
-  }
-
-  async function handleWorkspaceSubmit() {
-    if (!config.token.trim()) {
-      return;
-    }
-    if (operatorWorkspaceNeedsArchiveRationale(workspaceDraft.status, workspaceDraft)) {
-      setWorkspaceMutationState("error");
-      setWorkspaceMutationError("Workspace archive rationale is required.");
-      return;
-    }
-    const body = buildOperatorWorkspaceMutationBody(workspaceDraft);
-    try {
-      setWorkspaceMutationState("loading");
-      setWorkspaceMutationError(null);
-      const result = route.screen === "workspace-detail" && route.workspaceId
-        ? await forwardUpdateOperatorWorkspace(config, route.workspaceId, body)
-        : await forwardCreateOperatorWorkspace(config, body);
-      await refreshWorkspacesAndSelection(result.workspace.workspace_id);
-      setWorkspaceMutationState("ready");
-    } catch (error) {
-      setWorkspaceMutationState("error");
-      setWorkspaceMutationError(toErrorMessage(error));
-    }
-  }
-
-  async function handleWorkspaceQuickStatus(status: string) {
-    if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      return;
-    }
-    if (operatorWorkspaceNeedsArchiveRationale(status, workspaceDraft)) {
-      setWorkspaceMutationState("error");
-      setWorkspaceMutationError("Workspace archive rationale is required.");
-      return;
-    }
-    const body = buildOperatorWorkspaceMutationBody(workspaceDraft, status);
-    try {
-      setWorkspaceMutationState("loading");
-      setWorkspaceMutationError(null);
-      const result = await forwardUpdateOperatorWorkspace(config, route.workspaceId, body);
-      await refreshWorkspacesAndSelection(result.workspace.workspace_id);
-      setWorkspaceMutationState("ready");
-    } catch (error) {
-      setWorkspaceMutationState("error");
-      setWorkspaceMutationError(toErrorMessage(error));
-    }
-  }
-
-  async function handleWorkspaceDetachTask(taskId: string) {
-    if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      return;
-    }
-    try {
-      setWorkspaceTaskActionState("loading");
-      setWorkspaceTaskActionError(null);
-      setWorkspaceTaskActionMessage(null);
-      await forwardDetachOperatorTaskWorkspace(config, taskId);
-      await refreshWorkspacesAndSelection(route.workspaceId);
-      setWorkspaceTaskActionState("ready");
-      setWorkspaceTaskActionMessage(`Detached ${taskId} from ${route.workspaceId}.`);
-    } catch (error) {
-      setWorkspaceTaskActionState("error");
-      setWorkspaceTaskActionError(toErrorMessage(error));
-    }
-  }
-
-  async function handleWorkspaceArchiveTask(taskId: string) {
-    if (!config.token.trim() || route.screen !== "workspace-detail" || !route.workspaceId) {
-      return;
-    }
-    const rationale =
-      workspaceDraft.archiveNote.trim() ||
-      `Workspace archive blocker resolution for ${route.workspaceId}.`;
-    try {
-      setWorkspaceTaskActionState("loading");
-      setWorkspaceTaskActionError(null);
-      setWorkspaceTaskActionMessage(null);
-      await forwardArchiveOperatorTask(config, taskId, { archive_note: rationale });
-      await refreshWorkspacesAndSelection(route.workspaceId);
-      setWorkspaceTaskActionState("ready");
-      setWorkspaceTaskActionMessage(`Archived linked task ${taskId}.`);
-    } catch (error) {
-      setWorkspaceTaskActionState("error");
-      setWorkspaceTaskActionError(toErrorMessage(error));
-    }
   }
 
   async function handleBulkTaskLifecycle(action: TaskBulkAction) {
@@ -1320,6 +1166,7 @@ export function App() {
           linkedWorkspaceOption={linkedWorkspaceOption}
           unresolvedTaskWorkspaceRef={unresolvedTaskWorkspaceRef}
           workspaceDetail={workspaceDetail}
+          workspaceDetailReady={workspaceDetailReady}
           workspaceDetailError={workspaceDetailError}
           workspaceMutationState={workspaceMutationState}
           workspaceMutationError={workspaceMutationError}

@@ -1,0 +1,25 @@
+Improvement effect observation PIN — 2026-07-10
+
+Adjacent Python authority/compatibility baseline
+- Command: python -m unittest tests.test_improvement_candidates tests.test_agent_revision_application tests.test_episode_closure tests.test_episode_closure_cli_security tests.test_owner_auth_compatibility tests.test_event_authority
+- Result: PASS, 89 tests.
+
+Forward runtime-mode baseline
+- Command: python -m unittest tests.test_forward_runtime_mode
+- Result: PASS, 19 tests.
+- Contract retained for the quarantine slice: explicit Forward surface with legacy default and status-only compatibility alias.
+
+Protocol baseline
+- Command: pnpm --filter @conitens/protocol test -- improvement-event
+- Result: PASS, 1 test.
+- Command: python scripts/sync_event_types.py --check
+- Result: PASS, 150 event types and 32 aliases extracted; generated output remained synchronized.
+- Command: pnpm --filter @conitens/protocol build
+- Result: PASS.
+
+Missing-surface proof before RED
+- Search across closure model/service, CLI, protocol registry, and Python allow-list found no `comparison_key`, `improvement.effect_observed`, `effect-observe`, `effect-show`, or `effect-list` surface.
+
+Interpretation
+- Existing adjacent behavior was green before production edits.
+- The next RED must fail only for the missing comparison/effect observation contract.

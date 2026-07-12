@@ -1,0 +1,52 @@
+Improvement candidate approval slice GREEN
+Date: 2026-07-10
+
+Implemented surface:
+
+- `scripts/ensemble_improvement_candidate_model.py`
+- `scripts/ensemble_improvement_candidates.py`
+- candidate actions in `scripts/ensemble.py`
+- `improvement.candidate_proposed` in the canonical TypeScript event registry
+  and regenerated Python allow-list
+- focused Python and protocol regression tests
+
+Final verification:
+
+1. `python -m unittest tests.test_improvement_candidates`
+   PASS - 27 tests.
+2. `python -m unittest tests.test_episode_closure tests.test_episode_closure_cli_security tests.test_candidate_patch_hardening tests.test_approval_controls tests.test_improvement_candidates`
+   PASS - 55 tests.
+3. `python -m unittest tests.test_meeting_spawn_authority tests.test_improvement_candidates`
+   PASS - 58 tests.
+4. `python -m py_compile scripts/ensemble_improvement_candidate_model.py scripts/ensemble_improvement_candidates.py scripts/ensemble.py scripts/ensemble_allowed_events.py tests/test_improvement_candidates.py`
+   PASS.
+5. `npm --prefix packages/protocol test -- improvement-event`
+   PASS - 1 test.
+6. `npm --prefix packages/protocol run build`
+   PASS.
+7. Full protocol suite: 847 passed, four known unrelated failures. This exactly
+   matches the pre-existing agent-event registry/count drift and reducer-owned
+   file-pattern baseline; no new failure class appeared.
+8. Scoped diff whitespace check passed. Python/TypeScript language servers are
+   unavailable on this host by prior user choice; Python compile and the
+   protocol TypeScript build are the static proof channels.
+9. Repo Structure Lens post-write gate, including untracked files, passed with
+   zero dependency cycles. Artifact:
+   `.audit/repo-structure-lens/audit-summary.latest.md`.
+
+Manual CLI QA in an isolated workspace:
+
+- `improvement --help` exited 0.
+- candidate create returned `pending_review`; list/show returned the same ID;
+  owner decision returned `approved`.
+- unsafe candidate show and list limit 0 exited 1 without echoing the unsafe
+  path.
+- public JSON was ASCII-safe and omitted the resolved workspace path.
+- after candidate actions the only changed path was
+  `.notes/events/events.jsonl`; `.agent` and SQLite snapshots were unchanged.
+
+Review closure:
+
+- Final code review: APPROVE after the numeric replay-coercion RED/GREEN fix.
+- Final scoped security review: unconditional PASS.
+- Test review: PASS; optional wrong request-actor coverage was added and passes.

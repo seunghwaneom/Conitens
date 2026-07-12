@@ -37,7 +37,8 @@ NOTES_DIR = REPO_ROOT / ".notes"
 VALID_ROLES = ("supervisor", "recorder", "improver", "worker")
 VALID_STATUSES = ("active", "archived", "draft")
 PATCH_PROPOSAL_EVENT_TYPES = frozenset({"agent.patch_proposed", "improver.patch_generated"})
-PATCH_TERMINAL_EVENT_TYPES = frozenset({"agent.patch_approved", "agent.patch_applied"})
+PATCH_APPROVAL_EVENT_TYPE = "agent.patch_approved"
+PATCH_TERMINAL_EVENT_TYPES = frozenset({"agent.patch_applied"})
 PATCH_PLACEHOLDER_MARKERS = (
     "<!-- fill in specific persona changes below -->",
     "<!-- fill in specific skill changes below -->",
@@ -69,10 +70,14 @@ def _patch_body_has_concrete_changes(body: str) -> bool:
     return False
 
 
-def _patch_event_index() -> tuple[dict[str, dict[str, Any]], set[str]]:
+def _patch_event_index(
+    notes_dir: str | Path | None = None,
+) -> tuple[dict[str, dict[str, Any]], set[str], set[str]]:
     proposal_events: dict[str, dict[str, Any]] = {}
+    approved_patch_ids: set[str] = set()
     terminal_patch_ids: set[str] = set()
-    for event in load_events(str(NOTES_DIR)):
+    event_notes_dir = NOTES_DIR if notes_dir is None else notes_dir
+    for event in load_events(str(event_notes_dir)):
         event_type = str(event.get("type") or "")
         payload = event.get("payload") or {}
         patch_id = str(payload.get("patch_id") or "").strip()
@@ -81,9 +86,12 @@ def _patch_event_index() -> tuple[dict[str, dict[str, Any]], set[str]]:
         if event_type in PATCH_PROPOSAL_EVENT_TYPES:
             proposal_events.setdefault(patch_id, event)
             continue
+        if event_type == PATCH_APPROVAL_EVENT_TYPE:
+            approved_patch_ids.add(patch_id)
+            continue
         if event_type in PATCH_TERMINAL_EVENT_TYPES:
             terminal_patch_ids.add(patch_id)
-    return proposal_events, terminal_patch_ids
+    return proposal_events, approved_patch_ids, terminal_patch_ids
 
 
 def _load_patch_candidate(
@@ -114,7 +122,7 @@ def _load_patch_candidate(
     if event_agent_id and event_agent_id != agent_id:
         raise ValueError(f"Patch {patch_id} has mismatched agent ids between file and event log")
     if patch_id in terminal_patch_ids:
-        raise ValueError(f"Patch {patch_id} is already approved or applied")
+        raise ValueError(f"Patch {patch_id} is already applied")
     if not _patch_body_has_concrete_changes(document.body):
         raise ValueError(f"Patch {patch_id} does not contain a concrete behavior delta")
     return {
@@ -128,7 +136,7 @@ def _load_patch_candidate(
 def _list_pending_patches(agent_id: str) -> list[dict[str, Any]]:
     if not PATCHES_DIR.exists():
         return []
-    proposal_events, terminal_patch_ids = _patch_event_index()
+    proposal_events, _, terminal_patch_ids = _patch_event_index()
     patches: list[dict[str, Any]] = []
     for patch_file in sorted(PATCHES_DIR.glob(f"{agent_id}-*.md")):
         try:
@@ -405,12 +413,21 @@ def agent_patch(agent_id: str, *, patch_file: str, rationale: str = "") -> dict[
     return {"patch_id": patch_name.removesuffix(".md"), "path": str(patch_path)}
 
 
-def agent_apply_patch(patch_id: str) -> dict[str, Any]:
+def agent_apply_patch(
+    patch_id: str,
+    *,
+    workspace: str | Path | None = None,
+    actor: str = "operator",
+    reason: str | None = None,
+) -> dict[str, Any]:
     """Apply an approved patch (approval-gated)."""
-    patch_path = PATCHES_DIR / f"{patch_id}.md"
+    workspace_root = Path(workspace) if workspace is not None else REPO_ROOT
+    patches_dir = workspace_root / ".conitens" / "personas" / "candidate_patches" if workspace is not None else PATCHES_DIR
+    notes_dir = workspace_root / ".notes" if workspace is not None else NOTES_DIR
+    patch_path = patches_dir / f"{patch_id}.md"
     if not patch_path.exists():
         raise FileNotFoundError(f"Patch {patch_id} not found")
-    proposal_events, terminal_patch_ids = _patch_event_index()
+    proposal_events, approved_patch_ids, terminal_patch_ids = _patch_event_index(notes_dir)
     _load_patch_candidate(
         patch_path,
         proposal_events=proposal_events,
@@ -418,14 +435,15 @@ def agent_apply_patch(patch_id: str) -> dict[str, Any]:
         expected_patch_id=patch_id,
     )
 
+    if patch_id not in approved_patch_ids:
+        append_event(
+            str(notes_dir),
+            event_type=PATCH_APPROVAL_EVENT_TYPE,
+            actor={"type": "user", "name": str(actor or "operator")[:120]},
+            payload={"patch_id": patch_id, "reason_provided": bool(reason)},
+        )
     append_event(
-        str(NOTES_DIR),
-        event_type="agent.patch_approved",
-        actor={"type": "user", "name": "operator"},
-        payload={"patch_id": patch_id},
-    )
-    append_event(
-        str(NOTES_DIR),
+        str(notes_dir),
         event_type="agent.patch_applied",
         actor={"type": "system", "name": "agent-registry"},
         payload={"patch_id": patch_id},
@@ -524,7 +542,14 @@ def main() -> int:
         result = agent_patch(args.agent_id, patch_file=args.patch_file, rationale=args.rationale)
         print(json.dumps(result, indent=2))
     elif args.command == "apply":
-        result = agent_apply_patch(args.patch_id)
+        from ensemble_agent_patch_service import decide_agent_patch
+
+        result = decide_agent_patch(
+            REPO_ROOT,
+            args.patch_id,
+            decision="approve",
+            actor="cli",
+        )
         print(json.dumps(result, indent=2))
     elif args.command == "archive":
         result = agent_archive(args.agent_id)

@@ -1,0 +1,39 @@
+Improvement candidate slice RED
+Date: 2026-07-10
+
+Python command:
+python -m unittest tests.test_improvement_candidates
+
+Observed result:
+EXPECTED FAIL — 10/10 scenarios errored before production implementation.
+Nine service scenarios failed because `ensemble_improvement_candidate_model`
+did not exist. The CLI scenario failed with argparse exit 2 because the
+candidate actions were not registered.
+
+Protocol command:
+npm --prefix packages/protocol test -- --run tests/improvement-event.test.ts
+
+Observed result:
+EXPECTED FAIL — 1/1 assertion failed because the canonical EVENT_TYPES list did
+not include `improvement.candidate_proposed`.
+
+The failures identify the missing slice rather than a regression in the pinned
+episode closure, legacy candidate patch, or generic approval behavior.
+
+Review-derived RED cycles:
+
+- Candidate append succeeded while approval-request append failed; retry had
+  to repair the missing request without duplicating the candidate.
+- Structured proposal fields could collide under delimiter-based hashing;
+  canonical JSON hashing was required.
+- Malformed replay records could carry forged identity, digest, provenance,
+  request metadata, actor types, or pre-proposal terminal decisions.
+- Unsafe closure provenance could reach the candidate event before validation.
+- A terminal event type could disagree with its decision payload.
+- Malformed candidate versions could influence the next monotonic version.
+- Candidate input and CLI lookup/list boundaries accepted unsupported types or
+  unsafe values too late.
+- Final independent review reproduced numeric `target_ref` and `summary`
+  coercion: a forged internally consistent v2 rendered publicly and advanced
+  the next valid proposal to v3. The dedicated regression failed because no
+  `ImprovementCandidateError` was raised before the strict replay fix.

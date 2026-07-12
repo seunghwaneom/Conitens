@@ -497,12 +497,30 @@ MIGRATIONS: dict[int, str] = {
 
 
 class LoopStateRepository:
-    def __init__(self, workspace: str | Path):
+    def __init__(self, workspace: str | Path, *, read_only: bool = False):
         self.workspace = Path(workspace)
-        self.db_path = loop_state_db_path(self.workspace)
-        self.ensure_schema()
+        self.db_path = loop_state_db_path(self.workspace, create_parent=not read_only)
+        self.read_only = read_only
+        if not read_only:
+            self.ensure_schema()
 
     def _connect_raw(self) -> sqlite3.Connection:
+        if self.read_only:
+            if self.db_path.is_file():
+                wal_path = self.db_path.with_name(f"{self.db_path.name}-wal")
+                shm_path = self.db_path.with_name(f"{self.db_path.name}-shm")
+                immutable = "" if wal_path.exists() or shm_path.exists() else "&immutable=1"
+                uri = f"{self.db_path.resolve().as_uri()}?mode=ro{immutable}"
+                connection = sqlite3.connect(uri, uri=True)
+            else:
+                connection = sqlite3.connect(":memory:")
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+            if not self.db_path.is_file():
+                self._migrate_connection(connection)
+                connection.commit()
+            connection.execute("PRAGMA query_only = ON")
+            return connection
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(self.db_path)
         connection.row_factory = sqlite3.Row
@@ -516,71 +534,77 @@ class LoopStateRepository:
         connection = self._connect_raw()
         try:
             yield connection
-            connection.commit()
+            if not self.read_only:
+                connection.commit()
         except Exception:
-            connection.rollback()
+            if not self.read_only:
+                connection.rollback()
             raise
         finally:
             connection.close()
 
     def ensure_schema(self) -> None:
         with self.connect() as connection:
-            version = int(connection.execute("PRAGMA user_version").fetchone()[0])
-            for target_version in sorted(MIGRATIONS):
-                if target_version <= version:
-                    continue
-                script = MIGRATIONS[target_version]
-                if target_version == 5:
-                    columns = {
-                        row["name"]
-                        for row in connection.execute("PRAGMA table_info(orchestration_checkpoints)").fetchall()
-                    }
-                    if "retry_count" not in columns:
-                        connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0")
-                    if "validator_issues_json" not in columns:
-                        connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN validator_issues_json TEXT NOT NULL DEFAULT '[]'")
-                    if "approval_pending" not in columns:
-                        connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN approval_pending INTEGER NOT NULL DEFAULT 0")
-                    if "stop_reason" not in columns:
-                        connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN stop_reason TEXT")
-                    if "loop_cost_metrics_json" not in columns:
-                        connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN loop_cost_metrics_json TEXT NOT NULL DEFAULT '{}'")
-                elif target_version == 11:
-                    columns = {
-                        row["name"]
-                        for row in connection.execute("PRAGMA table_info(operator_tasks)").fetchall()
-                    }
-                    if "archived_at" not in columns:
-                        connection.execute("ALTER TABLE operator_tasks ADD COLUMN archived_at TEXT")
-                    connection.execute(
-                        """
-                        CREATE INDEX IF NOT EXISTS idx_operator_tasks_archived_updated
-                            ON operator_tasks (archived_at, updated_at DESC, task_id DESC)
-                        """
-                    )
-                elif target_version == 12:
-                    columns = {
-                        row["name"]
-                        for row in connection.execute("PRAGMA table_info(operator_tasks)").fetchall()
-                    }
-                    if "archived_by" not in columns:
-                        connection.execute("ALTER TABLE operator_tasks ADD COLUMN archived_by TEXT")
-                    if "archive_note" not in columns:
-                        connection.execute("ALTER TABLE operator_tasks ADD COLUMN archive_note TEXT")
-                elif target_version == 14:
-                    columns = {
-                        row["name"]
-                        for row in connection.execute("PRAGMA table_info(operator_workspaces)").fetchall()
-                    }
-                    if "archived_at" not in columns:
-                        connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archived_at TEXT")
-                    if "archived_by" not in columns:
-                        connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archived_by TEXT")
-                    if "archive_note" not in columns:
-                        connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archive_note TEXT")
-                else:
-                    connection.executescript(script)
-                connection.execute(f"PRAGMA user_version = {target_version}")
+            self._migrate_connection(connection)
+
+    @staticmethod
+    def _migrate_connection(connection: sqlite3.Connection) -> None:
+        version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+        for target_version in sorted(MIGRATIONS):
+            if target_version <= version:
+                continue
+            script = MIGRATIONS[target_version]
+            if target_version == 5:
+                columns = {
+                    row["name"]
+                    for row in connection.execute("PRAGMA table_info(orchestration_checkpoints)").fetchall()
+                }
+                if "retry_count" not in columns:
+                    connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0")
+                if "validator_issues_json" not in columns:
+                    connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN validator_issues_json TEXT NOT NULL DEFAULT '[]'")
+                if "approval_pending" not in columns:
+                    connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN approval_pending INTEGER NOT NULL DEFAULT 0")
+                if "stop_reason" not in columns:
+                    connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN stop_reason TEXT")
+                if "loop_cost_metrics_json" not in columns:
+                    connection.execute("ALTER TABLE orchestration_checkpoints ADD COLUMN loop_cost_metrics_json TEXT NOT NULL DEFAULT '{}'")
+            elif target_version == 11:
+                columns = {
+                    row["name"]
+                    for row in connection.execute("PRAGMA table_info(operator_tasks)").fetchall()
+                }
+                if "archived_at" not in columns:
+                    connection.execute("ALTER TABLE operator_tasks ADD COLUMN archived_at TEXT")
+                connection.execute(
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_operator_tasks_archived_updated
+                        ON operator_tasks (archived_at, updated_at DESC, task_id DESC)
+                    """
+                )
+            elif target_version == 12:
+                columns = {
+                    row["name"]
+                    for row in connection.execute("PRAGMA table_info(operator_tasks)").fetchall()
+                }
+                if "archived_by" not in columns:
+                    connection.execute("ALTER TABLE operator_tasks ADD COLUMN archived_by TEXT")
+                if "archive_note" not in columns:
+                    connection.execute("ALTER TABLE operator_tasks ADD COLUMN archive_note TEXT")
+            elif target_version == 14:
+                columns = {
+                    row["name"]
+                    for row in connection.execute("PRAGMA table_info(operator_workspaces)").fetchall()
+                }
+                if "archived_at" not in columns:
+                    connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archived_at TEXT")
+                if "archived_by" not in columns:
+                    connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archived_by TEXT")
+                if "archive_note" not in columns:
+                    connection.execute("ALTER TABLE operator_workspaces ADD COLUMN archive_note TEXT")
+            else:
+                connection.executescript(script)
+            connection.execute(f"PRAGMA user_version = {target_version}")
 
     def schema_version(self) -> int:
         with self.connect() as connection:
@@ -2401,6 +2425,11 @@ class LoopStateRepository:
         return normalized_run_id, normalized_iteration_id
 
 
+class ReadOnlyLoopStateRepository(LoopStateRepository):
+    def __init__(self, workspace: str | Path):
+        super().__init__(workspace, read_only=True)
+
+
 __all__ = [
     "ACTIVE_RUN_STATUSES",
     "OPERATOR_TASK_ALLOWED_TRANSITIONS",
@@ -2410,6 +2439,7 @@ __all__ = [
     "AUTHORITATIVE_STATE_OWNERS",
     "FINDING_CATEGORIES",
     "LoopStateRepository",
+    "ReadOnlyLoopStateRepository",
     "SCHEMA_VERSION",
     "decode_json",
     "encode_json",

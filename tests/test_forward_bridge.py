@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -27,6 +28,7 @@ from ensemble_forward_bridge import (
     build_operator_workflow_contracts_payload,
     launch_forward_bridge,
 )
+from ensemble_forward import build_runtime_cli_checks
 from ensemble_insight_extractor import InsightExtractor
 from ensemble_iteration_service import IterationService
 from ensemble_loop_repository import LoopStateRepository
@@ -194,16 +196,25 @@ class ForwardBridgeTests(unittest.TestCase):
             self.assertEqual(unauth_exc.exception.code, 403)
             unauth_exc.exception.close()
 
+            probe_calls: list[bool] = []
+
+            def fake_runtime_checks(*, probe_versions: bool) -> list[dict[str, object]]:
+                probe_calls.append(probe_versions)
+                return build_runtime_cli_checks(probe_versions=False)
+
             request = Request(
                 "http://127.0.0.1:8911/api/operator/runtime-roster",
                 headers={"Authorization": f"Bearer {launched['token']}"},
             )
-            with urlopen(request, timeout=10) as response:
-                payload_text = response.read().decode("utf-8")
-                payload = json.loads(payload_text)
+            with patch("ensemble_forward_bridge.build_runtime_cli_checks", side_effect=fake_runtime_checks):
+                with urlopen(request, timeout=10) as response:
+                    payload_text = response.read().decode("utf-8")
+                    payload = json.loads(payload_text)
         finally:
             launched["server"].shutdown()
 
+        self.assertEqual(probe_calls, [False])
+        self.assertFalse(payload["scope"]["probe_versions"])
         self.assertIn(payload["status"], {"ok", "warning", "danger"})
         self.assertFalse(payload["privacy"]["environment_dumped"])
         self.assertFalse(payload["privacy"]["auth_tokens_exposed"])
@@ -217,6 +228,29 @@ class ForwardBridgeTests(unittest.TestCase):
         self.assertNotIn(str(root), payload_text)
         self.assertNotIn("Authorization", payload_text)
         self.assertNotIn("Bearer", payload_text)
+
+    def test_operator_runtime_roster_endpoint_can_opt_in_to_version_probes(self) -> None:
+        root, _repo, _run_id, _iteration_id = self.prepare_workspace()
+        launched = launch_forward_bridge(root, host="127.0.0.1", port=8917)
+        try:
+            probe_calls: list[bool] = []
+
+            def fake_runtime_checks(*, probe_versions: bool) -> list[dict[str, object]]:
+                probe_calls.append(probe_versions)
+                return build_runtime_cli_checks(probe_versions=False)
+
+            request = Request(
+                "http://127.0.0.1:8917/api/operator/runtime-roster?probe_versions=1",
+                headers={"Authorization": f"Bearer {launched['token']}"},
+            )
+            with patch("ensemble_forward_bridge.build_runtime_cli_checks", side_effect=fake_runtime_checks):
+                with urlopen(request, timeout=10) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+        finally:
+            launched["server"].shutdown()
+
+        self.assertEqual(probe_calls, [True])
+        self.assertTrue(payload["scope"]["probe_versions"])
 
     def test_operator_runtime_roster_endpoint_filters_agent_runtime_with_ux_hints(self) -> None:
         root, repo, run_id, _iteration_id = self.prepare_workspace()
@@ -267,6 +301,47 @@ class ForwardBridgeTests(unittest.TestCase):
         self.assertNotIn(str(root), payload_text)
         self.assertNotIn("Authorization", payload_text)
         self.assertNotIn("Bearer", payload_text)
+
+    def test_operator_runtime_roster_projects_gjc_harness_evidence_without_mutation(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        append_event(
+            root,
+            event_type="harness.evidence_observed",
+            actor={"type": "system", "name": "gjc-adapter"},
+            scope={"run_id": run_id, "iteration_id": iteration_id},
+            payload={
+                "harness": "gajae-code",
+                "runtime": "gjc",
+                "status": "completed",
+                "harness_version": "0.0.0-test",
+                "observed_at": "2026-06-08T08:00:00Z",
+                "redaction_status": "metadata_only",
+                "summary": "GJC smoke test completed.",
+                "evidence_refs": ["gjc:run:smoke-1"],
+            },
+        )
+        events_before = load_events(root)
+
+        payload = build_operator_runtime_roster_payload(
+            root,
+            probe_versions=False,
+            runtime_id="gjc",
+            category="agent_runtime",
+        )
+        payload_text = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(load_events(root), events_before)
+        self.assertEqual(payload["counts"]["total"], 1)
+        gjc = payload["runtimes"][0]
+        self.assertEqual(gjc["id"], "gjc")
+        self.assertEqual(gjc["label"], "Gajae-Code (GJC)")
+        self.assertEqual(gjc["session_status"], "observed")
+        self.assertEqual(gjc["latest_run_id"], run_id)
+        self.assertEqual(gjc["observation_count"], 1)
+        self.assertIn("event:harness.evidence_observed:", gjc["evidence_refs"][0])
+        self.assertFalse(payload["privacy"]["raw_session_content_exposed"])
+        self.assertNotIn("GJC smoke test completed.", payload_text)
+        self.assertNotIn(str(root), payload_text)
 
     def test_operator_turn_records_endpoint_returns_metadata_without_transcript_content(self) -> None:
         root, repo, run_id, _iteration_id = self.prepare_workspace()
@@ -617,6 +692,55 @@ steps:
         self.assertIn("event:provider.call_recorded:", payload["evidence_refs"][0])
         self.assertNotIn("raw prompt should not be accepted", payload_text)
         self.assertNotIn("checkpoint-runtime", payload_text)
+
+    def test_operator_evidence_summary_projects_harness_metadata_only(self) -> None:
+        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        with self.assertRaisesRegex(ValueError, "forbids raw harness content fields"):
+            append_event(
+                root,
+                event_type="harness.evidence_observed",
+                actor={"type": "system", "name": "gjc-adapter"},
+                scope={"run_id": run_id, "iteration_id": iteration_id},
+                payload={
+                    "harness": "gajae-code",
+                    "runtime": "gjc",
+                    "status": "failed",
+                    "rawTranscript": "raw terminal transcript should not be accepted",
+                    "stdout": "secret stdout should not be accepted",
+                },
+            )
+        append_event(
+            root,
+            event_type="harness.evidence_observed",
+            actor={"type": "system", "name": "gjc-adapter"},
+            scope={"run_id": run_id, "iteration_id": iteration_id},
+            payload={
+                "harness": "gajae-code",
+                "runtime": "gjc",
+                "status": "completed",
+                "harness_version": "0.0.0-test",
+                "observed_at": "2026-06-08T08:00:00Z",
+                "redaction_status": "metadata_only",
+                "summary": "GJC transcript stayed external.",
+                "transcript_ref": "artifact:gjc/smoke-1.jsonl",
+                "evidence_refs": ["gjc:run:smoke-1", str(root / "raw-transcript.jsonl")],
+            },
+        )
+
+        payload = build_operator_evidence_summary_payload(root)
+        payload_text = json.dumps(payload, ensure_ascii=False)
+
+        self.assertEqual(payload["harness"]["observed"], 1)
+        self.assertEqual(payload["harness"]["latest_runtime"], "gjc")
+        self.assertEqual(payload["harness"]["latest_run_id"], run_id)
+        self.assertEqual(payload["harness"]["latest_status"], "completed")
+        self.assertEqual(payload["harness"]["latest_summary"], "GJC transcript stayed external.")
+        self.assertTrue(payload["harness"]["metadata_only"])
+        self.assertFalse(payload["harness"]["raw_transcript_exposed"])
+        self.assertEqual(payload["budget"]["harness_sources"], 1)
+        self.assertIn("event:harness.evidence_observed:", payload["evidence_refs"][0])
+        self.assertNotIn("raw terminal transcript should not be accepted", payload_text)
+        self.assertNotIn(str(root), payload_text)
 
     def test_operator_task_detail_projects_pr_ci_read_evidence(self) -> None:
         root, repo, run_id, iteration_id = self.prepare_workspace()
@@ -1130,7 +1254,7 @@ steps:
         self.assertEqual(updated["workspace"]["task_ids_json"], [])
 
     def test_operator_workspace_archive_metadata_is_returned(self) -> None:
-        root, _repo, _run_id, _iteration_id = self.prepare_workspace()
+        root, repo, _run_id, _iteration_id = self.prepare_workspace()
         launched = launch_forward_bridge(root, host="127.0.0.1", port=8901)
         try:
             create_request = Request(
@@ -1153,6 +1277,7 @@ steps:
             )
             with urlopen(create_request, timeout=10) as response:
                 created = json.loads(response.read().decode("utf-8"))
+            stored_archived = repo.get_operator_workspace("owork-archived")
 
             reactivate_request = Request(
                 "http://127.0.0.1:8901/api/operator/workspaces/owork-archived",
@@ -1176,8 +1301,9 @@ steps:
             launched["server"].shutdown()
 
         self.assertIsNotNone(created["workspace"]["archived_at"])
-        self.assertTrue(created["workspace"]["archived_by"])
+        self.assertIsNone(created["workspace"]["archived_by"])
         self.assertEqual(created["workspace"]["archive_note"], "Freeze the workspace after delivery.")
+        self.assertTrue(stored_archived["archived_by"])
         self.assertIsNone(restored["workspace"]["archived_at"])
         self.assertIsNone(restored["workspace"]["archived_by"])
         self.assertIsNone(restored["workspace"]["archive_note"])
@@ -1589,7 +1715,7 @@ steps:
         self.assertIn("pending approval", body["error"])
 
     def test_operator_task_request_approval_creates_task_linked_approval(self) -> None:
-        root, _repo, run_id, iteration_id = self.prepare_workspace()
+        root, repo, run_id, iteration_id = self.prepare_workspace()
         launched = launch_forward_bridge(root, host="127.0.0.1", port=8892)
         try:
             create_request = Request(
@@ -1647,9 +1773,12 @@ steps:
 
         self.assertEqual(approval["approval"]["task_id"], created["task"]["task_id"])
         self.assertEqual(approval["approval"]["action_type"], "operator_task_update")
-        self.assertEqual(approval["approval"]["action_payload"]["rationale"], "Need explicit review")
-        self.assertEqual(approval["approval"]["action_payload"]["requested_changes"], ["status", "owner_agent_id"])
+        self.assertEqual(approval["approval"]["action_payload"], {})
+        self.assertEqual(approvals["approvals"][0]["action_payload"], {})
         self.assertEqual(approvals["approvals"][0]["task_id"], created["task"]["task_id"])
+        stored_approval = repo.list_approval_requests(task_id=created["task"]["task_id"])[0]
+        self.assertEqual(stored_approval["action_payload"]["rationale"], "Need explicit review")
+        self.assertEqual(stored_approval["action_payload"]["requested_changes"], ["status", "owner_agent_id"])
 
     def test_operator_task_archive_is_blocked_when_task_has_pending_approval(self) -> None:
         root, _repo, run_id, iteration_id = self.prepare_workspace()
@@ -1870,8 +1999,7 @@ steps:
         self.assertIn("progress", state_docs["documents"])
         self.assertIn("latest_context", state_docs["documents"])
         self.assertIn("Expose read-only bridge routes", state_docs["documents"]["task_plan"]["content"])
-        self.assertIsNotNone(context_payload["repo_latest"])
-        self.assertIn("repo digest", context_payload["repo_latest"]["content"])
+        self.assertIsNone(context_payload["repo_latest"])
         self.assertIn("Bridge step", context_payload["runtime_latest"]["content"])
 
     def test_room_timeline_route_returns_settled_room_mapping(self) -> None:

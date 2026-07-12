@@ -1,6 +1,6 @@
 # Conitens
 
-> Last updated: 2026-07-04
+> Last updated: 2026-07-11
 
 > **Conitens는 외부 CLI 에이전트를 위한 verify-gated operations/control plane이다.**
 
@@ -12,12 +12,19 @@ The active control plane in this repository is:
 
 - Core CLI: [scripts/ensemble.py](scripts/ensemble.py)
 - Additive extensions: `scripts/ensemble_*.py`
-- Event log (sole commit point): `.notes/EVENTS/events.jsonl`
+- Event log (sole commit point): `.notes/events/events.jsonl`
 - Obsidian-compatible projections: `.notes/` (numbered vault: `00_Inbox/` through `80_Archive/`)
 - Canonical agent config: `.agent/`
 - Compatibility skills: `.agents/skills/`
 - Forward dashboard: `packages/dashboard`
-- Read-only Forward Bridge: `scripts/ensemble_forward_bridge.py`
+- Forward Bridge sidecar: `scripts/ensemble_forward_bridge.py`
+
+Forward is explicitly quarantined. It failed promotion as of 2026-07-11:
+gates 1, 6, and 7 are contradicted by current bridge behavior, and gates 2, 3,
+4, 5, and 8 remain unproven. Treat it as an additive
+operator/read-model sidecar with a bounded authenticated command surface.
+Current runtime authority remains `scripts/ensemble.py` plus `.notes/`,
+`.agent/`, and the event ledger; `default_runtime=legacy` remains unchanged.
 
 ### Priority: Persistent Agents & Communication Records
 
@@ -38,7 +45,7 @@ Architecture rule: `events/*.jsonl` is the sole commit point (I-1). `.notes/` Ma
 ### Active Runtime
 
 - `.notes/` — Obsidian Vault (projections from events). Numbered structure: `00_Inbox/` through `80_Archive/`, with `.index/` for SQLite FTS.
-- `.notes/EVENTS/events.jsonl` — append-only event log, sole commit point (I-1).
+- `.notes/events/events.jsonl` — append-only event log, sole commit point (I-1).
 - `.agent/` — canonical agent config (manifests, policies, skills, workflows, providers, rooms).
 - `scripts/ensemble.py` — existing operations core (preserved, never replaced).
 - Extension modules (additive, event-first):
@@ -100,7 +107,7 @@ Office Preview asset model:
 - `Classic` preserves the existing room scene and compact office avatars.
 - Sprite-gen and image generation are build/design-time inputs only; the dashboard runtime serves static assets and does not depend on those generators.
 
-Data source: Forward Bridge API (`scripts/ensemble_forward_bridge.py`) serving `/api/agents`, `/api/threads`, `/api/approvals`, `/api/runs`.
+Data source: Forward Bridge API (`scripts/ensemble_forward_bridge.py`) serving `/api/agents`, `/api/threads`, `/api/approvals`, `/api/runs`, and bounded authenticated operator command routes. It does not promote Forward to default runtime authority.
 
 ```bash
 pnpm --filter @conitens/dashboard dev
@@ -269,7 +276,7 @@ cd packages/command-center && pnpm dev
 # Forward dashboard dev server
 pnpm --filter @conitens/dashboard dev
 
-# Read-only Forward Bridge for dashboard data
+# Forward Bridge sidecar for dashboard data and bounded operator commands
 python scripts/ensemble.py --workspace . forward serve --host 127.0.0.1 --port 8785
 
 # Generate sprite assets

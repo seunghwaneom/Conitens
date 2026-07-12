@@ -1,0 +1,64 @@
+Improvement effect observation + Forward quarantine — final GREEN evidence
+Date: 2026-07-11
+
+Scope
+- Event-only exact-key improvement effect observation.
+- Closure public-boundary alignment.
+- Forward quarantine with legacy runtime default retained.
+- One bounded read-route reliability correction: the HTTP runtime-roster skips
+  optional version probes by default and preserves explicit opt-in.
+
+RED -> GREEN closures
+1. comparison_key was absent from closure API/CLI/event/index/projection.
+   GREEN: optional exact key persists across every required surface.
+2. improvement.effect_observed was absent from protocol and runtime.
+   GREEN: deterministic observe/show/list replays events directly.
+3. Replay accepted malformed identity/envelope/order edge cases.
+   GREEN: exact envelopes, temporal replay, duplicate collapse, rollback
+   history, strict JSON types, bounded provenance, and shared process locking.
+4. Closure creation accepted absolute POSIX paths that effect replay rejected.
+   GREEN: public prose rejects them before append; unsafe episode IDs publish
+   only deterministic episode-sha256 refs.
+5. The HTTP runtime-roster synchronously ran optional version probes by default
+   and could exceed its 10-second client contract.
+   GREEN: default HTTP reads skip version probes; probe_versions=1 remains an
+   explicit, tested opt-in.
+
+Final verification
+- Focused effect suite: 26/26 PASS.
+- Closure API/CLI security suite: 19/19 PASS.
+- Effect-adjacent bundle: 121/121 PASS in 48.150s.
+- Forward runtime + bridge bundle: 54/54 PASS in 74.406s.
+- Focused protocol event test: 1/1 PASS.
+- Protocol TypeScript build: PASS.
+- Full protocol comparison: 847 PASS / 4 known unrelated failures, exactly the
+  recorded baseline (stale agent-event count/subset assertions and one legacy
+  reducer-owned path assertion).
+- Python compilation for all changed runtime modules: PASS.
+- Event registry generation: 151 event types, 32 aliases.
+- `--forward status`: PASS; reports Default runtime: legacy.
+- `--forward start`: rejected with exit 2; status-only alias preserved.
+- Stale whole-bridge read-only wording search: no matches.
+- Final `git diff --check`: PASS; only existing Windows line-ending warnings.
+- Scoped debug-residue search: no matches; temporary debug state removed.
+
+Manual surface evidence
+- Real CLI observe/show/list and event-only replay: PASS.
+- Legacy improvement list/show compatibility: PASS.
+- Unsafe credential/control/path/traversal requests: rejected without append
+  and without echoing rejected values.
+- Safe multiline public prose: PASS.
+- No effect projection or SQLite effect authority was created.
+
+Independent review
+- Goal/scope: PASS.
+- Manual QA: PASS.
+- Code quality: PASS after the roster timeout and closure compatibility repairs.
+- Security/privacy: PASS after POSIX-path and opaque episode-id repairs.
+- Context/history: PASS.
+- Replay/state-machine audit: PASS.
+
+Known non-blocking debt
+- Forward remains quarantined. Its browser-visible public-context allowlisting,
+  query/command/transport separation, and primary read-path convergence remain
+  Wave 3 work. This evidence does not authorize Forward promotion.

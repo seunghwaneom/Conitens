@@ -1,6 +1,6 @@
 # Conitens 현재 아키텍처 및 코드 현황
 
-기준 시점: `2026-04-01`
+기준 시점: `2026-07-10`
 
 이 문서는 현재 저장소의 운영 구조와 코드 상태를 한 번에 파악하기 위한
 현행 요약 문서다. 과거 개념 스케치나 배치별 리뷰를 대체하지는 않지만,
@@ -23,6 +23,13 @@
 - 최근 추가된 명시적 진입 계약은 `ensemble forward ...`와
   `ensemble --forward status`이며, 이는 forward 스택을 운영 기본값으로
   바꾸지 않고도 operator-visible target으로 선택 가능하게 만든다.
+- 2026-07-10 authority repair 기준으로, Forward SQLite는 forward runtime 내부의
+  bounded operational owner/index이지 workspace durable truth가 아니다. workspace
+  durable truth는 여전히 `events/*.jsonl` event ledger이며, `append_event()` 경계를
+  통과한 뒤 projection/index를 갱신해야 한다.
+- Forward Bridge 전체를 read-only라고 부르는 문서는 더 이상 정확하지 않다. 현재
+  bridge는 side-effect-free query surface와 authenticated operator command surface를
+  함께 갖는다.
 
 ## 2. 계층별 구조
 
@@ -88,9 +95,12 @@ forward Batch 1-11 구현은 아래 축으로 구성된다.
 
 ## 3. Source of truth 정리
 
-Wave 1-1 이후 forward 스택 기준 authoritative owner는 아래처럼 정리되었다.
+Wave 1-1 이후 forward 스택 내부의 operational owner는 아래처럼 정리되었다. 단,
+이는 workspace 전체의 durable truth 승격을 의미하지 않는다. ADR-0004 전까지
+workspace domain transition의 최상위 commit record는 `events/*.jsonl`이고,
+Forward SQLite는 forward runtime 안의 bounded owner/index다.
 
-| 개념 | authoritative owner | 비고 |
+| 개념 | forward 내부 operational owner | 비고 |
 | --- | --- | --- |
 | run state | `sqlite:runs` | `.conitens/runtime/loop_state.sqlite3` |
 | iteration state | `sqlite:iterations` | same DB |
@@ -101,7 +111,57 @@ Wave 1-1 이후 forward 스택 기준 authoritative owner는 아래처럼 정리
 | immutable progress log | `sqlite:context_progress_entries` | `progress.md`는 append-only projection |
 
 중요한 점은 `.conitens/context/*.md`가 사람 친화적인 운영 digest라는 점이다.
-원천 truth는 DB이고, markdown은 projection이다.
+forward runtime 내부에서는 DB가 operational owner이고 markdown은 projection이다.
+하지만 저장소 전체 관점의 durable truth는 event ledger이며, Forward SQLite를
+기본 runtime authority로 승격하려면 ADR-0004의 promotion gate를 통과해야 한다.
+
+### 3.1 Unified authority map
+
+| Surface | 현재 지위 | 목표 경계 |
+| --- | --- | --- |
+| `events/*.jsonl` | workspace durable event record | `append_event()` 검증/redaction 이후 유일 commit point |
+| `.agent/` | canonical config surface | 승인된 workflow/skill/agent config command |
+| `.agents/skills/` | compatibility skill surface | `.agent` 계약과 동기화되는 mirror |
+| `.notes/` | legacy file surface와 projection 혼재 | event-derived human projection, legacy compatibility mirror |
+| Forward SQLite | forward 내부 operational owner/index | 승격 전 bounded runtime owner, command/projector write only |
+| `.conitens/context/` | generated digest + checked-in summary | generated context projection 또는 명시적 planning update |
+| `.vibe/` | repo intelligence sidecar | freshness-gated derived intelligence |
+| dashboard local state | browser state | ephemeral UI-only state |
+| meeting transcript JSONL | transcript/evidence ledger | redaction policy가 적용된 canonical transcript evidence, domain state authority 아님 |
+| harness logs | provider별 local evidence | Conitens에는 metadata/ref만 반영 |
+
+Meeting transcript JSONL은 예외적으로 append-only transcript/evidence ledger로 남을
+수 있다. 그러나 active meeting state, summary, approval, task, room ownership 같은
+domain state의 authority는 아니며, event/ref/hash/reconciliation 규칙으로 연결되어야
+한다. Unredacted private content, raw prompt/completion, stdout/stderr, token, username,
+absolute path는 event/operator/browser payload로 복사하지 않는다.
+
+### 3.2 Forward promotion gate
+
+Forward stack은 아래 조건이 모두 검증되기 전까지 기본 runtime으로 승격하지 않는다.
+
+1. 모든 durable mutation이 event-first 또는 명시적 transactional outbox를 사용한다.
+2. room, handoff, task, approval, run, iteration owner map이 하나로 합의된다.
+3. event replay와 DB restore가 같은 observable state를 만든다.
+4. approval/verify pause-resume가 기존 CLI와 동등 이상으로 검증된다.
+5. migration, rollback, compatibility alias, legacy import 정책이 문서화된다.
+6. bridge/dashboard 보안 regression이 통과한다.
+7. query route와 operator command route가 테스트와 모듈 경계로 분리된다.
+8. event append failure는 projection을 남기지 않고, projection failure after event는
+   replay/reconciliation으로 복구 가능하다.
+
+### 3.3 Forward Bridge boundary
+
+Forward Bridge는 다음 두 surface로 읽어야 한다.
+
+- Query surface: `GET`/read model/SSE 계열. side-effect free여야 하고 repository,
+  filesystem, event, approval, runtime mutation을 수행하지 않아야 한다.
+- Operator command surface: `POST`/`PATCH`/`DELETE` 계열. task/workspace/approval,
+  resume/archive/restore/delete 같은 mutation이며 command service, actor/rationale,
+  approval/verify, event/projection 경계를 가져야 한다.
+
+따라서 과거 BE-1a read-only 설명은 초기 read path에만 유효한 역사적 설명이다.
+현재 bridge 전체의 정확한 설명은 `query + operator command surface`다.
 
 ## 4. 실행 흐름
 

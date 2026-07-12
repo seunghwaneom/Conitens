@@ -197,6 +197,7 @@ export interface OperatorWorkbenchScreenProps {
 
   // Workspace detail
   workspaceDetail: OperatorWorkspaceDetailViewModel | null;
+  workspaceDetailReady: boolean;
   workspaceDetailError: string | null;
   workspaceMutationState: LoadState;
   workspaceMutationError: string | null;
@@ -340,6 +341,7 @@ export function OperatorWorkbenchScreen({
   linkedWorkspaceOption,
   unresolvedTaskWorkspaceRef,
   workspaceDetail,
+  workspaceDetailReady,
   workspaceDetailError,
   workspaceMutationState,
   workspaceMutationError,
@@ -708,24 +710,30 @@ export function OperatorWorkbenchScreen({
                         },
                       ]
                     : workspaceItems
-                  ).map((item) => (
-                    <button
-                      key={item.workspaceId}
-                      className={`forward-run-item${route.workspaceId === item.workspaceId ? " active" : ""}`}
-                      onClick={() => openWorkspace(item.workspaceId)}
-                    >
-                      <div className="forward-run-topline">
-                        <strong>{item.label}</strong>
-                        <span>{item.status}</span>
-                      </div>
-                      <p>{item.subtitle}</p>
-                      <div className="forward-metric-row">
-                        {item.metrics.map((metric) => (
-                          <span key={metric}>{metric}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
+                  ).map((item) => {
+                    const isWorkspaceSelected =
+                      route.workspaceId === item.workspaceId || (isDemo && item.workspaceId === "demo-workspace");
+                    return (
+                      <button
+                        key={item.workspaceId}
+                        type="button"
+                        className={`forward-run-item${isWorkspaceSelected ? " active" : ""}`}
+                        aria-pressed={isWorkspaceSelected}
+                        onClick={() => openWorkspace(item.workspaceId)}
+                      >
+                        <div className="forward-run-topline">
+                          <strong>{item.label}</strong>
+                          <span>{item.status}</span>
+                        </div>
+                        <p>{item.subtitle}</p>
+                        <div className="forward-metric-row">
+                          {item.metrics.map((metric) => (
+                            <span key={metric}>{metric}</span>
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             ) : isDemo ? (
@@ -1145,14 +1153,16 @@ export function OperatorWorkbenchScreen({
                             { label: "Tasks", value: "1" },
                           ],
                         }
-                      : workspaceDetail
+                      : workspaceDetailReady
+                        ? workspaceDetail
+                        : null
                   }
                   state={isDemo ? "ready" : route.screen === "workspaces" ? workspacesState : workspaceDetailState}
-                  error={workspaceDetailError}
+                  error={route.screen === "workspaces" ? workspacesError : workspaceDetailError}
                   mutationState={isDemo ? "ready" : workspaceMutationState}
                   mutationError={workspaceMutationError}
-                  onQuickStatus={!isDemo && route.screen === "workspace-detail" ? handleWorkspaceQuickStatus : undefined}
-                  quickStatusActions={!isDemo && route.screen === "workspace-detail" ? workspaceQuickStatusActions : undefined}
+                  onQuickStatus={!isDemo && workspaceDetailReady ? handleWorkspaceQuickStatus : undefined}
+                  quickStatusActions={!isDemo && workspaceDetailReady ? workspaceQuickStatusActions : undefined}
                   linkedTasks={isDemo ? [] : workspaceLinkedTaskItems}
                   linkedTasksState={isDemo ? "ready" : workspaceLinkedTasksState}
                   linkedTasksError={workspaceLinkedTasksError}
@@ -1160,10 +1170,10 @@ export function OperatorWorkbenchScreen({
                   taskActionError={workspaceTaskActionError}
                   taskActionMessage={workspaceTaskActionMessage}
                   onOpenTask={!isDemo ? openTask : undefined}
-                  onDetachTask={!isDemo ? handleWorkspaceDetachTask : undefined}
-                  onArchiveTask={!isDemo ? handleWorkspaceArchiveTask : undefined}
+                  onDetachTask={!isDemo && workspaceDetailReady ? handleWorkspaceDetachTask : undefined}
+                  onArchiveTask={!isDemo && workspaceDetailReady ? handleWorkspaceArchiveTask : undefined}
                 />
-                {!isDemo && (route.screen !== "workspace-detail" || workspaceDetail?.status !== "archived") ? (
+                {!isDemo && (route.screen === "workspaces" || (workspaceDetailReady && workspaceDetail?.status !== "archived")) ? (
                   <OperatorWorkspaceEditorPanel
                     mode={route.screen === "workspace-detail" ? "edit" : "create"}
                     draft={workspaceDraft}
@@ -1172,7 +1182,7 @@ export function OperatorWorkbenchScreen({
                     onChange={setWorkspaceDraft}
                     onSubmit={handleWorkspaceSubmit}
                   />
-                ) : !isDemo && route.screen === "workspace-detail" ? (
+                ) : !isDemo && workspaceDetailReady && route.screen === "workspace-detail" ? (
                   <section className="forward-section">
                     <div className="forward-section-header">
                       <div>

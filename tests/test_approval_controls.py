@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,6 +17,7 @@ from ensemble_iteration_service import IterationService
 from ensemble_loop_repository import LoopStateRepository
 from ensemble_orchestration import BuildGraph, PlannerGraph
 from ensemble_persona_memory import write_memory_record_schema
+import ensemble_approval as approval_module
 
 
 class RiskyWorker:
@@ -335,6 +337,50 @@ class ApprovalControlTests(unittest.TestCase):
 
         self.assertTrue(classification["requires_approval"])
         self.assertEqual(classification["risk_level"], "low")
+
+    def test_enqueue_append_failure_leaves_no_approval_projection(self) -> None:
+        root, repo = self.prepare_workspace()
+        run_id = self.create_run(root, repo)
+        iteration_id = repo.list_iterations(run_id)[-1]["iteration_id"]
+        approvals = approval_module.ApprovalInterruptAdapter(root)
+
+        with mock.patch.object(approval_module, "append_event", side_effect=RuntimeError("authority append failed")):
+            with self.assertRaisesRegex(RuntimeError, "authority append failed"):
+                approvals.enqueue_request(
+                    run_id=run_id,
+                    iteration_id=iteration_id,
+                    actor="conitens-architect",
+                    action_type="shell_execution",
+                    action_payload={"command": "echo guarded"},
+                )
+
+        self.assertEqual(repo.list_approval_requests(run_id=run_id), [])
+
+    def test_decision_append_failure_leaves_request_pending(self) -> None:
+        root, repo = self.prepare_workspace()
+        run_id = self.create_run(root, repo)
+        iteration_id = repo.list_iterations(run_id)[-1]["iteration_id"]
+        approvals = approval_module.ApprovalInterruptAdapter(root)
+        request = approvals.enqueue_request(
+            run_id=run_id,
+            iteration_id=iteration_id,
+            actor="conitens-architect",
+            action_type="shell_execution",
+            action_payload={"command": "echo guarded"},
+        )
+
+        with mock.patch.object(approval_module, "append_event", side_effect=RuntimeError("decision append failed")):
+            with self.assertRaisesRegex(RuntimeError, "decision append failed"):
+                approvals.decide(
+                    request_id=request["request_id"],
+                    status="approved",
+                    reviewer="owner",
+                    reviewer_note="approved",
+                )
+
+        persisted = repo.get_approval_request(request["request_id"])
+        self.assertIsNotNone(persisted)
+        self.assertEqual(persisted["status"], "pending")
 
 
 if __name__ == "__main__":

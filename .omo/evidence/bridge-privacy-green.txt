@@ -1,0 +1,48 @@
+Bridge privacy/query-boundary GREEN - 2026-07-10
+
+Final automated verification:
+python -m unittest tests.test_forward_runtime_mode tests.test_forward_bridge_boundary tests.test_forward_live_approval tests.test_forward_bridge
+
+Result after all review-driven repairs:
+- Ran 65 tests in 61.011s.
+- OK.
+- Focused public-boundary suite: 3/3 OK, including `../private-owner`.
+- Dashboard regression suite: 150/150 OK.
+- Python compile passed for both production modules and four related test files.
+- Scoped `git diff --check` exited 0; only line-ending conversion warnings were emitted.
+- Context markdown validation passed 5/5.
+
+Manual CLI verification under Windows CP949 without UTF-8 overrides:
+- `forward status --format json`: exit 0.
+- `workspace_root` is `.`.
+- active runtime truth remains `scripts/ensemble.py + .notes/ + .agent/`.
+- `loop_state_db` is `.conitens/runtime/loop_state.sqlite3`.
+- serialized output does not contain the resolved workspace root.
+- `forward context-latest --format json`: exit 0.
+- runtime and repository context paths are relative.
+- serialized output does not contain the resolved workspace root.
+- both context documents remain present and parsed Unicode, including U+2014,
+  survives the ASCII-safe JSON transport.
+
+Public-boundary contracts now covered:
+- exact-whitelist context/workspace/approval/validator/actor/SSE projections;
+- no raw approval payload, reviewer note, validator feedback, transcript, local
+  actor, secret-shaped value, or absolute local path in characterized public
+  responses;
+- inside-workspace paths remain relative;
+- outside absolute, UNC, and any relative `..` traversal path is `[REDACTED]`;
+- workspace list/detail queries do not repair or mutate repository storage;
+- internal repository records retain the original private values.
+
+Independent review-work result:
+- goal gate: PASS;
+- code review: PASS;
+- security review: PASS;
+- compatibility/context review: PASS;
+- manual QA: PASS.
+
+Dashboard build note:
+- TypeScript compilation completed and Vite transformed 143 modules.
+- Final build cleanup stopped on EPERM for the pre-existing locked
+  `packages/dashboard/dist/index (1).html`; no source compilation error was
+  observed and the locked artifact was not deleted.

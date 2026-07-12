@@ -1,0 +1,24 @@
+Meeting/spawn/handoff authority RED - 2026-07-10
+
+Command:
+python -m unittest tests.test_meeting_spawn_authority
+
+Pre-production result after removing one Windows-only mock error:
+- Ran 13 tests in 0.185s.
+- 11 failures and 2 expected contract errors.
+
+Intended RED classes:
+- lifecycle aliases for meeting, subagent, and handoff states are missing;
+- start/say/end meeting mutate transcript, active state, or summary before the
+  event append succeeds;
+- meeting message events do not yet provide a stable message id/hash/ref link;
+- create/transition handoff mutate files and SQLite before event append;
+- spawn launches a process and writes its active record before an intent event;
+- an observed spawn-event failure does not terminate the launched process;
+- stop kills/moves the process record before a termination-request event;
+- refresh moves a dead-process record without first recording the observation;
+- successful spawn/stop paths emit one legacy event instead of requested then
+  observed canonical lifecycle events.
+
+The test suite uses mocked processes and kill primitives; no real provider
+process is launched by these authority tests.

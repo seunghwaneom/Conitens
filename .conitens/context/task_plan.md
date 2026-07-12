@@ -2,6 +2,130 @@
 
 ## Active Batch
 
+- Batch: Unified authority repair execution
+- Status: in_progress
+- Date: 2026-07-10
+- Scope: Execute the approved architecture/refactor plan in reversible waves.
+  This slice fixes the documented authority contract, locks append/redaction and
+  rebuild behavior, converts room create/message/tool-event mutations to
+  event-before-projection ordering, hardens every characterized browser-visible
+  Forward query projection, and aligns meeting, handoff, spawn, and stop
+  lifecycle mutations without promoting Forward.
+- Acceptance: ADR-0004 must keep legacy as the default runtime and define
+  Forward promotion gates; append failures must leave no room/tool projection;
+  successful events must remain replayable when later projections fail; room
+  message and tool-event payloads must be replay-sufficient and redacted;
+  deterministic rebuild and browser-path safety must be tested; meeting and
+  spawn events must contain metadata rather than private text, paths, commands,
+  process output, or environment values; no approval or verification gate may
+  be weakened.
+- Implemented: Wave 0 authority/bridge docs and a machine-readable direct-write
+  inventory; Wave 1 append/redaction/rebuild behavior locks; Wave 2A event-first
+  room create, message, and tool-event paths with stable authority message IDs
+  and preserved integer SQLite projection IDs; Wave 2B public serializers for
+  context, workspace, approval, validator, actor, and SSE query payloads; Wave
+  2C event-first meeting, handoff, spawn, clean-exit, error, and stop command
+  lifecycles with metadata-only canonical events and recoverable secondary
+  projection failures.
+- Remaining: extract bridge query and command responsibilities behind the
+  now-locked public contract, then proceed to dashboard thin-shell and
+  improvement-loop waves behind dedicated gates.
+- Verified: 56 authority/room regression tests and 65 Forward boundary/runtime
+  tests pass; 150 dashboard tests also pass. The final meeting/spawn authority
+  group passes 34/34, focused protocol tests pass 6/6, the protocol package
+  builds, and Python compile/event-type sync/scoped diff checks pass. The full
+  operations suite now has 2 failures and 9 errors across 23 tests, all in
+  known allow-list/registry/provider-workflow debt; the full protocol suite has
+  4 known baseline failures and 846 passing tests.
+
+## Previous Batch
+
+- Batch: `Architecture direction and refactor planning`
+- Status: `complete`
+- Date: 2026-07-10
+- Scope: Analyze the project conversation history, current Python control plane,
+  forward SQLite/runtime stack, Forward Bridge, dashboard, generated context,
+  tests, and repository structure; then define a target architecture, product
+  direction, promotion gate, and reversible refactor roadmap without changing
+  runtime behavior.
+- Acceptance: The plan must preserve the event-first authority, additive Python
+  facade, approval/verify gates, metadata-only harness boundary, and current
+  forward non-default status; distinguish durable authority, operational state,
+  projection, evidence, and UI state; identify current contract violations with
+  code evidence; separate active from reference/parity surfaces; specify
+  behavior-lock tests, exit-gated waves, PR-sized slices, success metrics, risks,
+  and forward promotion/quarantine criteria.
+- Artifact: `docs/conitens-architecture-direction-refactor-plan-2026-07-10.md`.
+  Supporting generated evidence is under `.audit/repo-structure-lens/` and
+  `.omo/evidence/conitens-architecture-direction-refactor-plan-review.md`.
+- Verified: Independent architecture, fact, security, goal/constraint, and
+  manual Markdown QA lanes all passed. The plan was corrected for room event
+  payload sufficiency, the canonical meeting transcript evidence boundary,
+  browser-visible absolute-path leakage, the patch-approval bridge shortcut,
+  phase-scoped metrics, and the occupied ADR-0003 number; the new decision is
+  reserved as ADR-0004. The existing CLI facade and forward status surface were
+  exercised read-only. No runtime implementation was changed.
+
+## Previous Batch
+
+- Batch: `Episode closure attempt public artifact slice`
+- Status: `complete`
+- Date: 2026-07-05
+- Scope: Implement the minimal supervisor episode closure attempt vertical
+  slice from the interview seed. `episode close <episode_id>` now evaluates
+  deterministic closure rules for an existing event-sourced episode id, always
+  emits `task.artifact_added` with the closure bundle as replayable event
+  payload, materializes an `episode_closure_bundle` evidence JSON plus public
+  digest/index from that event, updates only a derived episode status
+  projection, and exposes `improvement list/show` L0/L1 CLI views.
+- Acceptance: Missing episode ids error before artifact writes; required
+  summary fields, failed/missing validation, and high-risk blockers produce a
+  `blocked` closure bundle; low confidence or review ambiguity produces
+  `needs_review`; successful validation with required fields produces `closed`;
+  every closure bundle contains `episode_summary`, `scorecard`,
+  `raw_access_audit`, and `next_workflow_recommendation`; raw access defaults
+  to `raw_access_used=false` with no grants; validation comes only from prior
+  validation events; public closure text and public episode labels are
+  redacted/rejected at the boundary; artifact filenames and event scope do not
+  expose raw episode ids; projection files are derived read models rather than
+  source-of-truth state.
+- Verified: Python compile passed for the changed CLI/module/test files;
+  `tests.test_episode_closure` + `tests.test_episode_closure_cli_security`
+  passed 13/13; non-server approval and loop-state regressions passed 26/26; a
+  non-server Forward Bridge projection regression passed; scoped `git diff --check`
+  passed with only the existing Windows LF/CRLF warning for `scripts/ensemble.py`.
+  The full fixed-port Forward Bridge HTTP regression bundle still fails on this
+  host with `PermissionError:
+  [WinError 10013]` during loopback port bind, including after elevated retry.
+
+## Previous Batch
+
+- Batch: `Gajae-Code harness adapter integration`
+- Status: `complete`
+- Date: 2026-07-04
+- Scope: Install Gajae-Code as a pinned external terminal harness, wire the
+  Codex plugin marketplace, and add Conitens read-only harness evidence
+  projections plus a metadata-only GJC adapter import surface without making
+  GJC authoritative runtime state.
+- Acceptance: Bun/GJC install checks pass; Codex plugin list shows
+  `gajae-code@gajae-code-local` installed and enabled; `harness.evidence_observed`
+  rejects raw transcript/stdout/stderr/prompt/diff/body/comment fields;
+  `scripts/ensemble_gjc_adapter.py` imports only redacted GJC metadata and
+  rejects unsafe evidence refs before append; the Forward Bridge exposes GJC
+  runtime availability and metadata-only harness evidence; the dashboard parses
+  and renders harness evidence as an evidence health signal rather than a
+  primary control surface; existing bridge and dashboard regression gates pass.
+- Verified: GJC install checks passed; focused backend harness tests passed;
+  GJC adapter tests passed; manual adapter CLI QA passed; approval and
+  loop-state regression tests passed; dashboard tests passed 150/150; dashboard
+  production build passed; `git diff --check` reported only existing Windows
+  LF/CRLF warnings. The full fixed-port Forward Bridge HTTP regression bundle
+  remains environment-blocked on this Windows host by `PermissionError:
+  [WinError 10013]` while binding loopback test ports, even when retried with
+  elevated execution.
+
+## Previous Batch
+
 - Batch: `README and Office Preview documentation sync`
 - Status: `complete`
 - Date: 2026-07-04
@@ -11,14 +135,235 @@
 - Acceptance: README must identify `packages/dashboard` and the read-only
   Forward Bridge as current forward surfaces; Office Preview docs must separate
   Focused large portrait assets from Topology 64px sprite atlases; stale
-  Spatial Lens asset-registry language must be removed; contributor identity
-  must not show a stale `Seung Hwan Lee` alias for the repo owner; no
-  code/runtime assets should be changed by this documentation-only pass.
-- Verified: reviewed edited Markdown, searched for removed stale phrases,
-  inspected the documentation diff, checked GitHub contributors/commit search,
-  verified `.mailmap` canonicalization with `git check-mailmap`, and traced the
-  remaining contributors-graph bucket to the `Codex <noreply@openai.com>`
-  co-author trailer in commit `02a1795`.
+  Spatial Lens asset-registry language must be removed; no code/runtime assets
+  should be changed by this documentation-only pass.
+- Verified: reviewed edited Markdown, searched for removed stale phrases, and
+  inspected the documentation diff.
+
+## Previous Batch
+
+- Batch: `Large imagegen pixel portrait agent integration`
+- Status: `complete`
+- Date: 2026-06-30
+- Scope: Apply the approved large standalone role character PNGs to the
+  dashboard Agent stage while preserving the existing sprite-gen atlas pipeline
+  for compact room/spatial avatar contexts.
+- Acceptance: all five canonical roles must have generated portrait assets
+  under `public/agent-portraits/generated`; Agent-stage cards must render those
+  assets with imagegen provenance hooks; the visible cards must show full-body
+  pixel characters rather than cropped heads, tiny sprites, sprite sheets, or
+  palette-swap mini bodies; tests/build/browser QA must stay green.
+- Verified: added RED contract for the missing portrait module and generated
+  asset surface; copied all five role PNGs into dashboard public assets as
+  `288x512` transparent RGBA portraits; wired
+  `agent-character-portraits.ts` into `AgentCharacterStage`; enlarged the card
+  portrait viewport and added browser QA rendered-size checks; targeted tests
+  passed 150/150; full dashboard tests passed 150/150; dashboard production
+  build passed; browser QA PASS at Agents 820/1220/1440, reduced motion, and
+  Topology 1220; screenshot inspection confirmed full-body figures. Evidence:
+  `.omo/evidence/agent-character-portraits-red.txt`,
+  `.omo/evidence/agent-character-portraits-targeted.txt`,
+  `.omo/evidence/dashboard-node-tests-agent-portraits.txt`,
+  `.omo/evidence/dashboard-build-agent-portraits.txt`,
+  `.omo/evidence/agent-character-stage-browser-qa-agent-portraits.txt`,
+  `.omo/evidence/agent-portrait-asset-check.txt`, and
+  `output/playwright/agent-character-stage/agents-1220.png`.
+
+## Previous Batch
+
+- Batch: `Front-facing pixel portrait agent redesign`
+- Status: `complete`
+- Date: 2026-06-28
+- Scope: Apply the user's attached front-facing pixel character references to
+  the sprite-gen agent cast, replacing the rejected top-view office character
+  direction with direct-generated full-body human lineup sprites.
+- Acceptance: generated agent sprites must read as front-facing full-body
+  pixel humans with large readable heads/eyes, highlighted hair, clothing
+  layers, separated legs/shoes, and role props; generated manifests and
+  requests must record user-supplied front-facing reference provenance without
+  copying source pixels; the Agent stage must render the 64px sprites at 2x
+  without clipping; Spatial Lens character registry geometry must match the
+  generated 64px atlas frames; no command-center/Claude/imported character
+  sheet source may return.
+- Verified: new RED contract failed first on old 48px/top-view artifacts;
+  regenerated all five sprite-gen role atlases at 64px; inspected the combined
+  contact sheet and Agents 820/1220/1440 screenshots; fixed a selected-avatar
+  CSS ring that made the sprite frame look boxed; revised sprite eyes, role
+  props, and silhouette cues after read-only visual critique; targeted
+  agent/spatial tests passed; full dashboard tests passed 149/149; `tsc -b`
+  passed; Vite production build passed; browser QA passed including 820px and
+  CTA/card keyboard focus sequence; visible magenta checks returned 0 pixels.
+  Evidence:
+  `.omo/evidence/agent-sprite-gen-front-facing-run.txt`,
+  `.omo/evidence/agent-character-stage-front-facing-targeted.txt`,
+  `.omo/evidence/dashboard-node-tests-front-facing.txt`,
+  `.omo/evidence/dashboard-tsc-front-facing.txt`,
+  `.omo/evidence/dashboard-vite-build-front-facing.txt`,
+  `.omo/evidence/agent-character-stage-browser-qa-front-facing.txt`,
+  `.omo/evidence/front-facing-character-reference-notes.md`, and
+  `output/playwright/agent-character-stage/front-facing-sprite-gen-contact.png`.
+
+## Previous Batch
+
+- Batch: `Reference-informed pixel office agent redesign`
+- Status: `complete`
+- Date: 2026-06-28
+- Scope: Use web/image reference research for top-down pixel office character
+  direction, then regenerate the agent sprite-gen character atlases and tune
+  the Agent stage so characters read as a stronger 2D human operator cast.
+- Acceptance: reference research must be recorded without copying source
+  pixels; generated sprite requests and manifests must record the source URLs
+  and no-copy art-direction note; characters must preserve the direct
+  sprite-gen component-row pipeline; Agent-stage cards must keep 1220px and
+  1440px layouts stable while making characters larger and more readable; no
+  command-center/Claude/imported character sheet source may return.
+- Verified: new manifest/reference test failed first on missing
+  `referenceSources`; regenerated all roles; targeted agent/spatial tests
+  passed; full dashboard tests passed 149/149; `tsc -b` passed; Vite
+  production build passed; browser QA passed; visual contact sheet and
+  1220/1440 screenshots inspected; exact/near magenta check returned 0;
+  `git diff --check` passed with only LF/CRLF warnings. Evidence:
+  `.omo/evidence/*reference-informed*.txt` and
+  `output/playwright/agent-character-stage/reference-informed-sprite-gen-contact.png`.
+
+## Previous Batch
+
+- Batch: `Frontend-skill 2D human sprite-gen redesign`
+- Status: `complete`
+- Date: 2026-06-28
+- Scope: Use the frontend-skill pass to replace the still-too-simple
+  direct-generated agent silhouettes with detailed 2D human operator sprites
+  while preserving the direct sprite-gen component-row pipeline, runtime
+  manifest contract, and Agent/Topology/Classic app semantics.
+- Acceptance: agent sprites must show readable 2D human faces, hair, clothing,
+  separate limbs, boots, and role props; generated `sprite-request.json` and
+  prompts must use detailed 2D cel-shaded human character language and avoid
+  simplified avatar/chibi/mascot provenance; QA notes must record the
+  non-simple 2D human character intent; the Agent stage must remain readable at
+  1220px and 1440px with reduced-motion behavior preserved; no dashboard
+  source should keep command-center agent PNG references.
+- Verified: old generated request failed the new provenance test first; direct
+  sprite-gen generation reran for all five roles at 48px `cellSize`;
+  dashboard tests passed 149/149; `tsc -b` passed; Vite production build
+  passed; browser QA passed; `git diff --check` passed; command-center agent
+  PNG source grep is empty; visual contact sheet inspected at
+  `output/playwright/agent-character-stage/2d-human-sprite-gen-contact.png`.
+  Evidence: `.omo/evidence/*2d-human*.txt`.
+
+## Previous Batch
+
+- Batch: `Direct sprite-gen agent character generation`
+- Status: `complete`
+- Date: 2026-06-28
+- Scope: Remove the borrowed/Claude/command-center character source path and
+  regenerate agent character atlases directly from role-owned sprite-gen
+  requests, while preserving the runtime public-asset contract and existing
+  Agent/Topology/Classic app semantics.
+- Acceptance: generated agent outputs must be created from direct sprite-gen
+  component rows, not imported character sheets; generated QA notes must state
+  the no command-center/Claude/imported-sheet provenance; each role keeps a
+  distinct motion profile; the runtime manifest remains compact and
+  dependency-free; the Agent stage keeps readable 1220px/1440px presentation,
+  reduced-motion behavior, and the next-action CTA.
+- Verified: direct sprite-gen generation ran for orchestrator, implementer,
+  researcher, reviewer, and validator; dashboard tests passed 149/149;
+  `tsc -b` passed; Vite production build passed; browser QA passed for Agents
+  1220/1440, reduced motion, and Topology 1220; `git diff --check` passed.
+  Evidence: `.omo/evidence/agent-sprite-gen-direct-run.txt`,
+  `.omo/evidence/dashboard-node-tests-direct-sprite.txt`,
+  `.omo/evidence/dashboard-tsc-direct-sprite.txt`,
+  `.omo/evidence/dashboard-vite-build-direct-sprite.txt`,
+  `.omo/evidence/agent-character-stage-browser-qa-direct-sprite.txt`, and
+  `.omo/evidence/git-diff-check-direct-sprite.txt`.
+
+## Previous Batch
+
+- Batch: `LazyCodex frontend character-stage polish`
+- Status: `complete`
+- Date: 2026-06-28
+- Scope: Apply the LazyCodex/frontend-skill pass to the existing sprite-gen
+  Agent stage without changing runtime asset generation, routing, or
+  Topology/Classic semantics.
+- Acceptance: visible copy should be product/operator language rather than raw
+  motion ids; the selected agent card should be the first-read visual anchor at
+  1220px and 1440px; `data-motion-profile` and sprite-gen provenance must stay
+  available for QA; blocked/review states must remain text-first and
+  reduced-motion-safe.
+- Verified: dashboard tests passed 149/149; `tsc -b` passed; Vite production
+  build passed; `git diff --check` passed; browser QA passed for Agents
+  1220/1440, reduced motion, and Topology 1220. Evidence:
+  `.omo/evidence/dashboard-node-tests-frontend-skill.txt`,
+  `.omo/evidence/dashboard-tsc-frontend-skill.txt`,
+  `.omo/evidence/dashboard-vite-build-frontend-skill.txt`,
+  `.omo/evidence/git-diff-check-frontend-skill.txt`, and
+  `.omo/evidence/agent-character-stage-browser-qa-frontend-skill.txt`.
+
+## Previous Batch
+
+- Batch: `Sprite-gen agent character stage implementation`
+- Status: `complete`
+- Date: 2026-06-27
+- Scope: Replace the office-centered Focused preview with a character-first
+  Agent deck, use sprite-gen-backed agent atlases, diversify per-character
+  motion profiles, and keep Topology/Classic mode semantics intact.
+- Acceptance: Focused/Agents mode must not mount the floor viewport; it must
+  show agent cards sourced from `public/agent-sprites/generated`, expose
+  handoff/blocked/next signals, render at least four distinct visible
+  role/motion profiles in the demo, preserve reduced-motion semantics, keep
+  the 1220px nav on one row, and avoid runtime sprite dependencies.
+- Verified: sprite-gen character manifests and QA GIF/contact sheets generated
+  for orchestrator, implementer, researcher, reviewer, and validator; RED
+  model/source test failed first on the missing character-stage module; final
+  dashboard tests passed 149/149; `tsc -b` passed; Vite production build
+  passed; browser QA passed for Agents 1220/1440, reduced motion, and
+  Topology 1220. Evidence: `.omo/evidence/agent-sprite-gen-run.txt`,
+  `.omo/evidence/dashboard-node-tests-final.txt`,
+  `.omo/evidence/dashboard-tsc-final.txt`,
+  `.omo/evidence/dashboard-vite-build-final.txt`, and
+  `output/playwright/agent-character-stage-results.json`.
+
+## Previous Batch
+
+- Batch: `Office-preview character-first redesign guidance`
+- Status: `complete`
+- Date: 2026-06-27
+- Scope: Produce implementation-ready redesign guidance for `#/office-preview`
+  that de-emphasizes office staging, prioritizes distinct agent characters and
+  diversified per-character motion, and preserves existing operator semantics,
+  demo data shape, and no-new-runtime-deps constraints.
+- Acceptance: guidance must define character-first principles, mode-by-mode UI
+  intent, motion taxonomy, guardrails, success criteria, and binary QA
+  scenarios for Focused, Floor Overview, and Classic.
+- Verified: current implementation/design contract reviewed in `DESIGN.md`,
+  `PixelOffice.tsx`, `OfficeStage.tsx`, `FocusedHandoffView.tsx`,
+  `OfficeSidebar.tsx`, `AgentSprite.tsx`, and latest browser evidence under
+  `output/playwright/sprite-gen-office-overhaul/`. Deliverables written to
+  `DESIGN.md` and
+  `docs/frontend/OFFICE_PREVIEW_CHARACTER_FIRST_REDESIGN.md`.
+
+## Previous Batch
+
+- Batch: `Sprite-gen office visual overhaul`
+- Status: `complete`
+- Date: 2026-06-27
+- Scope: Install and use `aldegad/sprite-gen` as a local Codex skill to
+  regenerate the dashboard office fixture atlas and floor tiles, then retune
+  Classic/Overview office styling around the new signal-first pixel palette
+  without adding runtime dependencies.
+- Acceptance: `sprite-gen` must be installed locally; the office fixture sheet
+  must preserve the existing 25-cell, 24px atlas contract; provenance must be
+  testable; Focused remains workbench-dominant; Overview remains topology-first
+  with dense room dressing hidden; Classic renders the revised office art
+  without horizontal overflow.
+- Verified: `sprite-gen` installed to
+  `C:\Users\eomsh\.codex\skills\sprite-gen`; generator script ran the
+  `unpack_atlas_run.py` imported-PNG path and `export_curated_pngs.py` curation
+  export path for 25 fixture frames; targeted dashboard tests passed 17/17;
+  full dashboard tests passed 145/145; dashboard production build passed;
+  browser QA passed 6/6 scenarios for Focused 1220/1440, Floor Overview
+  1440/1220, and Classic 1440/1220. Evidence:
+  `output/playwright/sprite-gen-office-overhaul-results.json` plus screenshots
+  under `output/playwright/sprite-gen-office-overhaul/`.
 
 ## Previous Batch
 
@@ -2008,3 +2353,302 @@ mode switch and CTA contracts model-owned and testable.
 - `output/playwright/frontend-design-architecture-improvement/focused-1440.png`
 - `output/playwright/frontend-design-architecture-improvement/overview-1440.png`
 - `output/playwright/frontend-design-architecture-improvement/classic-1440.png`
+
+## Gajae-Code Final Adapter Implementation
+
+- Batch: `GJC final adapter / control-plane leaf import`
+- Status: `complete`
+- Mode: Ralph + Ultrawork
+
+### Goal
+
+Implement the final phase of the approved Gajae-Code plan without weakening
+Conitens' control-plane boundary: GJC remains an external terminal harness,
+while Conitens `append_event()` remains the only authoritative mutation path.
+
+### Deliverables
+
+- Added `scripts/ensemble_gjc_adapter.py`, a dependency-free leaf adapter that
+  imports one redacted GJC run metadata JSON file.
+- Added `tests/test_gjc_adapter.py` for metadata import, raw-field rejection,
+  unsafe path rejection, symbolic-ref rejection, and CLI stderr redaction.
+- Added `.omo/evidence/gjc-adapter-manual-fixture.json` as a safe manual QA
+  fixture.
+- Updated `docs/gjc-harness-adapter.md` with the import command and symbolic
+  ref contract.
+- Refreshed Ralph/Ultrawork evidence in `.omo/notepads/` and `.omx/context/`.
+
+### Acceptance
+
+- [x] Adapter appends exactly one `harness.evidence_observed` event through
+      `append_event()`.
+- [x] Adapter does not write task lifecycle, approval state, or `.notes`
+      projections directly.
+- [x] Raw prompt/completion/stdout/stderr/transcript/log/body/diff/patch/
+      comment/command/token/secret fields are rejected before append.
+- [x] Relative artifact refs are canonicalized; absolute paths and traversal
+      are rejected.
+- [x] Symbolic refs are opaque IDs only; slash, backslash, traversal, and
+      drive-letter syntax are rejected.
+- [x] CLI rejection stderr does not leak the original unsafe ref/path.
+- [x] Existing bridge/dashboard projections continue to pass.
+
+### Evidence
+
+- `python -m unittest tests.test_gjc_adapter` passed 7/7.
+- `python -m py_compile scripts/ensemble_gjc_adapter.py scripts/ensemble_events.py scripts/ensemble_forward.py scripts/ensemble_forward_bridge.py` passed.
+- `python -m unittest tests.test_gjc_adapter tests.test_forward_runtime_mode tests.test_approval_controls tests.test_loop_state` passed 51/51.
+- Focused Forward Bridge GJC evidence tests passed 3/3.
+- `pnpm --filter @conitens/dashboard test` passed 150/150.
+- `pnpm --filter @conitens/dashboard build` passed.
+- `gjc --version` returned `gjc/0.8.1`; `gjc --smoke-test` returned
+  `smoke-test: ok`.
+
+## Wave 5 Improvement Candidate Approval Slice - 2026-07-10
+
+- Status: `complete`
+- Mode: Ralph + Ultrawork
+- Stop line: approval/rejection only; no `.agent` apply/rollback, Forward,
+  dashboard, SQLite candidate authority, effect measurement, or runtime-default
+  promotion.
+
+### Deliverables
+
+- Added a typed/versioned candidate model and event-replay service.
+- Added canonical `improvement.candidate_proposed` protocol registration and
+  regenerated the Python event allow-list.
+- Extended the existing `improvement` CLI with candidate
+  create/list/show/decide actions.
+- Added focused replay, privacy, versioning, approval-correlation, CLI, and
+  protocol tests.
+
+### Acceptance
+
+- [x] Candidate event precedes the metadata-only approval request.
+- [x] Exact retry is idempotent; changed proposals increment valid lineage
+      versions; malformed replay cannot poison version allocation.
+- [x] Deterministic risk upgrades topology/protected changes and requires owner
+      review.
+- [x] Only exact post-proposal approval events with valid actor types can decide
+      a candidate.
+- [x] Public reads reject private/path/secret-shaped, forged-provenance, and
+      non-string replay content.
+- [x] Isolated CLI QA confirms only the event ledger changes; `.agent` and
+      SQLite remain unchanged.
+- [x] Candidate 27/27, compatibility 55/55, authority integration 58/58,
+      protocol candidate test, TypeScript build, compile, and structure gates
+      pass.
+- [x] Independent final code review APPROVE and scoped security PASS obtained.
+
+### Follow-on Ralph gate
+
+Completed by the materializable agent-skill revision slice below. Candidate
+metadata remains non-executable; only a separately validated structured revision
+can reach the owner-gated apply path.
+
+### Evidence
+
+- `.omx/plans/prd-improvement-candidate-pipeline.md`
+- `.omx/plans/test-spec-improvement-candidate-pipeline.md`
+- `.omo/evidence/improvement-candidate-green.txt`
+- `.omo/evidence/improvement-candidate-debugging-audit.md`
+- `.omo/evidence/improvement-candidate-review-work.md`
+
+## Wave 5 Agent Skill Revision Apply/Rollback Slice - 2026-07-10
+
+- Status: `complete`
+- Mode: Ralph + Ultrawork
+- Stop line: one existing `.agent/skills/<skill>.yaml` target at a time; no
+  create/delete, persona core, `.agents/skills`, Forward, dashboard, SQLite
+  authority, runtime promotion, or automatic deployment.
+
+### Deliverables
+
+- Added digest-bound structured revision proposal/replay in
+  `scripts/ensemble_agent_revisions.py`.
+- Extracted read-only legacy owner matching to `scripts/ensemble_owner_auth.py`
+  while preserving `ensemble.py` wrappers.
+- Added owner-gated event-first apply, rollback, deterministic rebuild, atomic
+  projection, stale/drift/path checks, and cross-process serialization.
+- Added the existing-facade CLI actions `revision-propose`, `revision-show`,
+  `revision-apply`, `revision-rollback`, and `revision-rebuild`.
+- Registered exactly three revision events in the protocol and regenerated the
+  Python allow-list.
+
+### Acceptance
+
+- [x] Candidate review and config-write authorization remain separate.
+- [x] Proposal binds candidate ID/version/proposal digest, target, source hash,
+      base canonical hash, and next canonical hash.
+- [x] Apply and rollback append terminal authority events before atomic writes.
+- [x] Rebuild requires a live owner and deterministically replays the active
+      revision stack; ownerless rebuild creates no `.agent` output.
+- [x] Malformed, forged, duplicate, out-of-order, stale, unsafe-path, private,
+      secret-shaped, and externally drifted inputs fail closed.
+- [x] Focused 46/46 and compatibility 104/104 tests passed.
+- [x] Real CLI lifecycle, recovery, privacy, and process-concurrency QA passed.
+- [x] Protocol focused test/build, registry, compile, sync, scoped diff, and
+      zero-cycle structure gates passed.
+- [x] Independent code, state-machine, architecture, completion, and security
+      reviews approved the final slice.
+
+### Next gate
+
+Keep the current leaf module until another revision target family or richer
+revision semantics creates real reuse pressure. The next improvement-loop slice
+now measures post-apply effect and regression from exact-key public evidence.
+After this bounded slice, return to Wave 3 bridge query/command decomposition and
+public-context allowlisting; do not promote Forward or infer comparability from
+candidate prose.
+
+### Evidence
+
+- `.omx/plans/prd-agent-skill-revision-apply-rollback.md`
+- `.omx/plans/test-spec-agent-skill-revision-apply-rollback.md`
+- `.omo/evidence/agent-skill-revision-green.txt`
+- `.omo/evidence/agent-skill-revision-manual-qa.md`
+- `.omo/evidence/agent-skill-revision-debugging-audit.md`
+- `.omo/evidence/agent-skill-revision-review-work.md`
+
+## Wave 5 Effect Observation And Wave 6 Forward Quarantine - 2026-07-11
+
+- Status: `complete`
+- Mode: Ralph + Ultrawork
+- Stop line: exact comparison keys and metadata-only event replay only; no causal
+  claim, effect projection, SQLite authority, dashboard route, automatic apply,
+  authority-bearing Forward command change, or runtime-default promotion. The
+  read-only runtime-roster may skip optional version probes by default.
+
+### Deliverables
+
+- Added optional exact `comparison_key` persistence across closure API, bundle,
+  authority event, public index, projection rebuild, and CLI.
+- Added event-only `improvement.effect_observed` observe/show/list replay with
+  bounded metrics, explicit unknowns, and `causal_attribution=not_claimed`.
+- Reused the revision workspace file lock so observation and apply/rollback are
+  serialized across processes.
+- Replays revision state from the event prefix before the first effect event, so
+  later rollback preserves historical observations and reordered events fail.
+- Added strict recursive JSON type equality, exact nested closure schemas, public
+  text validation, traversal rejection, and bounded candidate provenance.
+- Accepted Forward quarantine in ADR-0004; `default_runtime=legacy` remains
+  unchanged and future promotion requires a new ADR proving all eight gates.
+- Aligned closure creation with effect replay's public-text policy: absolute
+  POSIX paths fail before append and unsafe episode IDs publish opaque hashes.
+- Removed optional external version probes from the default HTTP roster read;
+  explicit `probe_versions=1` diagnostics remain supported.
+
+### Acceptance
+
+- [x] Focused effect suite passes 26 tests, including process concurrency,
+      post-observation rollback, event reordering, bool/int confusion, nested
+      private content, safe multiline prose, public path rejection, and
+      >50-event provenance.
+- [x] Final adjacent candidate/revision/closure/owner/event-authority bundle
+      passes 121/121.
+- [x] Forward runtime + bridge acceptance passes 54/54; the formerly timing-out
+      roster endpoint defaults optional probes off and retains explicit opt-in.
+- [x] Protocol focused 1/1, TypeScript build, Python compile, 151-event/32-alias
+      registry generation, and the known full-protocol 847-pass/4-failure
+      baseline all match.
+- [x] Real CLI happy-path and unsafe-input QA passed for closure and effect
+      surfaces; no effect projection or SQLite state was created.
+- [x] Final settled-state review-work, code/security/scope/context/state-machine
+      rereviews, context/evidence closure, and temporary debug cleanup passed.
+
+### Evidence
+
+- `.omo/evidence/improvement-effect-green.txt`
+- `.omo/evidence/improvement-effect-debugging-audit.md`
+- `.omo/evidence/improvement-effect-review-work.md`
+
+### Next gate
+
+Wave 3 is the next architecture priority: split Forward query/command/transport
+responsibilities, converge primary read paths, and replace arbitrary public
+context Markdown with an allowlisted metadata projection. The current Forward
+privacy gate fails on raw bodies, secret-shaped strings, and absolute POSIX paths;
+quarantine is the control, not a claim that this debt is solved.
+
+## Wave 3 Forward Bridge Boundary Refactor - 2026-07-11
+
+- Status: `complete`
+- Mode: Ralph + Ultrawork
+- Stop line: boundary repair only; no Forward promotion, runtime-default change,
+  new dependency, persona-core migration, or unrelated cleanup.
+
+### Deliverables
+
+- Reduced `ensemble_forward_bridge.py` to a compatibility/assembly facade and
+  separated query, command, stream, HTTP, public-context, collaboration-read,
+  and patch-decision responsibilities into bounded leaves.
+- Made missing-workspace reads non-materializing and existing SQLite access
+  explicitly read-only with WAL-aware immutable handling.
+- Replaced arbitrary Markdown passthrough with allowlisted public projections;
+  public thread search is metadata-only and public actors, reviewers, handoff
+  reasons, paths, credentials, and error values are sanitized or omitted.
+- Preserved repository-primary collaboration reads with contained legacy thread
+  compatibility, facade monkeypatch contracts, dashboard response contracts,
+  SSE framing, and CLI behavior.
+- Centralized patch decisions and made approval/event ordering retry-safe and
+  workspace/actor/reason aware.
+- Centralized public approval/actor/handoff shaping across query, command, and SSE
+  paths; replaced query wildcard/dynamic-export chains with explicit owner imports;
+  and exhaustively documented all 13 operator mutation routes.
+- Kept Forward a loopback-authenticated quarantined sidecar with
+  `default_runtime=legacy`; root and boundary docs inventory both reads and
+  operator mutation routes.
+
+### Acceptance
+
+- [x] Focused boundary bundle passes 67/67 in 9.826 seconds.
+- [x] Complete Wave 3 bundle passes 158/158 in 94.117 seconds.
+- [x] HTTP overflow unit/stress bundle passes 11/11, including ten real loopback
+      oversized requests without Windows connection resets.
+- [x] Dashboard passes 154/154 and its TypeScript/Vite production build passes.
+- [x] All 37 Wave 3 Python files pass the no-excuse checker; changed Python
+      compiles and diff validation passes.
+- [x] Real CLI and loopback HTTP QA covers authentication, traversal, privacy,
+      metadata-only search, SSE, malformed/negative/oversized bodies, and cleanup.
+- [x] The adjacent legacy suite is classified, not hidden: 51 tests with 2 known
+      failures and 9 known errors in legacy event aliases/persona manifests; no
+      Forward Bridge module participates in those paths.
+- [x] Settled code review is `CLEAR / APPROVE` and the independent final gate is
+      `APPROVE`; neither reports a blocker.
+
+### Evidence
+
+- `.omx/plans/prd-wave3-forward-bridge-refactor.md`
+- `.omx/plans/test-spec-wave3-forward-bridge-refactor.md`
+- `.omo/evidence/wave3-forward-bridge-green.txt`
+- `.omo/evidence/wave3-forward-bridge-manual-qa.md`
+- `.omo/evidence/wave3-debugging-audit.md`
+- `.omo/evidence/wave3-forward-bridge-review-work.md`
+- `.omo/evidence/wave3-forward-bridge-settled-code-review.md`
+- `.omo/evidence/wave3-forward-bridge-refactor-gate-review.md`
+
+### Next gate
+
+Do not promote Forward. A future promotion slice must resolve and prove the
+documented Forward-only direct SQLite projection and approval reviewer semantics,
+along with every ADR-0004 gate. Separately plan the legacy event-alias and persona
+schema migration; do not mix it into bridge boundary work.
+
+## PR hardening follow-up (2026-07-11)
+
+- [x] Restore Active Handoff Workbench ahead of the character stage in Focused mode.
+- [x] Serialize improvement-candidate terminal decisions with a workspace lock.
+- [x] Make `forward status` avoid creating `.conitens` paths on an empty workspace.
+- [x] Remove Git email as a project-owner authorization factor.
+- [x] Run integrated tests, build, and browser QA before final review and PR creation.
+
+## PR #33 conflict integration (2026-07-12)
+
+- [x] Identify cleanup history superseded by `main` and isolate the five PR-specific commits.
+- [x] Preserve `main`'s extracted dashboard shell while composing the PR workspace controller.
+- [x] Move workspace list selection and error semantics to the extracted workbench screen.
+- [x] Preserve Forward quarantine and legacy runtime authority in merged documentation.
+- [x] Pass integrated Python, protocol, dashboard, and manual browser verification.
+- [x] Fix the review-discovered stale workspace draft race with failure-first coverage.
+- [x] Create and independently verify the history-preserving two-parent merge commit.
+- [x] Push the branch and confirm GitHub reports PR #33 mergeable.

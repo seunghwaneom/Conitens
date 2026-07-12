@@ -1,0 +1,50 @@
+Wave 3 query quality split evidence
+Date: 2026-07-11 Asia/Seoul
+
+Outcome
+- scripts/ensemble_forward_bridge_query.py is a 31-pure-LOC compatibility facade.
+- Query implementation is split into 18 cohesive shared/leaf modules, each 83-217 pure LOC.
+- All 27 caller-visible exports remain in the facade __all__.
+- The facade runtime-check injection and HTTP monkeypatch contract remain observable.
+
+Owned files
+- scripts/ensemble_forward_bridge_query.py
+- scripts/ensemble_forward_bridge_query_shared.py
+- scripts/ensemble_forward_bridge_query_core.py
+- scripts/ensemble_forward_bridge_query_provider_metrics.py
+- scripts/ensemble_forward_bridge_query_harness_evidence.py
+- scripts/ensemble_forward_bridge_query_pr_ci_evidence.py
+- scripts/ensemble_forward_bridge_query_operator_tasks.py
+- scripts/ensemble_forward_bridge_query_runtime_helpers.py
+- scripts/ensemble_forward_bridge_query_runtime_roster.py
+- scripts/ensemble_forward_bridge_query_turn_records.py
+- scripts/ensemble_forward_bridge_query_workflow_contracts.py
+- scripts/ensemble_forward_bridge_query_status_base.py
+- scripts/ensemble_forward_bridge_query_status_runs.py
+- scripts/ensemble_forward_bridge_query_status_rooms.py
+- scripts/ensemble_forward_bridge_query_wake_readiness.py
+- scripts/ensemble_forward_bridge_query_summary.py
+- scripts/ensemble_forward_bridge_query_inbox.py
+- scripts/ensemble_forward_bridge_query_agents.py
+- scripts/ensemble_forward_bridge_query_conversations.py
+
+Scenario 1: syntax/import surface
+Invocation: compile every scripts/ensemble_forward_bridge_query*.py with python -m py_compile.
+Observable: every owned Python module compiled; process continued to the test invocation with no compiler output or nonzero exit.
+
+Scenario 2: no-excuse gate
+Invocation: run skills/programming/scripts/python/check-no-excuse-rules.py once for each scripts/ensemble_forward_bridge_query*.py.
+Observable: 19 lines of "no violations in 1 file(s)"; aggregate exit 0.
+
+Scenario 3: query and GET boundary regression
+Invocation: python -m unittest with four ForwardBridgeArchitecture query/facade/monkeypatch tests, all tests in tests.test_forward_public_context and tests.test_forward_bridge_boundary, and five direct operator query projection tests.
+Observable: Ran 18 tests in 5.827s; OK. Live observables included GET run detail 200, unauthenticated status-confidence/wake-readiness 403, and authenticated status-confidence/wake-readiness 200.
+
+Preserved privacy/read contracts
+- Public run/detail projections continue excluding raw request, objective, plan-owner, note, and acceptance content.
+- Conversation projections continue using ConversationReadService methods.
+- Empty-workspace query remains write-free.
+
+Concurrent out-of-scope observation
+- An earlier mixed GET/POST suite run reported transient POST /api/operator/tasks and POST /api/operator/workspaces HTTP 500 with "Forward bridge internal error: NameError" while command modules were concurrently split.
+- The isolated operator task POST lifecycle was rerun afterward and passed (POST create 201, GET detail 200, PATCH 200, archive 200, restore 200, delete 200). No query-owned edit was required for that command-side transient.

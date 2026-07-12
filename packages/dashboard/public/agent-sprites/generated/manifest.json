@@ -1,0 +1,414 @@
+{
+  "generator": "sprite-gen",
+  "generatorRepo": "https://github.com/aldegad/sprite-gen",
+  "generatorVersion": "1.9.2",
+  "pipeline": "prepare_sprite_run+direct_component_rows+extract_sprite_row_frames+preview_animation+compose_sprite_atlas",
+  "cellSize": 64,
+  "referenceSources": [
+    "user-reference:codex-clipboard-11b0d6b3-front-facing-full-body-pixel-boy.png",
+    "user-reference:codex-clipboard-c73a6cca-front-facing-pixel-character-lineup.png",
+    "user-reference:codex-clipboard-3a0ec65f-front-facing-rpg-character-lineup.png"
+  ],
+  "roles": {
+    "orchestrator": {
+      "role": "orchestrator",
+      "atlasPath": "agent-sprites/generated/orchestrator/sprite-sheet-alpha.png",
+      "manifestPath": "agent-sprites/generated/orchestrator/manifest.json",
+      "qaNotesPath": "agent-sprites/generated/orchestrator/qa-notes.md",
+      "motionProfile": "command-pulse",
+      "primaryRow": "command-pulse",
+      "frameCount": 8,
+      "frameLayout": {
+        "sheetWidth": 512,
+        "sheetHeight": 64,
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "rows": {
+          "command-pulse": [
+            {
+              "x": 0,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 64,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 128,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 192,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 256,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 320,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 384,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 448,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            }
+          ]
+        }
+      },
+      "animation": {
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "columns": 8,
+        "rows": {
+          "command-pulse": {
+            "row": 0,
+            "frames": 8,
+            "fps": 6,
+            "loop": true
+          }
+        }
+      }
+    },
+    "implementer": {
+      "role": "implementer",
+      "atlasPath": "agent-sprites/generated/implementer/sprite-sheet-alpha.png",
+      "manifestPath": "agent-sprites/generated/implementer/manifest.json",
+      "qaNotesPath": "agent-sprites/generated/implementer/qa-notes.md",
+      "motionProfile": "build-shift",
+      "primaryRow": "build-shift",
+      "frameCount": 8,
+      "frameLayout": {
+        "sheetWidth": 512,
+        "sheetHeight": 64,
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "rows": {
+          "build-shift": [
+            {
+              "x": 0,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 64,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 128,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 192,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 256,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 320,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 384,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 448,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            }
+          ]
+        }
+      },
+      "animation": {
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "columns": 8,
+        "rows": {
+          "build-shift": {
+            "row": 0,
+            "frames": 8,
+            "fps": 6,
+            "loop": true
+          }
+        }
+      }
+    },
+    "researcher": {
+      "role": "researcher",
+      "atlasPath": "agent-sprites/generated/researcher/sprite-sheet-alpha.png",
+      "manifestPath": "agent-sprites/generated/researcher/manifest.json",
+      "qaNotesPath": "agent-sprites/generated/researcher/qa-notes.md",
+      "motionProfile": "research-orbit",
+      "primaryRow": "research-orbit",
+      "frameCount": 8,
+      "frameLayout": {
+        "sheetWidth": 512,
+        "sheetHeight": 64,
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "rows": {
+          "research-orbit": [
+            {
+              "x": 0,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 64,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 128,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 192,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 256,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 320,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 384,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 448,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            }
+          ]
+        }
+      },
+      "animation": {
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "columns": 8,
+        "rows": {
+          "research-orbit": {
+            "row": 0,
+            "frames": 8,
+            "fps": 6,
+            "loop": true
+          }
+        }
+      }
+    },
+    "reviewer": {
+      "role": "reviewer",
+      "atlasPath": "agent-sprites/generated/reviewer/sprite-sheet-alpha.png",
+      "manifestPath": "agent-sprites/generated/reviewer/manifest.json",
+      "qaNotesPath": "agent-sprites/generated/reviewer/qa-notes.md",
+      "motionProfile": "review-scan",
+      "primaryRow": "review-scan",
+      "frameCount": 8,
+      "frameLayout": {
+        "sheetWidth": 512,
+        "sheetHeight": 64,
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "rows": {
+          "review-scan": [
+            {
+              "x": 0,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 64,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 128,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 192,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 256,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 320,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 384,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 448,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            }
+          ]
+        }
+      },
+      "animation": {
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "columns": 8,
+        "rows": {
+          "review-scan": {
+            "row": 0,
+            "frames": 8,
+            "fps": 6,
+            "loop": true
+          }
+        }
+      }
+    },
+    "validator": {
+      "role": "validator",
+      "atlasPath": "agent-sprites/generated/validator/sprite-sheet-alpha.png",
+      "manifestPath": "agent-sprites/generated/validator/manifest.json",
+      "qaNotesPath": "agent-sprites/generated/validator/qa-notes.md",
+      "motionProfile": "verify-brace",
+      "primaryRow": "verify-brace",
+      "frameCount": 8,
+      "frameLayout": {
+        "sheetWidth": 512,
+        "sheetHeight": 64,
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "rows": {
+          "verify-brace": [
+            {
+              "x": 0,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 64,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 128,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 192,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 256,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 320,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 384,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            },
+            {
+              "x": 448,
+              "y": 0,
+              "w": 64,
+              "h": 64
+            }
+          ]
+        }
+      },
+      "animation": {
+        "cellWidth": 64,
+        "cellHeight": 64,
+        "columns": 8,
+        "rows": {
+          "verify-brace": {
+            "row": 0,
+            "frames": 8,
+            "fps": 6,
+            "loop": true
+          }
+        }
+      }
+    }
+  }
+}

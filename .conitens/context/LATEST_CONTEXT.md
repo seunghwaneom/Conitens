@@ -4,37 +4,498 @@ Read this file before substantial work.
 
 ## Current State
 
+- Active batch: Unified authority repair execution
+- Status: in_progress (2026-07-11)
+- Wave 0 is implemented: ADR-0004 defines the event ledger as durable workspace
+  truth, Forward SQLite as a bounded operational owner/index, projections as
+  rebuildable views, and explicit gates before any Forward default promotion.
+- Wave 1 behavior locks now cover canonical append aliases, raw-field rejection,
+  normal/duplicated Windows and POSIX user-path redaction, and deterministic
+  event-derived Obsidian thread timestamps.
+- Wave 2A is implemented for rooms: create, message, and tool-event paths append
+  the authority event before file/SQLite projection and materialize from the
+  returned redacted payload. Append failure leaves no projection; later
+  projection failure propagates while the committed event remains replayable.
+- New room messages expose a stable msg:<room_id>:<uuid> authority id and retain
+  the SQLite integer under id as projection identity. Legacy import prefers
+  explicit evidence_refs and remains compatible with attachment/text fallbacks.
+- Verification is green for 56 authority, room/replay, loop-state,
+  episode-security, and GJC tests, Python compile, inventory JSON, and scoped
+  diff checks.
+- Independent HEAVY review returned APPROVED after the tool-event authority,
+  legacy import, projection failure, message identity, path-redaction, and
+  deterministic-rebuild gaps were closed.
+- Wave 2B locked path/token and mutation boundaries, but a later dynamic review
+  found that arbitrary Forward context Markdown still preserves raw bodies,
+  common secret shapes, and absolute POSIX paths. Promotion gate 6 therefore
+  fails; an allowlisted public context projection remains Wave 3 debt.
+- Forward JSON is ASCII-safe on legacy Windows consoles while parsed Unicode is
+  preserved. The combined bridge/runtime suite passes 65/65, dashboard tests
+  pass 150/150, and independent goal, code, security, compatibility, and manual
+  QA lanes approved the current boundary.
+- Wave 2C is implemented for meeting, handoff, spawn, and stop lifecycles.
+  Authority events precede transcript, file, SQLite, loop-state, workspace, or
+  process projections; canonical events are metadata-only; short clean exits,
+  launch errors, cleanup failures, and command-completion failures preserve an
+  explicit terminal/recoverable record rather than silently drifting state.
+- The final meeting/spawn authority group passes 34/34; focused handoff
+  protocol tests pass 6/6; protocol build, event-type sync, Python compile, and
+  scoped diff checks pass. Code, security, compatibility, and test review lanes
+  all returned unconditional scoped PASS. The operations baseline is 2 failures
+  and 9 errors across 23 tests; the full protocol baseline is 4 failures and
+  846 passes, all in separately identified registry/ownership debt.
+- Waves 0-3 are complete, Wave 4 is partial, the bounded Wave 5 exact-key effect
+  slice is implemented, and Wave 6 selected Forward quarantine. The next
+  architecture priority is finishing the Wave 4 dashboard thin-shell boundaries,
+  then continuing measured improvement and promotion gates. Forward remains
+  non-default throughout.
+
+- Active batch: `Architecture direction and refactor planning`
+- Status: `complete` (2026-07-10)
+- Accepted staged plan:
+  `docs/conitens-architecture-direction-refactor-plan-2026-07-10.md`. It is a
+  code- and conversation-backed architecture/refactor plan, not an active-runtime
+  promotion or implementation change.
+- Stable direction: Conitens is a self-improving, event-sourced agent control
+  center above heterogeneous harnesses. It owns approval, verification, evidence,
+  replay, episode closure, and versioned skill/workflow/agent-topology proposals;
+  it does not replace provider runtimes or ingest private raw transcripts as
+  control state.
+- Current authority remains `scripts/ensemble.py + .notes + .agent`. The read-only
+  forward status surface confirms `default_runtime=legacy` while also reporting
+  SQLite-owned authoritative forward state. That dual ownership relation must be
+  settled by the proposed `ADR-0004: unified authority and forward promotion
+  gate` before any forward default promotion.
+- Highest-priority correctness findings: known room/meeting-state/spawn paths
+  write durable/projection data before events; the Forward Bridge mixes query,
+  command, HTTP, SSE, policy, and storage; bridge operator mutations and the
+  patch-approval shortcut have no bridge-level `append_event()` call; current
+  room message events are not sufficient to rebuild the room log.
+- Meeting transcript JSONL remains the canonical append-only transcript/evidence
+  ledger under redaction policy but is not domain state authority. Current
+  `MEETING_MSG` events include masked text; Wave 1 must explicitly test whether
+  that policy-approved payload remains or moves to an evidence ref. Unredacted
+  private raw content remains forbidden in events/operator payloads.
+- Browser-visible path safety is not yet a current guarantee: forward/operator
+  payloads can expose absolute local paths. The plan adds a leakage
+  characterization gate before payload contracts are frozen.
+- Target architecture has five planes: authority, execution, projection/index,
+  operator, and improvement. All durable domain commands cross the authority
+  plane; Forward SQLite remains bounded operational state/index until the
+  promotion gate passes; dashboard remains an operator shell/view model.
+- Refactor order: Wave 0 authority/ADR/docs; Wave 1 behavior locks; Wave 2
+  event-first commit-order repair; Wave 3 bridge/backend and room/handoff read
+  path decomposition; Wave 4 dashboard thin shell; Wave 5 improvement proposal
+  loop; Wave 6 forward promotion or explicit quarantine.
+- First implementation handoff: write ADR-0004 and fix bridge/state-owner docs;
+  add direct `append_event`, deterministic rebuild, bridge mutation/leakage, and
+  room payload-sufficiency tests; only then convert `ensemble_room.py` to
+  event-before-projection behavior.
+- `packages/command-center` remains reference/parity and should be frozen rather
+  than refactored until a later promotion decision. No new dependency, vector
+  DB, TypeScript control-plane rewrite, or repo-wide cleanup is proposed.
+- Generated structure evidence is under `.audit/repo-structure-lens/`; goal,
+  semantic cleanup, runtime hypothesis, independent review, and manual QA
+  evidence is under
+  `.omo/evidence/conitens-architecture-direction-refactor-plan-review.md` and
+  `.omo/evidence/plan-manual-qa/`.
+- Independent architecture critic, fact-check, security, goal/constraint gate,
+  and manual artifact QA lanes passed after revisions. The plan file opens as
+  strict UTF-8, its heading
+  hierarchy and code fences are valid, both Mermaid blocks are plausible, and
+  referenced local paths/tests exist. No runtime implementation changed.
+
+- Active batch: `Episode closure attempt public artifact slice`
+- Status: `complete` (2026-07-05)
+- User ended the Hermes/Supervisor interview with an implementation seed for
+  the minimum vertical slice: `conitens episode close <episode_id>` should
+  evaluate deterministic closure rules, always leave an auditable public
+  closure artifact, record it through `task.artifact_added`, update only a
+  derived episode projection, and expose L0/L1 `improvement list/show` views.
+- New seed artifact:
+  `.omx/plans/prometheus-strict/episode-closure-attempt-seed.md`. The fixed
+  PR1 boundaries are: no episode creation/execution system, no `episode.*`
+  event types, no L3 raw access enforcement, no approval escalation, no web UI,
+  no SQLite/vector index, and no provider raw I/O storage.
+- New implementation: `scripts/ensemble_episode_model.py`,
+  `scripts/ensemble_episode_artifacts.py`, and
+  `scripts/ensemble_episode_closure.py`. The split keeps every new closure file
+  at or below the 250 pure-LOC review ceiling. It treats the event log as source
+  of truth, considers an episode id existing only when prior events mention it
+  as `episode_id`, `task_id`, or `run_id`, rejects missing ids before writing
+  artifacts, builds the required four-part bundle
+  (`episode_summary`, `scorecard`, `raw_access_audit`,
+  `next_workflow_recommendation`), appends `task.artifact_added` with the
+  closure bundle and index record in the event payload, then materializes
+  `.notes/artifacts/agent-improvement/evidence/*.closure.json`,
+  `.notes/artifacts/agent-improvement/public/digests/*.md`,
+  `.notes/artifacts/agent-improvement/public/index.jsonl`, and a derived
+  `public/episodes/*.state.json` projection from that event payload.
+- CLI wiring in `scripts/ensemble.py`: `episode close <episode_id>` creates a
+  closure attempt; `improvement list` prints L0 artifact rows; `improvement
+  show <artifact_id>` prints the L1 digest. Existing `ensemble close` task
+  archival semantics were not changed.
+- Deterministic scorecard rules: missing required summary fields, missing or
+  failed validation, failed goal satisfaction, or high risk produce `blocked`;
+  low confidence, medium risk, or explicit review reasons produce
+  `needs_review`; only required fields plus validation pass and no blockers or
+  review reasons produce `closed`. `raw_access_audit` defaults to
+  `raw_access_used=false` and empty grants. Validation is derived only from
+  prior `validation.passed` / `validation.failed` events; the CLI has no
+  `--validation-passed` bypass. Public closure text and public episode labels
+  are redacted for token/path patterns, raw episode ids never appear in closure
+  artifact filenames or event scope, and raw transcript/provider scratchpad
+  markers are rejected before append.
+- Verification passed: Python compile for changed files; `tests.test_episode_closure`
+  + `tests.test_episode_closure_cli_security` passed 13/13;
+  `tests.test_approval_controls` + `tests.test_loop_state` passed 26/26; one
+  non-server Forward Bridge projection regression passed; scoped `git diff --check`
+  passed with only the known Windows LF/CRLF warning for `scripts/ensemble.py`.
+- The requested full Forward Bridge/operator HTTP regression bundle still fails
+  for this Windows host before exercising assertions because fixed loopback
+  test ports cannot bind: `PermissionError: [WinError 10013]`, including after
+  elevated retry. Treat this as an environment blocker, not evidence of this
+  closure slice regressing bridge behavior.
+
+- Active batch: `Gajae-Code harness adapter integration`
+- Status: `complete` (2026-07-04)
+- User asked to implement the prior Gajae-Code installation and Conitens Agent
+  Control Plane refactor plan. The boundary remains: Conitens is the
+  event-sourced control plane; GJC is an optional external terminal harness.
+- Upstream tag verification found `v0.8.1`; GJC standalone is installed as
+  `gajae-code@0.8.1`. Bun was upgraded from `1.3.7` to `1.3.14` because GJC
+  requires Bun `>=1.3.14`. Verification passed for `bun --version`,
+  `gjc --version`, and `gjc --smoke-test`.
+- The remote sparse Codex marketplace add failed because the sparse checkout
+  root did not contain a supported manifest. Fallback succeeded by cloning
+  `Yeachan-Heo/gajae-code` at `v0.8.1` into
+  `.omx/vendor/gajae-code-v0.8.1`, registering its `plugins` directory as
+  `gajae-code-local`, and installing `gajae-code@gajae-code-local`.
+- Protocol and backend now include `harness.evidence_observed`. `append_event()`
+  rejects raw harness prompt/completion/request/response, stdout/stderr/output,
+  transcript, log/content/body/diff/patch/comment, command, token, and secret
+  fields before writing. The Forward Bridge projects harness metadata,
+  evidence counts, redaction status, latest run/status/summary, and GJC runtime
+  observation without exposing raw transcript text or absolute local evidence
+  paths.
+- Final adapter phase is implemented in `scripts/ensemble_gjc_adapter.py`. It
+  imports one redacted GJC run metadata JSON file into exactly one
+  `harness.evidence_observed` event, accepts only the established metadata
+  fields, canonicalizes relative evidence paths into `artifact:` refs, rejects
+  absolute/traversal refs including unsafe `artifact:` suffixes, and never
+  writes task, approval, or projection state directly.
+- Dashboard parser/types/model now accept the harness evidence block and render
+  it as evidence health alongside provider telemetry. The visible section is
+  now `Telemetry and harness evidence`, preserving Focused mode's workbench
+  hierarchy and keeping logs as evidence rather than primary controls.
+- Threat model and log taxonomy are documented in
+  `docs/gjc-harness-adapter.md`.
+- Verification passed for install checks (`bun --version`, `gjc --version`,
+  `gjc --smoke-test`, and `codex plugin list`), Python syntax compile, focused
+  backend harness tests, GJC adapter tests 5/5, manual adapter CLI QA, approval and
+  loop-state regression tests, dashboard tests 150/150, dashboard production
+  build, and `git diff --check` with only existing Windows LF/CRLF warnings.
+  The planned fixed-port Forward Bridge HTTP regression bundle remains an
+  environment blocker on this Windows host: `PermissionError: [WinError 10013]`
+  occurs while binding local loopback test ports, including after elevated
+  retry.
+
 - Active batch: `README and Office Preview documentation sync`
 - Status: `complete` (2026-07-04)
-- User asked to update README and related docs, then publish the result to
-  GitHub. The docs now identify `packages/dashboard` as the active forward
-  operator UI, with `scripts/ensemble_forward_bridge.py` as the read-only data
-  bridge, while keeping `scripts/ensemble.py` + `.notes/` + `.agent/` as
-  runtime truth.
-- Follow-up: added `.mailmap` so a stale `Seung Hwan Lee` contributor/author
-  alias using the repo owner's GitHub noreply address canonicalizes to
-  `Seunghwan Eom`. Local `git shortlog -sne --all`, unique author/committer
-  inspection, GitHub contributor API, and GitHub commit search did not find a
-  remaining `Seung Hwan Lee` author string after this correction.
-- Follow-up 2: GitHub contributor stats still showed one `codex` contributor
-  bucket from commit `02a1795`'s `Co-authored-by: Codex <noreply@openai.com>`
-  trailer. `.mailmap` now also folds that co-author identity, plus a possible
-  `Seung Hwan Lee <noreply@openai.com>` stale form, into `Seunghwan Eom`.
+- User asked to update README and related docs. The docs now identify
+  `packages/dashboard` as the active forward operator UI, with
+  `scripts/ensemble_forward_bridge.py` as the read-only data bridge, while
+  keeping `scripts/ensemble.py` + `.notes/` + `.agent/` as runtime truth.
 - README and `CONITENS.md` now document Office Preview as an operator
   visualization with `Agents`, `Topology`, and `Classic` modes. Focused
   `Agents` uses large `288x512` imagegen portrait PNGs from
   `packages/dashboard/public/agent-portraits/generated`; `Topology` uses the
   Spatial Lens floor/fixture assets and `64x64` generated sprite-gen role
   atlases from `packages/dashboard/public/agent-sprites/generated`.
-- `docs/frontend/OFFICE_PREVIEW_CHARACTER_FIRST_REDESIGN.md` records the
-  portrait/sprite split and canonical roles. The Spatial Lens asset README now
-  matches the mounted registry instead of the old placeholder-era text.
+- `docs/frontend/OFFICE_PREVIEW_CHARACTER_FIRST_REDESIGN.md` now records the
+  2026-07-04 portrait/sprite split and canonical roles. The Spatial Lens asset
+  README now matches the mounted registry instead of the old placeholder-era
+  text.
 - Verification: reviewed edited Markdown, searched the user-facing docs for
   old placeholder wording, retired manifest names, old sprite source text, old
   Vite version text, and the old README date, then inspected the resulting doc
   diff.
 
-- Previous active batch: `Ultrawork cleanup`
+- Previous active batch: `Large imagegen pixel portrait agent integration`
+- Status: `complete` (2026-06-30)
+- User asked to apply the newly generated large role character designs to the
+  product UI. The Agent stage now resolves role-owned imagegen portrait PNGs
+  from `packages/dashboard/public/agent-portraits/generated` through
+  `agent-character-portraits.ts` instead of showing the compact `OfficeAvatar`
+  sprite cells in the main character cards.
+- All five canonical roles are registered as large standalone pixel portraits:
+  orchestrator, implementer, researcher, reviewer, and validator. Runtime
+  assets are `288x512` transparent RGBA PNGs marked with
+  `imagegen-large-pixel-avatar` provenance. The sprite-gen atlas pipeline stays
+  intact for room/spatial/classic compact avatar contexts.
+- `AgentCharacterStage` renders the portrait cutouts as decorative full-body
+  images with role/source DOM hooks. `office-stage.module.css` gives the
+  character cards a definite large portrait viewport so the figures render as
+  full-body characters rather than clipped head-only thumbnails.
+- Browser QA now checks generated portrait paths, natural image size,
+  provenance, reduced-motion behavior, and rendered client size. At 1220px the
+  final portrait heights are roughly `360-423px`, with full-body characters
+  visible in `output/playwright/agent-character-stage/agents-1220.png`.
+- Verification passed: RED contract failed first on missing
+  `agent-character-portraits.ts`; targeted dashboard tests passed 150/150; full
+  dashboard tests passed 150/150; dashboard production build passed; browser QA
+  PASS for Agents 820/1220/1440, reduced motion, and Topology 1220; asset check
+  confirmed all five portrait PNGs are `288x512` RGBA with transparent corners;
+  `git diff --check` passed with only Windows LF/CRLF warnings. Evidence:
+  `.omo/evidence/agent-character-portraits-red.txt`,
+  `.omo/evidence/agent-character-portraits-targeted.txt`,
+  `.omo/evidence/dashboard-node-tests-agent-portraits.txt`,
+  `.omo/evidence/dashboard-build-agent-portraits.txt`,
+  `.omo/evidence/agent-character-stage-browser-qa-agent-portraits.txt`,
+  `.omo/evidence/agent-portrait-asset-check.txt`, and
+  `output/playwright/agent-character-stage-results.json`.
+
+- Active batch: `Front-facing pixel portrait agent redesign`
+- Status: `complete` (2026-06-28)
+- User rejected the previous top-view office character direction and provided
+  three front-facing pixel human character references. The accepted direction
+  is now a character-lineup cast: front-facing full-body humans with large
+  readable heads/eyes, highlighted hair, clothing layers, separated legs and
+  shoes, and role props.
+- Agent sprite generation remains direct sprite-gen component-row output. No
+  source pixels, command-center sprites, Claude assets, imported sheets, or
+  purchased assets are copied into runtime assets.
+- `agent_sprite_design.py` now uses a `front-facing full-body pixel human
+  character sprite` contract at 64px cell size. It redraws all five role
+  sprites as upright human characters and keeps per-role motion/props:
+  tablet, wrench, lens/book, clipboard, and shield.
+- `generate_agent_sprite_assets.py` records the user-supplied front-facing
+  reference provenance in generated `sprite-request.json`, root manifest
+  `referenceSources`, and per-role QA notes.
+- Agent-stage cards render the 64px generated character cells at 2x, and the
+  Spatial Lens character asset registry now expects 64x64 source rectangles.
+  CSS clears the inherited `.selected` avatar ring so selected characters do
+  not look boxed by a sprite-frame outline.
+- A read-only visual critique found the category correction successful but
+  asked for stronger cast differentiation. The final generator pass increases
+  face contrast, role prop mass, researcher coat silhouette, and subtle
+  non-active card floor light.
+- Verification passed: RED contract failed first on old 48px/top-view
+  artifacts; regenerated all five sprite-gen role atlases; targeted
+  agent/spatial tests passed; full dashboard tests 149/149; `tsc -b`; Vite
+  production build; browser QA PASS for Agents 820/1220/1440, reduced motion,
+  CTA/card keyboard focus sequence, and Topology 1220; visible magenta checks
+  returned zero pixels; visual contact sheet and browser screenshot
+  inspection. Evidence:
+  `.omo/evidence/agent-sprite-gen-front-facing-run.txt`,
+  `.omo/evidence/agent-character-stage-front-facing-targeted.txt`,
+  `.omo/evidence/dashboard-node-tests-front-facing.txt`,
+  `.omo/evidence/dashboard-tsc-front-facing.txt`,
+  `.omo/evidence/dashboard-vite-build-front-facing.txt`,
+  `.omo/evidence/agent-character-stage-browser-qa-front-facing.txt`,
+  `.omo/evidence/front-facing-character-reference-notes.md`, and
+  `output/playwright/agent-character-stage/front-facing-sprite-gen-contact.png`.
+
+- Previous active batch: `Reference-informed pixel office agent redesign`
+- Status: `complete` (2026-06-28)
+- User asked to use "insane search" for pixel office character references, then
+  redesign the agent characters through sprite-gen and the frontend skill.
+  Firecrawl web/image search plus focused scrapes were used to extract art
+  direction from SLYNYRD top-down character tutorials, Masalimov Ilnur's Pixel
+  Office 32x32 page, and Pixeline's top-down 32px character base page. The
+  sources are recorded in `.omo/evidence/pixel-office-character-reference-notes.md`.
+- Agent sprite generation remains direct sprite-gen component-row output. No
+  reference images, command-center sprites, Claude assets, or purchased sheets
+  are imported into runtime assets.
+- `agent_sprite_design.py` now uses a `reference-informed top-down pixel office
+  human character sprite` contract. The drawing primitives emphasize compact
+  RPG-office proportions, paper-doll readable hair/head/chest/legs layers,
+  anchored boots, and distinct role props.
+- `generate_agent_sprite_assets.py` writes reference source URLs and a no-copy
+  art-direction note into generated `sprite-request.json`, root manifest
+  `referenceSources`, and per-role QA notes.
+- Agent-stage cards now render the 48px generated character cells at 3x so the
+  cast is the dominant first read. Room/classic avatar defaults remain smaller.
+- Verification passed: RED manifest provenance test failed first on missing
+  `referenceSources`; regenerated all five sprite-gen role atlases; targeted
+  agent/spatial tests passed; full dashboard tests 149/149; `tsc -b`; Vite
+  production build; browser QA PASS for Agents 1220/1440, reduced motion, and
+  Topology 1220; visual contact-sheet and browser screenshot inspection;
+  exact/near magenta pixel check returned 0; `git diff --check` had no
+  whitespace errors beyond Windows LF/CRLF warnings. Evidence:
+  `.omo/evidence/agent-sprite-gen-reference-informed-run.txt`,
+  `.omo/evidence/agent-character-stage-reference-targeted.txt`,
+  `.omo/evidence/dashboard-node-tests-reference-informed.txt`,
+  `.omo/evidence/dashboard-tsc-reference-informed.txt`,
+  `.omo/evidence/dashboard-vite-build-reference-informed.txt`,
+  `.omo/evidence/agent-character-stage-browser-qa-reference-informed.txt`, and
+  `output/playwright/agent-character-stage/reference-informed-sprite-gen-contact.png`.
+
+- Active batch: `Frontend-skill 2D human sprite-gen redesign`
+- Status: `complete` (2026-06-28)
+- User rejected the remaining simplified character read and explicitly asked
+  for the frontend skill plus direct sprite-gen generation of richer 2D human
+  characters. The agent sprite generator now produces 48px detailed
+  cel-shaded human operator sprites with readable faces, hair, neck/shoulder/
+  torso/arm/hand/leg/boot separation, clothing layers, and role props. The
+  Agent stage displays those 48px sprites at 2x so first-viewport density
+  stays close to the previous presentation while the source art has more room
+  for anatomy and clothing detail.
+- `agent_sprite_design.py` now owns role-specific human operator specs for
+  orchestrator, implementer, researcher, reviewer, and validator. The direct
+  sprite-gen request and generated prompts are rewritten to say
+  `detailed 2D cel-shaded human character sprite` and generated request
+  provenance is locked away from simplified avatar/chibi/mascot language.
+- `generate_agent_sprite_assets.py` now tolerates stale generated QA folders
+  during reruns with `dirs_exist_ok=True`, which keeps Windows regeneration
+  repeatable after a previous sprite-gen pass.
+- Spatial Lens asset registry character entries now point at the generated
+  `public/agent-sprites/generated` atlases too, removing the remaining
+  command-center agent PNG references from dashboard source.
+- `agent-character-stage.test.mjs` locks both generated QA notes and
+  `sprite-request.json` provenance plus the 48px `cellSize`, so future
+  regeneration cannot silently fall back to smaller simplified art.
+- Verification passed: RED provenance test failed first against the old
+  generated request; regenerated all agent sprites; dashboard tests 149/149;
+  `tsc -b`; Vite production build; browser QA PASS; `git diff --check`; and
+  visual contact-sheet inspection at
+  `output/playwright/agent-character-stage/2d-human-sprite-gen-contact.png`.
+  Evidence: `.omo/evidence/agent-sprite-gen-2d-human-run.txt`,
+  `.omo/evidence/dashboard-node-tests-2d-human.txt`,
+  `.omo/evidence/dashboard-tsc-2d-human.txt`,
+  `.omo/evidence/dashboard-vite-build-2d-human.txt`,
+  `.omo/evidence/agent-character-stage-browser-qa-2d-human.txt`, and
+  `.omo/evidence/git-diff-check-2d-human.txt`.
+
+- Active batch: `Direct sprite-gen agent character generation`
+- Status: `complete` (2026-06-28)
+- Replaced the agent character asset source path so generated runtime atlases no
+  longer import `packages/command-center/public/sprites` or any Claude/borrowed
+  character sheet. `generate_agent_sprite_assets.py` now creates role-owned
+  sprite-gen run folders, writes direct component-row PNGs, extracts frames,
+  previews motion GIFs, and composes public atlases from that local request.
+- Added `packages/dashboard/scripts/agent_sprite_design.py` to keep the direct
+  role sprite specs and drawing primitives separate from the generation
+  orchestration. The generator is now under the OMO 250 pure-LOC ceiling, and
+  each generated role includes `sprite-request.json`, `raw/`, `frames/`,
+  `prompts/`, `references/`, QA GIF/contact output, atlas report, manifest, and
+  QA notes stating there is no command-center, Claude, or imported character
+  sheet source.
+- Character-stage cards now render the newly generated 24px sprites at integer
+  4x scale so the agents, rather than the office shell, are the dominant visual
+  read. Room/classic avatar usage keeps its smaller default scale.
+- Verification passed: regenerated all agent sprite assets; dashboard tests
+  149/149; `tsc -b`; Vite production build; browser QA PASS for Agents
+  1220/1440, reduced motion, and Topology 1220; and `git diff --check`.
+  Evidence: `.omo/evidence/agent-sprite-gen-direct-run.txt`,
+  `.omo/evidence/dashboard-node-tests-direct-sprite.txt`,
+  `.omo/evidence/dashboard-tsc-direct-sprite.txt`,
+  `.omo/evidence/dashboard-vite-build-direct-sprite.txt`,
+  `.omo/evidence/agent-character-stage-browser-qa-direct-sprite.txt`, and
+  `.omo/evidence/git-diff-check-direct-sprite.txt`.
+
+- Active batch: `LazyCodex frontend character-stage polish`
+- Status: `complete` (2026-06-28)
+- Ran a scoped LazyCodex/frontend-skill polish pass on the existing
+  sprite-gen Agent stage. The visual thesis is a quiet operator roster where
+  the selected agent character is the first-read anchor, not the office shell.
+- `AgentCharacterStage` now uses product-facing copy (`Active agent cast`) and
+  displays readable motion/trait labels such as `Command pulse` and
+  `gate review` while keeping raw `data-motion-profile` ids intact for CSS,
+  tests, and QA.
+- `office-stage.module.css` gives the selected character card a stronger
+  stage treatment, wider desktop grid share, clearer action-link affordance,
+  and subtle state emphasis for `blocked` / `review` chips. Reduced-motion
+  behavior remains preserved.
+- Verification passed: dashboard tests 149/149; `tsc -b`; Vite production
+  build; `git diff --check`; and browser QA PASS for Agents 1220/1440,
+  reduced motion, and Topology 1220. Evidence:
+  `.omo/evidence/dashboard-node-tests-frontend-skill.txt`,
+  `.omo/evidence/dashboard-tsc-frontend-skill.txt`,
+  `.omo/evidence/dashboard-vite-build-frontend-skill.txt`,
+  `.omo/evidence/git-diff-check-frontend-skill.txt`, and
+  `.omo/evidence/agent-character-stage-browser-qa-frontend-skill.txt`.
+
+- Active batch: `Sprite-gen agent character stage implementation`
+- Status: `complete` (2026-06-27)
+- Focused office-preview is now character-first. The stage tab label is
+  `Agents`, and Focused mode renders `AgentCharacterStage` rather than the
+  Spatial Lens floor viewport. The stage exposes explicit `handoff`,
+  `blocked`, and `next` signal cells plus agent character cards.
+- Runtime agent visuals now resolve sprite-gen-backed public atlases from
+  `packages/dashboard/public/agent-sprites/generated`. The app does not depend
+  on sprite-gen at runtime. Generation/provenance is captured by
+  `packages/dashboard/scripts/generate_agent_sprite_assets.py`,
+  `public/agent-sprites/generated/manifest.json`, per-role manifests, QA GIFs,
+  contact sheets, and QA notes.
+- Visible character motion is diversified in the demo: architect uses
+  `command-pulse`, sentinel uses `verify-brace`, owner-gate approval uses a
+  reviewer-style `review-scan` approval profile, and worker-1 uses
+  `build-shift`. Canonical generated assets also include researcher
+  `research-orbit`.
+- A review-found Focused regression was fixed: Agents mode again exposes an
+  actionable next-operator CTA, `Open approvals`, linked to `#/approvals` with
+  `data-next-action-kind="owner-approval"`.
+- `OfficeAvatar` no longer renders canvas avatars. It renders stacked static
+  sprite-gen atlas frames with opacity cycling and role transform/filter
+  motion, preserving reduced-motion behavior. Character-stage avatars render
+  at integer 3x scale; room/classic usage keeps the default 2x scale.
+- Verification passed: RED character-stage test failed first on the missing
+  model; final dashboard tests 149/149; `tsc -b`; Vite production build; and
+  browser QA PASS for Agents 1220/1440, reduced motion, and Topology 1220.
+  Evidence: `.omo/evidence/dashboard-node-tests-final.txt`,
+  `.omo/evidence/dashboard-tsc-final.txt`,
+  `.omo/evidence/dashboard-vite-build-final.txt`, and
+  `output/playwright/agent-character-stage-results.json` with screenshots under
+  `output/playwright/agent-character-stage/`.
+
+- Active batch: `Office-preview character-first redesign guidance`
+- Status: `complete` (2026-06-27)
+- Reviewed the current office-preview contract in `DESIGN.md`,
+  `PixelOffice.tsx`, `OfficeStage.tsx`, `FocusedHandoffView.tsx`,
+  `OfficeSidebar.tsx`, and `AgentSprite.tsx`, plus the latest Focused /
+  Overview / Classic browser evidence under
+  `output/playwright/sprite-gen-office-overhaul/`.
+- Updated `DESIGN.md` so Conitens now defines the office shell as secondary
+  scenery and the agents/handoffs as the primary visual read. Preserved the
+  existing dark shell, Focused/Overview/Classic split, semantic status colors,
+  one-row top nav at `1220px`, and no-new-runtime-deps asset constraint.
+- Added `docs/frontend/OFFICE_PREVIEW_CHARACTER_FIRST_REDESIGN.md` as the
+  implementation handoff for the redesign. It defines character-first
+  principles, per-mode UI intent, component guidance, motion taxonomy,
+  Must/Must-not guardrails, success criteria, and binary QA scenarios.
+
+- Active batch: `Sprite-gen office visual overhaul`
+- Status: `complete` (2026-06-27)
+- Installed `aldegad/sprite-gen` as a local Codex skill at
+  `C:\Users\eomsh\.codex\skills\sprite-gen` and used its imported-PNG curation
+  path for the office fixture refresh. The app does not depend on sprite-gen at
+  runtime.
+- Added `DESIGN.md` as the dashboard design contract for the office UI:
+  signal-first pixel office, dark operator shell, Focused workbench dominance,
+  topology-first Overview, and dependency-free generated public assets.
+- Added `packages/dashboard/scripts/generate_office_sprite_assets.py`. It
+  creates loose 24px fixture PNGs, runs sprite-gen
+  `unpack_atlas_run.py --pngs-dir ...` and
+  `export_curated_pngs.py --run-dir ...`, then composes
+  `packages/dashboard/public/office-fixtures.png` and
+  `office-fixtures.meta.json`.
+- `office-fixtures.png` still preserves the existing runtime contract:
+  `600x24`, 25 cells, 24px cell size, registry order matching
+  `OFFICE_FIXTURE_REGISTRY`. `office-fixtures.meta.json` now records
+  generator repo/version/pipeline and source rectangles.
+- Regenerated the seven repeatable office floor tiles
+  `office-floor-{control,corridor,lab,lane,lobby,stage,workspace}.png` and
+  retuned `tokens.css`, `office-stage.module.css`, and
+  `spatial-lens.module.css` around the darker office palette.
+- Verification passed: new provenance test failed first on missing metadata;
+  targeted tests 17/17; full dashboard tests 145/145; dashboard production
+  build; browser QA 6/6 for Focused 1220/1440, Floor Overview 1440/1220, and
+  Classic 1440/1220. Evidence:
+  `output/playwright/sprite-gen-office-overhaul-results.json` and screenshots
+  under `output/playwright/sprite-gen-office-overhaul/`.
+
+- Active batch: `Ultrawork cleanup`
 - Status: `complete` (2026-06-14)
 - Removed evidence-backed stale files and local generated artifacts without
   changing active runtime behavior. Deleted unused dashboard modules:
@@ -2239,3 +2700,210 @@ Read this file before substantial work.
 - Claude FE-5 review artifact: `.omx/artifacts/claude-fe5-review-2026-04-01T19-29-47-070Z.md`
 - Claude latency diagnosis artifact: `.omx/artifacts/claude-latency-diagnosis-2026-04-01T19-29-47-070Z.md`
 - Final security hardening review: `.omx/artifacts/claude-security-hardening-final-2026-04-01T04-56-32-526Z.md`
+
+## Latest Update: Gajae-Code Final Adapter
+
+- Timestamp: `2026-07-04T15:14:31Z`
+- Gajae-Code is installed and verified as `gjc/0.8.1`; `gjc --smoke-test`
+  returns `smoke-test: ok`.
+- Conitens now has a leaf adapter at `scripts/ensemble_gjc_adapter.py` that
+  imports one redacted GJC metadata JSON file into one
+  `harness.evidence_observed` event via `append_event()`.
+- The adapter rejects unknown fields, raw harness body fields, unsafe artifact
+  paths, unsafe symbolic refs, and CLI error paths that would leak the original
+  unsafe ref.
+- Symbolic refs (`gjc:`, `event:`, `pr:`, `ci:`) are opaque IDs only; they do
+  not carry path semantics.
+- Contract docs live in `docs/gjc-harness-adapter.md`; tests live in
+  `tests/test_gjc_adapter.py`; safe manual fixture lives in
+  `.omo/evidence/gjc-adapter-manual-fixture.json`.
+- Verification passed:
+  `python -m unittest tests.test_gjc_adapter`,
+  `python -m unittest tests.test_gjc_adapter tests.test_forward_runtime_mode tests.test_approval_controls tests.test_loop_state`,
+  focused Forward Bridge GJC tests, Python `py_compile`,
+  `pnpm --filter @conitens/dashboard test`,
+  `pnpm --filter @conitens/dashboard build`, and `git diff --check`.
+- Architect rereview returned `APPROVED` after symbolic-ref validation and CLI
+  stderr-redaction fixes.
+- Remaining known host limitation: full fixed-port Forward Bridge HTTP
+  regression is still blocked on this Windows host by `PermissionError:
+  [WinError 10013]`; focused non-binding bridge tests remain the backend proof
+  channel.
+
+## Latest Update: Event-Sourced Improvement Candidate Approval
+
+- Timestamp: `2026-07-10`
+- Conitens now connects a recorded episode closure to a typed, schema-v1,
+  versioned improvement candidate, deterministic risk, metadata-only approval
+  request, and event-derived approval/rejection outcome.
+- Authority remains the event ledger. Candidate list/show replay events directly;
+  no candidate SQLite table or file projection was added.
+- The compatibility CLI exposes `improvement candidate-create`,
+  `candidate-list`, `candidate-show`, and `candidate-decide`; legacy
+  `improvement list/show` remains unchanged.
+- Replay rejects malformed identity/digest/risk/provenance, wrong-order or
+  wrong-actor approvals, private/path/secret-shaped input, and non-string
+  candidate fields before they render or affect version allocation.
+- Final verification: candidate 27/27, compatibility 55/55, authority
+  integration 58/58, focused protocol test and TypeScript build passed. Full
+  protocol remained at its known baseline of four failures and 847 passes.
+- Isolated CLI QA changed only `.notes/events/events.jsonl`; `.agent`, SQLite,
+  Forward, dashboard, and default runtime were untouched.
+- Final code review returned APPROVE and scoped security review returned
+  unconditional PASS.
+- The former next gate is complete: bounded structured revision content now has
+  event-first apply/rollback/rebuild and live owner authorization. Candidate
+  metadata summaries remain non-executable.
+
+## Latest Update: Event-Sourced Agent Skill Revision Apply/Rollback
+
+- Timestamp: `2026-07-10`
+- An approved `skill_patch` candidate can now produce a separate structured,
+  candidate-digest-bound revision for exactly one existing
+  `.agent/skills/<skill>.yaml` target.
+- Apply, rollback, and rebuild require the existing live project-owner match.
+  Apply/rollback append authority events before atomic projection; rebuild
+  derives the target active stack from valid events and rejects ownerless use.
+- Replay validates full event envelopes, candidate approval precedence, exact
+  request/grant/terminal correlation, hashes, reasons, duplicates, ordering, and
+  sequential rollback stack state.
+- Manifest validation is fixed-schema, bounded, privacy-safe, warning-free, and
+  path-safe. External drift and post-replace corruption fail closed.
+- The compatibility CLI exposes revision propose/show/apply/rollback/rebuild as
+  metadata-only ASCII-safe JSON. The live repository's `.agent` registry was not
+  modified during QA.
+- Final verification: focused 46/46, compatibility 104/104, registry 8/0/0,
+  protocol focused test/build, compile, sync, scoped diff, manual CLI recovery/
+  privacy/concurrency, and zero-cycle structure gate passed. Full protocol stayed
+  at its known 847-pass/4-failure baseline.
+- Independent code, state-machine, architecture, completion, and security
+  reviews approved after the ownerless-rebuild security RED was fixed.
+- Forward, dashboard, SQLite authority, `.conitens`, `.agents/skills`, default
+  runtime, and automatic deployment remain outside this slice.
+- The post-apply effect/regression gate is now implemented as a bounded exact-key
+  event-only slice. Split the revision leaf into reducer/materializer modules only
+  when another target family or richer semantics creates real reuse pressure.
+
+## Latest Update: Exact-Key Improvement Effect And Forward Quarantine
+
+- Timestamp: `2026-07-11`
+- Closure attempts now accept an optional exact comparison key and persist it in
+  the closure bundle, authority event, public index, projection rebuild, and CLI.
+- `improvement.effect_observed` connects a source closure, approved candidate,
+  owner-applied revision, and later exact-key closure without claiming causality.
+- Observe/show/list replay events directly; no effect projection, SQLite table,
+  dashboard route, or Forward authority was added.
+- Replay is temporal and fail-closed: it uses the event prefix before the first
+  effect event, preserves valid observations after later rollback, rejects
+  reordered/forged histories, and compares JSON types exactly.
+- Observation shares the revision workspace file lock across processes. One of
+  two conflicting processes commits; the other fails closed without corrupting
+  replay.
+- Nested closure content is exact-schema and public-text validated; secret/path/
+  raw injection, traversal comparison keys, partial telemetry totals, and bounded
+  provenance edge cases have regression coverage.
+- Forward is quarantined by accepted ADR-0004. Gates 1, 6, and 7 are contradicted;
+  gates 2, 3, 4, 5, and 8 remain unproven; `default_runtime=legacy` is unchanged.
+- Gate 6 specifically fails because arbitrary context Markdown can preserve raw
+  bodies, secret-shaped strings, and absolute POSIX paths. Wave 3 must replace
+  blacklist sanitization with an allowlisted public projection before promotion.
+- Closure creation now uses the same bounded public-text policy as effect replay:
+  absolute POSIX paths reject before append, while unsafe episode IDs publish
+  only deterministic `episode-sha256:` refs.
+- The read-only HTTP runtime-roster now skips optional external version probes by
+  default after a reproducible 10-second timeout; `probe_versions=1` remains an
+  explicit diagnostic path. This does not change authority or runtime default.
+- Final verification passes effect 26/26, closure security 19/19, adjacent
+  121/121, and Forward runtime + bridge 54/54. Protocol focused 1/1, TypeScript
+  build, Python compile, and 151-event/32-alias sync pass; the full protocol stays
+  at its known 847-pass/4-failure baseline.
+- Goal/scope, QA, code, security, context/history, and replay/state-machine review
+  lanes all pass for that slice. Wave 3 subsequently completed the query/command/
+  transport separation and allowlisted public context described below. The next
+  architecture priority is Wave 4 thin-shell completion; Forward promotion remains
+  prohibited.
+
+## Latest Update: Wave 3 Forward Bridge Boundary Refactor
+
+- Timestamp: `2026-07-11`
+- Wave 3 is complete: `ensemble_forward_bridge.py` is now a compatibility and
+  dependency-assembly facade over separately owned query, command, stream, HTTP,
+  public-context, collaboration-read, legacy compatibility, and patch-decision
+  boundaries.
+- Query/GET paths no longer materialize an absent SQLite database. Existing
+  databases use explicit read-only URI access with WAL-aware immutable handling.
+- Browser context and state documents are built from allowlisted fields rather
+  than arbitrary Markdown. Paths, credentials, secret-shaped strings, local
+  identity labels, raw bodies, and unsafe handoff reasons are omitted or replaced
+  with neutral public values.
+- Thread search is metadata-only. It cannot test for the presence of raw event or
+  legacy message text; repository-backed collaboration data remains primary and
+  contained legacy discovery remains available for historical compatibility.
+- Patch approve/reject routes share one service. Approval carries workspace,
+  actor, and reason; approved is retryable and applied is terminal. Approval
+  request/decision authority events precede their SQLite projections.
+- HTTP keeps loopback/origin/bearer boundaries, uses constant-time token compare,
+  bounded/sanitized errors, inventories mutation routes, and handles slightly
+  oversized Windows requests with a bounded drain while rejecting extreme lengths
+  without unbounded reads.
+- Public approval, actor, and handoff data now cross one shared allowlisted
+  projection used by query, command, and SSE paths. Query modules import their true
+  owners directly through an explicit 27-name facade; wildcard and dynamic-global
+  exports are rejected. The root contract lists all 13 operator mutations.
+- Verification passes focused 67/67 and complete Wave 3 158/158 tests, HTTP
+  overflow stress 11/11, dashboard 154/154, dashboard production build, Python
+  compile, 37-file scoped no-excuse, diff validation, and real CLI/live loopback
+  privacy/auth/traversal/SSE/body-limit QA.
+- The adjacent legacy suite remains at 51 tests with 2 failures and 9 errors from
+  uppercase event-alias drift and three legacy persona manifests; no Forward
+  Bridge module participates. This is a separate migration, not hidden Wave 3
+  fallout.
+- Forward remains a quarantined sidecar and `default_runtime=legacy` is unchanged.
+  Direct Forward-only SQLite projections and approval reviewer semantics remain
+  documented promotion blockers. No ADR-0004 promotion claim is made.
+- Independent settled code review is `CLEAR / APPROVE`; the final LazyCodex gate
+  is `APPROVE`. Neither reports a scoped finding or blocker.
+- A subsequent PR-hardening pass restored the Focused-mode Active Handoff
+  Workbench, made candidate terminal decisions atomic, stopped `forward status`
+  from materializing an empty runtime, and removed Git email as an owner
+  authorization factor. Integrated validation passes Python 119/119, dashboard
+  154/154, the production build, and live Chrome hierarchy/console checks. Final
+  security and code-quality review approve the staged diff; commit, push, and PR
+  creation remain.
+- Durable evidence lives in `.omo/evidence/wave3-forward-bridge-green.txt`,
+  `.omo/evidence/wave3-forward-bridge-manual-qa.md`,
+  `.omo/evidence/wave3-debugging-audit.md`, and
+  `.omo/evidence/wave3-forward-bridge-review-work.md`, with independent decisions
+  in `.omo/evidence/wave3-forward-bridge-settled-code-review.md` and
+  `.omo/evidence/wave3-forward-bridge-refactor-gate-review.md`.
+
+## Latest Update: PR #33 Conflict Integration
+
+- Timestamp: `2026-07-12`
+- PR #33 (`codex/episode-closure-attempt -> main`) diverged from `main` before
+  the dashboard thin-shell extraction and repository identity cleanup landed.
+- The integration is built from current `main` by replaying only the five
+  PR-specific changes. Cleanup history superseded by `main` is intentionally not
+  replayed.
+- `main` remains authoritative for the extracted dashboard screen and hook
+  boundaries. The PR workspace controller now composes through the thin
+  `App.tsx` shell, while workspace selection and list-error behavior live in
+  `OperatorWorkbenchScreen.tsx`.
+- The verified integration commit uses the original PR head and current `main`
+  as its two parents, so both public histories remain reachable without a force
+  push or regression of the `main` architecture.
+- Forward remains quarantined and `default_runtime=legacy` is unchanged. This
+  merge resolves repository integration only; it does not claim promotion.
+- Integrated verification passes Python 213/213, dashboard 155/155 and its
+  production build, protocol changed-slice/build checks, Python compile, diff
+  validation, and browser QA. The full protocol suite remains at its documented
+  847-pass/4-failure baseline.
+- Code review exposed a stale workspace draft race during A-to-B navigation. A
+  failure-first test reproduced it; route/detail identity is now checked at the
+  resource, controller, command, and screen boundaries before any mutation is
+  available.
+- Independent goal/scope and QA rechecks pass for the final merge graph, exact
+  reviewed tree identity, ancestry, and clean worktree. The branch was pushed
+  by fast-forward and GitHub reports PR #33 `MERGEABLE`; the separate
+  `BLOCKED` merge-state status reflects repository policy gates, not a content
+  conflict.

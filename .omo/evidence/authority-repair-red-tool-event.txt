@@ -1,0 +1,12 @@
+Command:
+python -m unittest tests.test_room_replay.RoomReplayTests.test_room_tool_event_is_appended_before_projection tests.test_room_replay.RoomReplayTests.test_room_tool_event_append_failure_does_not_project_state
+
+Pre-repair result:
+FAILED (failures=2), 2 tests in 0.278s.
+
+Failure contract:
+- The append callback observed an already-persisted SQLite tool_events row.
+- When append_event raised RuntimeError, the same SQLite row remained.
+
+This proves RoomService.append_tool_event wrote its projection before the
+canonical interaction.command_executed authority event.

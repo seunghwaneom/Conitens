@@ -1,0 +1,127 @@
+Wave 3 Forward Bridge query leaf evidence
+Date: 2026-07-11
+Owned production file: scripts/ensemble_forward_bridge_query.py
+
+Scope
+- Expanded the query leaf from the initial run list/detail slice to the complete
+  facade-exported read-model surface.
+- Integrated allowlisted state-doc/context-latest builders from
+  ensemble_forward_public_context.
+- Routed room/thread/handoff reads through ConversationReadService.
+- Added an injected runtime_checks_builder seam to runtime roster, wake readiness,
+  and operator summary.
+- No facade, test, context, command, stream, HTTP, or other production file was
+  edited by this executor.
+
+Exact query exports (27)
+- build_approval_detail_payload
+- build_operator_task_detail_payload
+- build_operator_tasks_payload
+- build_operator_workspace_detail_payload
+- build_operator_workspaces_payload
+- build_operator_doctor_evidence_payload
+- build_operator_evidence_summary_payload
+- build_operator_inbox_payload
+- build_operator_agents_payload
+- build_operator_runtime_roster_payload
+- build_operator_status_confidence_payload
+- build_operator_turn_records_payload
+- build_operator_wake_readiness_payload
+- build_operator_workflow_contracts_payload
+- build_operator_summary_payload
+- build_operator_pr_ci_evidence_payload
+- build_operator_task_reconcile_preview_payload
+- build_approvals_payload
+- build_run_context_latest_payload
+- build_run_detail_payload
+- build_run_state_docs_payload
+- build_runs_payload
+- build_handoffs_payload
+- build_threads_payload
+- build_thread_detail_payload
+- build_thread_search_payload
+- build_room_timeline_payload
+
+Export comparison
+- Shared with current facade: 22 read builders.
+- Query-only collaboration adapters: 5 builders (handoffs, room timeline, thread
+  list/detail/search).
+- Facade-only names are intentionally excluded effects/transports:
+  archive_operator_task_payload, delete_operator_task_payload,
+  detach_operator_task_workspace_payload, launch_forward_bridge,
+  request_operator_task_approval, restore_operator_task_payload,
+  run_forward_bridge, serialize_sse_event.
+
+Verification
+1. Direct all-builder registry harness
+   Result: DIRECT_QUERY_BUILDERS_OK 27
+   Result: RUNTIME_CHECK_INJECTIONS_OK 3
+   Result: WORKSPACE_SNAPSHOT_UNCHANGED 10
+   Notes: every export returned a JSON-serializable dict; the seeded workspace
+   file path/hash snapshot was byte-identical before and after all calls;
+   context-latest returned repo_latest=None; run detail/state-doc/context-latest
+   retained FileNotFoundError mapping for unknown runs.
+
+2. Facade/query characterization parity harness
+   Result: FACADE_QUERY_PARITY_OK 20 volatile timestamps excluded
+   Notes: compared the 20 legacy builders that have compatible direct inputs;
+   only generated_at and fallback last_active timestamps were normalized.
+
+3. Query architecture AST gate
+   Invocation:
+   python -m unittest tests.test_forward_bridge_architecture.ForwardBridgeArchitectureTests.test_query_module_excludes_http_command_and_mutation_boundaries
+   Result: 1 test passed.
+   Forbidden import/name intersections: empty.
+   Source scan counts: append_event=0, ReplayService=0, RoomService=0,
+   ensemble_comms=0, list_handoff_packets=0.
+
+4. Focused boundary/public-service suite
+   Invocation:
+   python -m unittest tests.test_forward_bridge_architecture.ForwardBridgeArchitectureTests.test_query_module_excludes_http_command_and_mutation_boundaries tests.test_forward_public_context.ForwardPublicContextTests.test_public_context_module_exposes_allowlisted_builders tests.test_conversation_read_service tests.test_forward_bridge_boundary
+   Result: 11 tests passed.
+
+5. Existing Forward Bridge characterization
+   Invocation:
+   python -m unittest tests.test_forward_bridge
+   Result: 35 tests passed.
+
+6. Compile
+   Invocation:
+   python -m py_compile scripts/ensemble_forward_bridge_query.py scripts/ensemble_forward_public_context.py scripts/ensemble_conversation_read_service.py
+   Result: passed.
+
+7. Programming policy
+   Invocation:
+   python C:/Users/eomsh/.codex/plugins/cache/sisyphuslabs/omo/4.16.1/skills/programming/scripts/python/check-no-excuse-rules.py scripts/ensemble_forward_bridge_query.py
+   Result: no violations in 1 file.
+   Note: the SIZE_OK marker is required because the approved architecture assigns
+   the complete public read-model surface to one query leaf.
+
+8. Whitespace and forbidden-symbol scans
+   Invocation:
+   git diff --no-index --check /dev/null scripts/ensemble_forward_bridge_query.py
+   Result: passed (Git emitted only its Windows LF-to-CRLF advisory).
+   Forbidden-symbol rg result: no matches.
+
+Known integration requirement
+- The full tests.test_forward_public_context behavioral test still reaches the
+  old facade-owned state-doc/context-latest implementations until the facade
+  adapter switches those names to the query leaf. Direct query builders already
+  use the allowlisted module and return repo_latest=None. This executor did not
+  edit the facade by ownership instruction.
+
+Required facade adapters
+1. Re-export all 22 shared query builders from ensemble_forward_bridge_query.
+2. Preserve facade-level build_run_detail_payload interception by keeping an
+   explicit facade wrapper/live dependency passed into the HTTP handler.
+3. Facade wrappers for build_operator_runtime_roster_payload,
+   build_operator_wake_readiness_payload, and build_operator_summary_payload must
+   pass runtime_checks_builder=build_runtime_cli_checks so monkeypatching the
+   facade binding remains effective.
+4. Route state-docs and context-latest through the query builders so the
+   allowlisted public-context contract and repo_latest=None take effect.
+5. Route thread list/detail/search, room timeline, and handoff reads through the
+   five query-only collaboration adapters; the HTTP layer should retain identifier
+   validation and status/error mapping.
+6. Keep the eight facade-only command/stream/launch exports outside the query
+   leaf.

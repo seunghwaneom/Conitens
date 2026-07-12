@@ -21,6 +21,7 @@ EVENT_SCHEMA_V = 1
 DEFAULT_EVENT_FILE = "events.jsonl"
 PROVIDER_CALL_EVENT_TYPE = "provider.call_recorded"
 PR_CI_EVIDENCE_EVENT_TYPES = frozenset({"pr.evidence_observed", "ci.evidence_observed"})
+HARNESS_EVIDENCE_EVENT_TYPE = "harness.evidence_observed"
 PROVIDER_CALL_FORBIDDEN_PAYLOAD_FIELDS = {
     "prompt",
     "completion",
@@ -51,11 +52,28 @@ PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS = {
     "auth_token",
     "secret",
 }
+HARNESS_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS = PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS | {
+    "prompt",
+    "completion",
+    "request",
+    "response",
+    "stdout",
+    "stderr",
+    "output",
+    "terminal_output",
+    "transcript",
+    "raw_transcript",
+    "command",
+}
 
 REDACTION_PATTERNS = {
     "path": [
         re.compile(r"/home/[^/\s]+/"),
         re.compile(r"/Users/[^/\s]+/"),
+        re.compile(
+            r"[A-Za-z]:(?:\\+|/+)Users(?:\\+|/+)[^\\/\s]+(?:\\+|/+)",
+            re.IGNORECASE,
+        ),
         re.compile(r"[A-Za-z]:\\\\Users\\\\[^\\\s]+\\\\"),
     ],
     "token": [
@@ -171,13 +189,18 @@ def _provider_call_forbidden_payload_fields(payload: dict[str, Any]) -> list[str
     return sorted(fields)
 
 
-def _external_evidence_forbidden_payload_fields(payload: dict[str, Any]) -> list[str]:
+def _external_evidence_forbidden_payload_fields(
+    payload: dict[str, Any],
+    *,
+    forbidden_fields: set[str] | frozenset[str] | None = None,
+) -> list[str]:
     fields: list[str] = []
-    forbidden_compact = {"".join(char for char in key if char.isalnum()) for key in PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS}
+    forbidden = forbidden_fields or PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS
+    forbidden_compact = {"".join(char for char in key if char.isalnum()) for key in forbidden}
     for key in payload:
         normalized, compact = _payload_key_variants(key)
         if (
-            normalized in PR_CI_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS
+            normalized in forbidden
             or compact in forbidden_compact
             or normalized.endswith("_log")
             or normalized.endswith("_logs")
@@ -185,12 +208,16 @@ def _external_evidence_forbidden_payload_fields(payload: dict[str, Any]) -> list
             or normalized.endswith("_body")
             or normalized.endswith("_diff")
             or normalized.endswith("_patch")
+            or normalized.endswith("_transcript")
+            or normalized.endswith("_output")
             or compact.endswith("log")
             or compact.endswith("logs")
             or compact.endswith("content")
             or compact.endswith("body")
             or compact.endswith("diff")
             or compact.endswith("patch")
+            or compact.endswith("transcript")
+            or compact.endswith("output")
         ):
             fields.append(str(key))
     return sorted(fields)
@@ -231,6 +258,16 @@ def append_event(
         if forbidden_fields:
             raise ValueError(
                 f"{event_type} payload forbids raw PR/CI content fields: "
+                + ", ".join(forbidden_fields)
+            )
+    if event_type == HARNESS_EVIDENCE_EVENT_TYPE:
+        forbidden_fields = _external_evidence_forbidden_payload_fields(
+            payload,
+            forbidden_fields=HARNESS_EVIDENCE_FORBIDDEN_PAYLOAD_FIELDS,
+        )
+        if forbidden_fields:
+            raise ValueError(
+                "harness.evidence_observed payload forbids raw harness content fields: "
                 + ", ".join(forbidden_fields)
             )
     redacted_payload, applied_rules = redact_data(deepcopy(payload), rules)

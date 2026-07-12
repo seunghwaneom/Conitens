@@ -1,0 +1,120 @@
+Wave 3 Forward Bridge facade evidence
+Date: 2026-07-11
+Executor scope:
+  - scripts/ensemble_forward_bridge.py
+  - .omo/evidence/wave3-facade-green.txt
+
+Outcome
+  PASS: scripts/ensemble_forward_bridge.py is now a thin compatibility facade.
+  Observed working-copy size changed from 4,205 physical lines before replacement to
+  254 physical lines / 222 pure LOC after replacement.
+  The facade imports query, stream, command, and HTTP leaves; it contains no HTTP
+  handler/server tree, repository construction, orchestration runtime, or direct
+  event append logic.
+
+Compatibility retained
+  - Every pre-existing __all__ export remains present.
+  - _stream_snapshot_payload and serialize_sse_event are re-exported from stream.
+  - build_threads_payload, build_thread_search_payload,
+    build_thread_detail_payload, and build_room_timeline_payload are exposed for
+    HTTP request binding.
+  - build_run_detail_payload remains facade-patchable at request time.
+  - runtime roster, wake readiness, and summary wrappers inject the facade's current
+    build_runtime_cli_checks binding into query calls.
+  - launch_forward_bridge and run_forward_bridge pass
+    bindings=lambda: sys.modules[__name__] to the HTTP leaf.
+  - Legacy mutation helper names are thin dispatch_command adapters.
+
+Pre-edit red baseline
+  Command:
+    python -m unittest tests.test_forward_bridge_architecture
+  Result:
+    FAIL, 6 tests run / 2 failures.
+    - facade still contained server/repository markers
+    - _stream_snapshot_payload was absent from __all__
+
+Facade architecture gate
+  Command:
+    python -m unittest tests.test_forward_bridge_architecture
+  Result:
+    PASS, Ran 6 tests, OK.
+    Includes request-time build_run_detail_payload monkeypatch verification.
+
+Facade/HTTP/command/live-approval/endpoint compatibility gate
+  Command:
+    python -m unittest tests.test_forward_bridge_architecture \
+      tests.test_forward_bridge_http \
+      tests.test_forward_bridge_commands \
+      tests.test_forward_live_approval \
+      tests.test_forward_bridge.ForwardBridgeTests.test_run_detail_and_replay_endpoints_return_forward_data \
+      tests.test_forward_bridge.ForwardBridgeTests.test_operator_summary_endpoint_returns_projection_shape \
+      tests.test_forward_bridge.ForwardBridgeTests.test_operator_runtime_roster_endpoint_returns_read_only_projection \
+      tests.test_forward_bridge.ForwardBridgeTests.test_operator_runtime_roster_endpoint_can_opt_in_to_version_probes \
+      tests.test_forward_bridge.ForwardBridgeTests.test_operator_runtime_roster_endpoint_filters_agent_runtime_with_ux_hints \
+      tests.test_forward_bridge.ForwardBridgeTests.test_operator_runtime_roster_projects_gjc_harness_evidence_without_mutation \
+      tests.test_forward_bridge.ForwardBridgeTests.test_operator_wake_readiness_endpoint_combines_sources_without_scheduling \
+      tests.test_forward_bridge.ForwardBridgeTests.test_room_timeline_route_returns_settled_room_mapping
+  Result:
+    PASS, Ran 36 tests in 17.452s, OK.
+
+Full focused integration observation
+  Command:
+    python -m py_compile scripts/ensemble_forward_bridge.py && \
+    python -m unittest tests.test_forward_bridge_architecture \
+      tests.test_forward_bridge_http tests.test_forward_bridge_commands \
+      tests.test_forward_bridge_boundary tests.test_forward_public_context \
+      tests.test_forward_live_approval tests.test_forward_bridge
+  Result at 11:31 local workspace time:
+    70 tests run, 67 passed, 3 failed in concurrently edited public-context
+    behavior outside this executor's ownership:
+    - test_context_payloads_redact_local_paths_and_secret_values
+    - test_public_context_bounds_each_allowlisted_text_leaf
+    - test_state_docs_and_context_latest_routes_keep_digest_boundary
+  Ownership handoff:
+    Root reported those public-context expectations fixed in its separately owned
+    files and its focused suites passing. Per root instruction, this executor did
+    not rerun the full 70-test bundle after that parallel fix.
+
+Python/static gates
+  Command:
+    python -m py_compile scripts/ensemble_forward_bridge.py
+  Result:
+    PASS, exit 0.
+
+  Command:
+    python /c/Users/eomsh/.codex/plugins/cache/sisyphuslabs/omo/4.16.1/skills/programming/scripts/python/check-no-excuse-rules.py scripts/ensemble_forward_bridge.py
+  Result:
+    PASS, no violations in 1 file(s).
+
+  Command:
+    git diff --check -- scripts/ensemble_forward_bridge.py
+  Result:
+    PASS, exit 0. Git emitted only the existing LF-to-CRLF working-copy warning.
+
+  Source boundary probe result:
+    physical_lines=254
+    pure_loc=222
+    forbidden_markers=[]
+
+Binding smoke
+  Assertions:
+    - all four thread/room HTTP binding names are in facade __all__
+    - each binding is the query leaf callable
+    - _stream_snapshot_payload and serialize_sse_event are the stream leaf callables
+  Result:
+    PASS, binding export smoke: OK.
+
+Mutation adapter smoke
+  Scenario:
+    create a temporary operator task through dispatch_command, archive through the
+    facade, restore through the facade, archive again, and delete through the facade.
+  Result:
+    PASS, mutation adapter smoke: OK.
+
+Diff measurement against HEAD
+  git diff --numstat -- scripts/ensemble_forward_bridge.py
+    153 insertions, 3,857 deletions
+  git diff --stat -- scripts/ensemble_forward_bridge.py
+    1 file changed, 153 insertions(+), 3,857 deletions(-)
+
+No commit was created.

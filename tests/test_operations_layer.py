@@ -618,8 +618,8 @@ class OperationsLayerTests(unittest.TestCase):
                 actor="TEST",
                 task_id="TASK-1",
             )
-            self.assertEqual(launched["status"], "running")
-            self.assertTrue((workspace / ".notes" / "subagents" / "ACTIVE" / f"{launched['spawn_id']}.json").exists())
+            self.assertEqual(launched["status"], "completed")
+            self.assertTrue((workspace / ".notes" / "subagents" / "COMPLETED" / f"{launched['spawn_id']}.json").exists())
             self.assertGreaterEqual(len(list_gate_records(workspace)), 1)
 
     def test_spawn_approval_is_consumed_after_one_launch(self) -> None:

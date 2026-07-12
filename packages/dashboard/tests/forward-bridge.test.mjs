@@ -161,16 +161,29 @@ test("parseOperatorSummaryResponse accepts optional evidence and doctor blocks",
         latest_model: "gpt-5.4",
       },
       budget: {
-        sources: 1,
+        sources: 2,
+        harness_sources: 1,
         retry_decisions: 1,
         approval_pending: 0,
+      },
+      harness: {
+        observed: 1,
+        sources: 1,
+        evidence_count: 1,
+        latest_runtime: "gjc",
+        latest_run_id: "run-1",
+        latest_status: "completed",
+        latest_summary: "GJC transcript stayed external.",
+        redacted_events: 0,
+        metadata_only: true,
+        raw_transcript_exposed: false,
       },
       sensitivity: {
         pii_findings: 0,
         raw_content_exposed: false,
-        redaction: "forward projection omits raw prompt and response content",
+        redaction: "forward projection omits raw prompt, response, transcript, and terminal output content",
       },
-      evidence_refs: ["orchestration_checkpoint:run-1:build:1"],
+      evidence_refs: ["orchestration_checkpoint:run-1:build:1", "event:harness.evidence_observed:E-1"],
     },
     doctor: {
       generated_at: "2026-06-07T00:00:00Z",
@@ -205,6 +218,21 @@ test("parseOperatorSummaryResponse accepts optional evidence and doctor blocks",
           evidence_refs: ["orchestration_checkpoint:run-1:build:1"],
         },
         {
+          id: "gjc",
+          label: "Gajae-Code (GJC)",
+          category: "agent_runtime",
+          availability_status: "warning",
+          session_status: "observed",
+          command: "gjc",
+          available: false,
+          version: null,
+          detail: "gjc was not found on PATH",
+          latest_seen_at: "2026-06-08T08:00:00Z",
+          latest_run_id: "run-1",
+          observation_count: 1,
+          evidence_refs: ["event:harness.evidence_observed:E-1"],
+        },
+        {
           id: "gemini",
           label: "Gemini CLI",
           category: "agent_runtime",
@@ -221,11 +249,11 @@ test("parseOperatorSummaryResponse accepts optional evidence and doctor blocks",
         },
       ],
       counts: {
-        total: 2,
-        agent_runtimes: 2,
+        total: 3,
+        agent_runtimes: 3,
         available: 1,
-        observed: 1,
-        missing_agent_runtimes: 1,
+        observed: 2,
+        missing_agent_runtimes: 2,
       },
       privacy: {
         environment_dumped: false,
@@ -237,10 +265,13 @@ test("parseOperatorSummaryResponse accepts optional evidence and doctor blocks",
   });
 
   assert.equal(parsed.evidence?.provider_calls.total_tokens, 321);
+  assert.equal(parsed.evidence?.harness.latest_runtime, "gjc");
   assert.equal(parsed.doctor?.checks[0].id, "bridge-auth");
-  assert.equal(parsed.runtime_roster?.counts.observed, 1);
+  assert.equal(parsed.runtime_roster?.counts.observed, 2);
   const view = toOperatorSummaryViewModel(parsed);
   assert.equal(view.evidence?.metrics[0].value, "1");
+  assert.equal(view.evidence?.metrics.find((metric) => metric.id === "harness-observed")?.value, "1");
+  assert.equal(view.evidence?.notes.find((note) => note.id === "evidence-harness")?.title, "GJC harness evidence is metadata-only");
   assert.equal(view.doctor?.checks[0].status, "ok");
   assert.equal(view.runtimeRoster?.runtimes[0].sessionLabel, "checkpoint evidence");
   assert.equal(view.postureLabel, "runtime attention");
@@ -261,8 +292,21 @@ test("parseOperatorEvidenceSummaryResponse and parseOperatorDoctorEvidenceRespon
     },
     budget: {
       sources: 0,
+      harness_sources: 0,
       retry_decisions: 0,
       approval_pending: 0,
+    },
+    harness: {
+      observed: 0,
+      sources: 0,
+      evidence_count: 0,
+      latest_runtime: null,
+      latest_run_id: null,
+      latest_status: null,
+      latest_summary: null,
+      redacted_events: 0,
+      metadata_only: true,
+      raw_transcript_exposed: false,
     },
     sensitivity: {
       pii_findings: 0,

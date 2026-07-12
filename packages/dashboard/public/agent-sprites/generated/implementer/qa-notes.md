@@ -1,0 +1,10 @@
+sprite_gen_done=implementer
+folder=D:\Google\.Conitens\packages\dashboard\public\agent-sprites\generated\implementer
+engine=component-row
+style=front-facing full-body pixel human character sprite; portrait lineup proportions; not a top-down token
+reference_sources=user-reference:codex-clipboard-11b0d6b3-front-facing-full-body-pixel-boy.png,user-reference:codex-clipboard-c73a6cca-front-facing-pixel-character-lineup.png,user-reference:codex-clipboard-3a0ec65f-front-facing-rpg-character-lineup.png
+source=direct sprite-gen request; no command-center, Claude, or imported character sheet
+pipeline=prepare_sprite_run+direct_component_rows+extract_sprite_row_frames+preview_animation+compose_sprite_atlas
+motion_profile=build-shift
+primary_motion_row=build-shift
+qa_note=pass: portrait-lineup engineer shifts build stance and raises a wrench clearly.

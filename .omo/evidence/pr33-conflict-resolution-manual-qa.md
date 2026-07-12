@@ -1,0 +1,49 @@
+# PR #33 Conflict Resolution Manual QA
+
+Date: 2026-07-12
+Surface under review: `D:\Google\.Conitens\.omx\worktrees\pr33-conflict-resolution`
+
+## Verdict
+
+PASS for the product/runtime integration and local delivery graph. The final
+merge object preserves the original PR head and current `main` as its two
+parents while publishing the exact reviewed integration tree.
+
+## manualQa
+
+### surfaceEvidence
+
+| scenarioId | criterionRef | surface | exactInvocation | verdict | artifactRefs |
+|---|---|---|---|---|---|
+| SE-DASHBOARD | dashboard shell and workspace flow | Dashboard tests | `pnpm --filter @conitens/dashboard test` | PASS (155/155 after the stale-detail regression was added) | A1, A2 |
+| SE-PYTHON | episode closure and Forward behavior | Python focused regression | `python -m unittest tests.test_episode_closure tests.test_episode_closure_cli_security tests.test_forward_bridge tests.test_forward_runtime_mode` | PASS (73/73) | A2 |
+| SE-PROTOCOL | known protocol baseline | Protocol test suite | `pnpm.cmd --filter @conitens/protocol test` | PASS as baseline (847 passed, 4 documented failures) | A3 |
+| SE-BROWSER | Focused hierarchy and workspace navigation | Dashboard production preview at 1220x1000 | Navigate `#/office-preview`; navigate `#/workspaces`; click Demo workspace; inspect console and route | PASS (prior claim backed by browser QA artifact) | A4 |
+| SE-HISTORY | required history-preserving merge | Git object graph | `git show -s --format=%P HEAD`; `git merge-base --is-ancestor <parent> HEAD`; `git rev-parse HEAD^{tree}` | PASS (two required parents, both ancestor checks exit 0, exact verified tree) | A5 |
+
+### adversarialCases
+
+| scenarioId | criterionRef | adversarialClass | expectedBehavior | verdict | artifactRefs |
+|---|---|---|---|---|---|
+| ADV-PROTOCOL-BASELINE | protocol regression | pre-existing registry/ownership drift | Exactly the documented 847-pass/4-failure baseline; no new failure | PASS | A3 |
+| ADV-BROWSER-CONSOLE | browser robustness | console errors during route transitions | Zero console errors on Focused and workspace list/detail routes | PASS | A4 |
+| ADV-WORKSPACE-SELECTION | workspace interaction | stale/duplicate selection state | Exactly one selected Demo workspace and detail route after click | PASS | A4 |
+| ADV-STALE-WORKSPACE-DRAFT | workspace interaction | route changes from workspace 1 to workspace 2 before detail loading finishes | No gateway update or refresh occurs until route and loaded-detail IDs match | PASS | A2 |
+| ADV-MERGE-PARENTS | mergeability/history | linear replay substituted for required two-parent merge | Final integration commit has original PR head and current main as both parents | PASS | A5 |
+
+## artifactRefs
+
+| id | kind | description | path |
+|---|---|---|---|
+| A1 | test-output | Dashboard baseline test run recorded in the Wave 3 green evidence | `.omo/evidence/wave3-forward-bridge-green.txt` |
+| A2 | test-output | Current dashboard/protocol/Python rerun record with exact invocations and counts | `.omo/evidence/pr33-conflict-resolution-rerun.txt` |
+| A3 | test-output | Protocol baseline evidence; current rerun reproduced 847 passed / 4 failed | `.omo/evidence/pr33-conflict-resolution-rerun.txt` |
+| A4 | browser-report | Focused hierarchy and rebuilt workspace list-to-detail browser QA, including zero console errors | `.omo/evidence/dashboard-thin-shell-final-browser-qa.md`, `.omo/evidence/pr33-conflict-resolution-rerun.txt` |
+| A5 | git-inspection | Verified history-preserving graph and independent final goal/QA rechecks | `.omo/evidence/pr33-conflict-resolution-rerun.txt`, `.omo/evidence/pr33-conflict-resolution-debugging-audit.md`, `.omo/evidence/pr33-conflict-resolution-review-work.md` |
+
+## Publication check
+
+PASS. The branch advanced by fast-forward and GitHub reports the published PR
+head `MERGEABLE`. Its separate `BLOCKED` merge-state status is a repository
+policy gate rather than a merge conflict. No product-runtime, history, or
+content-conflict blocker remains.

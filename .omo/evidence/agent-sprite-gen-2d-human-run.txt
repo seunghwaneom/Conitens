@@ -1,0 +1,260 @@
+{
+  "ok": true,
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator",
+  "states": [
+    "command-pulse"
+  ]
+}
+{
+  "ok": true,
+  "engine": "component-row",
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator",
+  "cell": {
+    "shape": "square",
+    "width": 48,
+    "height": 48,
+    "safe_margin_x": 4,
+    "safe_margin_y": 4,
+    "size": 48,
+    "safe_margin": 4
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [
+      255,
+      0,
+      255
+    ],
+    "selection": "manual"
+  },
+  "errors": [],
+  "warnings": []
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator\\qa",
+  "states": [
+    {
+      "state": "command-pulse",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\orchestrator\\manifest.json"
+}
+{
+  "ok": true,
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer",
+  "states": [
+    "build-shift"
+  ]
+}
+{
+  "ok": true,
+  "engine": "component-row",
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer",
+  "cell": {
+    "shape": "square",
+    "width": 48,
+    "height": 48,
+    "safe_margin_x": 4,
+    "safe_margin_y": 4,
+    "size": 48,
+    "safe_margin": 4
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [
+      255,
+      0,
+      255
+    ],
+    "selection": "manual"
+  },
+  "errors": [],
+  "warnings": []
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer\\qa",
+  "states": [
+    {
+      "state": "build-shift",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\implementer\\manifest.json"
+}
+{
+  "ok": true,
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher",
+  "states": [
+    "research-orbit"
+  ]
+}
+{
+  "ok": true,
+  "engine": "component-row",
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher",
+  "cell": {
+    "shape": "square",
+    "width": 48,
+    "height": 48,
+    "safe_margin_x": 4,
+    "safe_margin_y": 4,
+    "size": 48,
+    "safe_margin": 4
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [
+      255,
+      0,
+      255
+    ],
+    "selection": "manual"
+  },
+  "errors": [],
+  "warnings": []
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher\\qa",
+  "states": [
+    {
+      "state": "research-orbit",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\researcher\\manifest.json"
+}
+{
+  "ok": true,
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer",
+  "states": [
+    "review-scan"
+  ]
+}
+{
+  "ok": true,
+  "engine": "component-row",
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer",
+  "cell": {
+    "shape": "square",
+    "width": 48,
+    "height": 48,
+    "safe_margin_x": 4,
+    "safe_margin_y": 4,
+    "size": 48,
+    "safe_margin": 4
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [
+      255,
+      0,
+      255
+    ],
+    "selection": "manual"
+  },
+  "errors": [],
+  "warnings": []
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer\\qa",
+  "states": [
+    {
+      "state": "review-scan",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\reviewer\\manifest.json"
+}
+{
+  "ok": true,
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator",
+  "states": [
+    "verify-brace"
+  ]
+}
+{
+  "ok": true,
+  "engine": "component-row",
+  "run_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator",
+  "cell": {
+    "shape": "square",
+    "width": 48,
+    "height": 48,
+    "safe_margin_x": 4,
+    "safe_margin_y": 4,
+    "size": 48,
+    "safe_margin": 4
+  },
+  "chroma_key": {
+    "name": "magenta",
+    "hex": "#FF00FF",
+    "rgb": [
+      255,
+      0,
+      255
+    ],
+    "selection": "manual"
+  },
+  "errors": [],
+  "warnings": []
+}
+{
+  "ok": true,
+  "qa_dir": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator\\qa",
+  "states": [
+    {
+      "state": "verify-brace",
+      "ok": true,
+      "frames": 8,
+      "fps": 6,
+      "delay_ticks": 17,
+      "loop": true
+    }
+  ]
+}
+{
+  "ok": true,
+  "atlas": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator\\sprite-sheet-alpha.png",
+  "manifest": "D:\\Google\\.Conitens\\.tmp\\sprite-gen-agent-characters\\validator\\manifest.json"
+}

@@ -1,3 +1,4 @@
+// allow: SIZE_OK - typed asset catalog keeps floor, wall, furniture, and character manifests together for registry validation.
 export const SPATIAL_LENS_ASSET_KINDS = [
   "floor",
   "wall",
@@ -130,6 +131,7 @@ export const SPATIAL_LENS_PUBLIC_ASSET_ROOT = "/spatial-lens";
 
 const FIXTURE_SPRITE_SHEET = "/office-fixtures.png";
 const FIXTURE_CELL_SIZE = 24;
+const CHARACTER_CELL_SIZE = 64;
 
 function staticFrames(
   frameId: string,
@@ -221,26 +223,11 @@ const CHARACTER_SPRITES: Record<
   Exclude<SpatialLensCharacterRole, "placeholder">,
   string
 > = {
-  orchestrator: new URL(
-    "../../../../command-center/public/sprites/agent-orchestrator.png",
-    import.meta.url,
-  ).href,
-  implementer: new URL(
-    "../../../../command-center/public/sprites/agent-implementer.png",
-    import.meta.url,
-  ).href,
-  researcher: new URL(
-    "../../../../command-center/public/sprites/agent-researcher.png",
-    import.meta.url,
-  ).href,
-  reviewer: new URL(
-    "../../../../command-center/public/sprites/agent-reviewer.png",
-    import.meta.url,
-  ).href,
-  validator: new URL(
-    "../../../../command-center/public/sprites/agent-validator.png",
-    import.meta.url,
-  ).href,
+  orchestrator: "/agent-sprites/generated/orchestrator/sprite-sheet-alpha.png",
+  implementer: "/agent-sprites/generated/implementer/sprite-sheet-alpha.png",
+  researcher: "/agent-sprites/generated/researcher/sprite-sheet-alpha.png",
+  reviewer: "/agent-sprites/generated/reviewer/sprite-sheet-alpha.png",
+  validator: "/agent-sprites/generated/validator/sprite-sheet-alpha.png",
 };
 
 function createCharacterAsset(
@@ -252,18 +239,18 @@ function createCharacterAsset(
     kind: "character",
     label,
     src: CHARACTER_SPRITES[role],
-    tileSize: { w: 24, h: 24 },
+    tileSize: { w: CHARACTER_CELL_SIZE, h: CHARACTER_CELL_SIZE },
     anchor: { x: 0.5, y: 1 },
     rotationGroup: "character.facing",
     stateGroup: "character.role-state",
     animationFrames: staticFrames("character.idle", {
       x: 0,
       y: 0,
-      w: 24,
-      h: 24,
+      w: CHARACTER_CELL_SIZE,
+      h: CHARACTER_CELL_SIZE,
     }),
     role,
-    frameSize: { w: 24, h: 24 },
+    frameSize: { w: CHARACTER_CELL_SIZE, h: CHARACTER_CELL_SIZE },
     defaultFacing: "down",
     states: ["idle", "walking", "working", "reviewing", "blocked"],
   };

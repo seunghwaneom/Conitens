@@ -57,12 +57,14 @@ def ensure_personas_root(workspace: str | Path) -> Path:
     return path
 
 
-def loop_state_db_path(workspace: str | Path) -> Path:
-    return ensure_runtime_root(workspace) / LOOP_DB_FILENAME
+def loop_state_db_path(workspace: str | Path, *, create_parent: bool = True) -> Path:
+    root = ensure_runtime_root(workspace) if create_parent else runtime_root(workspace)
+    return root / LOOP_DB_FILENAME
 
 
-def loop_state_debug_path(workspace: str | Path) -> Path:
-    return ensure_runtime_root(workspace) / LOOP_DEBUG_FILENAME
+def loop_state_debug_path(workspace: str | Path, *, create_parent: bool = True) -> Path:
+    root = ensure_runtime_root(workspace) if create_parent else runtime_root(workspace)
+    return root / LOOP_DEBUG_FILENAME
 
 
 def task_plan_path(workspace: str | Path) -> Path:
@@ -77,8 +79,9 @@ def progress_path(workspace: str | Path) -> Path:
     return ensure_context_root(workspace) / PROGRESS_FILENAME
 
 
-def latest_context_path(workspace: str | Path) -> Path:
-    return ensure_context_root(workspace) / LATEST_CONTEXT_FILENAME
+def latest_context_path(workspace: str | Path, *, create_parent: bool = True) -> Path:
+    root = ensure_context_root(workspace) if create_parent else context_root(workspace)
+    return root / LATEST_CONTEXT_FILENAME
 
 
 def candidate_patches_root(workspace: str | Path) -> Path:

@@ -1,0 +1,10 @@
+sprite_gen_done=orchestrator
+folder=D:\Google\.Conitens\packages\dashboard\public\agent-sprites\generated\orchestrator
+engine=component-row
+style=front-facing full-body pixel human character sprite; portrait lineup proportions; not a top-down token
+reference_sources=user-reference:codex-clipboard-11b0d6b3-front-facing-full-body-pixel-boy.png,user-reference:codex-clipboard-c73a6cca-front-facing-pixel-character-lineup.png,user-reference:codex-clipboard-3a0ec65f-front-facing-rpg-character-lineup.png
+source=direct sprite-gen request; no command-center, Claude, or imported character sheet
+pipeline=prepare_sprite_run+direct_component_rows+extract_sprite_row_frames+preview_animation+compose_sprite_atlas
+motion_profile=command-pulse
+primary_motion_row=command-pulse
+qa_note=pass: portrait-lineup operations lead breathes, blinks, and checks a pulsing tablet.

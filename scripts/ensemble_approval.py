@@ -82,8 +82,22 @@ class ApprovalInterruptAdapter:
         action_payload: dict[str, Any],
     ) -> dict[str, Any]:
         classification = self.classify(action_type, action_payload)
+        request_id = f"approval-{uuid.uuid4().hex}"
+        created_at = utc_iso()
+        updated_at = utc_iso()
+        append_event(
+            self.workspace,
+            event_type="APPROVAL_REQUESTED",
+            actor={"type": "agent", "name": actor},
+            scope={"run_id": run_id, "task_id": task_id or run_id, "correlation_id": run_id},
+            payload={
+                "request_id": request_id,
+                "action_type": action_type,
+                "risk_level": classification["risk_level"],
+            },
+        )
         request = self.repository.append_approval_request(
-            request_id=f"approval-{uuid.uuid4().hex}",
+            request_id=request_id,
             run_id=run_id,
             iteration_id=iteration_id,
             task_id=task_id,
@@ -94,15 +108,8 @@ class ApprovalInterruptAdapter:
             status="pending",
             reviewer=None,
             reviewer_note=classification.get("notes"),
-            created_at=utc_iso(),
-            updated_at=utc_iso(),
-        )
-        append_event(
-            self.workspace,
-            event_type="APPROVAL_REQUESTED",
-            actor={"type": "agent", "name": actor},
-            scope={"run_id": run_id, "task_id": task_id or run_id, "correlation_id": run_id},
-            payload={"request_id": request["request_id"], "action_type": action_type, "risk_level": request["risk_level"]},
+            created_at=created_at,
+            updated_at=updated_at,
         )
         self.progress.regenerate(run_id)
         self.progress.append_entry(
@@ -129,14 +136,6 @@ class ApprovalInterruptAdapter:
             raise ValueError(f"Approval request not found: {request_id}")
         if current["status"] != "pending":
             raise ValueError(f"Approval request already decided: {request_id}")
-        request = self.repository.update_approval_request(
-            request_id=request_id,
-            status=status,
-            reviewer=reviewer,
-            reviewer_note=reviewer_note,
-            action_payload=edited_payload,
-            updated_at=utc_iso(),
-        )
         event_type = {
             "approved": "APPROVAL_APPROVED",
             "edited": "APPROVAL_EDITED",
@@ -146,9 +145,21 @@ class ApprovalInterruptAdapter:
             self.workspace,
             event_type=event_type,
             actor={"type": "agent", "name": reviewer},
-            scope={"run_id": request["run_id"], "task_id": request["run_id"], "correlation_id": request["run_id"]},
+            scope={
+                "run_id": current["run_id"],
+                "task_id": current.get("task_id") or current["run_id"],
+                "correlation_id": current["run_id"],
+            },
             payload={"request_id": request_id, "reviewer_note": reviewer_note},
             severity="error" if status == "rejected" else "info",
+        )
+        request = self.repository.update_approval_request(
+            request_id=request_id,
+            status=status,
+            reviewer=reviewer,
+            reviewer_note=reviewer_note,
+            action_payload=edited_payload,
+            updated_at=utc_iso(),
         )
         return request
 

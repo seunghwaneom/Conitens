@@ -1,0 +1,41 @@
+Agent skill revision apply/rollback — PIN and RED evidence
+Date: 2026-07-10
+
+PIN
+- python -m unittest tests.test_improvement_candidates tests.test_candidate_patch_hardening tests.test_approval_controls
+  Result: 42 tests, OK (9.842s)
+- canonical .agent skill registry validation
+  Result: 8 manifests, 0 errors, 0 warnings
+- npm test -- improvement-event.test.ts
+  Result: 1 test, OK
+- npm run build (packages/protocol)
+  Result: TypeScript build exit 0
+- python -m unittest tests.test_owner_auth_compatibility
+  Result: 5 tests, OK
+
+RED
+- python -m py_compile tests/test_owner_auth_compatibility.py tests/test_agent_revision_application.py
+  Result: exit 0
+- python -m unittest tests.test_agent_revision_application
+  Result: 13 tests, 13 expected errors
+  Missing boundary: ModuleNotFoundError: No module named 'ensemble_agent_revisions'
+
+The RED suite covers structured proposal metadata, candidate/target/schema/privacy
+gates, metadata-only apply rejection, owner/apply authorization separation,
+event-first append failure, projection recovery, stale hashes, rollback,
+deterministic event-only rebuild, and forged replay/public metadata.
+
+ADVERSARIAL RED ITERATIONS
+- Four replay/materialization regressions initially failed after the first GREEN:
+  wrong-scope or pre-proposal revision authority, candidate approval after the
+  revision proposal, duplicate/conflicting terminal ordering, and corruption
+  after atomic replace. The reducer, candidate-order check, active-stack replay,
+  and post-write hash verification closed them.
+- Strict manifest-shape RED showed that list fields could be accepted as scalars
+  and scalar fields could be accepted as structured values. Field-specific
+  shape validation now rejects both before revision events.
+- Security review RED:
+  `python -m unittest tests.test_agent_revision_application.AgentSkillRevisionApplicationTests.test_rebuild_requires_live_owner_before_materializing_authority_events`
+  initially failed because ownerless authority events were materialized. The
+  rebuild service now performs the same live project-owner check as apply and
+  rollback before replay or projection.

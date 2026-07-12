@@ -1,0 +1,148 @@
+﻿{
+    "manualQa":  {
+                     "surfaceEvidence":  [
+                                             {
+                                                 "scenarioId":  "SE-UTF8",
+                                                 "criterionRef":  "file opens as UTF-8",
+                                                 "surface":  "filesystem byte decode",
+                                                 "exactInvocation":  "[System.IO.File]::ReadAllBytes + strict UTF8Encoding(false,true).GetString on docs/conitens-architecture-direction-refactor-plan-2026-07-10.md",
+                                                 "verdict":  "PASS",
+                                                 "artifactRefs":  [
+                                                                      "A1"
+                                                                  ]
+                                             },
+                                             {
+                                                 "scenarioId":  "SE-STRUCTURE",
+                                                 "criterionRef":  "section hierarchy is coherent",
+                                                 "surface":  "markdown static parse",
+                                                 "exactInvocation":  "PowerShell regex parse of heading markers in docs/conitens-architecture-direction-refactor-plan-2026-07-10.md",
+                                                 "verdict":  "PASS",
+                                                 "artifactRefs":  [
+                                                                      "A2"
+                                                                  ]
+                                             },
+                                             {
+                                                 "scenarioId":  "SE-FENCES",
+                                                 "criterionRef":  "all code fences are balanced",
+                                                 "surface":  "markdown static parse",
+                                                 "exactInvocation":  "PowerShell regex parse of ^``` fence markers in docs/conitens-architecture-direction-refactor-plan-2026-07-10.md",
+                                                 "verdict":  "PASS",
+                                                 "artifactRefs":  [
+                                                                      "A2"
+                                                                  ]
+                                             },
+                                             {
+                                                 "scenarioId":  "SE-MERMAID",
+                                                 "criterionRef":  "both Mermaid diagrams are syntactically plausible",
+                                                 "surface":  "markdown fenced block parse",
+                                                 "exactInvocation":  "PowerShell extraction of mermaid fences; require exactly two flowchart/graph LR/TD/TB/RL/BT blocks with balanced brackets",
+                                                 "verdict":  "PASS",
+                                                 "artifactRefs":  [
+                                                                      "A2"
+                                                                  ]
+                                             },
+                                             {
+                                                 "scenarioId":  "SE-PATHS",
+                                                 "criterionRef":  "referenced local paths exist",
+                                                 "surface":  "filesystem path resolution",
+                                                 "exactInvocation":  "PowerShell regex extraction of filesystem-shaped local refs plus Test-Path, excluding unittest module names handled separately",
+                                                 "verdict":  "PASS",
+                                                 "artifactRefs":  [
+                                                                      "A2"
+                                                                  ]
+                                             },
+                                             {
+                                                 "scenarioId":  "SE-COMMANDS",
+                                                 "criterionRef":  "commands/tests named exist",
+                                                 "surface":  "filesystem/package metadata",
+                                                 "exactInvocation":  "PowerShell extraction of python -m unittest module refs, Test-Path tests/*.py, and package.json script inspection for dashboard test/build",
+                                                 "verdict":  "PASS",
+                                                 "artifactRefs":  [
+                                                                      "A2"
+                                                                  ]
+                                             },
+                                             {
+                                                 "scenarioId":  "SE-EXEC-REC",
+                                                 "criterionRef":  "executive recommendation is discoverable without reading all 700+ lines",
+                                                 "surface":  "markdown heading parse",
+                                                 "exactInvocation":  "PowerShell heading parse; require conclusion/recommendation heading within first 80 lines",
+                                                 "verdict":  "PASS",
+                                                 "artifactRefs":  [
+                                                                      "A2"
+                                                                  ]
+                                             }
+                                         ],
+                     "adversarialCases":  [
+                                              {
+                                                  "scenarioId":  "ADV-ODD-FENCE",
+                                                  "criterionRef":  "all code fences are balanced",
+                                                  "adversarialClass":  "odd fence count / unclosed block",
+                                                  "expectedBehavior":  "Fail if marker count is odd",
+                                                  "verdict":  "PASS",
+                                                  "artifactRefs":  [
+                                                                       "A2"
+                                                                   ]
+                                              },
+                                              {
+                                                  "scenarioId":  "ADV-MERMAID-COUNT",
+                                                  "criterionRef":  "both Mermaid diagrams are syntactically plausible",
+                                                  "adversarialClass":  "missing, extra, or non-flowchart Mermaid block",
+                                                  "expectedBehavior":  "Fail unless exactly two plausible Mermaid flowchart/graph blocks are found",
+                                                  "verdict":  "PASS",
+                                                  "artifactRefs":  [
+                                                                       "A2"
+                                                                   ]
+                                              },
+                                              {
+                                                  "scenarioId":  "ADV-PATH-MISSING",
+                                                  "criterionRef":  "referenced local paths exist",
+                                                  "adversarialClass":  "dangling filesystem-shaped path reference",
+                                                  "expectedBehavior":  "Fail on any missing extracted local path or missing glob base",
+                                                  "verdict":  "PASS",
+                                                  "artifactRefs":  [
+                                                                       "A2"
+                                                                   ]
+                                              },
+                                              {
+                                                  "scenarioId":  "ADV-TEST-MISSING",
+                                                  "criterionRef":  "commands/tests named exist",
+                                                  "adversarialClass":  "unresolved unittest module or missing package script",
+                                                  "expectedBehavior":  "Fail if any tests.test_* module lacks a tests/*.py file or dashboard package lacks test/build scripts",
+                                                  "verdict":  "PASS",
+                                                  "artifactRefs":  [
+                                                                       "A2"
+                                                                   ]
+                                              },
+                                              {
+                                                  "scenarioId":  "ADV-LATE-REC",
+                                                  "criterionRef":  "executive recommendation is discoverable without reading all 700+ lines",
+                                                  "adversarialClass":  "recommendation only appears at end",
+                                                  "expectedBehavior":  "Fail if no conclusion/recommendation heading appears within first 80 lines",
+                                                  "verdict":  "PASS",
+                                                  "artifactRefs":  [
+                                                                       "A2"
+                                                                   ]
+                                              }
+                                          ],
+                     "artifactRefs":  [
+                                          {
+                                              "id":  "A1",
+                                              "kind":  "text",
+                                              "description":  "Strict UTF-8 byte decode result",
+                                              "path":  ".omo/evidence/plan-manual-qa/utf8-check.txt"
+                                          },
+                                          {
+                                              "id":  "A2",
+                                              "kind":  "text",
+                                              "description":  "Corrected markdown structure, fence, Mermaid, path, and command/test inspection output",
+                                              "path":  ".omo/evidence/plan-manual-qa/structure-fences-mermaid-paths-commands-corrected.txt"
+                                          },
+                                          {
+                                              "id":  "A3",
+                                              "kind":  "json",
+                                              "description":  "Manual QA matrix tying scenarios and adversarial cases to evidence",
+                                              "path":  ".omo/evidence/plan-manual-qa/manualQa-matrix.json"
+                                          }
+                                      ]
+                 }
+}

@@ -6,8 +6,10 @@ Append-only meeting recorder for Conitens.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -17,6 +19,7 @@ from ensemble_paths import candidate_notes_dirs, ensure_notes_dir
 
 
 MSG_SCHEMA_V = 1
+DEFAULT_MEETING_ROOM_ID = "ops-control"
 ACTIVE_MEETING_FILE = "_active_meeting.json"
 
 
@@ -52,6 +55,27 @@ def ensure_meeting_dirs(workspace: str | Path) -> None:
 def utc_iso(ts: datetime | None = None) -> str:
     ts = ts or datetime.now(timezone.utc)
     return ts.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _next_message_id(meeting_id: str) -> str:
+    return f"msg:{meeting_id}:{uuid.uuid4().hex[:12]}"
+
+
+def _content_sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _transcript_ref(meeting_id: str) -> str:
+    return f"meetings/{meeting_id}.jsonl"
+
+
+def _merge_rules(*rule_groups: list[str]) -> list[str]:
+    merged: list[str] = []
+    for rules in rule_groups:
+        for rule in rules:
+            if rule not in merged:
+                merged.append(rule)
+    return merged
 
 
 def generate_meeting_id(workspace: str | Path) -> str:
@@ -130,6 +154,13 @@ def load_transcript(workspace: str | Path, meeting_id: str) -> list[dict[str, An
     return rows
 
 
+def _require_meeting_transcript(workspace: str | Path, meeting_id: str) -> list[dict[str, Any]]:
+    transcript = load_transcript(workspace, meeting_id)
+    if not transcript:
+        raise FileNotFoundError(f"Meeting not found: {meeting_id}")
+    return transcript
+
+
 def extract_meeting_metadata(transcript: list[dict[str, Any]]) -> dict[str, Any]:
     metadata = {
         "meeting_id": None,
@@ -168,38 +199,58 @@ def start_meeting(
     topic: str,
     actor: str = "CLI",
     task_id: str | None = None,
+    room_id: str = DEFAULT_MEETING_ROOM_ID,
 ) -> dict[str, Any]:
     meeting_id = generate_meeting_id(workspace)
     masked_topic, rules = redact_data(topic)
+    start_text = f"Meeting started: {masked_topic}"
+    message_id = _next_message_id(meeting_id)
+    event = append_event(
+        workspace,
+        event_type="meeting.started",
+        actor={"type": "agent", "name": actor},
+        scope={"meeting_id": meeting_id, "task_id": task_id},
+        payload={
+            "meeting_id": meeting_id,
+            "room_id": room_id,
+            "initiated_by": actor,
+            "participant_ids": [actor],
+            "title": masked_topic,
+            "topic": masked_topic,
+            "message_id": message_id,
+            "content_sha256": _content_sha256(start_text),
+            "transcript_ref": _transcript_ref(meeting_id),
+        },
+    )
+    event_payload = event.get("payload", {})
+    event_redaction = event.get("redaction", {})
+    event_rules = event_redaction.get("rules", []) if isinstance(event_redaction, dict) else []
     record = {
         "msg_v": MSG_SCHEMA_V,
-        "ts_utc": utc_iso(),
+        "ts_utc": event.get("ts_utc") or utc_iso(),
         "meeting_id": meeting_id,
+        "message_id": event_payload.get("message_id", message_id),
+        "content_sha256": event_payload.get("content_sha256", _content_sha256(start_text)),
+        "event_id": event.get("event_id"),
         "sender": "SYSTEM",
         "channel": "cli",
-        "content": {"type": "decision", "text": f"Meeting started: {masked_topic}"},
+        "content": {"type": "decision", "text": start_text},
         "refs": {"task_id": task_id, "files": []},
-        "redaction": {"applied": bool(rules), "rules": rules},
+        "redaction": {"applied": bool(rules or event_rules), "rules": _merge_rules(rules, event_rules)},
     }
     append_meeting_record(workspace, meeting_id, record)
     write_active_meeting(
         workspace,
         {
             "meeting_id": meeting_id,
-            "topic": masked_topic,
+            "topic": event_payload.get("topic", masked_topic),
             "started_at": record["ts_utc"],
             "opened_by": actor,
             "task_id": task_id,
+            "room_id": event_payload.get("room_id", room_id),
         },
     )
-    append_event(
-        workspace,
-        event_type="MEETING_STARTED",
-        actor={"type": "agent", "name": actor},
-        scope={"meeting_id": meeting_id, "task_id": task_id},
-        payload={"topic": masked_topic},
-    )
-    return {"meeting_id": meeting_id, "topic": masked_topic, "record": record}
+    return {"meeting_id": meeting_id, "topic": event_payload.get("topic", masked_topic), "record": record}
 
 
 def say(
@@ -217,26 +268,50 @@ def say(
     meeting_id = meeting_id or (active or {}).get("meeting_id")
     if not meeting_id:
         raise ValueError("No active meeting. Start a meeting or specify --meeting.")
+    _require_meeting_transcript(workspace, meeting_id)
 
     masked_text, rules = redact_data(text)
+    masked_files, file_rules = redact_data(files or [])
+    room_id = str((active or {}).get("room_id") or DEFAULT_MEETING_ROOM_ID)
+    message_id = _next_message_id(meeting_id)
+    content_sha256 = _content_sha256(masked_text)
+    event = append_event(
+        workspace,
+        event_type="meeting.deliberation",
+        actor={"type": "agent", "name": sender},
+        scope={"meeting_id": meeting_id, "task_id": task_id or (active or {}).get("task_id")},
+        payload={
+            "meeting_id": meeting_id,
+            "room_id": room_id,
+            "initiated_by": sender,
+            "channel": channel,
+            "content_type": content_type,
+            "message_id": message_id,
+            "content_sha256": content_sha256,
+            "transcript_ref": _transcript_ref(meeting_id),
+            "refs": {"task_id": task_id or (active or {}).get("task_id"), "files": masked_files},
+        },
+    )
+    event_payload = event.get("payload", {})
+    event_redaction = event.get("redaction", {})
+    event_rules = event_redaction.get("rules", []) if isinstance(event_redaction, dict) else []
     record = {
         "msg_v": MSG_SCHEMA_V,
-        "ts_utc": utc_iso(),
+        "ts_utc": event.get("ts_utc") or utc_iso(),
         "meeting_id": meeting_id,
+        "message_id": event_payload.get("message_id", message_id),
+        "content_sha256": event_payload.get("content_sha256", content_sha256),
+        "event_id": event.get("event_id"),
         "sender": sender,
         "channel": channel,
         "content": {"type": content_type, "text": masked_text},
-        "refs": {"task_id": task_id or (active or {}).get("task_id"), "files": files or []},
-        "redaction": {"applied": bool(rules), "rules": rules},
+        "refs": event_payload.get("refs", {"task_id": task_id or (active or {}).get("task_id"), "files": masked_files}),
+        "redaction": {
+            "applied": bool(rules or file_rules or event_rules),
+            "rules": _merge_rules(rules, file_rules, event_rules),
+        },
     }
     append_meeting_record(workspace, meeting_id, record)
-    append_event(
-        workspace,
-        event_type="MEETING_MSG",
-        actor={"type": "agent", "name": sender},
-        scope={"meeting_id": meeting_id, "task_id": record["refs"]["task_id"]},
-        payload={"channel": channel, "content_type": content_type, "text": masked_text},
-    )
     return record
 
 
@@ -276,16 +351,42 @@ def end_meeting(
     if not meeting_id:
         raise ValueError("No active meeting. Start a meeting or specify --meeting.")
 
-    metadata = extract_meeting_metadata(load_transcript(workspace, meeting_id))
+    metadata = extract_meeting_metadata(_require_meeting_transcript(workspace, meeting_id))
+    room_id = str((active or {}).get("room_id") or DEFAULT_MEETING_ROOM_ID)
+    end_text = f"Meeting ended ({summary_mode})"
+    message_id = _next_message_id(meeting_id)
+    content_sha256 = _content_sha256(end_text)
+    event = append_event(
+        workspace,
+        event_type="meeting.ended",
+        actor={"type": "agent", "name": actor},
+        scope={"meeting_id": meeting_id, "task_id": (active or {}).get("task_id")},
+        payload={
+            "meeting_id": meeting_id,
+            "room_id": room_id,
+            "ended_by": actor,
+            "summary_mode": summary_mode,
+            "summary_file": f"meetings/summaries/{meeting_id}.md",
+            "message_id": message_id,
+            "content_sha256": content_sha256,
+            "transcript_ref": _transcript_ref(meeting_id),
+        },
+    )
+    event_payload = event.get("payload", {})
+    event_redaction = event.get("redaction", {})
+    event_rules = event_redaction.get("rules", []) if isinstance(event_redaction, dict) else []
     record = {
         "msg_v": MSG_SCHEMA_V,
-        "ts_utc": utc_iso(),
+        "ts_utc": event.get("ts_utc") or utc_iso(),
         "meeting_id": meeting_id,
+        "message_id": event_payload.get("message_id", message_id),
+        "content_sha256": event_payload.get("content_sha256", content_sha256),
+        "event_id": event.get("event_id"),
         "sender": "SYSTEM",
         "channel": "cli",
-        "content": {"type": "decision", "text": f"Meeting ended ({summary_mode})"},
+        "content": {"type": "decision", "text": end_text},
         "refs": {"task_id": (active or {}).get("task_id"), "files": []},
-        "redaction": {"applied": False, "rules": []},
+        "redaction": {"applied": bool(event_rules), "rules": event_rules},
     }
     append_meeting_record(workspace, meeting_id, record)
     transcript = load_transcript(workspace, meeting_id)
@@ -312,13 +413,6 @@ def end_meeting(
     if active and active.get("meeting_id") == meeting_id:
         write_active_meeting(workspace, None)
 
-    append_event(
-        workspace,
-        event_type="MEETING_ENDED",
-        actor={"type": "agent", "name": actor},
-        scope={"meeting_id": meeting_id, "task_id": (active or {}).get("task_id")},
-        payload={"summary_mode": summary_mode, "summary_file": str(summary_file)},
-    )
     return {"meeting_id": meeting_id, "summary_file": str(summary_file)}
 
 
@@ -363,6 +457,7 @@ def build_parser() -> argparse.ArgumentParser:
     start_parser.add_argument("--topic", required=True)
     start_parser.add_argument("--actor", default="CLI")
     start_parser.add_argument("--task")
+    start_parser.add_argument("--room", default=DEFAULT_MEETING_ROOM_ID)
 
     say_parser = subparsers.add_parser("say")
     say_parser.add_argument("--meeting")
@@ -390,7 +485,19 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.command == "start":
-        print(json.dumps(start_meeting(args.workspace, topic=args.topic, actor=args.actor, task_id=args.task), ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                start_meeting(
+                    args.workspace,
+                    topic=args.topic,
+                    actor=args.actor,
+                    task_id=args.task,
+                    room_id=args.room,
+                ),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return 0
     if args.command == "say":
         print(

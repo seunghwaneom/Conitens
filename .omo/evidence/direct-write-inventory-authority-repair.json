@@ -1,0 +1,378 @@
+{
+  "schema_v": 1,
+  "generated_at": "2026-07-10",
+  "scope": "conitens-authority-repair-wave-0",
+  "entries": [
+    {
+      "file": "scripts/ensemble_room.py",
+      "symbol": "create_room",
+      "current_write": "Writes .notes/rooms metadata, creates .notes/rooms log, and upserts SQLite room before ROOM_CREATED append_event.",
+      "authority_class": "unsafe-direct-domain-write",
+      "target_boundary": "authority command -> ROOM_CREATED event -> .notes compatibility projection and Forward SQLite index",
+      "first_slice": true,
+      "test_refs": [
+        "tests/test_room_replay.py::RoomReplayTests.test_room_create_event_is_appended_before_projection_writes",
+        "tests/test_room_replay.py::RoomReplayTests.test_room_create_append_failure_does_not_project_room_state",
+        "tests/test_room_replay.py::RoomReplayTests.test_room_create_projection_failure_keeps_committed_event"
+      ],
+      "entry_points": [
+        "create_room",
+        "RoomService.create_room"
+      ],
+      "existing_tests": [
+        "tests/test_room_replay.py",
+        "tests/test_operations_layer.py"
+      ],
+      "fallback": "Revert only room create ordering while keeping RED tests and inventory; narrow to metadata-only projection repair.",
+      "facade_or_leaf": "leaf module behind service facade",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "legacy_surfaces": [
+          ".notes/rooms/*.json",
+          ".notes/rooms/*.jsonl"
+        ],
+        "event": "ROOM_CREATED"
+      }
+    },
+    {
+      "file": "scripts/ensemble_room.py",
+      "symbol": "post_room_message",
+      "current_write": "Updates room metadata, appends .notes/rooms JSONL, and inserts SQLite message before ROOM_MESSAGE append_event; event payload is insufficient for replay.",
+      "authority_class": "unsafe-direct-domain-write",
+      "target_boundary": "authority command -> replay-sufficient ROOM_MESSAGE event -> metadata/log/SQLite projections",
+      "first_slice": true,
+      "test_refs": [
+        "tests/test_room_replay.py::RoomReplayTests.test_room_message_event_is_appended_before_projection_writes",
+        "tests/test_room_replay.py::RoomReplayTests.test_room_message_append_failure_does_not_project_message_state",
+        "tests/test_room_replay.py::RoomReplayTests.test_room_message_projection_failure_keeps_committed_event",
+        "tests/test_room_replay.py::RoomReplayTests.test_room_message_event_payload_is_replay_sufficient",
+        "tests/test_room_replay.py::RoomReplayTests.test_room_message_returns_authority_and_projection_ids"
+      ],
+      "entry_points": [
+        "post_room_message",
+        "RoomService.append_message"
+      ],
+      "existing_tests": [
+        "tests/test_room_replay.py",
+        "tests/test_operations_layer.py"
+      ],
+      "fallback": "Revert only message ordering while preserving payload sufficiency test; split message id generation from projection append.",
+      "facade_or_leaf": "leaf module behind service facade",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "legacy_surfaces": [
+          ".notes/rooms/*.json",
+          ".notes/rooms/*.jsonl"
+        ],
+        "event": "ROOM_MESSAGE"
+      }
+    },
+    {
+      "file": "scripts/ensemble_meeting.py",
+      "symbol": "start_meeting",
+      "current_write": "Appends transcript record and writes active meeting files before MEETING_STARTED append_event.",
+      "authority_class": "unsafe-direct-domain-write",
+      "target_boundary": "meeting command -> MEETING_STARTED event plus transcript evidence ref/hash -> active meeting projection",
+      "first_slice": false,
+      "test_refs": [
+        "tests/test_operations_layer.py",
+        "future tests/test_meeting_replay.py::test_start_meeting_appends_event_before_active_projection"
+      ],
+      "entry_points": [
+        "start_meeting"
+      ],
+      "existing_tests": [
+        "tests/test_operations_layer.py"
+      ],
+      "fallback": "Keep transcript evidence append but mark active meeting files as projection; repair after room slice is green.",
+      "facade_or_leaf": "leaf module",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "legacy_surfaces": [
+          ".notes/meetings/*.jsonl",
+          ".notes/meetings/active.json"
+        ],
+        "event": "MEETING_STARTED",
+        "exception": "transcript-evidence-ledger-not-domain-authority"
+      }
+    },
+    {
+      "file": "scripts/ensemble_meeting.py",
+      "symbol": "say",
+      "current_write": "Appends redacted transcript record before MEETING_MSG append_event with masked text payload.",
+      "authority_class": "compatibility-mirror",
+      "target_boundary": "transcript evidence append with stable id/hash plus policy-approved metadata event or content_ref",
+      "first_slice": false,
+      "test_refs": [
+        "tests/test_operations_layer.py",
+        "future tests/test_meeting_replay.py::test_meeting_message_privacy_and_payload_contract"
+      ],
+      "entry_points": [
+        "say",
+        "append_meeting_record"
+      ],
+      "existing_tests": [
+        "tests/test_operations_layer.py"
+      ],
+      "fallback": "Preserve masked transcript behavior and add metadata-only event link before changing payload shape.",
+      "facade_or_leaf": "leaf module",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "event": "MEETING_MSG",
+        "privacy_rule": "unredacted transcript content must not enter event or browser payload"
+      }
+    },
+    {
+      "file": "scripts/ensemble_spawn.py",
+      "symbol": "start_spawn",
+      "current_write": "Writes spawn record and launches external process before SUBAGENT_SPAWNED append_event.",
+      "authority_class": "external-side-effect",
+      "target_boundary": "SUBAGENT_SPAWN_REQUESTED event -> external launch -> SUBAGENT_SPAWNED or SUBAGENT_SPAWN_FAILED observed event -> record projection",
+      "first_slice": false,
+      "test_refs": [
+        "future tests/test_spawn_lifecycle.py::test_spawn_records_requested_before_external_side_effect",
+        "tests/test_operations_layer.py"
+      ],
+      "entry_points": [
+        "start_spawn",
+        "spawn_record_path"
+      ],
+      "existing_tests": [
+        "tests/test_operations_layer.py"
+      ],
+      "fallback": "Leave current spawn path unchanged until requested/observed lifecycle events are added behind compatibility reads.",
+      "facade_or_leaf": "leaf module",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "event": "SUBAGENT_SPAWNED",
+        "side_effect": "external process launch"
+      }
+    },
+    {
+      "file": "scripts/ensemble_handoff.py",
+      "symbol": "create_handoff",
+      "current_write": "Creates handoff packets and mirrors them into files/SQLite for agent transfer paths.",
+      "authority_class": "compatibility-mirror",
+      "target_boundary": "handoff command/event -> compact packet projection and SQLite operational index",
+      "first_slice": false,
+      "test_refs": [
+        "tests/test_operations_layer.py",
+        "future tests/test_handoff_replay.py::test_handoff_packet_rebuilds_from_event"
+      ],
+      "entry_points": [
+        "create_handoff",
+        "transition_handoff"
+      ],
+      "existing_tests": [
+        "tests/test_operations_layer.py"
+      ],
+      "fallback": "Keep file and SQLite mirrors while introducing event-derived read path behind existing facade.",
+      "facade_or_leaf": "leaf module",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "surface": "handoff packet"
+      }
+    },
+    {
+      "file": "scripts/ensemble_room_service.py",
+      "symbol": "RoomService",
+      "current_write": "Service facade delegates room create/message writes to ensemble_room legacy functions.",
+      "authority_class": "compatibility-mirror",
+      "target_boundary": "service facade remains stable while ensemble_room changes to event-first internals",
+      "first_slice": true,
+      "test_refs": [
+        "tests/test_room_replay.py",
+        "tests/test_operations_layer.py"
+      ],
+      "entry_points": [
+        "RoomService.create_room",
+        "RoomService.append_message"
+      ],
+      "existing_tests": [
+        "tests/test_room_replay.py",
+        "tests/test_operations_layer.py"
+      ],
+      "fallback": "Keep service signatures unchanged; revert internals without changing callers if behavior regresses.",
+      "facade_or_leaf": "facade",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "delegates_to": [
+          "ensemble_room.create_room",
+          "ensemble_room.post_room_message"
+        ]
+      }
+    },
+    {
+      "file": "scripts/ensemble_room_service.py",
+      "symbol": "RoomService.append_tool_event",
+      "current_write": "Inserted the SQLite tool-event projection before ROOM_TOOL_EVENT or TOOL_EVENT append_event.",
+      "authority_class": "unsafe-direct-domain-write",
+      "target_boundary": "tool command -> replay-sufficient interaction.command_executed event -> redacted SQLite projection",
+      "first_slice": true,
+      "test_refs": [
+        "tests/test_room_replay.py::RoomReplayTests.test_room_tool_event_is_appended_before_projection",
+        "tests/test_room_replay.py::RoomReplayTests.test_room_tool_event_append_failure_does_not_project_state"
+      ],
+      "entry_points": [
+        "RoomService.append_tool_event",
+        "AG2RoomAdapter.append_tool_event"
+      ],
+      "existing_tests": [
+        "tests/test_room_replay.py",
+        "tests/test_loop_state.py"
+      ],
+      "fallback": "Keep the service signature stable and revert only projection enrichment if consumers reject the returned event_id.",
+      "facade_or_leaf": "facade",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "event_aliases": [
+          "ROOM_TOOL_EVENT",
+          "TOOL_EVENT"
+        ],
+        "canonical_event": "interaction.command_executed",
+        "repair_status": "implemented"
+      }
+    },
+    {
+      "file": "scripts/ensemble_forward_bridge.py",
+      "symbol": "ForwardBridgeHandler.do_POST",
+      "current_write": "Authenticated POST routes create operator tasks/workspaces, decide approvals, resume runs, and request task approval through repository/runtime services.",
+      "authority_class": "operational-index",
+      "target_boundary": "operator command service with actor, rationale, idempotency, approval, event/projection policy, and path/privacy validation",
+      "first_slice": false,
+      "test_refs": [
+        "tests/test_forward_bridge.py",
+        "tests/test_forward_runtime_mode.py",
+        "packages/dashboard/tests/forward-bridge.test.mjs"
+      ],
+      "entry_points": [
+        "launch_forward_bridge",
+        "ForwardBridgeHandler.do_POST"
+      ],
+      "existing_tests": [
+        "tests/test_forward_bridge.py",
+        "tests/test_forward_runtime_mode.py"
+      ],
+      "fallback": "Keep route compatibility and move one command at a time behind a command facade with current payload shape.",
+      "facade_or_leaf": "facade",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "routes": [
+          "POST /api/operator/tasks",
+          "POST /api/operator/workspaces",
+          "POST /api/approvals/:id/decision",
+          "POST /api/approvals/:id/resume"
+        ]
+      }
+    },
+    {
+      "file": "scripts/ensemble_forward_bridge.py",
+      "symbol": "ForwardBridgeHandler.do_PATCH",
+      "current_write": "Authenticated PATCH routes update operator tasks/workspaces directly through LoopStateRepository.",
+      "authority_class": "operational-index",
+      "target_boundary": "operator command service with event or explicit forward-only operational classification pending repair",
+      "first_slice": false,
+      "test_refs": [
+        "tests/test_forward_bridge.py",
+        "packages/dashboard/tests/forward-bridge.test.mjs"
+      ],
+      "entry_points": [
+        "ForwardBridgeHandler.do_PATCH"
+      ],
+      "existing_tests": [
+        "tests/test_forward_bridge.py"
+      ],
+      "fallback": "Preserve HTTP route and payload while extracting storage call into a command helper covered by spy tests.",
+      "facade_or_leaf": "facade",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "routes": [
+          "PATCH /api/operator/tasks/:id",
+          "PATCH /api/operator/workspaces/:id"
+        ]
+      }
+    },
+    {
+      "file": "scripts/ensemble_forward_bridge.py",
+      "symbol": "ForwardBridgeHandler.do_DELETE",
+      "current_write": "Authenticated DELETE routes delete operator tasks and include patch approval shortcuts that call agent_apply_patch.",
+      "authority_class": "unsafe-direct-domain-write",
+      "target_boundary": "operator command service; patch approval must pass approval state and event/audit boundary before applying",
+      "first_slice": false,
+      "test_refs": [
+        "tests/test_forward_bridge.py",
+        "tests/test_forward_runtime_mode.py"
+      ],
+      "entry_points": [
+        "ForwardBridgeHandler.do_DELETE"
+      ],
+      "existing_tests": [
+        "tests/test_forward_bridge.py",
+        "tests/test_forward_runtime_mode.py"
+      ],
+      "fallback": "Disable only shortcut route behind compatibility error if it cannot be made approval-bound; keep normal approval decision route.",
+      "facade_or_leaf": "facade",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "routes": [
+          "DELETE /api/operator/tasks/:id",
+          "DELETE /api/approvals/:patch_id/approve",
+          "DELETE /api/approvals/:patch_id/reject"
+        ]
+      }
+    },
+    {
+      "file": "scripts/ensemble_loop_repository.py",
+      "symbol": "LoopStateRepository",
+      "current_write": "Owns SQLite writes for runs, iterations, rooms, messages, handoffs, approvals, operator tasks, and workspaces.",
+      "authority_class": "operational-index",
+      "target_boundary": "repository remains bounded storage/index behind command services and projectors until promotion gates pass",
+      "first_slice": false,
+      "test_refs": [
+        "tests/test_loop_state.py",
+        "tests/test_room_replay.py",
+        "tests/test_forward_bridge.py"
+      ],
+      "entry_points": [
+        "LoopStateRepository.upsert_room",
+        "LoopStateRepository.append_room_message",
+        "LoopStateRepository.upsert_handoff_packet"
+      ],
+      "existing_tests": [
+        "tests/test_loop_state.py",
+        "tests/test_room_replay.py",
+        "tests/test_forward_bridge.py"
+      ],
+      "fallback": "Do not change repository schema in first slice; adapt callers to event-first ordering around existing methods.",
+      "facade_or_leaf": "leaf storage module",
+      "legacy_compatibility_alias": false,
+      "metadata": {
+        "store": ".conitens/runtime/loop_state.sqlite3"
+      }
+    },
+    {
+      "file": "scripts/ensemble_obsidian.py",
+      "symbol": "rebuild_all",
+      "current_write": "Rebuilds .notes projections from events.",
+      "authority_class": "projection",
+      "target_boundary": "deterministic projector from event ledger to .notes views",
+      "first_slice": false,
+      "test_refs": [
+        "tests/test_event_authority.py::EventAuthorityTests.test_rebuild_all_is_deterministic_and_overwrites_stale_projection",
+        "tests/test_operations_layer.py"
+      ],
+      "entry_points": [
+        "rebuild_all"
+      ],
+      "existing_tests": [
+        "tests/test_operations_layer.py"
+      ],
+      "fallback": "Projector remains rebuild-only; if deterministic test fails, repair projector before moving more writers.",
+      "facade_or_leaf": "leaf projection module",
+      "legacy_compatibility_alias": true,
+      "metadata": {
+        "projection_surface": ".notes"
+      }
+    }
+  ]
+}

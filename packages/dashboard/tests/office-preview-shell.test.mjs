@@ -7,11 +7,13 @@ import { fileURLToPath } from "node:url";
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD_SRC = path.resolve(TEST_DIR, "../src");
 
-test("office preview shell makes focused workbench dominant", () => {
+test("office preview shell keeps the handoff workbench primary and the character cast secondary", () => {
   const pixelOfficeSource = readDashboardSource("components/PixelOffice.tsx");
   const officeStageSource = readDashboardSource("components/OfficeStage.tsx");
+  const characterStageSource = readDashboardSource("components/AgentCharacterStage.tsx");
+  const officeAvatarSource = readDashboardSource("components/OfficeAvatar.tsx");
   const officeCssSource = readDashboardSource("office.module.css");
-  const spatialCssSource = readDashboardSource("spatial-lens/styles/spatial-lens.module.css");
+  const stageCssSource = readDashboardSource("office-stage.module.css");
 
   assert.match(pixelOfficeSource, /data-office-preview-shell=\{getOfficePreviewShellMode\(stageMode\)\}/);
   assert.match(pixelOfficeSource, /if \(stageMode === "focused"\) return "workbench-dominant";/);
@@ -23,10 +25,20 @@ test("office preview shell makes focused workbench dominant", () => {
     officeCssSource,
     /\.office-layout\[data-stage-mode="focused"\]/,
   );
-  assert.match(
-    officeStageSource,
-    /isSelected && entry\.mode === "focused" \? \(\s+<FocusedHandoffView/,
+  assert.match(officeStageSource, /<FocusedHandoffView/);
+  assert.match(officeStageSource, /<AgentCharacterStage/);
+  assert.ok(
+    officeStageSource.indexOf("<FocusedHandoffView") <
+      officeStageSource.indexOf("<AgentCharacterStage"),
+    "FocusedHandoffView must render before the secondary character stage",
   );
+  assert.match(characterStageSource, /data-agent-character-stage="true"/);
+  assert.match(characterStageSource, /data-agent-character-card/);
+  assert.match(characterStageSource, /data-motion-profile/);
+  assert.match(officeAvatarSource, /data-agent-avatar-source="sprite-gen"/);
+  assert.match(stageCssSource, /\.agent-character-card\[data-motion-profile="command-pulse"\]/);
+  assert.match(stageCssSource, /\.agent-character-card\[data-motion-profile="build-shift"\]/);
+  assert.match(stageCssSource, /\.agent-character-card\[data-motion-profile="verify-brace"\]/);
   assert.match(officeStageSource, /viewMode="overview"/);
   assert.doesNotMatch(officeStageSource, /viewMode=\{stageMode\}/);
   assert.match(officeStageSource, /role="tablist"/);
@@ -42,11 +54,6 @@ test("office preview shell makes focused workbench dominant", () => {
   assert.match(officeStageSource, /ArrowRight/);
   assert.match(officeStageSource, /ArrowLeft/);
   assert.doesNotMatch(officeStageSource, /aria-pressed/);
-  assert.match(spatialCssSource, /\.focused-workbench-root/);
-  assert.match(spatialCssSource, /\.focused-workbench-handoff-summary/);
-  assert.match(spatialCssSource, /\.focused-workbench-step\[data-workbench-step="blocked"\]/);
-  assert.match(spatialCssSource, /\.focused-context-strip/);
-  assert.match(spatialCssSource, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/);
 });
 
 test("office preview shell gives Floor Overview a map plus inspector command center", () => {

@@ -11,7 +11,7 @@ from typing import Any
 
 from ensemble_events import append_event
 from ensemble_loop_repository import LoopStateRepository
-from ensemble_room import create_room, post_room_message, room_log_path, room_meta_path
+from ensemble_room import create_room, post_room_message, room_log_path, room_meta_path, utc_iso
 
 
 ROOM_TYPES = {"debate", "review", "decision", "user-approval", "discussion"}
@@ -101,23 +101,44 @@ class RoomService:
         iteration_id: str | None = None,
         created_at: str | None = None,
     ) -> dict[str, Any]:
-        event = self.repository.append_tool_event(
-            room_id=room_id,
-            run_id=run_id,
-            iteration_id=iteration_id,
-            actor=actor,
-            tool_name=tool_name,
-            payload=payload,
-            created_at=created_at,
-        )
-        append_event(
+        projected_at = created_at or utc_iso()
+        authority_payload = {
+            "room_id": room_id,
+            "run_id": run_id,
+            "iteration_id": iteration_id,
+            "actor": actor,
+            "tool_name": tool_name,
+            "payload": payload,
+            "created_at": projected_at,
+        }
+        event = append_event(
             self.workspace,
             event_type="ROOM_TOOL_EVENT" if room_id else "TOOL_EVENT",
             actor={"type": "agent", "name": actor},
-            scope={"room_id": room_id, "run_id": run_id, "task_id": run_id, "correlation_id": run_id or room_id},
-            payload={"tool_name": tool_name, "payload": payload},
+            scope={
+                "room_id": room_id,
+                "run_id": run_id,
+                "iteration_id": iteration_id,
+                "task_id": run_id,
+                "correlation_id": run_id or room_id,
+            },
+            payload=authority_payload,
         )
-        return event
+        projected = dict(event.get("payload") or authority_payload)
+        projected_tool_payload = projected.get("payload")
+        if not isinstance(projected_tool_payload, dict):
+            projected_tool_payload = {}
+        record = self.repository.append_tool_event(
+            room_id=projected.get("room_id"),
+            run_id=projected.get("run_id"),
+            iteration_id=projected.get("iteration_id"),
+            actor=str(projected.get("actor") or actor),
+            tool_name=str(projected.get("tool_name") or tool_name),
+            payload=projected_tool_payload,
+            created_at=str(projected.get("created_at") or projected_at),
+        )
+        record["event_id"] = event.get("event_id")
+        return record
 
     def get_room(self, room_id: str) -> dict[str, Any]:
         self.sync_legacy_room(room_id)
@@ -256,8 +277,8 @@ class RoomService:
                 sender=message.get("sender") or "legacy",
                 sender_kind=message.get("sender_kind") or _default_sender_kind(message.get("sender") or "legacy"),
                 message_type=message.get("message_type") or "text",
-                content=message.get("text") or "",
-                evidence_refs=message.get("attachments") or [],
+                content=message.get("content") or message.get("text") or "",
+                evidence_refs=message.get("evidence_refs") or message.get("attachments") or [],
                 metadata=message.get("metadata") or {},
                 created_at=message.get("ts_utc"),
             )

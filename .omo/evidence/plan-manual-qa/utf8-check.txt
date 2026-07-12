@@ -1,0 +1,6 @@
+﻿surface: filesystem byte decode
+invocation: [System.IO.File]::ReadAllBytes + strict UTF8Encoding(false,true).GetString
+path: docs/conitens-architecture-direction-refactor-plan-2026-07-10.md
+bytes: 34036
+chars: 26385
+verdict: PASS strict UTF-8 decode succeeded

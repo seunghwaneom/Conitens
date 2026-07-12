@@ -1,0 +1,1 @@
+PASS scoped git diff --check for front-facing character changes (CRLF warnings ignored).
