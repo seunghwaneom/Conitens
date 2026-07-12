@@ -55,3 +55,8 @@ has exactly two parents in the required order: original PR head
 its tree is exactly the reviewed integration tree
 `4e5867d4262d894dd1a26ceaf783bac6b652c538`, and the worktree is clean.
 Independent goal/scope and QA rechecks report no remaining local blocker.
+
+Remote publication check: PASS. The PR branch advanced by fast-forward and
+GitHub reports `mergeable=MERGEABLE`. GitHub also reports
+`mergeStateStatus=BLOCKED`, which is a repository policy gate rather than a
+content merge conflict.

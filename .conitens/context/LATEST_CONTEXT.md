@@ -2903,5 +2903,7 @@ Read this file before substantial work.
   resource, controller, command, and screen boundaries before any mutation is
   available.
 - Independent goal/scope and QA rechecks pass for the final merge graph, exact
-  reviewed tree identity, ancestry, and clean worktree. Remote publication and
-  GitHub mergeability confirmation are the only remaining delivery checks.
+  reviewed tree identity, ancestry, and clean worktree. The branch was pushed
+  by fast-forward and GitHub reports PR #33 `MERGEABLE`; the separate
+  `BLOCKED` merge-state status reflects repository policy gates, not a content
+  conflict.

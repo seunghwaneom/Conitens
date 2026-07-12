@@ -43,6 +43,7 @@ parents while publishing the exact reviewed integration tree.
 
 ## Publication check
 
-The local integration and final review gates pass. Push the branch and confirm
-GitHub reports the PR mergeable; no product-runtime or local-history blocker is
-known.
+PASS. The branch advanced by fast-forward and GitHub reports the published PR
+head `MERGEABLE`. Its separate `BLOCKED` merge-state status is a repository
+policy gate rather than a merge conflict. No product-runtime, history, or
+content-conflict blocker remains.
